@@ -1,0 +1,19 @@
+version: '2'
+sql:
+- name: "athletes"
+  queries: "./athletes/queries"
+  schema: "./store/migrations"
+  engine: "postgresql"
+  gen:
+    go:
+      package: "athletes"
+      out: "./athletes"
+      emit_json_tags: false
+      emit_prepared_queries: false
+      emit_interface: true
+      emit_exact_table_names: false
+overrides:
+  go:
+    overrides:
+      - go_type: "github.com/jackc/pgtype.UUID"
+        db_type: "uuid"
