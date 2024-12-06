@@ -15,5 +15,11 @@ plugins:
     out: gen/
     opt:
       - paths=source_relative
+  - remote: buf.build/connectrpc/es:v1.6.1
+    out: web/gen
+    opt:
+      - target=ts
+  - remote: buf.build/bufbuild/es:v1.10.0
+    out: web/gen
 inputs:
   - directory: api
