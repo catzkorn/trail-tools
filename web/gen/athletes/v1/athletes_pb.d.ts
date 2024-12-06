@@ -195,9 +195,9 @@ export declare class BloodLactateMeasure extends Message<BloodLactateMeasure> {
   activityId: string;
 
   /**
-   * @generated from field: double mmol_per_liter = 3;
+   * @generated from field: string mmol_per_liter = 3;
    */
-  mmolPerLiter: number;
+  mmolPerLiter: string;
 
   /**
    * @generated from field: int32 heart_rate_bpm = 4;
@@ -234,9 +234,9 @@ export declare class CreateBloodLactateMeasureRequest extends Message<CreateBloo
   activityId: string;
 
   /**
-   * @generated from field: double mmol_per_liter = 2;
+   * @generated from field: string mmol_per_liter = 2;
    */
-  mmolPerLiter: number;
+  mmolPerLiter: string;
 
   /**
    * @generated from field: int32 heart_rate_bpm = 3;

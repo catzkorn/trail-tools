@@ -8,7 +8,7 @@ package athletes
 import (
 	"context"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addActivity = `-- name: AddActivity :one
@@ -27,8 +27,8 @@ type AddActivityParams struct {
 	AthleteID pgtype.UUID
 }
 
-func (q *Queries) AddActivity(ctx context.Context, arg AddActivityParams) (Activity, error) {
-	row := q.db.QueryRowContext(ctx, addActivity, arg.Name, arg.AthleteID)
+func (q *Queries) AddActivity(ctx context.Context, arg *AddActivityParams) (Activity, error) {
+	row := q.db.QueryRow(ctx, addActivity, arg.Name, arg.AthleteID)
 	var i Activity
 	err := row.Scan(
 		&i.ID,
@@ -49,7 +49,7 @@ RETURNING id, create_time, name
 `
 
 func (q *Queries) AddAthlete(ctx context.Context, name string) (Athlete, error) {
-	row := q.db.QueryRowContext(ctx, addAthlete, name)
+	row := q.db.QueryRow(ctx, addAthlete, name)
 	var i Athlete
 	err := row.Scan(&i.ID, &i.CreateTime, &i.Name)
 	return i, err
@@ -70,12 +70,12 @@ RETURNING id, create_time, activity_id, mmol_per_liter, heart_rate_bpm
 
 type AddMeasureParams struct {
 	ActivityID   pgtype.UUID
-	MmolPerLiter string
-	HeartRateBpm int16
+	MmolPerLiter pgtype.Numeric
+	HeartRateBpm int32
 }
 
-func (q *Queries) AddMeasure(ctx context.Context, arg AddMeasureParams) (BloodLactateMeasure, error) {
-	row := q.db.QueryRowContext(ctx, addMeasure, arg.ActivityID, arg.MmolPerLiter, arg.HeartRateBpm)
+func (q *Queries) AddMeasure(ctx context.Context, arg *AddMeasureParams) (BloodLactateMeasure, error) {
+	row := q.db.QueryRow(ctx, addMeasure, arg.ActivityID, arg.MmolPerLiter, arg.HeartRateBpm)
 	var i BloodLactateMeasure
 	err := row.Scan(
 		&i.ID,
@@ -94,7 +94,7 @@ RETURNING id, create_time, name
 `
 
 func (q *Queries) DeleteAthlete(ctx context.Context, id pgtype.UUID) (Athlete, error) {
-	row := q.db.QueryRowContext(ctx, deleteAthlete, id)
+	row := q.db.QueryRow(ctx, deleteAthlete, id)
 	var i Athlete
 	err := row.Scan(&i.ID, &i.CreateTime, &i.Name)
 	return i, err
