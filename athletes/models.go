@@ -5,28 +5,26 @@
 package athletes
 
 import (
-	"time"
-
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Activity struct {
 	ID         pgtype.UUID
-	CreateTime time.Time
+	CreateTime pgtype.Timestamptz
 	Name       string
 	AthleteID  pgtype.UUID
 }
 
 type Athlete struct {
 	ID         pgtype.UUID
-	CreateTime time.Time
+	CreateTime pgtype.Timestamptz
 	Name       string
 }
 
 type BloodLactateMeasure struct {
 	ID           pgtype.UUID
-	CreateTime   time.Time
+	CreateTime   pgtype.Timestamptz
 	ActivityID   pgtype.UUID
-	MmolPerLiter string
-	HeartRateBpm int16
+	MmolPerLiter pgtype.Numeric
+	HeartRateBpm int32
 }

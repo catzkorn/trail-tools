@@ -3,7 +3,7 @@
 package store
 
 import (
-	"database/sql"
+	"context"
 	"embed"
 	"fmt"
 	"log/slog"
@@ -11,7 +11,7 @@ import (
 
 	migrate "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	pgxmigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -23,12 +23,12 @@ import (
 var fs embed.FS
 
 type DB struct {
-	*sql.DB
+	*pgx.Conn
 }
 
 // New creates a new Directory, connecting it to the postgres server on
 // the URL provided.
-func New(logger *slog.Logger, pgURL *url.URL) (*DB, error) {
+func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) {
 	connURL := *pgURL
 	c, err := pgx.ParseConfig(connURL.String())
 	if err != nil {
@@ -39,26 +39,30 @@ func New(logger *slog.Logger, pgURL *url.URL) (*DB, error) {
 		Logger:   slogadapter.NewLogger(logger),
 		LogLevel: tracelog.LogLevelTrace,
 	}
-	db := stdlib.OpenDB(*c)
-
-	err = validateSchema(db, pgURL.Scheme)
+	conn, err := pgx.ConnectConfig(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
+	}
+	err = validateSchema(conn, pgURL.Scheme)
 	if err != nil {
 		return nil, fmt.Errorf("validating schema: %w", err)
 	}
 
-	return &DB{DB: db}, nil
+	return &DB{Conn: conn}, nil
 }
 
 // Migrate migrates the Postgres schema to the current version.
-func validateSchema(db *sql.DB, scheme string) error {
+func validateSchema(conn *pgx.Conn, scheme string) error {
 	sourceInstance, err := iofs.New(fs, "migrations")
 	if err != nil {
 		return err
 	}
+	db := stdlib.OpenDB(*conn.Config())
+	defer db.Close()
 	var driverInstance database.Driver
 	switch scheme {
 	case "postgres", "postgresql":
-		driverInstance, err = postgres.WithInstance(db, new(postgres.Config))
+		driverInstance, err = pgxmigrate.WithInstance(db, new(pgxmigrate.Config))
 	default:
 		return fmt.Errorf("unknown scheme: %q", scheme)
 	}

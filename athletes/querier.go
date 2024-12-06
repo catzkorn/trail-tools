@@ -7,13 +7,13 @@ package athletes
 import (
 	"context"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	AddActivity(ctx context.Context, arg AddActivityParams) (Activity, error)
+	AddActivity(ctx context.Context, arg *AddActivityParams) (Activity, error)
 	AddAthlete(ctx context.Context, name string) (Athlete, error)
-	AddMeasure(ctx context.Context, arg AddMeasureParams) (BloodLactateMeasure, error)
+	AddMeasure(ctx context.Context, arg *AddMeasureParams) (BloodLactateMeasure, error)
 	DeleteAthlete(ctx context.Context, id pgtype.UUID) (Athlete, error)
 }
 
