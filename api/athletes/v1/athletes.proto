@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package athletes.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service AthleteService {
+  rpc CreateAthlete(CreateAthleteRequest) returns (CreateAthleteResponse);
+  rpc CreateActivity(CreateActivityRequest) returns (CreateActivityResponse);
+  rpc CreateBloodLactateMeasure(CreateBloodLactateMeasureRequest) returns (CreateBloodLactateMeasureResponse);
+}
+
+message Athlete {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
+
+message CreateAthleteRequest {
+  string name = 1;
+}
+
+message CreateAthleteResponse {
+  Athlete athlete = 1;
+}
+
+message Activity {
+  string id = 1;
+  string name = 2;
+  string athlete_id = 3;
+  google.protobuf.Timestamp create_time = 4;
+}
+
+message CreateActivityRequest {
+  string name = 1;
+  string athlete_id = 2;
+}
+
+message CreateActivityResponse {
+  Activity activity = 1;
+}
+
+message BloodLactateMeasure {
+  string id = 1;
+  string activity_id = 2;
+  double mmol_per_liter = 3;
+  int32 heart_rate_bpm = 4;
+  google.protobuf.Timestamp create_time = 5;
+}
+
+message CreateBloodLactateMeasureRequest {
+  string activity_id = 1;
+  double mmol_per_liter = 2;
+  int32 heart_rate_bpm = 3;
+}
+
+message CreateBloodLactateMeasureResponse {
+  BloodLactateMeasure blood_lactate_measure = 1;
+}
