@@ -3,11 +3,13 @@ module github.com/catzkorn/trail-tools
 go 1.23.4
 
 require (
+	connectrpc.com/connect v1.17.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jackc/pgtype v1.14.4
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/mcosta74/pgx-slog v0.3.1
 	gitlab.com/greyxor/slogor v1.5.2
+	google.golang.org/protobuf v1.34.2
 )
 
 require (
