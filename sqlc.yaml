@@ -1,3 +1,4 @@
+# See https://docs.sqlc.dev/en/latest/reference/config.html for documentation on the fields
 version: '2'
 sql:
 - name: "athletes"
@@ -8,12 +9,7 @@ sql:
     go:
       package: "athletes"
       out: "./athletes"
-      emit_json_tags: false
-      emit_prepared_queries: false
+      sql_package: "pgx/v5"
+      sql_driver: "github.com/jackc/pgx/v5"
       emit_interface: true
-      emit_exact_table_names: false
-overrides:
-  go:
-    overrides:
-      - go_type: "github.com/jackc/pgtype.UUID"
-        db_type: "uuid"
+      emit_params_struct_pointers: true

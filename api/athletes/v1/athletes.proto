@@ -43,14 +43,14 @@ message CreateActivityResponse {
 message BloodLactateMeasure {
   string id = 1;
   string activity_id = 2;
-  double mmol_per_liter = 3;
+  string mmol_per_liter = 3;
   int32 heart_rate_bpm = 4;
   google.protobuf.Timestamp create_time = 5;
 }
 
 message CreateBloodLactateMeasureRequest {
   string activity_id = 1;
-  double mmol_per_liter = 2;
+  string mmol_per_liter = 2;
   int32 heart_rate_bpm = 3;
 }
 

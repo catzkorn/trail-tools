@@ -79,7 +79,7 @@ export const BloodLactateMeasure = /*@__PURE__*/ proto3.makeMessageType(
   () => [
     { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "activity_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "mmol_per_liter", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
+    { no: 3, name: "mmol_per_liter", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "heart_rate_bpm", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
     { no: 5, name: "create_time", kind: "message", T: Timestamp },
   ],
@@ -92,7 +92,7 @@ export const CreateBloodLactateMeasureRequest = /*@__PURE__*/ proto3.makeMessage
   "athletes.v1.CreateBloodLactateMeasureRequest",
   () => [
     { no: 1, name: "activity_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "mmol_per_liter", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
+    { no: 2, name: "mmol_per_liter", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "heart_rate_bpm", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ],
 );
