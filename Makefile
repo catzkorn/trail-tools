@@ -1,5 +1,8 @@
 SQLC_VERSION:=1.27.0
 BUF_VERSION:=1.47.2
+NPM_TAG:=23-alpine
+ESBUILD_VERSION:=0.24.0
+POSTGRES_VERSION:=17
 
 .PHONY: db-up
 db-up:
@@ -15,11 +18,20 @@ sqlc:
 
 .PHONY: buf
 buf:
-	docker run --rm -v $$(pwd):/srv --user $(id -u):$(id -g) -w /srv bufbuild/buf:$(BUF_VERSION) generate
+	go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) generate
 
 .PHONY: gen
-gen: sqlc buf
+gen: sqlc buf web
 
 .PHONY: run
 run:
 	go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable
+
+.PHONY: web-deps
+web-deps:
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
+
+.PHONY: web
+web:
+	go run github.com/evanw/esbuild/cmd/esbuild@v0.24.0 web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv d3fk/tailwindcss:latest --minify -i base.css -o dist/index.css
