@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+      "target": "ES6",
+      "module": "ESNext",
+      "jsx": "react-jsx",
+      "strict": true,
+      "moduleResolution": "Node",
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "baseUrl": ".",
+      "paths": {
+        "@components/*": ["components/*"],
+        "@pages/*": ["pages/*"],
+        "@utils/*": ["utils/*"]
+      }
+    },
+    "include": ["."],
+    "exclude": ["node_modules", "dist"]
+  }
+  
