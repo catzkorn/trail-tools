@@ -35,6 +35,9 @@ func NewService(log *slog.Logger, directory Directory) *Service {
 }
 
 func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athletesv1.CreateAthleteRequest]) (*connect.Response[athletesv1.CreateAthleteResponse], error) {
+	if req.Msg.Name == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("empty athlete name"))
+	}
 	athlete, err := s.directory.AddAthlete(ctx, req.Msg.Name)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add athlete: %w", err))
