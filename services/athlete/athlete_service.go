@@ -9,6 +9,7 @@ import (
 	"github.com/catzkorn/trail-tools/athletes"
 	athletesv1 "github.com/catzkorn/trail-tools/gen/athletes/v1"
 	"github.com/catzkorn/trail-tools/gen/athletes/v1/athletesv1connect"
+	"github.com/catzkorn/trail-tools/oidc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -35,6 +36,10 @@ func NewService(log *slog.Logger, directory Directory) *Service {
 }
 
 func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athletesv1.CreateAthleteRequest]) (*connect.Response[athletesv1.CreateAthleteResponse], error) {
+	userInfo := oidc.GetAuthDetails(ctx)
+	if userInfo == nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
+	}
 	if req.Msg.Name == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("empty athlete name"))
 	}
@@ -57,6 +62,10 @@ func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athlet
 }
 
 func (s *Service) CreateActivity(ctx context.Context, req *connect.Request[athletesv1.CreateActivityRequest]) (*connect.Response[athletesv1.CreateActivityResponse], error) {
+	userInfo := oidc.GetAuthDetails(ctx)
+	if userInfo == nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
+	}
 	activityParam := &athletes.AddActivityParams{
 		Name: req.Msg.Name,
 	}
@@ -83,6 +92,10 @@ func (s *Service) CreateActivity(ctx context.Context, req *connect.Request[athle
 }
 
 func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Request[athletesv1.CreateBloodLactateMeasureRequest]) (*connect.Response[athletesv1.CreateBloodLactateMeasureResponse], error) {
+	userInfo := oidc.GetAuthDetails(ctx)
+	if userInfo == nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
+	}
 	if req.Msg.HeartRateBpm <= 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid heart rate: %d", req.Msg.HeartRateBpm))
 	}

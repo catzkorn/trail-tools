@@ -4,15 +4,18 @@ go 1.23.4
 
 require (
 	connectrpc.com/connect v1.17.0
+	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/mcosta74/pgx-slog v0.3.1
 	gitlab.com/greyxor/slogor v1.5.2
 	golang.org/x/net v0.29.0
+	golang.org/x/oauth2 v0.21.0
 	google.golang.org/protobuf v1.34.2
 )
 
 require (
+	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
