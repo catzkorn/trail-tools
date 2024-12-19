@@ -25,7 +25,7 @@ gen: sqlc buf web
 
 .PHONY: run
 run:
-	go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable
+	go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable -oidc-client-id $$OIDC_CLIENT_ID -oidc-client-secret $$OIDC_CLIENT_SECRET
 
 .PHONY: web-deps
 web-deps:
