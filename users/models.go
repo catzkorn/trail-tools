@@ -2,11 +2,10 @@
 // versions:
 //   sqlc v1.27.0
 
-package athletes
+package users
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/shopspring/decimal"
 )
 
 type Activity struct {
@@ -27,7 +26,7 @@ type BloodLactateMeasure struct {
 	ID           pgtype.UUID
 	ActivityID   pgtype.UUID
 	CreateTime   pgtype.Timestamptz
-	MmolPerLiter decimal.Decimal
+	MmolPerLiter pgtype.Numeric
 	HeartRateBpm int32
 }
 

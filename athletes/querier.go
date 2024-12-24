@@ -12,7 +12,7 @@ import (
 
 type Querier interface {
 	AddActivity(ctx context.Context, arg *AddActivityParams) (Activity, error)
-	AddAthlete(ctx context.Context, name string) (Athlete, error)
+	AddAthlete(ctx context.Context, arg *AddAthleteParams) (Athlete, error)
 	AddMeasure(ctx context.Context, arg *AddMeasureParams) (BloodLactateMeasure, error)
 	DeleteAthlete(ctx context.Context, id pgtype.UUID) (Athlete, error)
 }

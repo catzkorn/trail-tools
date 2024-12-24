@@ -1,18 +1,20 @@
 -- name: AddAthlete :one
-INSERT INTO athlete (
-  name
+INSERT INTO athletes (
+  name,
+  user_id
 ) VALUES (
-  $1
+  $1,
+  $2
 )
 RETURNING *;
 
 -- name: DeleteAthlete :one
-DELETE FROM athlete
+DELETE FROM athletes
 WHERE id = $1
 RETURNING *;
 
 -- name: AddActivity :one
-INSERT INTO activity (
+INSERT INTO activities (
   name,
   athlete_id
 ) VALUES (
@@ -22,7 +24,7 @@ INSERT INTO activity (
 RETURNING *;
 
 -- name: AddMeasure :one
-INSERT INTO blood_lactate_measure (
+INSERT INTO blood_lactate_measures (
   activity_id,
   mmol_per_liter,
   heart_rate_bpm
