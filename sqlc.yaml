@@ -1,15 +1,32 @@
 # See https://docs.sqlc.dev/en/latest/reference/config.html for documentation on the fields
-version: '2'
+version: "2"
 sql:
-- name: "athletes"
-  queries: "./athletes/queries"
-  schema: "./store/migrations"
-  engine: "postgresql"
-  gen:
-    go:
-      package: "athletes"
-      out: "./athletes"
-      sql_package: "pgx/v5"
-      sql_driver: "github.com/jackc/pgx/v5"
-      emit_interface: true
-      emit_params_struct_pointers: true
+  - name: "athletes"
+    queries: "./athletes/queries"
+    schema: "./store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "athletes"
+        out: "./athletes"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: true
+        emit_params_struct_pointers: true
+        overrides:
+          - db_type: "pg_catalog.numeric"
+            go_type:
+              import: "github.com/shopspring/decimal"
+              type: "Decimal"
+  - name: "users"
+    queries: "./users/queries"
+    schema: "./store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "users"
+        out: "./users"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: true
+        emit_params_struct_pointers: true

@@ -13,6 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	pgxmigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	decimal "github.com/jackc/pgx-shopspring-decimal"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/tracelog"
@@ -47,6 +48,8 @@ func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) 
 	if err != nil {
 		return nil, fmt.Errorf("validating schema: %w", err)
 	}
+	// Register decimal type
+	decimal.Register(conn.TypeMap())
 
 	return &DB{Conn: conn}, nil
 }
