@@ -18,6 +18,7 @@ import (
 	"github.com/catzkorn/trail-tools/oidc"
 	"github.com/catzkorn/trail-tools/services/athlete"
 	"github.com/catzkorn/trail-tools/store"
+	"github.com/catzkorn/trail-tools/users"
 	"github.com/catzkorn/trail-tools/web"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/net/http2"
@@ -92,11 +93,15 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
 	}
-	dir, err := athletes.NewDirectory(log, db)
+	users, err := users.NewRepository(log, db)
 	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		return fmt.Errorf("failed to create user directory: %w", err)
 	}
-	apiPath, apiHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, dir))
+	athletes, err := athletes.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create athlete directory: %w", err)
+	}
+	apiPath, apiHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, users, athletes))
 	authAPI, err := oidc.NewAuthnMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiHandler)
 	if err != nil {
 		return fmt.Errorf("failed to create authn interceptor: %w", err)
