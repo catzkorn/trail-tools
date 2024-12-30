@@ -20,8 +20,9 @@ sqlc:
 buf:
 	go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) generate
 
-.PHONY: gen
-gen: sqlc buf web
+.PHONY: buf-lint
+buf-lint:
+	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) lint
 
 .PHONY: run
 run:
@@ -31,7 +32,17 @@ run:
 web-deps:
 	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
 
+.PHONY: web-lint
+web-lint:
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
+
 .PHONY: web
 web:
 	go run github.com/evanw/esbuild/cmd/esbuild@v0.24.0 web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
 	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv d3fk/tailwindcss:latest --minify -i base.css -o dist/index.css
+
+.PHONY: gen
+gen: sqlc buf web
+
+.PHONY: lint
+lint: web-lint buf-lint
