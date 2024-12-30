@@ -1,4 +1,4 @@
-import React, { useActionState, useState } from "react";
+import React, { useState } from "react";
 import { useTransition } from "react";
 import { Athlete, AthleteService } from "gen/athletes/v1/athletes_pb";
 import { createClient, ConnectError } from "@connectrpc/connect";
@@ -35,7 +35,12 @@ const CreateAthleteForm: React.FC = () => {
 
   return (
     <div>
-      <input value={name} onChange={(event) => setName(event.target.value)} />
+      <input
+        value={name}
+        onChange={(event) => {
+          setName(event.target.value);
+        }}
+      />
       <button onClick={handleSubmit} disabled={isPending}>
         Create Athlete
       </button>
