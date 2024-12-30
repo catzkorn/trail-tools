@@ -24,6 +24,14 @@ buf:
 buf-lint:
 	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) lint
 
+.PHONY: buf-format
+buf-format:
+	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) format -w
+
+.PHONY: go-format
+go-format:
+	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go run mvdan.cc/gofumpt@latest -w
+
 .PHONY: run
 run:
 	go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable -oidc-client-id $$OIDC_CLIENT_ID -oidc-client-secret $$OIDC_CLIENT_SECRET
@@ -36,6 +44,10 @@ web-deps:
 web-lint:
 	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
 
+.PHONY: web-format
+web-format:
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx prettier --write .
+
 .PHONY: web
 web:
 	go run github.com/evanw/esbuild/cmd/esbuild@v0.24.0 web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
@@ -46,3 +58,6 @@ gen: sqlc buf web
 
 .PHONY: lint
 lint: web-lint buf-lint
+
+.PHONY: format
+format: go-format web-format buf-format
