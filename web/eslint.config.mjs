@@ -10,7 +10,6 @@ export default [
     // or it will only exclude files matched by "files".
     ignores: [
       "eslint.config.mjs",
-      "tailwind.config.js",
       "prettier.config.mjs",
       "gen/**",
       "dist/index.js",
