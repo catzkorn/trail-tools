@@ -19,6 +19,8 @@ ON CONFLICT (oidc_subject) DO UPDATE set oidc_subject = EXCLUDED.oidc_subject
 RETURNING id, create_time, oidc_subject
 `
 
+// Note: we don't actually need to update anything, but if we don't,
+// the query doesn't return the row.
 func (q *Queries) GetUser(ctx context.Context, oidcSubject string) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, oidcSubject)
 	var i User
