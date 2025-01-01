@@ -3,6 +3,7 @@ BUF_VERSION:=1.47.2
 NPM_TAG:=23-alpine
 ESBUILD_VERSION:=0.24.0
 POSTGRES_VERSION:=17
+TAILWINDCSS_VERSION=sha256:5da4533829b37dfc4d596dabca91e2fea3ccfe212d771bd4dc687ebc21a7ad24
 
 .PHONY: db-up
 db-up:
@@ -38,20 +39,20 @@ run:
 
 .PHONY: web-deps
 web-deps:
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
 
 .PHONY: web-lint
 web-lint:
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
 
 .PHONY: web-format
 web-format:
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx prettier --write .
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx prettier --write .
 
 .PHONY: web
 web:
 	go run github.com/evanw/esbuild/cmd/esbuild@v0.24.0 web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv d3fk/tailwindcss:latest --minify -i base.css -o dist/index.css
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv d3fk/tailwindcss@$(TAILWINDCSS_VERSION) --minify -i base.css -o dist/index.css
 
 .PHONY: gen
 gen: sqlc buf web

@@ -9,6 +9,8 @@ import (
 )
 
 type Querier interface {
+	// Note: we don't actually need to update anything, but if we don't,
+	// the query doesn't return the row.
 	GetUser(ctx context.Context, oidcSubject string) (User, error)
 }
 
