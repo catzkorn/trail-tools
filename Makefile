@@ -38,15 +38,15 @@ run:
 
 .PHONY: web-deps
 web-deps:
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
 
 .PHONY: web-lint
 web-lint:
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
 
 .PHONY: web-format
 web-format:
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx prettier --write .
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx prettier --write .
 
 .PHONY: web
 web:
