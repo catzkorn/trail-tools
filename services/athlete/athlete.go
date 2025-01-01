@@ -12,8 +12,8 @@ import (
 )
 
 func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athletesv1.CreateAthleteRequest]) (*connect.Response[athletesv1.CreateAthleteResponse], error) {
-	userInfo := oidc.GetAuthDetails(ctx)
-	if userInfo == nil {
+	userInfo, ok := oidc.GetUserInfo(ctx)
+	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
 	}
 	if req.Msg.Name == "" {
@@ -27,12 +27,11 @@ func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athlet
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add athlete: %w", err))
 	}
-	resp := &athletesv1.CreateAthleteResponse{
+	return connect.NewResponse(&athletesv1.CreateAthleteResponse{
 		Athlete: &athletesv1.Athlete{
 			Name:       req.Msg.Name,
 			CreateTime: timestamppb.New(athlete.CreateTime.Time),
 			Id:         store.UUIDToString(athlete.ID),
 		},
-	}
-	return connect.NewResponse(resp), nil
+	}), nil
 }

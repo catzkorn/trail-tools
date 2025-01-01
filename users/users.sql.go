@@ -15,7 +15,7 @@ INSERT INTO users (
 ) VALUES (
   $1
 )
-ON CONFLICT (oidc_subject) DO NOTHING
+ON CONFLICT (oidc_subject) DO UPDATE set oidc_subject = EXCLUDED.oidc_subject
 RETURNING id, create_time, oidc_subject
 `
 

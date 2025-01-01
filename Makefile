@@ -20,8 +20,17 @@ sqlc:
 buf:
 	go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) generate
 
-.PHONY: gen
-gen: sqlc buf web
+.PHONY: buf-lint
+buf-lint:
+	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) lint
+
+.PHONY: buf-format
+buf-format:
+	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) format -w
+
+.PHONY: go-format
+go-format:
+	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go run mvdan.cc/gofumpt@latest -w
 
 .PHONY: run
 run:
@@ -31,7 +40,24 @@ run:
 web-deps:
 	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npm install
 
+.PHONY: web-lint
+web-lint:
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
+
+.PHONY: web-format
+web-format:
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx prettier --write .
+
 .PHONY: web
 web:
 	go run github.com/evanw/esbuild/cmd/esbuild@v0.24.0 web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
 	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv d3fk/tailwindcss:latest --minify -i base.css -o dist/index.css
+
+.PHONY: gen
+gen: sqlc buf web
+
+.PHONY: lint
+lint: web-lint buf-lint
+
+.PHONY: format
+format: go-format web-format buf-format

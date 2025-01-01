@@ -15,8 +15,10 @@ import (
 
 	"github.com/catzkorn/trail-tools/athletes"
 	"github.com/catzkorn/trail-tools/gen/athletes/v1/athletesv1connect"
+	"github.com/catzkorn/trail-tools/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/oidc"
 	"github.com/catzkorn/trail-tools/services/athlete"
+	"github.com/catzkorn/trail-tools/services/user"
 	"github.com/catzkorn/trail-tools/store"
 	"github.com/catzkorn/trail-tools/users"
 	"github.com/catzkorn/trail-tools/web"
@@ -59,7 +61,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	if err := run(ctx, log, *databaseUrl, *address, *oidcClientID, *oidcClientSecret, *oidcIssuerURL); err != nil {
-		log.Error("Failed running app", slogor.Err(err))
+		log.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
 	}
 }
@@ -101,14 +103,23 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
-	apiPath, apiHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, users, athletes))
-	authAPI, err := oidc.NewAuthnMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiHandler)
+	// Register all handlers to a single mux
+	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, users, athletes))
+	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log, users))
+	apiMux := http.NewServeMux()
+	apiMux.Handle(athletePath, athleteHandler)
+	apiMux.Handle(usersPath, usersHandler)
+
+	// Wrap the mux in the OIDC authn middleware
+	apiAuth, err := oidc.NewAuthnMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiMux)
 	if err != nil {
 		return fmt.Errorf("failed to create authn interceptor: %w", err)
 	}
+
 	mux := http.NewServeMux()
-	// Serve the Connect API
-	mux.Handle(apiPath, authAPI)
+	// Serve the API handlers through the authn middleware
+	mux.Handle(athletePath, apiAuth)
+	mux.Handle(usersPath, apiAuth)
 	// Serve OIDC handlers
 	if err := oidc.RegisterHandlers(ctx, log, "http://"+address, oidcClientID, oidcClientSecret, oidcIssuerURL, mux); err != nil {
 		return fmt.Errorf("failed to register OIDC handlers: %w", err)
@@ -130,14 +141,14 @@ func run(
 	}
 	go func() {
 		<-ctx.Done()
-		log.Info("Interrupt received, shutting down")
+		log.InfoContext(ctx, "Interrupt received, shutting down")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(shutdownCtx); err != nil {
-			log.Error("Failed to shutdown server", slogor.Err(err))
+			log.ErrorContext(ctx, "Failed to shutdown server", slogor.Err(err))
 		}
 	}()
-	log.Info("Serving on", slog.String("addr", "localhost:8080"))
+	log.InfoContext(ctx, "Serving on", slog.String("addr", "localhost:8080"))
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to serve: %w", err)
 	}

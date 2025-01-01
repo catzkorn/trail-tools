@@ -1,0 +1,31 @@
+package user
+
+import (
+	"context"
+
+	"connectrpc.com/connect"
+	usersv1 "github.com/catzkorn/trail-tools/gen/users/v1"
+	"github.com/catzkorn/trail-tools/oidc"
+	"github.com/catzkorn/trail-tools/store"
+)
+
+func (s *Service) GetCurrentUser(ctx context.Context, req *connect.Request[usersv1.GetCurrentUserRequest]) (*connect.Response[usersv1.GetCurrentUserResponse], error) {
+	userInfo, ok := oidc.GetUserInfo(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, nil)
+	}
+	user, err := s.users.GetUser(ctx, userInfo.Subject)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&usersv1.GetCurrentUserResponse{
+		User: &usersv1.User{
+			Id:         store.UUIDToString(user.ID),
+			Email:      userInfo.Email,
+			Name:       userInfo.Name,
+			GivenName:  userInfo.GivenName,
+			FamilyName: userInfo.FamilyName,
+			AvatarUrl:  userInfo.AvatarURL,
+		},
+	}), nil
+}

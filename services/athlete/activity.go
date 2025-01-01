@@ -12,8 +12,8 @@ import (
 )
 
 func (s *Service) CreateActivity(ctx context.Context, req *connect.Request[athletesv1.CreateActivityRequest]) (*connect.Response[athletesv1.CreateActivityResponse], error) {
-	userInfo := oidc.GetAuthDetails(ctx)
-	if userInfo == nil {
+	_, ok := oidc.GetUserInfo(ctx)
+	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
 	}
 	athleteID, err := store.StringToUUID(req.Msg.AthleteId)
@@ -24,16 +24,12 @@ func (s *Service) CreateActivity(ctx context.Context, req *connect.Request[athle
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add activity: %w", err))
 	}
-	resp := &athletesv1.CreateActivityResponse{
+	return connect.NewResponse(&athletesv1.CreateActivityResponse{
 		Activity: &athletesv1.Activity{
 			Id:         store.UUIDToString(activity.ID),
 			AthleteId:  store.UUIDToString(activity.AthleteID),
 			Name:       req.Msg.Name,
 			CreateTime: timestamppb.New(activity.CreateTime.Time),
 		},
-	}
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to assign activity ID: %w", err))
-	}
-	return connect.NewResponse(resp), nil
+	}), nil
 }

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package users.v1;
+
+service UserService {
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string given_name = 4;
+  string family_name = 5;
+  string avatar_url = 6;
+}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1;
+}

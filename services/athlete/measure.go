@@ -13,8 +13,8 @@ import (
 )
 
 func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Request[athletesv1.CreateBloodLactateMeasureRequest]) (*connect.Response[athletesv1.CreateBloodLactateMeasureResponse], error) {
-	userInfo := oidc.GetAuthDetails(ctx)
-	if userInfo == nil {
+	_, ok := oidc.GetUserInfo(ctx)
+	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
 	}
 	if req.Msg.HeartRateBpm <= 0 {
@@ -35,7 +35,7 @@ func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Re
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add measure: %w", err))
 	}
-	resp := &athletesv1.CreateBloodLactateMeasureResponse{
+	return connect.NewResponse(&athletesv1.CreateBloodLactateMeasureResponse{
 		BloodLactateMeasure: &athletesv1.BloodLactateMeasure{
 			MmolPerLiter: measure.MmolPerLiter.String(),
 			HeartRateBpm: int32(measure.HeartRateBpm),
@@ -43,6 +43,5 @@ func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Re
 			Id:           store.UUIDToString(measure.ID),
 			ActivityId:   store.UUIDToString(measure.ActivityID),
 		},
-	}
-	return connect.NewResponse(resp), nil
+	}), nil
 }
