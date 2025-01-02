@@ -1,9 +1,4 @@
-SQLC_VERSION:=1.27.0
-BUF_VERSION:=1.47.2
-NPM_TAG:=23-alpine
-ESBUILD_VERSION:=0.24.0
-POSTGRES_VERSION:=17
-TAILWINDCSS_VERSION=sha256:5da4533829b37dfc4d596dabca91e2fea3ccfe212d771bd4dc687ebc21a7ad24
+NPM_TAG:=23.5.0-alpine
 
 .PHONY: db-up
 db-up:
@@ -15,23 +10,23 @@ db-down:
 
 .PHONY: sqlc
 sqlc:
-	docker run --rm -v $$(pwd):/srv --user $(id -u):$(id -g) -w /srv sqlc/sqlc:$(SQLC_VERSION) generate
+	go tool sqlc generate
 
 .PHONY: buf
 buf:
-	go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) generate
+	go tool buf generate
 
 .PHONY: buf-lint
 buf-lint:
-	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) lint
+	cd api && go tool buf lint
 
 .PHONY: buf-format
 buf-format:
-	cd api && go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION) format -w
+	cd api && go tool buf format -w
 
 .PHONY: go-format
 go-format:
-	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go run mvdan.cc/gofumpt@latest -w
+	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go tool gofumpt -w
 
 .PHONY: run
 run:
@@ -51,8 +46,8 @@ web-format:
 
 .PHONY: web
 web:
-	go run github.com/evanw/esbuild/cmd/esbuild@v0.24.0 web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
-	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv d3fk/tailwindcss@$(TAILWINDCSS_VERSION) --minify -i base.css -o dist/index.css
+	go tool esbuild web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx tailwindcss --minify -i base.css -o dist/index.css
 
 .PHONY: gen
 gen: sqlc buf web
