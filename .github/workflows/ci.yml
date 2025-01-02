@@ -82,3 +82,18 @@ jobs:
           go-version: "stable"
       - name: Run go test
         run: go test -race ./...
+
+  mod:
+    name: Check diff after tidying go.mod and go.sum
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: WillAbides/setup-go-faster@v1.14.0
+        with:
+          go-version: "stable"
+      - run: |
+          make web-deps
+          go mod tidy
+          git diff --exit-code
