@@ -11,6 +11,7 @@ plugins:
     out: gen/
     opt:
       - paths=source_relative
+      - default_api_level=API_OPAQUE
   - local: ["go", "tool", "protoc-gen-connect-go"]
     out: gen/
     opt:
