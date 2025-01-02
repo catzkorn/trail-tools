@@ -18,14 +18,14 @@ func (s *Service) GetCurrentUser(ctx context.Context, req *connect.Request[users
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&usersv1.GetCurrentUserResponse{
-		User: &usersv1.User{
+	return connect.NewResponse(usersv1.GetCurrentUserResponse_builder{
+		User: usersv1.User_builder{
 			Id:         store.UUIDToString(user.ID),
 			Email:      userInfo.Email,
 			Name:       userInfo.Name,
 			GivenName:  userInfo.GivenName,
 			FamilyName: userInfo.FamilyName,
 			AvatarUrl:  userInfo.AvatarURL,
-		},
-	}), nil
+		}.Build(),
+	}.Build()), nil
 }

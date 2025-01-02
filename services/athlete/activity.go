@@ -16,20 +16,20 @@ func (s *Service) CreateActivity(ctx context.Context, req *connect.Request[athle
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
 	}
-	athleteID, err := store.StringToUUID(req.Msg.AthleteId)
+	athleteID, err := store.StringToUUID(req.Msg.GetAthleteId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid athlete ID: %w", err))
 	}
-	activity, err := s.athletes.AddActivity(ctx, req.Msg.Name, athleteID)
+	activity, err := s.athletes.AddActivity(ctx, req.Msg.GetName(), athleteID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add activity: %w", err))
 	}
-	return connect.NewResponse(&athletesv1.CreateActivityResponse{
-		Activity: &athletesv1.Activity{
+	return connect.NewResponse(athletesv1.CreateActivityResponse_builder{
+		Activity: athletesv1.Activity_builder{
 			Id:         store.UUIDToString(activity.ID),
 			AthleteId:  store.UUIDToString(activity.AthleteID),
-			Name:       req.Msg.Name,
+			Name:       req.Msg.GetName(),
 			CreateTime: timestamppb.New(activity.CreateTime.Time),
-		},
-	}), nil
+		}.Build(),
+	}.Build()), nil
 }
