@@ -11,7 +11,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -22,12 +21,12 @@ const (
 )
 
 type Athlete struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *Athlete) Reset() {
@@ -55,37 +54,73 @@ func (x *Athlete) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Athlete.ProtoReflect.Descriptor instead.
-func (*Athlete) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *Athlete) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *Athlete) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *Athlete) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
+func (x *Athlete) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *Athlete) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Athlete) SetCreateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreateTime = v
+}
+
+func (x *Athlete) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreateTime != nil
+}
+
+func (x *Athlete) ClearCreateTime() {
+	x.xxx_hidden_CreateTime = nil
+}
+
+type Athlete_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         string
+	Name       string
+	CreateTime *timestamppb.Timestamp
+}
+
+func (b0 Athlete_builder) Build() *Athlete {
+	m0 := &Athlete{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CreateTime = b.CreateTime
+	return m0
+}
+
 type CreateAthleteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateAthleteRequest) Reset() {
@@ -113,23 +148,36 @@ func (x *CreateAthleteRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateAthleteRequest.ProtoReflect.Descriptor instead.
-func (*CreateAthleteRequest) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *CreateAthleteRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
+func (x *CreateAthleteRequest) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type CreateAthleteRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name string
+}
+
+func (b0 CreateAthleteRequest_builder) Build() *CreateAthleteRequest {
+	m0 := &CreateAthleteRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
 type CreateAthleteResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Athlete       *Athlete               `protobuf:"bytes,1,opt,name=athlete,proto3" json:"athlete,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Athlete *Athlete               `protobuf:"bytes,1,opt,name=athlete,proto3" json:"athlete,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateAthleteResponse) Reset() {
@@ -157,26 +205,50 @@ func (x *CreateAthleteResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateAthleteResponse.ProtoReflect.Descriptor instead.
-func (*CreateAthleteResponse) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *CreateAthleteResponse) GetAthlete() *Athlete {
 	if x != nil {
-		return x.Athlete
+		return x.xxx_hidden_Athlete
 	}
 	return nil
 }
 
+func (x *CreateAthleteResponse) SetAthlete(v *Athlete) {
+	x.xxx_hidden_Athlete = v
+}
+
+func (x *CreateAthleteResponse) HasAthlete() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Athlete != nil
+}
+
+func (x *CreateAthleteResponse) ClearAthlete() {
+	x.xxx_hidden_Athlete = nil
+}
+
+type CreateAthleteResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Athlete *Athlete
+}
+
+func (b0 CreateAthleteResponse_builder) Build() *CreateAthleteResponse {
+	m0 := &CreateAthleteResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Athlete = b.Athlete
+	return m0
+}
+
 type Activity struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	AthleteId     string                 `protobuf:"bytes,3,opt,name=athlete_id,json=athleteId,proto3" json:"athlete_id,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_AthleteId  string                 `protobuf:"bytes,3,opt,name=athlete_id,json=athleteId,proto3" json:"athlete_id,omitempty"`
+	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *Activity) Reset() {
@@ -204,45 +276,87 @@ func (x *Activity) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Activity.ProtoReflect.Descriptor instead.
-func (*Activity) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *Activity) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *Activity) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *Activity) GetAthleteId() string {
 	if x != nil {
-		return x.AthleteId
+		return x.xxx_hidden_AthleteId
 	}
 	return ""
 }
 
 func (x *Activity) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
+func (x *Activity) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *Activity) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *Activity) SetAthleteId(v string) {
+	x.xxx_hidden_AthleteId = v
+}
+
+func (x *Activity) SetCreateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreateTime = v
+}
+
+func (x *Activity) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreateTime != nil
+}
+
+func (x *Activity) ClearCreateTime() {
+	x.xxx_hidden_CreateTime = nil
+}
+
+type Activity_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         string
+	Name       string
+	AthleteId  string
+	CreateTime *timestamppb.Timestamp
+}
+
+func (b0 Activity_builder) Build() *Activity {
+	m0 := &Activity{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_AthleteId = b.AthleteId
+	x.xxx_hidden_CreateTime = b.CreateTime
+	return m0
+}
+
 type CreateActivityRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	AthleteId     string                 `protobuf:"bytes,2,opt,name=athlete_id,json=athleteId,proto3" json:"athlete_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	xxx_hidden_AthleteId string                 `protobuf:"bytes,2,opt,name=athlete_id,json=athleteId,proto3" json:"athlete_id,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CreateActivityRequest) Reset() {
@@ -270,30 +384,49 @@ func (x *CreateActivityRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateActivityRequest.ProtoReflect.Descriptor instead.
-func (*CreateActivityRequest) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *CreateActivityRequest) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
 func (x *CreateActivityRequest) GetAthleteId() string {
 	if x != nil {
-		return x.AthleteId
+		return x.xxx_hidden_AthleteId
 	}
 	return ""
 }
 
+func (x *CreateActivityRequest) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CreateActivityRequest) SetAthleteId(v string) {
+	x.xxx_hidden_AthleteId = v
+}
+
+type CreateActivityRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name      string
+	AthleteId string
+}
+
+func (b0 CreateActivityRequest_builder) Build() *CreateActivityRequest {
+	m0 := &CreateActivityRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_AthleteId = b.AthleteId
+	return m0
+}
+
 type CreateActivityResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Activity      *Activity              `protobuf:"bytes,1,opt,name=activity,proto3" json:"activity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Activity *Activity              `protobuf:"bytes,1,opt,name=activity,proto3" json:"activity,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CreateActivityResponse) Reset() {
@@ -321,27 +454,51 @@ func (x *CreateActivityResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateActivityResponse.ProtoReflect.Descriptor instead.
-func (*CreateActivityResponse) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *CreateActivityResponse) GetActivity() *Activity {
 	if x != nil {
-		return x.Activity
+		return x.xxx_hidden_Activity
 	}
 	return nil
 }
 
+func (x *CreateActivityResponse) SetActivity(v *Activity) {
+	x.xxx_hidden_Activity = v
+}
+
+func (x *CreateActivityResponse) HasActivity() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Activity != nil
+}
+
+func (x *CreateActivityResponse) ClearActivity() {
+	x.xxx_hidden_Activity = nil
+}
+
+type CreateActivityResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Activity *Activity
+}
+
+func (b0 CreateActivityResponse_builder) Build() *CreateActivityResponse {
+	m0 := &CreateActivityResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Activity = b.Activity
+	return m0
+}
+
 type BloodLactateMeasure struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ActivityId    string                 `protobuf:"bytes,2,opt,name=activity_id,json=activityId,proto3" json:"activity_id,omitempty"`
-	MmolPerLiter  string                 `protobuf:"bytes,3,opt,name=mmol_per_liter,json=mmolPerLiter,proto3" json:"mmol_per_liter,omitempty"`
-	HeartRateBpm  int32                  `protobuf:"varint,4,opt,name=heart_rate_bpm,json=heartRateBpm,proto3" json:"heart_rate_bpm,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	xxx_hidden_ActivityId   string                 `protobuf:"bytes,2,opt,name=activity_id,json=activityId,proto3" json:"activity_id,omitempty"`
+	xxx_hidden_MmolPerLiter string                 `protobuf:"bytes,3,opt,name=mmol_per_liter,json=mmolPerLiter,proto3" json:"mmol_per_liter,omitempty"`
+	xxx_hidden_HeartRateBpm int32                  `protobuf:"varint,4,opt,name=heart_rate_bpm,json=heartRateBpm,proto3" json:"heart_rate_bpm,omitempty"`
+	xxx_hidden_CreateTime   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *BloodLactateMeasure) Reset() {
@@ -369,53 +526,101 @@ func (x *BloodLactateMeasure) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BloodLactateMeasure.ProtoReflect.Descriptor instead.
-func (*BloodLactateMeasure) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *BloodLactateMeasure) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *BloodLactateMeasure) GetActivityId() string {
 	if x != nil {
-		return x.ActivityId
+		return x.xxx_hidden_ActivityId
 	}
 	return ""
 }
 
 func (x *BloodLactateMeasure) GetMmolPerLiter() string {
 	if x != nil {
-		return x.MmolPerLiter
+		return x.xxx_hidden_MmolPerLiter
 	}
 	return ""
 }
 
 func (x *BloodLactateMeasure) GetHeartRateBpm() int32 {
 	if x != nil {
-		return x.HeartRateBpm
+		return x.xxx_hidden_HeartRateBpm
 	}
 	return 0
 }
 
 func (x *BloodLactateMeasure) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreateTime
+		return x.xxx_hidden_CreateTime
 	}
 	return nil
 }
 
+func (x *BloodLactateMeasure) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *BloodLactateMeasure) SetActivityId(v string) {
+	x.xxx_hidden_ActivityId = v
+}
+
+func (x *BloodLactateMeasure) SetMmolPerLiter(v string) {
+	x.xxx_hidden_MmolPerLiter = v
+}
+
+func (x *BloodLactateMeasure) SetHeartRateBpm(v int32) {
+	x.xxx_hidden_HeartRateBpm = v
+}
+
+func (x *BloodLactateMeasure) SetCreateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreateTime = v
+}
+
+func (x *BloodLactateMeasure) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreateTime != nil
+}
+
+func (x *BloodLactateMeasure) ClearCreateTime() {
+	x.xxx_hidden_CreateTime = nil
+}
+
+type BloodLactateMeasure_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id           string
+	ActivityId   string
+	MmolPerLiter string
+	HeartRateBpm int32
+	CreateTime   *timestamppb.Timestamp
+}
+
+func (b0 BloodLactateMeasure_builder) Build() *BloodLactateMeasure {
+	m0 := &BloodLactateMeasure{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_ActivityId = b.ActivityId
+	x.xxx_hidden_MmolPerLiter = b.MmolPerLiter
+	x.xxx_hidden_HeartRateBpm = b.HeartRateBpm
+	x.xxx_hidden_CreateTime = b.CreateTime
+	return m0
+}
+
 type CreateBloodLactateMeasureRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ActivityId    string                 `protobuf:"bytes,1,opt,name=activity_id,json=activityId,proto3" json:"activity_id,omitempty"`
-	MmolPerLiter  string                 `protobuf:"bytes,2,opt,name=mmol_per_liter,json=mmolPerLiter,proto3" json:"mmol_per_liter,omitempty"`
-	HeartRateBpm  int32                  `protobuf:"varint,3,opt,name=heart_rate_bpm,json=heartRateBpm,proto3" json:"heart_rate_bpm,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ActivityId   string                 `protobuf:"bytes,1,opt,name=activity_id,json=activityId,proto3" json:"activity_id,omitempty"`
+	xxx_hidden_MmolPerLiter string                 `protobuf:"bytes,2,opt,name=mmol_per_liter,json=mmolPerLiter,proto3" json:"mmol_per_liter,omitempty"`
+	xxx_hidden_HeartRateBpm int32                  `protobuf:"varint,3,opt,name=heart_rate_bpm,json=heartRateBpm,proto3" json:"heart_rate_bpm,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CreateBloodLactateMeasureRequest) Reset() {
@@ -443,37 +648,62 @@ func (x *CreateBloodLactateMeasureRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateBloodLactateMeasureRequest.ProtoReflect.Descriptor instead.
-func (*CreateBloodLactateMeasureRequest) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *CreateBloodLactateMeasureRequest) GetActivityId() string {
 	if x != nil {
-		return x.ActivityId
+		return x.xxx_hidden_ActivityId
 	}
 	return ""
 }
 
 func (x *CreateBloodLactateMeasureRequest) GetMmolPerLiter() string {
 	if x != nil {
-		return x.MmolPerLiter
+		return x.xxx_hidden_MmolPerLiter
 	}
 	return ""
 }
 
 func (x *CreateBloodLactateMeasureRequest) GetHeartRateBpm() int32 {
 	if x != nil {
-		return x.HeartRateBpm
+		return x.xxx_hidden_HeartRateBpm
 	}
 	return 0
 }
 
+func (x *CreateBloodLactateMeasureRequest) SetActivityId(v string) {
+	x.xxx_hidden_ActivityId = v
+}
+
+func (x *CreateBloodLactateMeasureRequest) SetMmolPerLiter(v string) {
+	x.xxx_hidden_MmolPerLiter = v
+}
+
+func (x *CreateBloodLactateMeasureRequest) SetHeartRateBpm(v int32) {
+	x.xxx_hidden_HeartRateBpm = v
+}
+
+type CreateBloodLactateMeasureRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ActivityId   string
+	MmolPerLiter string
+	HeartRateBpm int32
+}
+
+func (b0 CreateBloodLactateMeasureRequest_builder) Build() *CreateBloodLactateMeasureRequest {
+	m0 := &CreateBloodLactateMeasureRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ActivityId = b.ActivityId
+	x.xxx_hidden_MmolPerLiter = b.MmolPerLiter
+	x.xxx_hidden_HeartRateBpm = b.HeartRateBpm
+	return m0
+}
+
 type CreateBloodLactateMeasureResponse struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	BloodLactateMeasure *BloodLactateMeasure   `protobuf:"bytes,1,opt,name=blood_lactate_measure,json=bloodLactateMeasure,proto3" json:"blood_lactate_measure,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_BloodLactateMeasure *BloodLactateMeasure   `protobuf:"bytes,1,opt,name=blood_lactate_measure,json=bloodLactateMeasure,proto3" json:"blood_lactate_measure,omitempty"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *CreateBloodLactateMeasureResponse) Reset() {
@@ -501,16 +731,40 @@ func (x *CreateBloodLactateMeasureResponse) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateBloodLactateMeasureResponse.ProtoReflect.Descriptor instead.
-func (*CreateBloodLactateMeasureResponse) Descriptor() ([]byte, []int) {
-	return file_athletes_v1_athletes_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *CreateBloodLactateMeasureResponse) GetBloodLactateMeasure() *BloodLactateMeasure {
 	if x != nil {
-		return x.BloodLactateMeasure
+		return x.xxx_hidden_BloodLactateMeasure
 	}
 	return nil
+}
+
+func (x *CreateBloodLactateMeasureResponse) SetBloodLactateMeasure(v *BloodLactateMeasure) {
+	x.xxx_hidden_BloodLactateMeasure = v
+}
+
+func (x *CreateBloodLactateMeasureResponse) HasBloodLactateMeasure() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_BloodLactateMeasure != nil
+}
+
+func (x *CreateBloodLactateMeasureResponse) ClearBloodLactateMeasure() {
+	x.xxx_hidden_BloodLactateMeasure = nil
+}
+
+type CreateBloodLactateMeasureResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	BloodLactateMeasure *BloodLactateMeasure
+}
+
+func (b0 CreateBloodLactateMeasureResponse_builder) Build() *CreateBloodLactateMeasureResponse {
+	m0 := &CreateBloodLactateMeasureResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_BloodLactateMeasure = b.BloodLactateMeasure
+	return m0
 }
 
 var File_athletes_v1_athletes_proto protoreflect.FileDescriptor
@@ -615,18 +869,6 @@ var file_athletes_v1_athletes_proto_rawDesc = []byte{
 	0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
 	0x02, 0x0c, 0x41, 0x74, 0x68, 0x6c, 0x65, 0x74, 0x65, 0x73, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-}
-
-var (
-	file_athletes_v1_athletes_proto_rawDescOnce sync.Once
-	file_athletes_v1_athletes_proto_rawDescData = file_athletes_v1_athletes_proto_rawDesc
-)
-
-func file_athletes_v1_athletes_proto_rawDescGZIP() []byte {
-	file_athletes_v1_athletes_proto_rawDescOnce.Do(func() {
-		file_athletes_v1_athletes_proto_rawDescData = protoimpl.X.CompressGZIP(file_athletes_v1_athletes_proto_rawDescData)
-	})
-	return file_athletes_v1_athletes_proto_rawDescData
 }
 
 var file_athletes_v1_athletes_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
