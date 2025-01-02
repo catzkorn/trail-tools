@@ -38,6 +38,7 @@ web-deps:
 
 .PHONY: web-lint
 web-lint:
+	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx tsc --noEmit
 	docker run --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx eslint
 
 .PHONY: web-format
