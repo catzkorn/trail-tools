@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { useTransition } from "react";
-import { Athlete, AthleteService } from "gen/athletes/v1/athletes_pb";
-import { createClient, ConnectError } from "@connectrpc/connect";
+import { ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { Athlete, AthleteService } from "gen/athletes/v1/athletes_pb";
+import React, { useState, useTransition } from "react";
 
 const CreateAthleteForm: React.FC = () => {
   const [athlete, setAthlete] = useState<Athlete | null>(null);
