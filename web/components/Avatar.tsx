@@ -1,6 +1,5 @@
-import React from "react";
-
 import { UserIcon } from "@heroicons/react/24/outline";
+import React from "react";
 
 interface AvatarProps {
   avatarUrl: string;

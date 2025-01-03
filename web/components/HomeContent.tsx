@@ -1,5 +1,5 @@
-import React from "react";
 import CreateAthleteForm from "components/CreateAthleteForm";
+import React from "react";
 
 const HomeContent: React.FC = () => {
   return (
