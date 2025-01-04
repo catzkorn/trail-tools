@@ -22,6 +22,7 @@ import (
 	"github.com/catzkorn/trail-tools/store"
 	"github.com/catzkorn/trail-tools/users"
 	"github.com/catzkorn/trail-tools/web"
+	"github.com/go-chi/chi/v5/middleware"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -53,6 +54,12 @@ var (
 		"https://accounts.google.com",
 		"The URL of the OIDC issuer to use for authentication",
 	)
+	serveDir = flag.String(
+		"serve-dir",
+		"",
+		"Optionally, the directory to serve as the root of the web application."+
+			" If unset, will serve the compiled web application from the web package",
+	)
 )
 
 func main() {
@@ -60,7 +67,7 @@ func main() {
 	log := slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp)))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	if err := run(ctx, log, *databaseUrl, *address, *oidcClientID, *oidcClientSecret, *oidcIssuerURL); err != nil {
+	if err := run(ctx, log, *databaseUrl, *address, *oidcClientID, *oidcClientSecret, *oidcIssuerURL, *serveDir); err != nil {
 		log.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
 	}
@@ -74,6 +81,7 @@ func run(
 	oidcClientID string,
 	oidcClientSecret string,
 	oidcIssuerURL string,
+	serveDir string,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -124,16 +132,26 @@ func run(
 	if err := oidc.RegisterHandlers(ctx, log, "http://"+address, oidcClientID, oidcClientSecret, oidcIssuerURL, mux); err != nil {
 		return fmt.Errorf("failed to register OIDC handlers: %w", err)
 	}
-	// Serve index.js, index.js.map and index.css directly
+
 	webFs, _ := fs.Sub(web.Dist, "dist")
-	mux.Handle("/index.js", http.FileServer(http.FS(webFs)))
-	mux.Handle("/index.js.map", http.FileServer(http.FS(webFs)))
-	mux.Handle("/index.css", http.FileServer(http.FS(webFs)))
-	mux.Handle("/favicon.svg", http.FileServer(http.FS(webFs)))
+	if serveDir != "" {
+		webFs = os.DirFS(serveDir)
+	}
+	fileServer := middleware.NoCache(http.FileServer(http.FS(webFs)))
+
+	// Serve index.js, index.js.map, index.css and favicon.ico directly
+	mux.Handle("/index.js", fileServer)
+	mux.Handle("/index.js.map", fileServer)
+	mux.Handle("/index.css", fileServer)
+	mux.Handle("/favicon.svg", fileServer)
 	// For all other requests, serve the contents of index.html
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFileFS(w, r, webFs, "index.html")
-	}))
+	mux.Handle("/",
+		middleware.NoCache(
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.ServeFileFS(w, r, webFs, "index.html")
+			}),
+		),
+	)
 
 	srv := &http.Server{
 		Addr: address,
