@@ -21,7 +21,7 @@ jobs:
       - name: Run make format
         run: |
           make format
-          git diff --exit-code
+          git diff --exit-code --name-only
 
   lint:
     name: Run linters
@@ -52,7 +52,7 @@ jobs:
         run: |
           make web-deps
           make gen
-          git diff --exit-code
+          git diff --exit-code --name-only
 
   build:
     name: Build Go code
@@ -96,4 +96,4 @@ jobs:
       - run: |
           make web-deps
           go mod tidy
-          git diff --exit-code
+          git diff --exit-code --name-only
