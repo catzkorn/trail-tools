@@ -1,23 +1,26 @@
 import Header from "@components/Header";
-import HomeContent from "@components/HomeContent";
 import { User } from "gen/users/v1/users_pb";
 import React from "react";
 
-interface HomePageProps {
+interface ProfilePageProps {
   user: User | null;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ user }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
+  let content = <p>Welcome to Trail Tools {user?.givenName}</p>;
+  if (user === null) {
+    content = <p>You are not signed in</p>;
+  }
   return (
     <div className="min-h-full">
       <Header user={user} />
       <main>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <HomeContent />
+          {content}
         </div>
       </main>
     </div>
   );
 };
 
-export default HomePage;
+export default ProfilePage;
