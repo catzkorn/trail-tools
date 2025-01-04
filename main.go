@@ -129,6 +129,7 @@ func run(
 	mux.Handle("/index.js", http.FileServer(http.FS(webFs)))
 	mux.Handle("/index.js.map", http.FileServer(http.FS(webFs)))
 	mux.Handle("/index.css", http.FileServer(http.FS(webFs)))
+	mux.Handle("/favicon.svg", http.FileServer(http.FS(webFs)))
 	// For all other requests, serve the contents of index.html
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFileFS(w, r, webFs, "index.html")
