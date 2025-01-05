@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/catzkorn/trail-tools/gen/users/v1/usersv1connect"
-	"github.com/catzkorn/trail-tools/users"
+	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
+	"github.com/catzkorn/trail-tools/internal/users"
 )
 
 var _ usersv1connect.UserServiceHandler = (*Service)(nil)

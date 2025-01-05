@@ -5,15 +5,15 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/catzkorn/trail-tools/gen
+      value: github.com/catzkorn/trail-tools/internal/gen
 plugins:
   - local: ["go", "tool", "protoc-gen-go"]
-    out: gen/
+    out: internal/gen/
     opt:
       - paths=source_relative
       - default_api_level=API_OPAQUE
   - local: ["go", "tool", "protoc-gen-connect-go"]
-    out: gen/
+    out: internal/gen/
     opt:
       - paths=source_relative
   - remote: buf.build/bufbuild/es:v2.2.2

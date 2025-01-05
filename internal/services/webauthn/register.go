@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/catzkorn/trail-tools/store"
+	"github.com/catzkorn/trail-tools/internal/store"
 	"gitlab.com/greyxor/slogor"
 )
 

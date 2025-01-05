@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/catzkorn/trail-tools/store"
+	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/jackc/pgx/v5/pgtype"
