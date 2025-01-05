@@ -37,3 +37,7 @@ sql:
         initialisms:
           - oidc
           - id
+          - json
+          - usb
+          - nfc
+          - ble
