@@ -5,8 +5,174 @@
 package users
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type WebAuthnAuthenticatorAttachment string
+
+const (
+	WebAuthnAuthenticatorAttachmentPlatform      WebAuthnAuthenticatorAttachment = "platform"
+	WebAuthnAuthenticatorAttachmentCrossPlatform WebAuthnAuthenticatorAttachment = "cross-platform"
+)
+
+func (e *WebAuthnAuthenticatorAttachment) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WebAuthnAuthenticatorAttachment(s)
+	case string:
+		*e = WebAuthnAuthenticatorAttachment(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WebAuthnAuthenticatorAttachment: %T", src)
+	}
+	return nil
+}
+
+type NullWebAuthnAuthenticatorAttachment struct {
+	WebAuthnAuthenticatorAttachment WebAuthnAuthenticatorAttachment
+	Valid                           bool // Valid is true if WebAuthnAuthenticatorAttachment is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWebAuthnAuthenticatorAttachment) Scan(value interface{}) error {
+	if value == nil {
+		ns.WebAuthnAuthenticatorAttachment, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WebAuthnAuthenticatorAttachment.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWebAuthnAuthenticatorAttachment) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WebAuthnAuthenticatorAttachment), nil
+}
+
+func (e WebAuthnAuthenticatorAttachment) Valid() bool {
+	switch e {
+	case WebAuthnAuthenticatorAttachmentPlatform,
+		WebAuthnAuthenticatorAttachmentCrossPlatform:
+		return true
+	}
+	return false
+}
+
+type WebAuthnAuthenticatorTransport string
+
+const (
+	WebAuthnAuthenticatorTransportUSB       WebAuthnAuthenticatorTransport = "usb"
+	WebAuthnAuthenticatorTransportNFC       WebAuthnAuthenticatorTransport = "nfc"
+	WebAuthnAuthenticatorTransportBLE       WebAuthnAuthenticatorTransport = "ble"
+	WebAuthnAuthenticatorTransportSmartCard WebAuthnAuthenticatorTransport = "smart-card"
+	WebAuthnAuthenticatorTransportHybrid    WebAuthnAuthenticatorTransport = "hybrid"
+	WebAuthnAuthenticatorTransportInternal  WebAuthnAuthenticatorTransport = "internal"
+)
+
+func (e *WebAuthnAuthenticatorTransport) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WebAuthnAuthenticatorTransport(s)
+	case string:
+		*e = WebAuthnAuthenticatorTransport(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WebAuthnAuthenticatorTransport: %T", src)
+	}
+	return nil
+}
+
+type NullWebAuthnAuthenticatorTransport struct {
+	WebAuthnAuthenticatorTransport WebAuthnAuthenticatorTransport
+	Valid                          bool // Valid is true if WebAuthnAuthenticatorTransport is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWebAuthnAuthenticatorTransport) Scan(value interface{}) error {
+	if value == nil {
+		ns.WebAuthnAuthenticatorTransport, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WebAuthnAuthenticatorTransport.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWebAuthnAuthenticatorTransport) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WebAuthnAuthenticatorTransport), nil
+}
+
+func (e WebAuthnAuthenticatorTransport) Valid() bool {
+	switch e {
+	case WebAuthnAuthenticatorTransportUSB,
+		WebAuthnAuthenticatorTransportNFC,
+		WebAuthnAuthenticatorTransportBLE,
+		WebAuthnAuthenticatorTransportSmartCard,
+		WebAuthnAuthenticatorTransportHybrid,
+		WebAuthnAuthenticatorTransportInternal:
+		return true
+	}
+	return false
+}
+
+type WebAuthnUserVerificationRequirement string
+
+const (
+	WebAuthnUserVerificationRequirementRequired    WebAuthnUserVerificationRequirement = "required"
+	WebAuthnUserVerificationRequirementPreferred   WebAuthnUserVerificationRequirement = "preferred"
+	WebAuthnUserVerificationRequirementDiscouraged WebAuthnUserVerificationRequirement = "discouraged"
+)
+
+func (e *WebAuthnUserVerificationRequirement) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WebAuthnUserVerificationRequirement(s)
+	case string:
+		*e = WebAuthnUserVerificationRequirement(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WebAuthnUserVerificationRequirement: %T", src)
+	}
+	return nil
+}
+
+type NullWebAuthnUserVerificationRequirement struct {
+	WebAuthnUserVerificationRequirement WebAuthnUserVerificationRequirement
+	Valid                               bool // Valid is true if WebAuthnUserVerificationRequirement is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWebAuthnUserVerificationRequirement) Scan(value interface{}) error {
+	if value == nil {
+		ns.WebAuthnUserVerificationRequirement, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WebAuthnUserVerificationRequirement.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWebAuthnUserVerificationRequirement) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WebAuthnUserVerificationRequirement), nil
+}
+
+func (e WebAuthnUserVerificationRequirement) Valid() bool {
+	switch e {
+	case WebAuthnUserVerificationRequirementRequired,
+		WebAuthnUserVerificationRequirementPreferred,
+		WebAuthnUserVerificationRequirementDiscouraged:
+		return true
+	}
+	return false
+}
 
 type Activity struct {
 	ID         pgtype.UUID
@@ -38,4 +204,44 @@ type OIDCUser struct {
 type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
+}
+
+type WebAuthnCredential struct {
+	WebAuthnUserID                []byte
+	CreateTime                    pgtype.Timestamptz
+	ID                            []byte
+	PublicKey                     []byte
+	AttestationType               string
+	Transport                     []WebAuthnAuthenticatorTransport
+	FlagUserPresent               bool
+	FlagUserVerified              bool
+	FlagBackupEligible            bool
+	FlagBackupState               bool
+	AuthenticatorAaguid           []byte
+	AuthenticatorSignCount        int64
+	AuthenticatorCloneWarning     bool
+	AuthenticatorAttachment       WebAuthnAuthenticatorAttachment
+	AttestationClientDataJSON     []byte
+	AttestationClientDataHash     []byte
+	AttestationAuthenticatorData  []byte
+	AttestationPublicKeyAlgorithm int64
+	AttestationObject             []byte
+}
+
+type WebAuthnSession struct {
+	ID                   pgtype.UUID
+	CreateTime           pgtype.Timestamptz
+	Challenge            string
+	RelyingPartyID       string
+	WebAuthnUserID       []byte
+	AllowedCredentialIds [][]byte
+	Expires              pgtype.Timestamptz
+	UserVerification     WebAuthnUserVerificationRequirement
+	Extensions           []byte
+}
+
+type WebAuthnUser struct {
+	ID             pgtype.UUID
+	WebAuthnUserID []byte
+	Name           string
 }
