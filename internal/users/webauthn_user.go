@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/catzkorn/trail-tools/internal/users/internal"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 )
@@ -14,7 +15,7 @@ type webAuthnUser struct {
 	creds []webauthn.Credential
 }
 
-func newWebAuthnUser(ctx context.Context, name string, id []byte, querier *Queries) (*webAuthnUser, error) {
+func newWebAuthnUser(ctx context.Context, name string, id []byte, querier *internal.Queries) (*webAuthnUser, error) {
 	dbCreds, err := querier.ListWebAuthnCredentials(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list webauthn credentials for user %q: %w", string(id), err)

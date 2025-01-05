@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.27.0
 
-package athletes
+package internal
 
 import (
 	"database/sql/driver"
