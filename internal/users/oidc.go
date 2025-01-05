@@ -5,7 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/catzkorn/trail-tools/internal/users/internal"
 )
+
+type OIDCUser struct {
+	*internal.OIDCUser
+}
 
 // GetOIDCUser gets or creates a new OIDC user with the provided subject.
 func (r *Repository) GetOIDCUser(ctx context.Context, subject string) (*OIDCUser, error) {
@@ -21,5 +27,7 @@ func (r *Repository) GetOIDCUser(ctx context.Context, subject string) (*OIDCUser
 	default:
 		// User retrieved successfully
 	}
-	return oidcUser, nil
+	return &OIDCUser{
+		OIDCUser: oidcUser,
+	}, nil
 }

@@ -3,7 +3,7 @@
 //   sqlc v1.27.0
 // source: web_authn.sql
 
-package users
+package internal
 
 import (
 	"context"
