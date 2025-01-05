@@ -9,6 +9,7 @@ replace github.com/mcosta74/pgx-slog => github.com/johanbrandhorst/pgx-slog v0.3
 require (
 	connectrpc.com/connect v1.17.0
 	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/go-chi/chi/v5 v5.2.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e
 	github.com/jackc/pgx/v5 v5.7.1
@@ -66,7 +67,6 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-chi/chi/v5 v5.2.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
