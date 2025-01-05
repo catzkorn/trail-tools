@@ -7,8 +7,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "athletes"
-        out: "./internal/athletes"
+        package: "internal"
+        out: "./internal/athletes/internal"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -26,8 +26,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "users"
-        out: "./internal/users"
+        package: "internal"
+        out: "./internal/users/internal"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false

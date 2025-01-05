@@ -3,7 +3,7 @@
 //   sqlc v1.27.0
 // source: athletes.sql
 
-package athletes
+package internal
 
 import (
 	"context"

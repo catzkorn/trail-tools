@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/users/internal"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -43,7 +44,7 @@ func (r *Repository) GetWebAuthnUser(ctx context.Context, webAuthnUserID []byte)
 }
 
 func (r *Repository) CreateWebAuthnSession(ctx context.Context, session *webauthn.SessionData) error {
-	ur := WebAuthnUserVerificationRequirement(session.UserVerification)
+	ur := internal.WebAuthnUserVerificationRequirement(session.UserVerification)
 	if !ur.Valid() {
 		return fmt.Errorf("invalid user verification requirement: %s", ur)
 	}
@@ -55,7 +56,7 @@ func (r *Repository) CreateWebAuthnSession(ctx context.Context, session *webauth
 			return fmt.Errorf("failed to marshal extensions to JSON: %w", err)
 		}
 	}
-	_, err := r.querier.CreateWebAuthnSession(ctx, &CreateWebAuthnSessionParams{
+	_, err := r.querier.CreateWebAuthnSession(ctx, &internal.CreateWebAuthnSessionParams{
 		Challenge:            session.Challenge,
 		RelyingPartyID:       session.RelyingPartyID,
 		WebAuthnUserID:       session.UserID,
@@ -96,19 +97,19 @@ func (r *Repository) GetWebAuthnSession(ctx context.Context, webAuthnUserID []by
 }
 
 func (r *Repository) UpsertWebAuthnCredential(ctx context.Context, webAuthnUserID []byte, credential *webauthn.Credential) error {
-	var transport []WebAuthnAuthenticatorTransport
+	var transport []internal.WebAuthnAuthenticatorTransport
 	for _, tp := range credential.Transport {
-		t := WebAuthnAuthenticatorTransport(tp)
+		t := internal.WebAuthnAuthenticatorTransport(tp)
 		if !t.Valid() {
 			return fmt.Errorf("invalid authenticator transport: %s", t)
 		}
 		transport = append(transport, t)
 	}
-	a := WebAuthnAuthenticatorAttachment(credential.Authenticator.Attachment)
+	a := internal.WebAuthnAuthenticatorAttachment(credential.Authenticator.Attachment)
 	if !a.Valid() {
 		return fmt.Errorf("invalid authenticator attachment: %s", a)
 	}
-	_, err := r.querier.UpsertWebAuthnCredential(ctx, &UpsertWebAuthnCredentialParams{
+	_, err := r.querier.UpsertWebAuthnCredential(ctx, &internal.UpsertWebAuthnCredentialParams{
 		WebAuthnUserID:                webAuthnUserID,
 		ID:                            credential.ID,
 		PublicKey:                     credential.PublicKey,
