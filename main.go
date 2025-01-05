@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/catzkorn/trail-tools/athletes"
@@ -19,10 +20,12 @@ import (
 	"github.com/catzkorn/trail-tools/oidc"
 	"github.com/catzkorn/trail-tools/services/athlete"
 	"github.com/catzkorn/trail-tools/services/user"
+	"github.com/catzkorn/trail-tools/services/webauthn"
 	"github.com/catzkorn/trail-tools/store"
 	"github.com/catzkorn/trail-tools/users"
 	"github.com/catzkorn/trail-tools/web"
 	"github.com/go-chi/chi/v5/middleware"
+	wauthn "github.com/go-webauthn/webauthn/webauthn"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -60,6 +63,16 @@ var (
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
 	)
+	webAuthnRPID = flag.String(
+		"webauthn-rp-id",
+		"localhost",
+		"The Relying Party ID for WebAuthn, defaults to localhost",
+	)
+	webAuthnRPOrigins = flag.String(
+		"webauthn-rp-origins",
+		"http://localhost",
+		"Comma-separated list of Relying Party Origins for WebAuthn, defaults to http://localhost",
+	)
 )
 
 func main() {
@@ -67,7 +80,18 @@ func main() {
 	log := slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp)))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	if err := run(ctx, log, *databaseUrl, *address, *oidcClientID, *oidcClientSecret, *oidcIssuerURL, *serveDir); err != nil {
+	if err := run(
+		ctx,
+		log,
+		*databaseUrl,
+		*address,
+		*oidcClientID,
+		*oidcClientSecret,
+		*oidcIssuerURL,
+		*serveDir,
+		*webAuthnRPID,
+		*webAuthnRPOrigins,
+	); err != nil {
 		log.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
 	}
@@ -82,6 +106,8 @@ func run(
 	oidcClientSecret string,
 	oidcIssuerURL string,
 	serveDir string,
+	webAuthnRPID string,
+	webAuthnRPOrigins string,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -111,6 +137,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
+
 	// Register all handlers to a single mux
 	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, users, athletes))
 	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log, users))
@@ -129,8 +156,22 @@ func run(
 	mux.Handle(athletePath, apiAuth)
 	mux.Handle(usersPath, apiAuth)
 	// Serve OIDC handlers
-	if err := oidc.RegisterHandlers(ctx, log, "http://"+address, oidcClientID, oidcClientSecret, oidcIssuerURL, mux); err != nil {
+	if err := oidc.RegisterHandlers(ctx, log, "http://"+address, oidcClientID, oidcClientSecret, oidcIssuerURL, users, mux); err != nil {
 		return fmt.Errorf("failed to register OIDC handlers: %w", err)
+	}
+	// Serve WebAuthn handlers if configured
+	if webAuthnRPID != "" && webAuthnRPOrigins != "" {
+		wconfig := &wauthn.Config{
+			RPDisplayName: "Trail tools",
+			RPID:          webAuthnRPID,                          // Generally the FQDN for your site
+			RPOrigins:     strings.Split(webAuthnRPOrigins, ","), // The origin URLs allowed for WebAuthn requests
+		}
+
+		webAuthn, err := wauthn.New(wconfig)
+		if err != nil {
+			return fmt.Errorf("failed to create webauthn: %w", err)
+		}
+		webauthn.Register(mux, log, webAuthn, users)
 	}
 
 	webFs, _ := fs.Sub(web.Dist, "dist")
