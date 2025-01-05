@@ -19,7 +19,7 @@ func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athlet
 	if req.Msg.GetName() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("empty athlete name"))
 	}
-	user, err := s.users.GetUser(ctx, userInfo.Subject)
+	user, err := s.users.GetOIDCUser(ctx, userInfo.Subject)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get user: %w", err))
 	}

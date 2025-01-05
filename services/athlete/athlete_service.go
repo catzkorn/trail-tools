@@ -14,13 +14,13 @@ import (
 var _ athletesv1connect.AthleteServiceHandler = (*Service)(nil)
 
 type AthleteRepository interface {
-	AddAthlete(ctx context.Context, name string, userID pgtype.UUID) (athletes.Athlete, error)
-	AddActivity(ctx context.Context, name string, athleteID pgtype.UUID) (athletes.Activity, error)
-	AddMeasure(ctx context.Context, activityID pgtype.UUID, mmolPerLiter decimal.Decimal, heartRateBPM int32) (athletes.BloodLactateMeasure, error)
+	AddAthlete(ctx context.Context, name string, userID pgtype.UUID) (*athletes.Athlete, error)
+	AddActivity(ctx context.Context, name string, athleteID pgtype.UUID) (*athletes.Activity, error)
+	AddMeasure(ctx context.Context, activityID pgtype.UUID, mmolPerLiter decimal.Decimal, heartRateBPM int32) (*athletes.BloodLactateMeasure, error)
 }
 
 type UserRepository interface {
-	GetUser(ctx context.Context, oidcSubject string) (users.User, error)
+	GetOIDCUser(ctx context.Context, oidcSubject string) (*users.OIDCUser, error)
 }
 
 // Service implements API handlers for the athlete service.
