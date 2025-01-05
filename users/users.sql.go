@@ -7,23 +7,17 @@ package users
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getUser = `-- name: GetUser :one
-INSERT INTO users (
-  oidc_subject
-) VALUES (
-  $1
-)
-ON CONFLICT (oidc_subject) DO UPDATE set oidc_subject = EXCLUDED.oidc_subject
-RETURNING id, create_time, oidc_subject
+select id, create_time from users where id = $1
 `
 
-// Note: we don't actually need to update anything, but if we don't,
-// the query doesn't return the row.
-func (q *Queries) GetUser(ctx context.Context, oidcSubject string) (User, error) {
-	row := q.db.QueryRow(ctx, getUser, oidcSubject)
+func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (*User, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.CreateTime, &i.OidcSubject)
-	return i, err
+	err := row.Scan(&i.ID, &i.CreateTime)
+	return &i, err
 }

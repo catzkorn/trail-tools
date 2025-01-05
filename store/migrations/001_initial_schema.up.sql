@@ -1,28 +1,14 @@
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  create_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  oidc_subject TEXT UNIQUE NOT NULL
+create extension if not exists pgcrypto;
+
+create table users (
+  id uuid primary key default gen_random_uuid(),
+  create_time timestamptz not null default current_timestamp
 );
 
-CREATE TABLE athletes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  create_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE activities (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  athlete_id UUID NOT NULL REFERENCES athletes(id),
-  create_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE blood_lactate_measures (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  activity_id UUID NOT NULL REFERENCES activities(id),
-  create_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  mmol_per_liter NUMERIC NOT NULL,
-  heart_rate_bpm INTEGER NOT NULL
-);
-
+create or replace function insert_users_subtype() returns trigger
+as $$
+begin
+  insert into users default values returning id into new.id;
+  return new;
+end;
+$$ language plpgsql;
