@@ -54,7 +54,7 @@ func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) 
 	return &DB{Conn: conn}, nil
 }
 
-// Migrate migrates the Postgres schema to the current version.
+// validateSchema migrates the Postgres schema to the current version.
 func validateSchema(conn *pgx.Conn, scheme string) error {
 	sourceInstance, err := iofs.New(fs, "migrations")
 	if err != nil {

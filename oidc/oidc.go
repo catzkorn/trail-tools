@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/catzkorn/trail-tools/users"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/oauth2"
@@ -26,10 +27,15 @@ const (
 	callbackPath  = "/oidc/callback"
 )
 
-type Handler struct {
-	log          *slog.Logger
-	oauth2Config oauth2.Config
-	verifier     *oidc.IDTokenVerifier
+type UserRepository interface {
+	GetOIDCUser(ctx context.Context, oidcSubject string) (*users.OIDCUser, error)
+}
+
+type handler struct {
+	log            *slog.Logger
+	oauth2Config   oauth2.Config
+	verifier       *oidc.IDTokenVerifier
+	userRepository UserRepository
 }
 
 func RegisterHandlers(
@@ -39,6 +45,7 @@ func RegisterHandlers(
 	clientID string,
 	clientSecret string,
 	issuerURL string,
+	userRepository UserRepository,
 	mux *http.ServeMux,
 ) error {
 	switch {
@@ -72,7 +79,7 @@ func RegisterHandlers(
 	if err != nil {
 		return fmt.Errorf("failed to create OIDC provider: %w", err)
 	}
-	h := &Handler{
+	h := &handler{
 		log: logger,
 		oauth2Config: oauth2.Config{
 			ClientID:     clientID,
@@ -81,7 +88,8 @@ func RegisterHandlers(
 			Endpoint:     provider.Endpoint(),
 			Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 		},
-		verifier: provider.Verifier(&oidc.Config{ClientID: clientID}),
+		verifier:       provider.Verifier(&oidc.Config{ClientID: clientID}),
+		userRepository: userRepository,
 	}
 	mux.Handle(loginPath, http.HandlerFunc(h.Login))
 	mux.Handle(logoutPath, http.HandlerFunc(h.Logout))
@@ -89,7 +97,7 @@ func RegisterHandlers(
 	return nil
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	state, err := randBase64(16)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "failed to generate state", slogor.Err(err))
@@ -107,7 +115,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, h.oauth2Config.AuthCodeURL(state, oidc.Nonce(nonce)), http.StatusFound)
 }
 
-func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(cookieIDToken); err == nil {
 		c.Expires = time.Now().Add(-time.Hour)
 		c.Path = "/"
@@ -116,7 +124,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	state, err := r.Cookie(cookieState)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "missing state cookie", slogor.Err(err))
@@ -153,6 +161,13 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 	if idToken.Nonce != nonce.Value {
 		http.Error(w, "nonce did not match", http.StatusBadRequest)
+		return
+	}
+
+	// Create the user in the DB
+	if _, err := h.userRepository.GetOIDCUser(r.Context(), idToken.Subject); err != nil {
+		h.log.ErrorContext(r.Context(), "failed to get OIDC user", slogor.Err(err))
+		http.Error(w, "failed to get OIDC user", http.StatusInternalServerError)
 		return
 	}
 

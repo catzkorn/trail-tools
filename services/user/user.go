@@ -14,7 +14,7 @@ func (s *Service) GetCurrentUser(ctx context.Context, req *connect.Request[users
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, nil)
 	}
-	user, err := s.users.GetUser(ctx, userInfo.Subject)
+	user, err := s.users.GetOIDCUser(ctx, userInfo.Subject)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

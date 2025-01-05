@@ -13,14 +13,14 @@ import (
 )
 
 const addActivity = `-- name: AddActivity :one
-INSERT INTO activities (
+insert into activities (
   name,
   athlete_id
-) VALUES (
+) values (
   $1,
   $2
 )
-RETURNING id, athlete_id, create_time, name
+returning id, athlete_id, create_time, name
 `
 
 type AddActivityParams struct {
@@ -28,7 +28,7 @@ type AddActivityParams struct {
 	AthleteID pgtype.UUID
 }
 
-func (q *Queries) AddActivity(ctx context.Context, arg *AddActivityParams) (Activity, error) {
+func (q *Queries) AddActivity(ctx context.Context, arg *AddActivityParams) (*Activity, error) {
 	row := q.db.QueryRow(ctx, addActivity, arg.Name, arg.AthleteID)
 	var i Activity
 	err := row.Scan(
@@ -37,18 +37,18 @@ func (q *Queries) AddActivity(ctx context.Context, arg *AddActivityParams) (Acti
 		&i.CreateTime,
 		&i.Name,
 	)
-	return i, err
+	return &i, err
 }
 
 const addAthlete = `-- name: AddAthlete :one
-INSERT INTO athletes (
+insert into athletes (
   name,
   user_id
-) VALUES (
+) values (
   $1,
   $2
 )
-RETURNING id, user_id, create_time, name
+returning id, user_id, create_time, name
 `
 
 type AddAthleteParams struct {
@@ -56,7 +56,7 @@ type AddAthleteParams struct {
 	UserID pgtype.UUID
 }
 
-func (q *Queries) AddAthlete(ctx context.Context, arg *AddAthleteParams) (Athlete, error) {
+func (q *Queries) AddAthlete(ctx context.Context, arg *AddAthleteParams) (*Athlete, error) {
 	row := q.db.QueryRow(ctx, addAthlete, arg.Name, arg.UserID)
 	var i Athlete
 	err := row.Scan(
@@ -65,20 +65,20 @@ func (q *Queries) AddAthlete(ctx context.Context, arg *AddAthleteParams) (Athlet
 		&i.CreateTime,
 		&i.Name,
 	)
-	return i, err
+	return &i, err
 }
 
 const addMeasure = `-- name: AddMeasure :one
-INSERT INTO blood_lactate_measures (
+insert into blood_lactate_measures (
   activity_id,
   mmol_per_liter,
   heart_rate_bpm
-) VALUES (
+) values (
   $1,
   $2,
   $3
 )
-RETURNING id, activity_id, create_time, mmol_per_liter, heart_rate_bpm
+returning id, activity_id, create_time, mmol_per_liter, heart_rate_bpm
 `
 
 type AddMeasureParams struct {
@@ -87,7 +87,7 @@ type AddMeasureParams struct {
 	HeartRateBpm int32
 }
 
-func (q *Queries) AddMeasure(ctx context.Context, arg *AddMeasureParams) (BloodLactateMeasure, error) {
+func (q *Queries) AddMeasure(ctx context.Context, arg *AddMeasureParams) (*BloodLactateMeasure, error) {
 	row := q.db.QueryRow(ctx, addMeasure, arg.ActivityID, arg.MmolPerLiter, arg.HeartRateBpm)
 	var i BloodLactateMeasure
 	err := row.Scan(
@@ -97,16 +97,16 @@ func (q *Queries) AddMeasure(ctx context.Context, arg *AddMeasureParams) (BloodL
 		&i.MmolPerLiter,
 		&i.HeartRateBpm,
 	)
-	return i, err
+	return &i, err
 }
 
 const deleteAthlete = `-- name: DeleteAthlete :one
-DELETE FROM athletes
-WHERE id = $1
-RETURNING id, user_id, create_time, name
+delete from athletes
+where id = $1
+returning id, user_id, create_time, name
 `
 
-func (q *Queries) DeleteAthlete(ctx context.Context, id pgtype.UUID) (Athlete, error) {
+func (q *Queries) DeleteAthlete(ctx context.Context, id pgtype.UUID) (*Athlete, error) {
 	row := q.db.QueryRow(ctx, deleteAthlete, id)
 	var i Athlete
 	err := row.Scan(
@@ -115,5 +115,5 @@ func (q *Queries) DeleteAthlete(ctx context.Context, id pgtype.UUID) (Athlete, e
 		&i.CreateTime,
 		&i.Name,
 	)
-	return i, err
+	return &i, err
 }

@@ -11,7 +11,7 @@ import (
 var _ usersv1connect.UserServiceHandler = (*Service)(nil)
 
 type UserRepository interface {
-	GetUser(ctx context.Context, oidcSubject string) (users.User, error)
+	GetOIDCUser(ctx context.Context, oidcSubject string) (*users.OIDCUser, error)
 }
 
 // Service implements API handlers for the athlete service.

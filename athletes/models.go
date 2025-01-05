@@ -31,8 +31,12 @@ type BloodLactateMeasure struct {
 	HeartRateBpm int32
 }
 
+type OidcUser struct {
+	ID      pgtype.UUID
+	Subject string
+}
+
 type User struct {
-	ID          pgtype.UUID
-	CreateTime  pgtype.Timestamptz
-	OidcSubject string
+	ID         pgtype.UUID
+	CreateTime pgtype.Timestamptz
 }
