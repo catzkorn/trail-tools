@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	athletesv1 "github.com/catzkorn/trail-tools/gen/athletes/v1"
-	"github.com/catzkorn/trail-tools/oidc"
-	"github.com/catzkorn/trail-tools/store"
+	athletesv1 "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
+	"github.com/catzkorn/trail-tools/internal/oidc"
+	"github.com/catzkorn/trail-tools/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

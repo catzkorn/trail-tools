@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/catzkorn/trail-tools/store"
+	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 )

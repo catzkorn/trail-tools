@@ -2,13 +2,13 @@
 version: "2"
 sql:
   - name: "athletes"
-    queries: "./athletes/queries"
-    schema: "./store/migrations"
+    queries: "./internal/athletes/queries"
+    schema: "./internal/store/migrations"
     engine: "postgresql"
     gen:
       go:
         package: "athletes"
-        out: "./athletes"
+        out: "./internal/athletes"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -21,13 +21,13 @@ sql:
               import: "github.com/shopspring/decimal"
               type: "Decimal"
   - name: "users"
-    queries: "./users/queries"
-    schema: "./store/migrations"
+    queries: "./internal/users/queries"
+    schema: "./internal/store/migrations"
     engine: "postgresql"
     gen:
       go:
         package: "users"
-        out: "./users"
+        out: "./internal/users"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
