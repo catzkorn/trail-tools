@@ -3,7 +3,7 @@ package users
 import (
 	"log/slog"
 
-	"github.com/catzkorn/trail-tools/store"
+	"github.com/catzkorn/trail-tools/internal/store"
 )
 
 // Repository allows storing and querying of users and related data.

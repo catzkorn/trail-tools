@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/catzkorn/trail-tools/athletes"
-	"github.com/catzkorn/trail-tools/gen/athletes/v1/athletesv1connect"
-	"github.com/catzkorn/trail-tools/users"
+	"github.com/catzkorn/trail-tools/internal/athletes"
+	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
+	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 )

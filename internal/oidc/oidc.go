@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/catzkorn/trail-tools/users"
+	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/oauth2"

@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/catzkorn/trail-tools/gen/athletes/v1"
+	v1 "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
 	http "net/http"
 	strings "strings"
 )
