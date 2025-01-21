@@ -1,29 +1,21 @@
 package user
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
-	"github.com/catzkorn/trail-tools/internal/users"
 )
 
 var _ usersv1connect.UserServiceHandler = (*Service)(nil)
 
-type UserRepository interface {
-	GetOIDCUser(ctx context.Context, oidcSubject string) (*users.OIDCUser, error)
-}
-
 // Service implements API handlers for the athlete service.
 type Service struct {
-	log   *slog.Logger
-	users UserRepository
+	log *slog.Logger
 }
 
 // NewService creates a new Service from the provided logger and directory.
-func NewService(log *slog.Logger, users UserRepository) *Service {
+func NewService(log *slog.Logger) *Service {
 	return &Service{
-		log:   log,
-		users: users,
+		log: log,
 	}
 }

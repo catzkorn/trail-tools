@@ -2,38 +2,10 @@
 insert into web_authn_users (name) values ($1) returning *;
 
 -- name: GetWebAuthnUser :one
+select * from web_authn_users where id = $1;
+
+-- name: GetWebAuthnUserByWebAuthnUserID :one
 select * from web_authn_users where web_authn_user_id = $1;
-
--- name: CreateWebAuthnSession :one
-insert into web_authn_sessions (
-  challenge,
-  relying_party_id,
-  web_authn_user_id,
-  allowed_credential_ids,
-  expires,
-  user_verification,
-  extensions
-) values (
-  $1,
-  $2,
-  $3,
-  $4,
-  $5,
-  $6,
-  $7
-)
--- Replace the existing session if it exists.
-on conflict (web_authn_user_id) do update set
-  challenge = excluded.challenge,
-  relying_party_id = excluded.relying_party_id,
-  allowed_credential_ids = excluded.allowed_credential_ids,
-  expires = excluded.expires,
-  user_verification = excluded.user_verification,
-  extensions = excluded.extensions
-returning *;
-
--- name: GetWebAuthnSession :one
-delete from web_authn_sessions where web_authn_user_id = $1 returning *;
 
 -- name: UpsertWebAuthnCredential :one
 insert into web_authn_credentials (

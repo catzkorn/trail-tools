@@ -2,10 +2,6 @@ module github.com/catzkorn/trail-tools
 
 go 1.24rc1
 
-// Removes dependency on github.com/jackc/pgx
-// Remove if https://github.com/mcosta74/pgx-slog/pull/6 is merged
-replace github.com/mcosta74/pgx-slog => github.com/johanbrandhorst/pgx-slog v0.3.2-0.20250102004633-6c2fd42ca106
-
 require (
 	connectrpc.com/connect v1.17.0
 	github.com/coreos/go-oidc/v3 v3.11.0
@@ -14,7 +10,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e
 	github.com/jackc/pgx/v5 v5.7.1
-	github.com/mcosta74/pgx-slog v0.3.1
+	github.com/mcosta74/pgx-slog v0.4.1
 	github.com/shopspring/decimal v1.3.1
 	gitlab.com/greyxor/slogor v1.5.2
 	golang.org/x/net v0.33.0

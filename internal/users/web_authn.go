@@ -3,24 +3,23 @@ package users
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users/internal"
-	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // CreateWebAuthnUser creates a new WebAuthn user with the provided name.
-func (r *Repository) CreateWebAuthnUser(ctx context.Context, name string) (webauthn.User, error) {
-	wUser, err := r.querier.CreateWebAuthnUser(ctx, name)
+func (r *Repository) CreateWebAuthnUser(ctx context.Context, name string) (*WebAuthnUser, error) {
+	dbUser, err := r.querier.CreateWebAuthnUser(ctx, name)
 	if err != nil {
 		fmt.Errorf("failed to create WebAuthn user in DB: %w", err)
 	}
-	user, err := newWebAuthnUser(ctx, wUser.Name, wUser.WebAuthnUserID, r.querier)
+	user, err := newWebAuthnUser(ctx, dbUser.ID, dbUser.Name, dbUser.WebAuthnUserID, r.querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create WebAuthn user: %w", err)
 	}
@@ -28,72 +27,19 @@ func (r *Repository) CreateWebAuthnUser(ctx context.Context, name string) (webau
 }
 
 // GetWebAuthnUser gets a WebAuthn user by ID. If the user does not exist, it returns store.ErrNotFound.
-func (r *Repository) GetWebAuthnUser(ctx context.Context, webAuthnUserID []byte) (webauthn.User, error) {
-	wUser, err := r.querier.GetWebAuthnUser(ctx, webAuthnUserID)
+func (r *Repository) GetWebAuthnUser(ctx context.Context, webAuthnUserID []byte) (*WebAuthnUser, error) {
+	wUser, err := r.querier.GetWebAuthnUserByWebAuthnUserID(ctx, webAuthnUserID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, store.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get WebAuthn user: %w", err)
 	}
-	user, err := newWebAuthnUser(ctx, wUser.Name, wUser.WebAuthnUserID, r.querier)
+	user, err := newWebAuthnUser(ctx, wUser.ID, wUser.Name, wUser.WebAuthnUserID, r.querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create WebAuthn user: %w", err)
 	}
 	return user, nil
-}
-
-func (r *Repository) CreateWebAuthnSession(ctx context.Context, session *webauthn.SessionData) error {
-	ur := internal.WebAuthnUserVerificationRequirement(session.UserVerification)
-	if !ur.Valid() {
-		return fmt.Errorf("invalid user verification requirement: %s", ur)
-	}
-	var extensions []byte
-	if len(session.Extensions) != 0 {
-		var err error
-		extensions, err = json.Marshal(session.Extensions)
-		if err != nil {
-			return fmt.Errorf("failed to marshal extensions to JSON: %w", err)
-		}
-	}
-	_, err := r.querier.CreateWebAuthnSession(ctx, &internal.CreateWebAuthnSessionParams{
-		Challenge:            session.Challenge,
-		RelyingPartyID:       session.RelyingPartyID,
-		WebAuthnUserID:       session.UserID,
-		AllowedCredentialIds: session.AllowedCredentialIDs,
-		Expires:              pgtype.Timestamptz{Time: session.Expires, Valid: true},
-		UserVerification:     ur,
-		Extensions:           extensions,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create WebAuthn session: %w", err)
-	}
-	return nil
-}
-
-func (r *Repository) GetWebAuthnSession(ctx context.Context, webAuthnUserID []byte) (*webauthn.SessionData, error) {
-	webAuthnSession, err := r.querier.GetWebAuthnSession(ctx, webAuthnUserID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, store.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to get WebAuthn session: %w", err)
-	}
-	var extensions map[string]any
-	if len(webAuthnSession.Extensions) != 0 {
-		if err := json.Unmarshal(webAuthnSession.Extensions, &extensions); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal extensions: %w", err)
-		}
-	}
-	return &webauthn.SessionData{
-		Challenge:            webAuthnSession.Challenge,
-		RelyingPartyID:       webAuthnSession.RelyingPartyID,
-		UserID:               webAuthnSession.WebAuthnUserID,
-		AllowedCredentialIDs: webAuthnSession.AllowedCredentialIds,
-		Expires:              webAuthnSession.Expires.Time,
-		UserVerification:     protocol.UserVerificationRequirement(webAuthnSession.UserVerification),
-		Extensions:           extensions,
-	}, nil
 }
 
 func (r *Repository) UpsertWebAuthnCredential(ctx context.Context, webAuthnUserID []byte, credential *webauthn.Credential) error {
@@ -133,4 +79,24 @@ func (r *Repository) UpsertWebAuthnCredential(ctx context.Context, webAuthnUserI
 		return fmt.Errorf("failed to create WebAuthn credential: %w", err)
 	}
 	return nil
+}
+
+func (r *Repository) CreateWebAuthnSession(ctx context.Context, user *WebAuthnUser, expiry time.Time) (string, error) {
+	if expiry.Before(time.Now()) {
+		return "", errors.New("expiry must be in the future")
+	}
+	sessionID, err := r.querier.CreateSession(ctx, &internal.CreateSessionParams{
+		UserID: user.id,
+		Expiry: pgtype.Timestamptz{
+			Time:  expiry,
+			Valid: true,
+		},
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", store.ErrNotFound
+		}
+		return "", fmt.Errorf("failed to create sessions: %w", err)
+	}
+	return store.UUIDToString(sessionID), nil
 }

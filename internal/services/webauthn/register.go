@@ -1,11 +1,15 @@
 package webauthn
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"gitlab.com/greyxor/slogor"
 )
 
@@ -21,8 +25,8 @@ func (h *handler) registerBegin(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := h.userRepository.CreateWebAuthnUser(r.Context(), name)
 	if err != nil {
-		h.log.ErrorContext(r.Context(), "failed to get user", slogor.Err(err))
-		http.Error(w, "failed to get user", http.StatusInternalServerError)
+		h.log.ErrorContext(r.Context(), "failed to create user", slogor.Err(err))
+		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
 	options, session, err := h.webauthn.BeginRegistration(user)
@@ -31,11 +35,22 @@ func (h *handler) registerBegin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to begin registration", http.StatusInternalServerError)
 		return
 	}
-	if err := h.userRepository.CreateWebAuthnSession(r.Context(), session); err != nil {
-		h.log.ErrorContext(r.Context(), "failed to store session", slogor.Err(err))
-		http.Error(w, "failed to store session", http.StatusInternalServerError)
+	cookieVal, err := json.Marshal(session)
+	if err != nil {
+		h.log.ErrorContext(r.Context(), "failed to encode session", slogor.Err(err))
+		http.Error(w, "failed to encode session", http.StatusInternalServerError)
 		return
 	}
+	http.SetCookie(w, &http.Cookie{
+		Name: webAuthnCookieName,
+		// Encode with base64 to avoid issues with quotes in the cookie value
+		Value:    base64.RawURLEncoding.EncodeToString(cookieVal),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/webauthn/register",
+		Expires:  session.Expires,
+	})
 	if err := json.NewEncoder(w).Encode(options); err != nil {
 		h.log.ErrorContext(r.Context(), "failed to encode response", slogor.Err(err))
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
@@ -44,12 +59,29 @@ func (h *handler) registerBegin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) registerFinish(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "user ID is required", http.StatusBadRequest)
+	sessionCookie, err := r.Cookie(webAuthnCookieName)
+	if err != nil {
+		if errors.Is(err, http.ErrNoCookie) {
+			http.Error(w, "no existing webauthn registration session found", http.StatusForbidden)
+			return
+		}
+		h.log.ErrorContext(r.Context(), "failed to get session cookie", slogor.Err(err))
+		http.Error(w, "failed to get session cookie", http.StatusInternalServerError)
 		return
 	}
-	user, err := h.userRepository.GetWebAuthnUser(r.Context(), []byte(userID))
+	sessionData, err := base64.RawURLEncoding.DecodeString(sessionCookie.Value)
+	if err != nil {
+		h.log.ErrorContext(r.Context(), "failed to decode session", slogor.Err(err))
+		http.Error(w, "failed to decode session", http.StatusInternalServerError)
+		return
+	}
+	var session webauthn.SessionData
+	if err := json.Unmarshal([]byte(sessionData), &session); err != nil {
+		h.log.ErrorContext(r.Context(), "failed to decode session", slogor.Err(err))
+		http.Error(w, "failed to decode session", http.StatusInternalServerError)
+		return
+	}
+	user, err := h.userRepository.GetWebAuthnUser(r.Context(), session.UserID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			http.Error(w, "user not found", http.StatusNotFound)
@@ -59,16 +91,18 @@ func (h *handler) registerFinish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to get user", http.StatusInternalServerError)
 		return
 	}
-	session, err := h.userRepository.GetWebAuthnSession(r.Context(), user.WebAuthnID())
+	cred, err := h.webauthn.FinishRegistration(user, session, r)
 	if err != nil {
-		h.log.ErrorContext(r.Context(), "failed to get user session", slogor.Err(err))
-		http.Error(w, "failed to get user session", http.StatusInternalServerError)
-		return
-	}
-	cred, err := h.webauthn.FinishRegistration(user, *session, r)
-	if err != nil {
-		h.log.ErrorContext(r.Context(), "failed to get session data", slogor.Err(err))
-		http.Error(w, "failed to get session data", http.StatusInternalServerError)
+		verErr := new(protocol.Error)
+		if errors.As(err, &verErr) {
+			h.log.ErrorContext(r.Context(), "failed to verify registration",
+				slog.String("details", verErr.Details),
+				slog.String("type", verErr.Type),
+				slog.String("devinfo", verErr.DevInfo),
+			)
+		}
+		h.log.ErrorContext(r.Context(), "failed to finish registration", slogor.Err(err))
+		http.Error(w, "failed to finish registration", http.StatusInternalServerError)
 		return
 	}
 	if err := h.userRepository.UpsertWebAuthnCredential(r.Context(), user.WebAuthnID(), cred); err != nil {
@@ -76,4 +110,7 @@ func (h *handler) registerFinish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to add user credential", http.StatusInternalServerError)
 		return
 	}
+	// Expire the session cookie
+	sessionCookie.MaxAge = -1
+	http.SetCookie(w, sessionCookie)
 }

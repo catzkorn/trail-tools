@@ -7,18 +7,20 @@ import (
 	"github.com/catzkorn/trail-tools/internal/users/internal"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type webAuthnUser struct {
-	name  string
-	id    []byte
-	creds []webauthn.Credential
+type WebAuthnUser struct {
+	id             pgtype.UUID
+	name           string
+	webAuthnUserID []byte
+	creds          []webauthn.Credential
 }
 
-func newWebAuthnUser(ctx context.Context, name string, id []byte, querier *internal.Queries) (*webAuthnUser, error) {
-	dbCreds, err := querier.ListWebAuthnCredentials(ctx, id)
+func newWebAuthnUser(ctx context.Context, id pgtype.UUID, name string, webAuthnUserID []byte, querier *internal.Queries) (*WebAuthnUser, error) {
+	dbCreds, err := querier.ListWebAuthnCredentials(ctx, webAuthnUserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list webauthn credentials for user %q: %w", string(id), err)
+		return nil, fmt.Errorf("failed to list webauthn credentials: %w", err)
 	}
 	var creds []webauthn.Credential
 	for _, cred := range dbCreds {
@@ -52,25 +54,30 @@ func newWebAuthnUser(ctx context.Context, name string, id []byte, querier *inter
 			},
 		})
 	}
-	return &webAuthnUser{
-		name:  name,
-		id:    id,
-		creds: creds,
+	return &WebAuthnUser{
+		id:             id,
+		name:           name,
+		webAuthnUserID: webAuthnUserID,
+		creds:          creds,
 	}, nil
 }
 
-func (w *webAuthnUser) WebAuthnID() []byte {
+func (w *WebAuthnUser) ID() pgtype.UUID {
 	return w.id
 }
 
-func (w *webAuthnUser) WebAuthnName() string {
+func (w *WebAuthnUser) WebAuthnID() []byte {
+	return w.webAuthnUserID
+}
+
+func (w *WebAuthnUser) WebAuthnName() string {
 	return w.name
 }
 
-func (w *webAuthnUser) WebAuthnDisplayName() string {
+func (w *WebAuthnUser) WebAuthnDisplayName() string {
 	return w.name
 }
 
-func (w *webAuthnUser) WebAuthnCredentials() []webauthn.Credential {
+func (w *WebAuthnUser) WebAuthnCredentials() []webauthn.Credential {
 	return w.creds
 }

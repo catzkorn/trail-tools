@@ -11,70 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createWebAuthnSession = `-- name: CreateWebAuthnSession :one
-insert into web_authn_sessions (
-  challenge,
-  relying_party_id,
-  web_authn_user_id,
-  allowed_credential_ids,
-  expires,
-  user_verification,
-  extensions
-) values (
-  $1,
-  $2,
-  $3,
-  $4,
-  $5,
-  $6,
-  $7
-)
-on conflict (web_authn_user_id) do update set
-  challenge = excluded.challenge,
-  relying_party_id = excluded.relying_party_id,
-  allowed_credential_ids = excluded.allowed_credential_ids,
-  expires = excluded.expires,
-  user_verification = excluded.user_verification,
-  extensions = excluded.extensions
-returning id, create_time, challenge, relying_party_id, web_authn_user_id, allowed_credential_ids, expires, user_verification, extensions
-`
-
-type CreateWebAuthnSessionParams struct {
-	Challenge            string
-	RelyingPartyID       string
-	WebAuthnUserID       []byte
-	AllowedCredentialIds [][]byte
-	Expires              pgtype.Timestamptz
-	UserVerification     WebAuthnUserVerificationRequirement
-	Extensions           []byte
-}
-
-// Replace the existing session if it exists.
-func (q *Queries) CreateWebAuthnSession(ctx context.Context, arg *CreateWebAuthnSessionParams) (*WebAuthnSession, error) {
-	row := q.db.QueryRow(ctx, createWebAuthnSession,
-		arg.Challenge,
-		arg.RelyingPartyID,
-		arg.WebAuthnUserID,
-		arg.AllowedCredentialIds,
-		arg.Expires,
-		arg.UserVerification,
-		arg.Extensions,
-	)
-	var i WebAuthnSession
-	err := row.Scan(
-		&i.ID,
-		&i.CreateTime,
-		&i.Challenge,
-		&i.RelyingPartyID,
-		&i.WebAuthnUserID,
-		&i.AllowedCredentialIds,
-		&i.Expires,
-		&i.UserVerification,
-		&i.Extensions,
-	)
-	return &i, err
-}
-
 const createWebAuthnUser = `-- name: CreateWebAuthnUser :one
 insert into web_authn_users (name) values ($1) returning id, web_authn_user_id, name
 `
@@ -86,33 +22,23 @@ func (q *Queries) CreateWebAuthnUser(ctx context.Context, name string) (*WebAuth
 	return &i, err
 }
 
-const getWebAuthnSession = `-- name: GetWebAuthnSession :one
-delete from web_authn_sessions where web_authn_user_id = $1 returning id, create_time, challenge, relying_party_id, web_authn_user_id, allowed_credential_ids, expires, user_verification, extensions
+const getWebAuthnUser = `-- name: GetWebAuthnUser :one
+select id, web_authn_user_id, name from web_authn_users where id = $1
 `
 
-func (q *Queries) GetWebAuthnSession(ctx context.Context, webAuthnUserID []byte) (*WebAuthnSession, error) {
-	row := q.db.QueryRow(ctx, getWebAuthnSession, webAuthnUserID)
-	var i WebAuthnSession
-	err := row.Scan(
-		&i.ID,
-		&i.CreateTime,
-		&i.Challenge,
-		&i.RelyingPartyID,
-		&i.WebAuthnUserID,
-		&i.AllowedCredentialIds,
-		&i.Expires,
-		&i.UserVerification,
-		&i.Extensions,
-	)
+func (q *Queries) GetWebAuthnUser(ctx context.Context, id pgtype.UUID) (*WebAuthnUser, error) {
+	row := q.db.QueryRow(ctx, getWebAuthnUser, id)
+	var i WebAuthnUser
+	err := row.Scan(&i.ID, &i.WebAuthnUserID, &i.Name)
 	return &i, err
 }
 
-const getWebAuthnUser = `-- name: GetWebAuthnUser :one
+const getWebAuthnUserByWebAuthnUserID = `-- name: GetWebAuthnUserByWebAuthnUserID :one
 select id, web_authn_user_id, name from web_authn_users where web_authn_user_id = $1
 `
 
-func (q *Queries) GetWebAuthnUser(ctx context.Context, webAuthnUserID []byte) (*WebAuthnUser, error) {
-	row := q.db.QueryRow(ctx, getWebAuthnUser, webAuthnUserID)
+func (q *Queries) GetWebAuthnUserByWebAuthnUserID(ctx context.Context, webAuthnUserID []byte) (*WebAuthnUser, error) {
+	row := q.db.QueryRow(ctx, getWebAuthnUserByWebAuthnUserID, webAuthnUserID)
 	var i WebAuthnUser
 	err := row.Scan(&i.ID, &i.WebAuthnUserID, &i.Name)
 	return &i, err

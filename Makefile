@@ -1,4 +1,5 @@
-NPM_TAG:=23.5.0-alpine
+NPM_TAG:=23.6.0-alpine
+DEX_TAG:=v2.41.1-distroless
 
 .PHONY: db-up
 db-up:
@@ -30,7 +31,11 @@ go-format:
 
 .PHONY: run
 run:
-	-go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable -oidc-client-id $$OIDC_CLIENT_ID -oidc-client-secret $$OIDC_CLIENT_SECRET
+	-go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable -log-level debug -tls-key localhost-key.pem -tls-cert localhost.pem -oidc-client-id $$OIDC_CLIENT_ID -oidc-client-secret $$OIDC_CLIENT_SECRET -oidc-issuer-url $$OIDC_ISSUER_URL
+
+.PHONY: dex
+dex:
+	docker run --rm -v $$(pwd)/test/dex/dex-config.yaml:/etc/dex/config.docker.yaml -p 5556:5556 dexidp/dex:v2.41.1-distroless
 
 .PHONY: web-deps
 web-deps:
@@ -55,8 +60,8 @@ watch:
 	-/usr/bin/env bash -c "\
 		trap 'kill %1 %2' EXIT;\
 		go tool esbuild web/index.tsx --bundle --outdir=web/dist --sourcemap --target=es6 --watch=forever & \
-		docker run -t --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx -s tailwindcss --minify -i base.css -o dist/index.css --watch & \
-		go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable -oidc-client-id $$OIDC_CLIENT_ID -oidc-client-secret $$OIDC_CLIENT_SECRET -serve-dir $$(pwd)/web/dist \
+		docker run -t --rm -v $$(pwd)/web:/srv --user $$(id -u):$$(id -g) -w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm -e NODE_OPTIONS='--disable-warning=ExperimentalWarning' node:$(NPM_TAG) npx -s tailwindcss -i base.css -o dist/index.css --watch & \
+		go run main.go -database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable -log-level debug -tls-key localhost-key.pem -tls-cert localhost.pem -oidc-client-id $$OIDC_CLIENT_ID -oidc-client-secret $$OIDC_CLIENT_SECRET -serve-dir $$(pwd)/web/dist \
 	"
 
 .PHONY: gen

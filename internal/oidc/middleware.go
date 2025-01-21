@@ -2,7 +2,7 @@ package oidc
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -42,44 +42,34 @@ type UserInfo struct {
 	Birthdate         string `json:"birthdate"`
 }
 
-type authKey struct{}
+type oidcInfoKey struct{}
 
 func GetUserInfo(ctx context.Context) (UserInfo, bool) {
-	userInfo, ok := ctx.Value(authKey{}).(UserInfo)
+	userInfo, ok := ctx.Value(oidcInfoKey{}).(UserInfo)
 	return userInfo, ok
 }
 
-func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, issuerURL string, clientID string, next http.Handler) (http.Handler, error) {
-	switch {
-	case log == nil:
-		return nil, errors.New("logger is required")
-	case issuerURL == "":
-		return nil, errors.New("issuer URL is required")
-	case clientID == "":
-		return nil, errors.New("client ID is required")
-	case next == nil:
-		return nil, errors.New("wrapped HTTP handler is required")
-	}
+func NewOIDCMiddleware(ctx context.Context, log *slog.Logger, issuerURL string, clientID string, next http.Handler) (http.Handler, error) {
 	provider, err := oidc.NewProvider(ctx, issuerURL)
 	if err != nil {
-		return nil, errors.New("failed to create OIDC provider")
+		return nil, fmt.Errorf("failed to create OIDC provider: %w", err)
 	}
 	verifier := provider.Verifier(&oidc.Config{ClientID: clientID})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		idCookie, err := req.Cookie(cookieIDToken)
 		if err != nil {
-			log.DebugContext(req.Context(), "User had no token, continue unauthenticated", slogor.Err(err))
+			log.DebugContext(req.Context(), "User had no token, continue unauthenticated", slogor.Err(err), slog.String("path", req.URL.Path))
 			next.ServeHTTP(w, req)
 			return
 		}
 		idToken, err := verifier.Verify(ctx, idCookie.Value)
 		if err != nil {
-			log.DebugContext(req.Context(), "User ID token was invalid, redirecting", slogor.Err(err))
-			http.Redirect(w, req, loginPath, http.StatusFound)
+			log.DebugContext(req.Context(), "User OIDC ID token was invalid, redirecting to /", slogor.Err(err))
+			expireCookie(w, idCookie)
+			http.Redirect(w, req, "/", http.StatusFound)
 			return
 		}
-		log.DebugContext(req.Context(), "User was authenticated", slog.String("subject", idToken.Subject))
 		userInfo := UserInfo{
 			Expiry:          idToken.Expiry,
 			IssuedAt:        idToken.IssuedAt,
@@ -94,7 +84,7 @@ func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, issuerURL string,
 			http.Redirect(w, req, loginPath, http.StatusFound)
 			return
 		}
-		newCtx := context.WithValue(req.Context(), authKey{}, userInfo)
+		newCtx := context.WithValue(req.Context(), oidcInfoKey{}, userInfo)
 		next.ServeHTTP(w, req.WithContext(newCtx))
 	}), nil
 }

@@ -7,10 +7,12 @@ package internal
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createOIDCUser = `-- name: CreateOIDCUser :one
-insert into oidc_users (subject) values ($1) returning id, subject
+insert into oidc_users (subject) values ($1) on conflict (subject) do update set subject=excluded.subject returning id, subject
 `
 
 func (q *Queries) CreateOIDCUser(ctx context.Context, subject string) (*OIDCUser, error) {
@@ -21,11 +23,11 @@ func (q *Queries) CreateOIDCUser(ctx context.Context, subject string) (*OIDCUser
 }
 
 const getOIDCUser = `-- name: GetOIDCUser :one
-select id, subject from oidc_users where subject = $1
+select id, subject from oidc_users where id = $1
 `
 
-func (q *Queries) GetOIDCUser(ctx context.Context, subject string) (*OIDCUser, error) {
-	row := q.db.QueryRow(ctx, getOIDCUser, subject)
+func (q *Queries) GetOIDCUser(ctx context.Context, id pgtype.UUID) (*OIDCUser, error) {
+	row := q.db.QueryRow(ctx, getOIDCUser, id)
 	var i OIDCUser
 	err := row.Scan(&i.ID, &i.Subject)
 	return &i, err

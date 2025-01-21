@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/users"
+	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/oauth2"
@@ -28,7 +28,7 @@ const (
 )
 
 type UserRepository interface {
-	GetOIDCUser(ctx context.Context, oidcSubject string) (*users.OIDCUser, error)
+	CreateOIDCSession(ctx context.Context, oidcSubject string, expiry time.Time) (string, error)
 }
 
 type handler struct {
@@ -116,6 +116,8 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
+	// TODO: This needs to be moved to a generic logout endpoint to expire this
+	// and the session cookie.
 	if c, err := r.Cookie(cookieIDToken); err == nil {
 		c.Expires = time.Now().Add(-time.Hour)
 		c.Path = "/"
@@ -164,13 +166,6 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create the user in the DB
-	if _, err := h.userRepository.GetOIDCUser(r.Context(), idToken.Subject); err != nil {
-		h.log.ErrorContext(r.Context(), "failed to get OIDC user", slogor.Err(err))
-		http.Error(w, "failed to get OIDC user", http.StatusInternalServerError)
-		return
-	}
-
 	var userInfo oidc.UserInfo
 	if err := idToken.Claims(&userInfo); err != nil {
 		h.log.ErrorContext(r.Context(), "failed to get claims from ID token", slogor.Err(err))
@@ -182,8 +177,8 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	cookieId := &http.Cookie{
 		Name:     cookieIDToken,
 		Value:    rawIDToken,
-		MaxAge:   int(time.Until(idToken.Expiry).Seconds()),
-		Secure:   r.TLS != nil,
+		Expires:  idToken.Expiry,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
@@ -191,11 +186,18 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookieId)
 
 	if c, err := r.Cookie(cookieState); err == nil {
-		expireCallbackCookie(w, c)
+		expireCookie(w, c)
 	}
 	if c, err := r.Cookie(cookieNonce); err == nil {
-		expireCallbackCookie(w, c)
+		expireCookie(w, c)
 	}
+	sessionID, err := h.userRepository.CreateOIDCSession(r.Context(), idToken.Subject, idToken.Expiry)
+	if err != nil {
+		h.log.ErrorContext(r.Context(), "failed to get OIDC user", slogor.Err(err))
+		http.Error(w, "failed to get OIDC user", http.StatusInternalServerError)
+		return
+	}
+	authn.SetSessionCookie(w, sessionID, idToken.Expiry)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -213,13 +215,13 @@ func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value strin
 		Name:     name,
 		Value:    value,
 		MaxAge:   int(time.Hour.Seconds()),
-		Secure:   r.TLS != nil,
+		Secure:   true,
 		HttpOnly: true,
 	}
 	http.SetCookie(w, c)
 }
 
-func expireCallbackCookie(w http.ResponseWriter, oldCookie *http.Cookie) {
+func expireCookie(w http.ResponseWriter, oldCookie *http.Cookie) {
 	oldCookie.Expires = time.Now().Add(-time.Hour)
 	http.SetCookie(w, oldCookie)
 }

@@ -122,59 +122,6 @@ func (e WebAuthnAuthenticatorTransport) Valid() bool {
 	return false
 }
 
-type WebAuthnUserVerificationRequirement string
-
-const (
-	WebAuthnUserVerificationRequirementRequired    WebAuthnUserVerificationRequirement = "required"
-	WebAuthnUserVerificationRequirementPreferred   WebAuthnUserVerificationRequirement = "preferred"
-	WebAuthnUserVerificationRequirementDiscouraged WebAuthnUserVerificationRequirement = "discouraged"
-)
-
-func (e *WebAuthnUserVerificationRequirement) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = WebAuthnUserVerificationRequirement(s)
-	case string:
-		*e = WebAuthnUserVerificationRequirement(s)
-	default:
-		return fmt.Errorf("unsupported scan type for WebAuthnUserVerificationRequirement: %T", src)
-	}
-	return nil
-}
-
-type NullWebAuthnUserVerificationRequirement struct {
-	WebAuthnUserVerificationRequirement WebAuthnUserVerificationRequirement
-	Valid                               bool // Valid is true if WebAuthnUserVerificationRequirement is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullWebAuthnUserVerificationRequirement) Scan(value interface{}) error {
-	if value == nil {
-		ns.WebAuthnUserVerificationRequirement, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.WebAuthnUserVerificationRequirement.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullWebAuthnUserVerificationRequirement) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.WebAuthnUserVerificationRequirement), nil
-}
-
-func (e WebAuthnUserVerificationRequirement) Valid() bool {
-	switch e {
-	case WebAuthnUserVerificationRequirementRequired,
-		WebAuthnUserVerificationRequirementPreferred,
-		WebAuthnUserVerificationRequirementDiscouraged:
-		return true
-	}
-	return false
-}
-
 type Activity struct {
 	ID         pgtype.UUID
 	AthleteID  pgtype.UUID
@@ -202,6 +149,12 @@ type OidcUser struct {
 	Subject string
 }
 
+type Session struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+	Expiry pgtype.Timestamptz
+}
+
 type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
@@ -227,18 +180,6 @@ type WebAuthnCredential struct {
 	AttestationAuthenticatorData  []byte
 	AttestationPublicKeyAlgorithm int64
 	AttestationObject             []byte
-}
-
-type WebAuthnSession struct {
-	ID                   pgtype.UUID
-	CreateTime           pgtype.Timestamptz
-	Challenge            string
-	RelyingPartyID       string
-	WebAuthnUserID       []byte
-	AllowedCredentialIds [][]byte
-	Expires              pgtype.Timestamptz
-	UserVerification     WebAuthnUserVerificationRequirement
-	Extensions           []byte
 }
 
 type WebAuthnUser struct {

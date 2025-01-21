@@ -2,19 +2,21 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/athletes"
+	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/oidc"
@@ -31,16 +33,41 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
+const (
+	defaultHostname = "localhost"
+	defaultPort     = "8080"
+)
+
 var (
+	logLevel = flag.String(
+		"log-level",
+		"info",
+		"The log level to use",
+	)
 	databaseUrl = flag.String(
 		"database-url",
 		"",
 		"The URL of the postgres database in which to store the state of the application",
 	)
-	address = flag.String(
-		"address",
-		"localhost:8080",
-		"The address on which to serve the application",
+	hostname = flag.String(
+		"hostname",
+		defaultHostname,
+		"The hostname on which to serve the application",
+	)
+	port = flag.String(
+		"port",
+		defaultPort,
+		"The port on which to serve the application",
+	)
+	tlsKeyPath = flag.String(
+		"tls-key",
+		"",
+		"The path to the private key used for serving the application over HTTPS",
+	)
+	tlsCertPath = flag.String(
+		"tls-cert",
+		"",
+		"The path to the certificate used for serving the application over HTTPS",
 	)
 	oidcClientID = flag.String(
 		"oidc-client-id",
@@ -63,36 +90,36 @@ var (
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
 	)
-	webAuthnRPID = flag.String(
-		"webauthn-rp-id",
-		"localhost",
-		"The Relying Party ID for WebAuthn, defaults to localhost",
-	)
-	webAuthnRPOrigins = flag.String(
-		"webauthn-rp-origins",
-		"http://localhost",
-		"Comma-separated list of Relying Party Origins for WebAuthn, defaults to http://localhost",
-	)
 )
 
 func main() {
 	flag.Parse()
-	log := slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp)))
+	var slogLevel slog.Level
+	if err := slogLevel.UnmarshalText([]byte(*logLevel)); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse log level: %v\n", err)
+		os.Exit(1)
+	}
+	logger := slog.New(slogor.NewHandler(
+		os.Stdout,
+		slogor.SetTimeFormat(time.Stamp),
+		slogor.SetLevel(slogLevel),
+	))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	if err := run(
 		ctx,
-		log,
+		logger,
 		*databaseUrl,
-		*address,
+		*hostname,
+		*port,
+		*tlsKeyPath,
+		*tlsCertPath,
 		*oidcClientID,
 		*oidcClientSecret,
 		*oidcIssuerURL,
 		*serveDir,
-		*webAuthnRPID,
-		*webAuthnRPOrigins,
 	); err != nil {
-		log.ErrorContext(ctx, "Failed running app", slogor.Err(err))
+		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
 	}
 }
@@ -101,29 +128,44 @@ func run(
 	ctx context.Context,
 	log *slog.Logger,
 	databaseUrl string,
-	address string,
+	hostname string,
+	port string,
+	tlsKeyPath string,
+	tlsCertPath string,
 	oidcClientID string,
 	oidcClientSecret string,
 	oidcIssuerURL string,
 	serveDir string,
-	webAuthnRPID string,
-	webAuthnRPOrigins string,
 ) error {
 	switch {
 	case databaseUrl == "":
 		return errors.New("database-url is required")
-	case address == "":
+	case hostname == "":
 		return errors.New("address is required")
+	case port == "":
+		return errors.New("port is required")
 	case oidcClientID == "":
 		return errors.New("oidc-client-id is required")
 	case oidcClientSecret == "":
 		return errors.New("oidc-client-secret is required")
 	case oidcIssuerURL == "":
 		return errors.New("oidc-issuer-url is required")
+	case tlsKeyPath != "" && tlsCertPath == "" || tlsKeyPath == "" && tlsCertPath != "":
+		return errors.New("tls-cert and tls-key must be set together")
 	}
 	dbUrl, err := url.Parse(databaseUrl)
 	if err != nil {
 		return fmt.Errorf("failed to parse database-url: %w", err)
+	}
+	address := net.JoinHostPort(hostname, port)
+	baseURL := "http://" + address
+	var cert tls.Certificate
+	if tlsCertPath != "" && tlsKeyPath != "" {
+		cert, err = tls.LoadX509KeyPair(tlsCertPath, tlsKeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to load TLS certificate: %w", err)
+		}
+		baseURL = "https://" + address
 	}
 	db, err := store.New(ctx, log, dbUrl)
 	if err != nil {
@@ -139,40 +181,41 @@ func run(
 	}
 
 	// Register all handlers to a single mux
-	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, users, athletes))
-	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log, users))
+	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, athletes))
+	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log))
 	apiMux := http.NewServeMux()
 	apiMux.Handle(athletePath, athleteHandler)
 	apiMux.Handle(usersPath, usersHandler)
 
 	// Wrap the mux in the OIDC authn middleware
-	apiAuth, err := oidc.NewAuthnMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiMux)
+	oidcHandler, err := oidc.NewOIDCMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiMux)
 	if err != nil {
-		return fmt.Errorf("failed to create authn interceptor: %w", err)
+		return fmt.Errorf("failed to create OIDC middleware: %w", err)
+	}
+	authHandler, err := authn.NewAuthnMiddleware(ctx, log, users, oidcHandler)
+	if err != nil {
+		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
 
 	mux := http.NewServeMux()
 	// Serve the API handlers through the authn middleware
-	mux.Handle(athletePath, apiAuth)
-	mux.Handle(usersPath, apiAuth)
+	mux.Handle(athletePath, authHandler)
+	mux.Handle(usersPath, authHandler)
 	// Serve OIDC handlers
-	if err := oidc.RegisterHandlers(ctx, log, "http://"+address, oidcClientID, oidcClientSecret, oidcIssuerURL, users, mux); err != nil {
+	if err := oidc.RegisterHandlers(ctx, log, baseURL, oidcClientID, oidcClientSecret, oidcIssuerURL, users, mux); err != nil {
 		return fmt.Errorf("failed to register OIDC handlers: %w", err)
 	}
-	// Serve WebAuthn handlers if configured
-	if webAuthnRPID != "" && webAuthnRPOrigins != "" {
-		wconfig := &wauthn.Config{
-			RPDisplayName: "Trail tools",
-			RPID:          webAuthnRPID,                          // Generally the FQDN for your site
-			RPOrigins:     strings.Split(webAuthnRPOrigins, ","), // The origin URLs allowed for WebAuthn requests
-		}
 
-		webAuthn, err := wauthn.New(wconfig)
-		if err != nil {
-			return fmt.Errorf("failed to create webauthn: %w", err)
-		}
-		webauthn.Register(mux, log, webAuthn, users)
+	wconfig := &wauthn.Config{
+		RPDisplayName: "Trail tools",
+		RPID:          hostname,          // Generally the FQDN for your site
+		RPOrigins:     []string{baseURL}, // The origin URLs allowed for WebAuthn requests
 	}
+	webAuthn, err := wauthn.New(wconfig)
+	if err != nil {
+		return fmt.Errorf("failed to create webauthn: %w", err)
+	}
+	webauthn.RegisterHandlers(mux, log, webAuthn, users)
 
 	webFs, _ := fs.Sub(web.Dist, "dist")
 	if serveDir != "" {
@@ -199,6 +242,15 @@ func run(
 		// Use h2c so we can serve HTTP/2 without TLS.
 		Handler: h2c.NewHandler(mux, &http2.Server{}),
 	}
+	serveFn := srv.ListenAndServe
+	if cert.Certificate != nil {
+		srv.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}
+		serveFn = func() error {
+			return srv.ListenAndServeTLS("", "")
+		}
+	}
 	go func() {
 		<-ctx.Done()
 		log.InfoContext(ctx, "Interrupt received, shutting down")
@@ -208,8 +260,8 @@ func run(
 			log.ErrorContext(ctx, "Failed to shutdown server", slogor.Err(err))
 		}
 	}()
-	log.InfoContext(ctx, "Serving on", slog.String("addr", "localhost:8080"))
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	log.InfoContext(ctx, "Serving on", slog.String("addr", address))
+	if err := serveFn(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to serve: %w", err)
 	}
 	return nil
