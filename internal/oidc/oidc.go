@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/users"
+	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/oauth2"
@@ -23,12 +23,11 @@ const (
 	cookieNonce   = "oidc-nonce"
 	cookieIDToken = "oidc-id-token"
 	loginPath     = "/oidc/login"
-	logoutPath    = "/oidc/logout"
 	callbackPath  = "/oidc/callback"
 )
 
 type UserRepository interface {
-	GetOIDCUser(ctx context.Context, oidcSubject string) (*users.OIDCUser, error)
+	CreateOIDCSession(ctx context.Context, oidcSubject string, expiry time.Time) (string, error)
 }
 
 type handler struct {
@@ -47,28 +46,16 @@ func RegisterHandlers(
 	issuerURL string,
 	userRepository UserRepository,
 	mux *http.ServeMux,
-) error {
-	switch {
-	case logger == nil:
-		return errors.New("logger is required")
-	case baseURL == "":
-		return errors.New("base URL is required")
-	case clientID == "":
-		return errors.New("client ID is required")
-	case clientSecret == "":
-		return errors.New("client secret is required")
-	case issuerURL == "":
-		return errors.New("issuer URL is required")
-	}
+) (logoutHandler http.HandlerFunc, _ error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		return errors.New("failed to parse base URL")
+		return nil, errors.New("failed to parse base URL")
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("base URL must have a scheme of http or https, got %q", u.Scheme)
+		return nil, fmt.Errorf("base URL must have a scheme of http or https, got %q", u.Scheme)
 	}
 	if u.Host == "" {
-		return errors.New("base URL must have a host")
+		return nil, errors.New("base URL must have a host")
 	}
 	redirectURL := &url.URL{
 		Scheme: u.Scheme,
@@ -77,7 +64,7 @@ func RegisterHandlers(
 	}
 	provider, err := oidc.NewProvider(ctx, issuerURL)
 	if err != nil {
-		return fmt.Errorf("failed to create OIDC provider: %w", err)
+		return nil, fmt.Errorf("failed to create OIDC provider: %w", err)
 	}
 	h := &handler{
 		log: logger,
@@ -91,13 +78,12 @@ func RegisterHandlers(
 		verifier:       provider.Verifier(&oidc.Config{ClientID: clientID}),
 		userRepository: userRepository,
 	}
-	mux.Handle(loginPath, http.HandlerFunc(h.Login))
-	mux.Handle(logoutPath, http.HandlerFunc(h.Logout))
-	mux.Handle(callbackPath, http.HandlerFunc(h.Callback))
-	return nil
+	mux.Handle(loginPath, http.HandlerFunc(h.login))
+	mux.Handle(callbackPath, http.HandlerFunc(h.callback))
+	return h.logout, nil
 }
 
-func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	state, err := randBase64(16)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "failed to generate state", slogor.Err(err))
@@ -115,16 +101,16 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, h.oauth2Config.AuthCodeURL(state, oidc.Nonce(nonce)), http.StatusFound)
 }
 
-func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *handler) logout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(cookieIDToken); err == nil {
 		c.Expires = time.Now().Add(-time.Hour)
 		c.Path = "/"
+		c.Value = ""
 		http.SetCookie(w, c)
 	}
-	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
+func (h *handler) callback(w http.ResponseWriter, r *http.Request) {
 	state, err := r.Cookie(cookieState)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "missing state cookie", slogor.Err(err))
@@ -164,13 +150,6 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create the user in the DB
-	if _, err := h.userRepository.GetOIDCUser(r.Context(), idToken.Subject); err != nil {
-		h.log.ErrorContext(r.Context(), "failed to get OIDC user", slogor.Err(err))
-		http.Error(w, "failed to get OIDC user", http.StatusInternalServerError)
-		return
-	}
-
 	var userInfo oidc.UserInfo
 	if err := idToken.Claims(&userInfo); err != nil {
 		h.log.ErrorContext(r.Context(), "failed to get claims from ID token", slogor.Err(err))
@@ -182,8 +161,8 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	cookieId := &http.Cookie{
 		Name:     cookieIDToken,
 		Value:    rawIDToken,
-		MaxAge:   int(time.Until(idToken.Expiry).Seconds()),
-		Secure:   r.TLS != nil,
+		Expires:  idToken.Expiry,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
@@ -191,11 +170,18 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookieId)
 
 	if c, err := r.Cookie(cookieState); err == nil {
-		expireCallbackCookie(w, c)
+		expireCookie(w, c)
 	}
 	if c, err := r.Cookie(cookieNonce); err == nil {
-		expireCallbackCookie(w, c)
+		expireCookie(w, c)
 	}
+	sessionID, err := h.userRepository.CreateOIDCSession(r.Context(), idToken.Subject, idToken.Expiry)
+	if err != nil {
+		h.log.ErrorContext(r.Context(), "failed to get OIDC user", slogor.Err(err))
+		http.Error(w, "failed to get OIDC user", http.StatusInternalServerError)
+		return
+	}
+	authn.SetSessionCookie(w, sessionID, idToken.Expiry)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -213,13 +199,13 @@ func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value strin
 		Name:     name,
 		Value:    value,
 		MaxAge:   int(time.Hour.Seconds()),
-		Secure:   r.TLS != nil,
+		Secure:   true,
 		HttpOnly: true,
 	}
 	http.SetCookie(w, c)
 }
 
-func expireCallbackCookie(w http.ResponseWriter, oldCookie *http.Cookie) {
+func expireCookie(w http.ResponseWriter, oldCookie *http.Cookie) {
 	oldCookie.Expires = time.Now().Add(-time.Hour)
 	http.SetCookie(w, oldCookie)
 }
