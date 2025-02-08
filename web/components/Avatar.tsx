@@ -7,7 +7,7 @@ interface AvatarProps {
 
 export const Avatar: React.FC<AvatarProps> = ({ avatarUrl }) => {
   if (avatarUrl === "") {
-    return <UserIcon className="size-8 rounded-full" />;
+    return <UserIcon className="size-8 rounded-full bg-white p-1" />;
   }
   return <img alt="" src={avatarUrl} className="size-8 rounded-full" />;
 };
