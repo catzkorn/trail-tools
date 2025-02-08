@@ -5,7 +5,12 @@ import (
 
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type User interface {
+	ID() pgtype.UUID
+}
 
 // Repository allows storing and querying of users and related data.
 type Repository struct {
