@@ -11,27 +11,6 @@ create table web_authn_users (
 create trigger insert_users_subtype before insert on web_authn_users
   for each row execute procedure insert_users_subtype();
 
--- https://www.w3.org/TR/webauthn/#enum-userVerificationRequirement
-create type web_authn_user_verification_requirement as enum (
-  'required',
-  'preferred',
-  'discouraged'
-);
-
-create table web_authn_sessions (
-  id uuid primary key default gen_random_uuid(),
-  create_time timestamptz not null default current_timestamp,
-  challenge text not null,
-  relying_party_id text not null,
-  -- I _think_ https://www.w3.org/TR/webauthn/#sctn-authenticator-ops
-  -- implies that we can allow only a single session per web_authn_user_id.
-  web_authn_user_id bytea not null unique references web_authn_users(web_authn_user_id),
-  allowed_credential_ids bytea[] not null,
-  expires timestamptz not null,
-  user_verification web_authn_user_verification_requirement not null,
-  extensions jsonb null
-);
-
 -- https://www.w3.org/TR/web_authn-3/#enum-transport
 create type web_authn_authenticator_transport as enum (
   'usb',
