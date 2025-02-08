@@ -1,6 +1,6 @@
 module github.com/catzkorn/trail-tools
 
-go 1.24rc1
+go 1.24rc3
 
 require (
 	connectrpc.com/connect v1.17.0
