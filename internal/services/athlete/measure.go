@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
+	"github.com/catzkorn/trail-tools/internal/authn"
 	athletesv1 "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
-	"github.com/catzkorn/trail-tools/internal/oidc"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Request[athletesv1.CreateBloodLactateMeasureRequest]) (*connect.Response[athletesv1.CreateBloodLactateMeasureResponse], error) {
-	_, ok := oidc.GetUserInfo(ctx)
+	_, ok := authn.GetUser(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
 	}
