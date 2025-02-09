@@ -6,9 +6,11 @@ interface ProfilePageProps {
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
-  let content = <p>Welcome to Trail Tools {user?.givenName}</p>;
+  let content = <> </>;
   if (user === null) {
     content = <p>You are not signed in</p>;
+  } else {
+    content = <p>Welcome to Trail Tools {user.name}</p>;
   }
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{content}</div>
