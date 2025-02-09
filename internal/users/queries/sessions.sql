@@ -10,3 +10,5 @@ select
   end::text as type
 from sessions where sessions.id = $1 and sessions.expiry > now();
 
+-- name: DeleteSession :exec
+delete from sessions where id = $1;

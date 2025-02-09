@@ -27,6 +27,15 @@ func (q *Queries) CreateSession(ctx context.Context, arg *CreateSessionParams) (
 	return id, err
 }
 
+const deleteSession = `-- name: DeleteSession :exec
+delete from sessions where id = $1
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSession, id)
+	return err
+}
+
 const getSessionUser = `-- name: GetSessionUser :one
 select
   user_id,
