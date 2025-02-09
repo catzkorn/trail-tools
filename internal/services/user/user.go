@@ -21,7 +21,13 @@ func (s *Service) GetCurrentUser(ctx context.Context, req *connect.Request[users
 	case *users.OIDCUser:
 		userInfo, ok := oidc.GetUserInfo(ctx)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("no OIDC user info found"))
+			// This can happen if the OIDC JWT has a different lifetime than the session cookie.
+			// Lets just a minimal valid response here. The session is still valid.
+			return connect.NewResponse(usersv1.GetCurrentUserResponse_builder{
+				User: usersv1.User_builder{
+					Id: store.UUIDToString(user.ID()),
+				}.Build(),
+			}.Build()), nil
 		}
 		return connect.NewResponse(usersv1.GetCurrentUserResponse_builder{
 			User: usersv1.User_builder{

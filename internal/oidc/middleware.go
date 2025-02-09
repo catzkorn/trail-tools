@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -56,18 +57,20 @@ func NewOIDCMiddleware(ctx context.Context, log *slog.Logger, issuerURL string, 
 	}
 	verifier := provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		idCookie, err := req.Cookie(cookieIDToken)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idCookie, err := r.Cookie(cookieIDToken)
 		if err != nil {
-			log.DebugContext(req.Context(), "User had no token, continue unauthenticated", slogor.Err(err), slog.String("path", req.URL.Path))
-			next.ServeHTTP(w, req)
+			if !errors.Is(err, http.ErrNoCookie) {
+				log.ErrorContext(r.Context(), "Failed to get OIDC cookie", slogor.Err(err))
+			}
+			next.ServeHTTP(w, r)
 			return
 		}
 		idToken, err := verifier.Verify(ctx, idCookie.Value)
 		if err != nil {
-			log.DebugContext(req.Context(), "User OIDC ID token was invalid, redirecting to /", slogor.Err(err))
+			log.DebugContext(r.Context(), "User OIDC ID token was invalid, expiring cookie and continuing unauthenticated", slogor.Err(err))
 			expireCookie(w, idCookie)
-			http.Redirect(w, req, "/", http.StatusFound)
+			next.ServeHTTP(w, r)
 			return
 		}
 		userInfo := UserInfo{
@@ -80,11 +83,9 @@ func NewOIDCMiddleware(ctx context.Context, log *slog.Logger, issuerURL string, 
 			Nonce:           idToken.Nonce,
 		}
 		if err := idToken.Claims(&userInfo); err != nil {
-			log.ErrorContext(req.Context(), "Failed to parse user info from ID token", slogor.Err(err))
-			http.Redirect(w, req, loginPath, http.StatusFound)
-			return
+			log.ErrorContext(r.Context(), "Failed to parse user info from ID token", slogor.Err(err))
 		}
-		newCtx := context.WithValue(req.Context(), oidcInfoKey{}, userInfo)
-		next.ServeHTTP(w, req.WithContext(newCtx))
+		newCtx := context.WithValue(r.Context(), oidcInfoKey{}, userInfo)
+		next.ServeHTTP(w, r.WithContext(newCtx))
 	}), nil
 }
