@@ -1,4 +1,3 @@
-import Header from "@components/Header";
 import { User } from "gen/users/v1/users_pb";
 import React from "react";
 
@@ -12,14 +11,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user }) => {
     content = <p>You are not signed in</p>;
   }
   return (
-    <div className="min-h-full">
-      <Header user={user} />
-      <main>
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          {content}
-        </div>
-      </main>
-    </div>
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{content}</div>
   );
 };
 

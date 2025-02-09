@@ -1,3 +1,4 @@
+import Header from "@components/Header";
 import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import HomePage from "@pages/HomePage";
@@ -15,14 +16,9 @@ const App: React.FC = () => {
 
   useEffect(
     () => {
-      const abort = new AbortController();
-
       async function getCurrentUser() {
         try {
-          const result = await client.getCurrentUser(
-            {},
-            { signal: abort.signal }
-          );
+          const result = await client.getCurrentUser({});
           setUser(result.user);
         } catch (err: unknown) {
           const cErr = ConnectError.from(err);
@@ -40,10 +36,6 @@ const App: React.FC = () => {
         }
       }
       void getCurrentUser();
-      // Abort the request if the component is unmounted
-      return () => {
-        abort.abort();
-      };
     },
     [] // Empty dependencies array to run the effect only once
   );
@@ -57,10 +49,15 @@ const App: React.FC = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<HomePage user={user} />} />
-      <Route path="/profile" element={<ProfilePage user={user} />} />
-    </Routes>
+    <div className="min-h-full">
+      <Header user={user} />
+      <main>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/profile" element={<ProfilePage user={user} />} />
+        </Routes>
+      </main>
+    </div>
   );
 };
 
