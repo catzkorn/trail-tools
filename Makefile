@@ -110,6 +110,7 @@ watch:
 			--outdir=web/dist \
 			--sourcemap \
 			--target=es6 \
+			--minify \
 			--watch=forever & \
 		docker run \
 			-t \
