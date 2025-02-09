@@ -54,3 +54,17 @@ func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, er
 	}
 	return retUser, nil
 }
+
+func (r *Repository) DeleteSession(ctx context.Context, sessionID string) error {
+	id, err := store.StringToUUID(sessionID)
+	if err != nil {
+		return fmt.Errorf("invalid UUID: %w", err)
+	}
+	if err := r.querier.DeleteSession(ctx, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return store.ErrNotFound
+		}
+		return fmt.Errorf("failed to delete session: %w", err)
+	}
+	return nil
+}
