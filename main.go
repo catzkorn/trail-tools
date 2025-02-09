@@ -211,7 +211,7 @@ func run(
 	}
 
 	// Register authn and oidc logout handler directly on the mux
-	authn.RegisterLogoutHandler(mux, oidcLogout)
+	authn.RegisterLogoutHandler(log, mux, users, oidcLogout)
 
 	webAuthn, err := wauthn.New(&wauthn.Config{
 		RPDisplayName: "Trail tools",
