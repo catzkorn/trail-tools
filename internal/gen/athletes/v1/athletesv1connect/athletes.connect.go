@@ -36,6 +36,12 @@ const (
 	// AthleteServiceCreateAthleteProcedure is the fully-qualified name of the AthleteService's
 	// CreateAthlete RPC.
 	AthleteServiceCreateAthleteProcedure = "/athletes.v1.AthleteService/CreateAthlete"
+	// AthleteServiceListAthletesProcedure is the fully-qualified name of the AthleteService's
+	// ListAthletes RPC.
+	AthleteServiceListAthletesProcedure = "/athletes.v1.AthleteService/ListAthletes"
+	// AthleteServiceDeleteAthleteProcedure is the fully-qualified name of the AthleteService's
+	// DeleteAthlete RPC.
+	AthleteServiceDeleteAthleteProcedure = "/athletes.v1.AthleteService/DeleteAthlete"
 	// AthleteServiceCreateActivityProcedure is the fully-qualified name of the AthleteService's
 	// CreateActivity RPC.
 	AthleteServiceCreateActivityProcedure = "/athletes.v1.AthleteService/CreateActivity"
@@ -48,6 +54,8 @@ const (
 var (
 	athleteServiceServiceDescriptor                         = v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService")
 	athleteServiceCreateAthleteMethodDescriptor             = athleteServiceServiceDescriptor.Methods().ByName("CreateAthlete")
+	athleteServiceListAthletesMethodDescriptor              = athleteServiceServiceDescriptor.Methods().ByName("ListAthletes")
+	athleteServiceDeleteAthleteMethodDescriptor             = athleteServiceServiceDescriptor.Methods().ByName("DeleteAthlete")
 	athleteServiceCreateActivityMethodDescriptor            = athleteServiceServiceDescriptor.Methods().ByName("CreateActivity")
 	athleteServiceCreateBloodLactateMeasureMethodDescriptor = athleteServiceServiceDescriptor.Methods().ByName("CreateBloodLactateMeasure")
 )
@@ -55,6 +63,8 @@ var (
 // AthleteServiceClient is a client for the athletes.v1.AthleteService service.
 type AthleteServiceClient interface {
 	CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error)
+	ListAthletes(context.Context, *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error)
+	DeleteAthlete(context.Context, *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error)
 	CreateActivity(context.Context, *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error)
 	CreateBloodLactateMeasure(context.Context, *connect.Request[v1.CreateBloodLactateMeasureRequest]) (*connect.Response[v1.CreateBloodLactateMeasureResponse], error)
 }
@@ -75,6 +85,18 @@ func NewAthleteServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(athleteServiceCreateAthleteMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		listAthletes: connect.NewClient[v1.ListAthletesRequest, v1.ListAthletesResponse](
+			httpClient,
+			baseURL+AthleteServiceListAthletesProcedure,
+			connect.WithSchema(athleteServiceListAthletesMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		deleteAthlete: connect.NewClient[v1.DeleteAthleteRequest, v1.DeleteAthleteResponse](
+			httpClient,
+			baseURL+AthleteServiceDeleteAthleteProcedure,
+			connect.WithSchema(athleteServiceDeleteAthleteMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		createActivity: connect.NewClient[v1.CreateActivityRequest, v1.CreateActivityResponse](
 			httpClient,
 			baseURL+AthleteServiceCreateActivityProcedure,
@@ -93,6 +115,8 @@ func NewAthleteServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 // athleteServiceClient implements AthleteServiceClient.
 type athleteServiceClient struct {
 	createAthlete             *connect.Client[v1.CreateAthleteRequest, v1.CreateAthleteResponse]
+	listAthletes              *connect.Client[v1.ListAthletesRequest, v1.ListAthletesResponse]
+	deleteAthlete             *connect.Client[v1.DeleteAthleteRequest, v1.DeleteAthleteResponse]
 	createActivity            *connect.Client[v1.CreateActivityRequest, v1.CreateActivityResponse]
 	createBloodLactateMeasure *connect.Client[v1.CreateBloodLactateMeasureRequest, v1.CreateBloodLactateMeasureResponse]
 }
@@ -100,6 +124,16 @@ type athleteServiceClient struct {
 // CreateAthlete calls athletes.v1.AthleteService.CreateAthlete.
 func (c *athleteServiceClient) CreateAthlete(ctx context.Context, req *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error) {
 	return c.createAthlete.CallUnary(ctx, req)
+}
+
+// ListAthletes calls athletes.v1.AthleteService.ListAthletes.
+func (c *athleteServiceClient) ListAthletes(ctx context.Context, req *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error) {
+	return c.listAthletes.CallUnary(ctx, req)
+}
+
+// DeleteAthlete calls athletes.v1.AthleteService.DeleteAthlete.
+func (c *athleteServiceClient) DeleteAthlete(ctx context.Context, req *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error) {
+	return c.deleteAthlete.CallUnary(ctx, req)
 }
 
 // CreateActivity calls athletes.v1.AthleteService.CreateActivity.
@@ -115,6 +149,8 @@ func (c *athleteServiceClient) CreateBloodLactateMeasure(ctx context.Context, re
 // AthleteServiceHandler is an implementation of the athletes.v1.AthleteService service.
 type AthleteServiceHandler interface {
 	CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error)
+	ListAthletes(context.Context, *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error)
+	DeleteAthlete(context.Context, *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error)
 	CreateActivity(context.Context, *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error)
 	CreateBloodLactateMeasure(context.Context, *connect.Request[v1.CreateBloodLactateMeasureRequest]) (*connect.Response[v1.CreateBloodLactateMeasureResponse], error)
 }
@@ -129,6 +165,18 @@ func NewAthleteServiceHandler(svc AthleteServiceHandler, opts ...connect.Handler
 		AthleteServiceCreateAthleteProcedure,
 		svc.CreateAthlete,
 		connect.WithSchema(athleteServiceCreateAthleteMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	athleteServiceListAthletesHandler := connect.NewUnaryHandler(
+		AthleteServiceListAthletesProcedure,
+		svc.ListAthletes,
+		connect.WithSchema(athleteServiceListAthletesMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	athleteServiceDeleteAthleteHandler := connect.NewUnaryHandler(
+		AthleteServiceDeleteAthleteProcedure,
+		svc.DeleteAthlete,
+		connect.WithSchema(athleteServiceDeleteAthleteMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	athleteServiceCreateActivityHandler := connect.NewUnaryHandler(
@@ -147,6 +195,10 @@ func NewAthleteServiceHandler(svc AthleteServiceHandler, opts ...connect.Handler
 		switch r.URL.Path {
 		case AthleteServiceCreateAthleteProcedure:
 			athleteServiceCreateAthleteHandler.ServeHTTP(w, r)
+		case AthleteServiceListAthletesProcedure:
+			athleteServiceListAthletesHandler.ServeHTTP(w, r)
+		case AthleteServiceDeleteAthleteProcedure:
+			athleteServiceDeleteAthleteHandler.ServeHTTP(w, r)
 		case AthleteServiceCreateActivityProcedure:
 			athleteServiceCreateActivityHandler.ServeHTTP(w, r)
 		case AthleteServiceCreateBloodLactateMeasureProcedure:
@@ -162,6 +214,14 @@ type UnimplementedAthleteServiceHandler struct{}
 
 func (UnimplementedAthleteServiceHandler) CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.CreateAthlete is not implemented"))
+}
+
+func (UnimplementedAthleteServiceHandler) ListAthletes(context.Context, *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.ListAthletes is not implemented"))
+}
+
+func (UnimplementedAthleteServiceHandler) DeleteAthlete(context.Context, *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.DeleteAthlete is not implemented"))
 }
 
 func (UnimplementedAthleteServiceHandler) CreateActivity(context.Context, *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error) {

@@ -100,20 +100,50 @@ func (q *Queries) AddMeasure(ctx context.Context, arg *AddMeasureParams) (*Blood
 	return &i, err
 }
 
-const deleteAthlete = `-- name: DeleteAthlete :one
+const deleteAthleteForUser = `-- name: DeleteAthleteForUser :execrows
 delete from athletes
-where id = $1
-returning id, user_id, create_time, name
+where id = $1 and user_id = $2
 `
 
-func (q *Queries) DeleteAthlete(ctx context.Context, id pgtype.UUID) (*Athlete, error) {
-	row := q.db.QueryRow(ctx, deleteAthlete, id)
-	var i Athlete
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.CreateTime,
-		&i.Name,
-	)
-	return &i, err
+type DeleteAthleteForUserParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteAthleteForUser(ctx context.Context, arg *DeleteAthleteForUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteAthleteForUser, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const listAthletesForUser = `-- name: ListAthletesForUser :many
+select id, user_id, create_time, name from athletes
+where user_id = $1
+`
+
+func (q *Queries) ListAthletesForUser(ctx context.Context, userID pgtype.UUID) ([]*Athlete, error) {
+	rows, err := q.db.Query(ctx, listAthletesForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*Athlete
+	for rows.Next() {
+		var i Athlete
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.CreateTime,
+			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

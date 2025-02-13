@@ -8,10 +8,13 @@ insert into athletes (
 )
 returning *;
 
--- name: DeleteAthlete :one
+-- name: ListAthletesForUser :many
+select * from athletes
+where user_id = $1;
+
+-- name: DeleteAthleteForUser :execrows
 delete from athletes
-where id = $1
-returning *;
+where id = $1 and user_id = $2;
 
 -- name: AddActivity :one
 insert into activities (

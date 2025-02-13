@@ -14,6 +14,8 @@ var _ athletesv1connect.AthleteServiceHandler = (*Service)(nil)
 
 type AthleteRepository interface {
 	AddAthlete(ctx context.Context, name string, userID pgtype.UUID) (*athletes.Athlete, error)
+	ListAthletesForUser(ctx context.Context, userID pgtype.UUID) ([]*athletes.Athlete, error)
+	DeleteAthleteForUser(ctx context.Context, userID pgtype.UUID, athleteID pgtype.UUID) error
 	AddActivity(ctx context.Context, name string, athleteID pgtype.UUID) (*athletes.Activity, error)
 	AddMeasure(ctx context.Context, activityID pgtype.UUID, mmolPerLiter decimal.Decimal, heartRateBPM int32) (*athletes.BloodLactateMeasure, error)
 }
