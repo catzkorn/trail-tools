@@ -229,13 +229,14 @@ func run(
 	if serveDir != "" {
 		webFs = os.DirFS(serveDir)
 	}
-	fileServer := http.FileServer(http.FS(webFs))
+	fileServer := http.FileServerFS(webFs)
 
-	// Serve index.js, index.js.map, index.css and favicon.ico directly
+	// Serve index.js, index.js.map, index.css, favicon.ico and img/ directly
 	mux.Handle("/index.js", fileServer)
 	mux.Handle("/index.js.map", fileServer)
 	mux.Handle("/index.css", fileServer)
 	mux.Handle("/favicon.svg", fileServer)
+	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
 	mux.Handle("/",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
