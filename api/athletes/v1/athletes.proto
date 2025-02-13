@@ -6,6 +6,9 @@ import "google/protobuf/timestamp.proto";
 
 service AthleteService {
   rpc CreateAthlete(CreateAthleteRequest) returns (CreateAthleteResponse);
+  rpc ListAthletes(ListAthletesRequest) returns (ListAthletesResponse);
+  rpc DeleteAthlete(DeleteAthleteRequest) returns (DeleteAthleteResponse);
+
   rpc CreateActivity(CreateActivityRequest) returns (CreateActivityResponse);
   rpc CreateBloodLactateMeasure(CreateBloodLactateMeasureRequest) returns (CreateBloodLactateMeasureResponse);
 }
@@ -23,6 +26,18 @@ message CreateAthleteRequest {
 message CreateAthleteResponse {
   Athlete athlete = 1;
 }
+
+message ListAthletesRequest {}
+
+message ListAthletesResponse {
+  repeated Athlete athletes = 1;
+}
+
+message DeleteAthleteRequest {
+  string id = 1;
+}
+
+message DeleteAthleteResponse {}
 
 message Activity {
   string id = 1;
