@@ -1,9 +1,10 @@
-import Header from "@components/Header";
+import Header from "@components/header/Header";
 import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import HomePage from "@pages/HomePage";
-import ProfilePage from "@pages/Profile";
+import { AthleteService } from "gen/athletes/v1/athletes_pb";
 import { User, UserService } from "gen/users/v1/users_pb";
+import AthletesPage from "pages/Athletes";
+import SettingsPage from "pages/Settings";
 import React, { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 
@@ -11,14 +12,15 @@ const App: React.FC = () => {
   const transport = createConnectTransport({
     baseUrl: ".",
   });
-  const client = createClient(UserService, transport);
+  const userServiceClient = createClient(UserService, transport);
+  const athleteServiceClient = createClient(AthleteService, transport);
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(
     () => {
       async function getCurrentUser() {
         try {
-          const result = await client.getCurrentUser({});
+          const result = await userServiceClient.getCurrentUser({});
           setUser(result.user);
         } catch (err: unknown) {
           const cErr = ConnectError.from(err);
@@ -49,13 +51,26 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full flex flex-col">
       <Header user={user} />
-      <main>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/profile" element={<ProfilePage user={user} />} />
-        </Routes>
+      <main className="flex grow justify-center bg-blue-50">
+        <div className="flex grow max-w-5xl px-4 py-6">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <AthletesPage client={athleteServiceClient} user={user} />
+              }
+            />
+            <Route
+              path="/athletes"
+              element={
+                <AthletesPage client={athleteServiceClient} user={user} />
+              }
+            />
+            <Route path="/settings" element={<SettingsPage user={user} />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );
