@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file athletes/v1/athletes.proto.
  */
 export const file_athletes_v1_athletes: GenFile = /*@__PURE__*/
-  fileDesc("ChphdGhsZXRlcy92MS9hdGhsZXRlcy5wcm90bxILYXRobGV0ZXMudjEiVAoHQXRobGV0ZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEi8KC2NyZWF0ZV90aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIkChRDcmVhdGVBdGhsZXRlUmVxdWVzdBIMCgRuYW1lGAEgASgJIj4KFUNyZWF0ZUF0aGxldGVSZXNwb25zZRIlCgdhdGhsZXRlGAEgASgLMhQuYXRobGV0ZXMudjEuQXRobGV0ZSJpCghBY3Rpdml0eRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmF0aGxldGVfaWQYAyABKAkSLwoLY3JlYXRlX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjkKFUNyZWF0ZUFjdGl2aXR5UmVxdWVzdBIMCgRuYW1lGAEgASgJEhIKCmF0aGxldGVfaWQYAiABKAkiQQoWQ3JlYXRlQWN0aXZpdHlSZXNwb25zZRInCghhY3Rpdml0eRgBIAEoCzIVLmF0aGxldGVzLnYxLkFjdGl2aXR5IpcBChNCbG9vZExhY3RhdGVNZWFzdXJlEgoKAmlkGAEgASgJEhMKC2FjdGl2aXR5X2lkGAIgASgJEhYKDm1tb2xfcGVyX2xpdGVyGAMgASgJEhYKDmhlYXJ0X3JhdGVfYnBtGAQgASgFEi8KC2NyZWF0ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJnCiBDcmVhdGVCbG9vZExhY3RhdGVNZWFzdXJlUmVxdWVzdBITCgthY3Rpdml0eV9pZBgBIAEoCRIWCg5tbW9sX3Blcl9saXRlchgCIAEoCRIWCg5oZWFydF9yYXRlX2JwbRgDIAEoBSJkCiFDcmVhdGVCbG9vZExhY3RhdGVNZWFzdXJlUmVzcG9uc2USPwoVYmxvb2RfbGFjdGF0ZV9tZWFzdXJlGAEgASgLMiAuYXRobGV0ZXMudjEuQmxvb2RMYWN0YXRlTWVhc3VyZTK/AgoOQXRobGV0ZVNlcnZpY2USVgoNQ3JlYXRlQXRobGV0ZRIhLmF0aGxldGVzLnYxLkNyZWF0ZUF0aGxldGVSZXF1ZXN0GiIuYXRobGV0ZXMudjEuQ3JlYXRlQXRobGV0ZVJlc3BvbnNlElkKDkNyZWF0ZUFjdGl2aXR5EiIuYXRobGV0ZXMudjEuQ3JlYXRlQWN0aXZpdHlSZXF1ZXN0GiMuYXRobGV0ZXMudjEuQ3JlYXRlQWN0aXZpdHlSZXNwb25zZRJ6ChlDcmVhdGVCbG9vZExhY3RhdGVNZWFzdXJlEi0uYXRobGV0ZXMudjEuQ3JlYXRlQmxvb2RMYWN0YXRlTWVhc3VyZVJlcXVlc3QaLi5hdGhsZXRlcy52MS5DcmVhdGVCbG9vZExhY3RhdGVNZWFzdXJlUmVzcG9uc2VCsgEKD2NvbS5hdGhsZXRlcy52MUINQXRobGV0ZXNQcm90b1ABWkNnaXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9hdGhsZXRlcy92MTthdGhsZXRlc3YxogIDQVhYqgILQXRobGV0ZXMuVjHKAgtBdGhsZXRlc1xWMeICF0F0aGxldGVzXFYxXEdQQk1ldGFkYXRh6gIMQXRobGV0ZXM6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChphdGhsZXRlcy92MS9hdGhsZXRlcy5wcm90bxILYXRobGV0ZXMudjEiVAoHQXRobGV0ZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEi8KC2NyZWF0ZV90aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIkChRDcmVhdGVBdGhsZXRlUmVxdWVzdBIMCgRuYW1lGAEgASgJIj4KFUNyZWF0ZUF0aGxldGVSZXNwb25zZRIlCgdhdGhsZXRlGAEgASgLMhQuYXRobGV0ZXMudjEuQXRobGV0ZSIVChNMaXN0QXRobGV0ZXNSZXF1ZXN0Ij4KFExpc3RBdGhsZXRlc1Jlc3BvbnNlEiYKCGF0aGxldGVzGAEgAygLMhQuYXRobGV0ZXMudjEuQXRobGV0ZSIiChREZWxldGVBdGhsZXRlUmVxdWVzdBIKCgJpZBgBIAEoCSIXChVEZWxldGVBdGhsZXRlUmVzcG9uc2UiaQoIQWN0aXZpdHkSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRISCgphdGhsZXRlX2lkGAMgASgJEi8KC2NyZWF0ZV90aW1lGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI5ChVDcmVhdGVBY3Rpdml0eVJlcXVlc3QSDAoEbmFtZRgBIAEoCRISCgphdGhsZXRlX2lkGAIgASgJIkEKFkNyZWF0ZUFjdGl2aXR5UmVzcG9uc2USJwoIYWN0aXZpdHkYASABKAsyFS5hdGhsZXRlcy52MS5BY3Rpdml0eSKXAQoTQmxvb2RMYWN0YXRlTWVhc3VyZRIKCgJpZBgBIAEoCRITCgthY3Rpdml0eV9pZBgCIAEoCRIWCg5tbW9sX3Blcl9saXRlchgDIAEoCRIWCg5oZWFydF9yYXRlX2JwbRgEIAEoBRIvCgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiZwogQ3JlYXRlQmxvb2RMYWN0YXRlTWVhc3VyZVJlcXVlc3QSEwoLYWN0aXZpdHlfaWQYASABKAkSFgoObW1vbF9wZXJfbGl0ZXIYAiABKAkSFgoOaGVhcnRfcmF0ZV9icG0YAyABKAUiZAohQ3JlYXRlQmxvb2RMYWN0YXRlTWVhc3VyZVJlc3BvbnNlEj8KFWJsb29kX2xhY3RhdGVfbWVhc3VyZRgBIAEoCzIgLmF0aGxldGVzLnYxLkJsb29kTGFjdGF0ZU1lYXN1cmUy7AMKDkF0aGxldGVTZXJ2aWNlElYKDUNyZWF0ZUF0aGxldGUSIS5hdGhsZXRlcy52MS5DcmVhdGVBdGhsZXRlUmVxdWVzdBoiLmF0aGxldGVzLnYxLkNyZWF0ZUF0aGxldGVSZXNwb25zZRJTCgxMaXN0QXRobGV0ZXMSIC5hdGhsZXRlcy52MS5MaXN0QXRobGV0ZXNSZXF1ZXN0GiEuYXRobGV0ZXMudjEuTGlzdEF0aGxldGVzUmVzcG9uc2USVgoNRGVsZXRlQXRobGV0ZRIhLmF0aGxldGVzLnYxLkRlbGV0ZUF0aGxldGVSZXF1ZXN0GiIuYXRobGV0ZXMudjEuRGVsZXRlQXRobGV0ZVJlc3BvbnNlElkKDkNyZWF0ZUFjdGl2aXR5EiIuYXRobGV0ZXMudjEuQ3JlYXRlQWN0aXZpdHlSZXF1ZXN0GiMuYXRobGV0ZXMudjEuQ3JlYXRlQWN0aXZpdHlSZXNwb25zZRJ6ChlDcmVhdGVCbG9vZExhY3RhdGVNZWFzdXJlEi0uYXRobGV0ZXMudjEuQ3JlYXRlQmxvb2RMYWN0YXRlTWVhc3VyZVJlcXVlc3QaLi5hdGhsZXRlcy52MS5DcmVhdGVCbG9vZExhY3RhdGVNZWFzdXJlUmVzcG9uc2VCsgEKD2NvbS5hdGhsZXRlcy52MUINQXRobGV0ZXNQcm90b1ABWkNnaXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9hdGhsZXRlcy92MTthdGhsZXRlc3YxogIDQVhYqgILQXRobGV0ZXMuVjHKAgtBdGhsZXRlc1xWMeICF0F0aGxldGVzXFYxXEdQQk1ldGFkYXRh6gIMQXRobGV0ZXM6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message athletes.v1.Athlete
@@ -76,6 +76,66 @@ export const CreateAthleteResponseSchema: GenMessage<CreateAthleteResponse> = /*
   messageDesc(file_athletes_v1_athletes, 2);
 
 /**
+ * @generated from message athletes.v1.ListAthletesRequest
+ */
+export type ListAthletesRequest = Message<"athletes.v1.ListAthletesRequest"> & {
+};
+
+/**
+ * Describes the message athletes.v1.ListAthletesRequest.
+ * Use `create(ListAthletesRequestSchema)` to create a new message.
+ */
+export const ListAthletesRequestSchema: GenMessage<ListAthletesRequest> = /*@__PURE__*/
+  messageDesc(file_athletes_v1_athletes, 3);
+
+/**
+ * @generated from message athletes.v1.ListAthletesResponse
+ */
+export type ListAthletesResponse = Message<"athletes.v1.ListAthletesResponse"> & {
+  /**
+   * @generated from field: repeated athletes.v1.Athlete athletes = 1;
+   */
+  athletes: Athlete[];
+};
+
+/**
+ * Describes the message athletes.v1.ListAthletesResponse.
+ * Use `create(ListAthletesResponseSchema)` to create a new message.
+ */
+export const ListAthletesResponseSchema: GenMessage<ListAthletesResponse> = /*@__PURE__*/
+  messageDesc(file_athletes_v1_athletes, 4);
+
+/**
+ * @generated from message athletes.v1.DeleteAthleteRequest
+ */
+export type DeleteAthleteRequest = Message<"athletes.v1.DeleteAthleteRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message athletes.v1.DeleteAthleteRequest.
+ * Use `create(DeleteAthleteRequestSchema)` to create a new message.
+ */
+export const DeleteAthleteRequestSchema: GenMessage<DeleteAthleteRequest> = /*@__PURE__*/
+  messageDesc(file_athletes_v1_athletes, 5);
+
+/**
+ * @generated from message athletes.v1.DeleteAthleteResponse
+ */
+export type DeleteAthleteResponse = Message<"athletes.v1.DeleteAthleteResponse"> & {
+};
+
+/**
+ * Describes the message athletes.v1.DeleteAthleteResponse.
+ * Use `create(DeleteAthleteResponseSchema)` to create a new message.
+ */
+export const DeleteAthleteResponseSchema: GenMessage<DeleteAthleteResponse> = /*@__PURE__*/
+  messageDesc(file_athletes_v1_athletes, 6);
+
+/**
  * @generated from message athletes.v1.Activity
  */
 export type Activity = Message<"athletes.v1.Activity"> & {
@@ -105,7 +165,7 @@ export type Activity = Message<"athletes.v1.Activity"> & {
  * Use `create(ActivitySchema)` to create a new message.
  */
 export const ActivitySchema: GenMessage<Activity> = /*@__PURE__*/
-  messageDesc(file_athletes_v1_athletes, 3);
+  messageDesc(file_athletes_v1_athletes, 7);
 
 /**
  * @generated from message athletes.v1.CreateActivityRequest
@@ -127,7 +187,7 @@ export type CreateActivityRequest = Message<"athletes.v1.CreateActivityRequest">
  * Use `create(CreateActivityRequestSchema)` to create a new message.
  */
 export const CreateActivityRequestSchema: GenMessage<CreateActivityRequest> = /*@__PURE__*/
-  messageDesc(file_athletes_v1_athletes, 4);
+  messageDesc(file_athletes_v1_athletes, 8);
 
 /**
  * @generated from message athletes.v1.CreateActivityResponse
@@ -144,7 +204,7 @@ export type CreateActivityResponse = Message<"athletes.v1.CreateActivityResponse
  * Use `create(CreateActivityResponseSchema)` to create a new message.
  */
 export const CreateActivityResponseSchema: GenMessage<CreateActivityResponse> = /*@__PURE__*/
-  messageDesc(file_athletes_v1_athletes, 5);
+  messageDesc(file_athletes_v1_athletes, 9);
 
 /**
  * @generated from message athletes.v1.BloodLactateMeasure
@@ -181,7 +241,7 @@ export type BloodLactateMeasure = Message<"athletes.v1.BloodLactateMeasure"> & {
  * Use `create(BloodLactateMeasureSchema)` to create a new message.
  */
 export const BloodLactateMeasureSchema: GenMessage<BloodLactateMeasure> = /*@__PURE__*/
-  messageDesc(file_athletes_v1_athletes, 6);
+  messageDesc(file_athletes_v1_athletes, 10);
 
 /**
  * @generated from message athletes.v1.CreateBloodLactateMeasureRequest
@@ -208,7 +268,7 @@ export type CreateBloodLactateMeasureRequest = Message<"athletes.v1.CreateBloodL
  * Use `create(CreateBloodLactateMeasureRequestSchema)` to create a new message.
  */
 export const CreateBloodLactateMeasureRequestSchema: GenMessage<CreateBloodLactateMeasureRequest> = /*@__PURE__*/
-  messageDesc(file_athletes_v1_athletes, 7);
+  messageDesc(file_athletes_v1_athletes, 11);
 
 /**
  * @generated from message athletes.v1.CreateBloodLactateMeasureResponse
@@ -225,7 +285,7 @@ export type CreateBloodLactateMeasureResponse = Message<"athletes.v1.CreateBlood
  * Use `create(CreateBloodLactateMeasureResponseSchema)` to create a new message.
  */
 export const CreateBloodLactateMeasureResponseSchema: GenMessage<CreateBloodLactateMeasureResponse> = /*@__PURE__*/
-  messageDesc(file_athletes_v1_athletes, 8);
+  messageDesc(file_athletes_v1_athletes, 12);
 
 /**
  * @generated from service athletes.v1.AthleteService
@@ -238,6 +298,22 @@ export const AthleteService: GenService<{
     methodKind: "unary";
     input: typeof CreateAthleteRequestSchema;
     output: typeof CreateAthleteResponseSchema;
+  },
+  /**
+   * @generated from rpc athletes.v1.AthleteService.ListAthletes
+   */
+  listAthletes: {
+    methodKind: "unary";
+    input: typeof ListAthletesRequestSchema;
+    output: typeof ListAthletesResponseSchema;
+  },
+  /**
+   * @generated from rpc athletes.v1.AthleteService.DeleteAthlete
+   */
+  deleteAthlete: {
+    methodKind: "unary";
+    input: typeof DeleteAthleteRequestSchema;
+    output: typeof DeleteAthleteResponseSchema;
   },
   /**
    * @generated from rpc athletes.v1.AthleteService.CreateActivity

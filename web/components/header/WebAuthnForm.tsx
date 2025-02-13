@@ -29,11 +29,7 @@ interface User {
   id: string;
 }
 
-interface WebAuthnFormProps {
-  closeModal: () => void;
-}
-
-const WebAuthnForm: React.FC<WebAuthnFormProps> = ({ closeModal }) => {
+const WebAuthnForm: React.FC = () => {
   const [isPending, startTransition] = useTransition();
   const [username, setUsername] = useState("");
 
@@ -61,7 +57,6 @@ const WebAuthnForm: React.FC<WebAuthnFormProps> = ({ closeModal }) => {
           },
           method: "POST",
         });
-        closeModal();
         // Reaload the window to reload with the session cookie set
         window.location.reload();
       } catch (err: unknown) {
@@ -109,7 +104,6 @@ const WebAuthnForm: React.FC<WebAuthnFormProps> = ({ closeModal }) => {
           },
           method: "POST",
         });
-        closeModal();
         // Reload the window to reload with the session cookie set
         window.location.reload();
       } catch (err) {
