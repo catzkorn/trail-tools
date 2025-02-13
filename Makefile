@@ -120,7 +120,7 @@ watch:
 			-w /srv \
 			-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 			-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
-			node:$(NPM_TAG) npx -s tailwindcss -i base.css -o dist/index.css --watch & \
+			node:$(NPM_TAG) npx -s tailwindcss --minify -i base.css -o dist/index.css --watch & \
 		go run main.go \
 			-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
 			-log-level debug \
