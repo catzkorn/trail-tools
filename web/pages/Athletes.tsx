@@ -1,16 +1,13 @@
 import Athletes from "@components/athletes/Athletes";
 import SignInDialog from "@components/header/SignInDialog";
-import { Client } from "@connectrpc/connect";
-import { AthleteService } from "gen/athletes/v1/athletes_pb";
 import { User } from "gen/users/v1/users_pb";
 import React from "react";
 
 interface AthletesPageProps {
-  client: Client<typeof AthleteService>;
   user: User | null;
 }
 
-const AthletesPage: React.FC<AthletesPageProps> = ({ client, user }) => {
+const AthletesPage: React.FC<AthletesPageProps> = ({ user }) => {
   if (user === null) {
     return (
       <div className="flex grow flex-col items-center">
@@ -23,7 +20,7 @@ const AthletesPage: React.FC<AthletesPageProps> = ({ client, user }) => {
     );
   }
 
-  return <Athletes client={client} />;
+  return <Athletes />;
 };
 
 export default AthletesPage;

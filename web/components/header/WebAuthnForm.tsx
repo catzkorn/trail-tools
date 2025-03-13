@@ -57,22 +57,16 @@ const WebAuthnForm: React.FC = () => {
           },
           method: "POST",
         });
-        // Reaload the window to reload with the session cookie set
+        // Reload the window to reload with the session cookie set
         window.location.reload();
       } catch (err: unknown) {
-        if (err instanceof DOMException) {
-          // Ignore AbortErrors, they seem to happen every time we load this.
-          if (err.name !== "AbortError") {
-            console.error(err, err.name, err.message);
-          }
-        } else {
-          console.error(err);
-        }
+        // Note: React strict mode will cause the first AbortError
+        // from this component in dev mode. This does not happen when
+        // building minified code.
+        console.error(err);
       }
     };
-    triggerPasskeyRetrieval().catch((err: unknown) => {
-      console.error("Failed to trigger passkey retrieval:", err);
-    });
+    void triggerPasskeyRetrieval();
   });
 
   const handleSubmit = () => {

@@ -1,19 +1,12 @@
-import { Client } from "@connectrpc/connect";
-import { Athlete, AthleteService } from "gen/athletes/v1/athletes_pb";
+import AthleteRow from "@components/athletes/AthleteRow";
+import { Athlete } from "gen/athletes/v1/athletes_pb";
 import React from "react";
-import AthleteRow from "./AthleteRow";
 
 interface AthletesTableProps {
   athletes: Athlete[];
-  listAthletes: () => Promise<void>;
-  client: Client<typeof AthleteService>;
 }
 
-const AthletesTable: React.FC<AthletesTableProps> = ({
-  athletes,
-  listAthletes,
-  client,
-}) => {
+const AthletesTable: React.FC<AthletesTableProps> = ({ athletes }) => {
   return (
     <table className="min-w-full">
       <thead>
@@ -26,12 +19,7 @@ const AthletesTable: React.FC<AthletesTableProps> = ({
       </thead>
       <tbody className="divide-y divide-black border-y border-black">
         {athletes.map((athlete: Athlete) => (
-          <AthleteRow
-            key={athlete.id}
-            client={client}
-            athlete={athlete}
-            listAthletes={listAthletes}
-          />
+          <AthleteRow key={athlete.id} athlete={athlete} />
         ))}
       </tbody>
     </table>

@@ -1,37 +1,37 @@
 import AddAthleteButton from "@components/athletes/AddAthleteButton";
 import AthletesTable from "@components/athletes/AthletesTable";
-import { Client, ConnectError } from "@connectrpc/connect";
-import { Athlete, AthleteService } from "gen/athletes/v1/athletes_pb";
-import React, { useEffect, useState } from "react";
+import Loading from "@components/Loading";
+import { useQuery } from "@connectrpc/connect-query";
+import { Button } from "@headlessui/react";
+import { listAthletes } from "gen/athletes/v1/athletes-AthleteService_connectquery";
+import React from "react";
 
-interface AthletesProps {
-  client: Client<typeof AthleteService>;
-}
+const Athletes: React.FC = () => {
+  const { isPending, isError, data, error, refetch } = useQuery(listAthletes);
 
-const Athletes: React.FC<AthletesProps> = ({ client }) => {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  if (isPending) {
+    return <Loading />;
+  }
 
-  const listAthletes = async () => {
-    try {
-      const result = await client.listAthletes({});
-      setAthletes(result.athletes);
-    } catch (err: unknown) {
-      console.error("Failed to get athletes:", ConnectError.from(err));
-    }
-  };
+  if (isError) {
+    return (
+      <div className="flex grow items-center justify-center">
+        <h1>Error: {error.message}</h1>
+        <Button
+          onClick={() => {
+            void refetch();
+          }}
+        />
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    void listAthletes();
-  }, [client]);
+  const athletes = data.athletes;
 
   return (
     <div className="flex flex-col grow gap-4 px-4">
-      <AthletesTable
-        client={client}
-        athletes={athletes}
-        listAthletes={listAthletes}
-      />
-      <AddAthleteButton client={client} listAthletes={listAthletes} />
+      <AthletesTable athletes={athletes} />
+      <AddAthleteButton />
     </div>
   );
 };

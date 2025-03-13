@@ -1,4 +1,4 @@
-import { Client, ConnectError } from "@connectrpc/connect";
+import { createConnectQueryKey, useMutation } from "@connectrpc/connect-query";
 import {
   Button,
   Dialog,
@@ -7,38 +7,32 @@ import {
   DialogTitle,
 } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { Athlete, AthleteService } from "gen/athletes/v1/athletes_pb";
-import React, { useState, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  deleteAthlete,
+  listAthletes,
+} from "gen/athletes/v1/athletes-AthleteService_connectquery";
+import { Athlete } from "gen/athletes/v1/athletes_pb";
+import React, { useState } from "react";
 
 interface AthleteRowProps {
-  client: Client<typeof AthleteService>;
   athlete: Athlete;
-  listAthletes: () => Promise<void>;
 }
 
-const AthleteRow: React.FC<AthleteRowProps> = ({
-  client,
-  athlete,
-  listAthletes,
-}) => {
-  const [isPending, startTransition] = useTransition();
+const AthleteRow: React.FC<AthleteRowProps> = ({ athlete }) => {
+  const queryClient = useQueryClient();
+  const deleteAthleteRPC = useMutation(deleteAthlete, {
+    onSuccess: async () => {
+      // Invalidate any listAthletes queries
+      await queryClient.invalidateQueries({
+        queryKey: createConnectQueryKey({
+          schema: listAthletes,
+          cardinality: undefined,
+        }),
+      });
+    },
+  });
   const [isOpen, setIsOpen] = useState(false);
-
-  const [error, setError] = useState<ConnectError | null>(null);
-
-  const handleSubmit = (e: React.FormEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    startTransition(async () => {
-      try {
-        await client.deleteAthlete({ id: athlete.id });
-        setError(null);
-        setIsOpen(false);
-        await listAthletes();
-      } catch (err: unknown) {
-        setError(ConnectError.from(err));
-      }
-    });
-  };
 
   return (
     <tr key={athlete.id}>
@@ -54,7 +48,12 @@ const AthleteRow: React.FC<AthleteRowProps> = ({
         >
           <XMarkIcon className="size-4" />
         </Button>
-        <Dialog open={isOpen} onClose={setIsOpen} className="relative z-10">
+        <Dialog
+          open={isOpen}
+          onClose={setIsOpen}
+          aria-disabled={deleteAthleteRPC.isPending}
+          className="relative z-10"
+        >
           <DialogBackdrop
             transition
             className="fixed inset-0 bg-gray-500/80 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"
@@ -75,11 +74,18 @@ const AthleteRow: React.FC<AthleteRowProps> = ({
                       >
                         Are you sure you wish to delete {athlete.name}?
                       </DialogTitle>
-                      {error !== null && <p>{error.message}</p>}
+                      {deleteAthleteRPC.error !== null && (
+                        <p>{deleteAthleteRPC.error.message}</p>
+                      )}
                       <Button
-                        onClick={handleSubmit}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          deleteAthleteRPC.mutate({ id: athlete.id });
+                          setIsOpen(false);
+                        }}
+                        autoFocus
                         className="bg-gray-800 text-white rounded-md px-4 py-2 mt-4"
-                        disabled={isPending}
+                        disabled={deleteAthleteRPC.isPending}
                       >
                         Delete
                       </Button>

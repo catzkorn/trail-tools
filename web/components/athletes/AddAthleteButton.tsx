@@ -1,4 +1,4 @@
-import { Client, ConnectError } from "@connectrpc/connect";
+import { createConnectQueryKey, useMutation } from "@connectrpc/connect-query";
 import {
   Button,
   Dialog,
@@ -11,40 +11,30 @@ import {
   Label,
 } from "@headlessui/react";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import { AthleteService } from "gen/athletes/v1/athletes_pb";
-import React, { useState, useTransition } from "react";
-
-interface AddAthleteButtonProps {
-  client: Client<typeof AthleteService>;
-  listAthletes: () => Promise<void>;
-}
-
-const AddAthleteButton: React.FC<AddAthleteButtonProps> = ({
-  client,
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  createAthlete,
   listAthletes,
-}) => {
-  const [isPending, startTransition] = useTransition();
+} from "gen/athletes/v1/athletes-AthleteService_connectquery";
+import React, { useState } from "react";
+
+const AddAthleteButton: React.FC = () => {
+  const queryClient = useQueryClient();
+  const addAthleteRPC = useMutation(createAthlete, {
+    onSuccess: async () => {
+      // Invalidate any listAthletes queries
+      await queryClient.invalidateQueries({
+        queryKey: createConnectQueryKey({
+          schema: listAthletes,
+          cardinality: undefined,
+        }),
+      });
+    },
+  });
+
   const [isOpen, setIsOpen] = useState(false);
   const [athleteName, setAthleteName] = useState("");
 
-  const [error, setError] = useState<ConnectError | null>(null);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    startTransition(async () => {
-      if (athleteName === "") {
-        return;
-      }
-      try {
-        await client.createAthlete({ name: athleteName });
-        setError(null);
-        setIsOpen(false);
-        await listAthletes();
-      } catch (err: unknown) {
-        setError(ConnectError.from(err));
-      }
-    });
-  };
   return (
     <div className="flex flex-row items-center justify-center">
       <Button
@@ -79,26 +69,36 @@ const AddAthleteButton: React.FC<AddAthleteButtonProps> = ({
                     >
                       Add athlete
                     </DialogTitle>
-                    <form onSubmit={handleSubmit} aria-disabled={isPending}>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        addAthleteRPC.mutate({ name: athleteName });
+                        setIsOpen(false);
+                      }}
+                      aria-disabled={addAthleteRPC.isPending}
+                    >
                       <Fieldset className="flex flex-col space-y-6 items-center">
                         <Field className="flex flex-col">
                           <Label className="text-left">Athlete name</Label>
                           <Input
                             name="athlete_name"
                             type="text"
+                            autoFocus
                             onChange={(e) => {
                               setAthleteName(e.target.value);
                             }}
                             className="mt-3 block w-full rounded-md border border-button-border-light rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
                           />
-                          {error !== null && (
-                            <div className="text-red-500">{error.message}</div>
+                          {addAthleteRPC.error !== null && (
+                            <div className="text-red-500">
+                              {addAthleteRPC.error.message}
+                            </div>
                           )}
                         </Field>
                         <Button
                           type="submit"
                           className="bg-gray-800 text-white rounded-md px-4 py-2 mt-4"
-                          disabled={isPending}
+                          disabled={addAthleteRPC.isPending}
                         >
                           Add athlete
                         </Button>
