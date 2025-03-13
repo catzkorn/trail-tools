@@ -9,8 +9,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user }) => {
-  const regularHighlight = "text-gray-300 hover:bg-gray-700 hover:text-white";
-  const sharedClasses = "rounded-md px-3 py-2 text-md font-medium";
+  const buttonStyle =
+    "text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-md font-medium";
 
   return (
     <Disclosure as="nav" className="bg-gray-800">
@@ -28,25 +28,19 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
               </span>
             </Link>
           </div>
-          <UserNav user={user} />
+          {user !== null && <UserNav user={user} />}
         </div>
         <div className="flex flex-row p-2">
           {user !== null && (
             <>
               <Link to="/athletes">
-                <button className={regularHighlight + " " + sharedClasses}>
-                  Athletes
-                </button>
+                <button className={buttonStyle}>Athletes</button>
               </Link>
               <Link to="/blood-lactate">
-                <button className={regularHighlight + " " + sharedClasses}>
-                  Blood Lactate
-                </button>
+                <button className={buttonStyle}>Blood Lactate</button>
               </Link>
               <Link to="/settings">
-                <button className={regularHighlight + " " + sharedClasses}>
-                  Settings
-                </button>
+                <button className={buttonStyle}>Settings</button>
               </Link>
             </>
           )}

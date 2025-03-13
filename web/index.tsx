@@ -1,3 +1,6 @@
+import { TransportProvider } from "@connectrpc/connect-query";
+import { createConnectTransport } from "@connectrpc/connect-web";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -9,10 +12,20 @@ if (rootDiv === null) {
 }
 const root = ReactDOM.createRoot(rootDiv);
 
+const transport = createConnectTransport({
+  baseUrl: ".",
+});
+
+const queryClient = new QueryClient();
+
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <TransportProvider transport={transport}>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </TransportProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

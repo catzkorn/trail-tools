@@ -6,7 +6,7 @@ interface SettingsPageProps {
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
-  let content = <> </>;
+  let content = <></>;
   if (user === null) {
     content = <p>You are not signed in</p>;
   } else {

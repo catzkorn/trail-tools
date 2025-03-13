@@ -4,14 +4,10 @@ import { User } from "gen/users/v1/users_pb";
 import React from "react";
 
 interface UserNavProps {
-  user: User | null;
+  user: User;
 }
 
 const UserNav: React.FC<UserNavProps> = ({ user }) => {
-  if (user === null) {
-    // Do not render button or drop down if the user is not logged in
-    return undefined;
-  }
   return (
     <div className="ml-4 flex items-center md:ml-6">
       <Menu as="div" className="relative ml-3">
