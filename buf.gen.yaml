@@ -20,5 +20,9 @@ plugins:
     out: web/gen
     opt:
       - target=ts
+  - remote: buf.build/connectrpc/query-es:v2.0.1
+    out: web/gen
+    opt:
+      - target=ts
 inputs:
   - directory: api
