@@ -1,13 +1,11 @@
 NPM_TAG:=23.7.0-alpine
 DEX_TAG:=v2.41.1-distroless
+CPUS ?= $(shell (nproc --all || sysctl -n hw.ncpu) 2>/dev/null || echo 1)
+MAKEFLAGS += --jobs=$(CPUS)
 
-.PHONY: db-up
-db-up:
-	docker run --rm -it --name postgres -p 5432:5432 -d -e POSTGRES_PASSWORD=password postgres:latest
-
-.PHONY: db-down
-db-down:
-	docker stop postgres
+.PHONY: db
+db:
+	-docker run --rm -it --name postgres -p 5432:5432 -d -e POSTGRES_PASSWORD=password postgres:latest && sleep 5
 
 .PHONY: sqlc
 sqlc:
@@ -29,80 +27,91 @@ buf-format:
 go-format:
 	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go tool gofumpt -w
 
-.PHONY: run
-run:
-	-go run main.go \
-		-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable\
-		-log-level debug \
-		-oidc-client-id $$OIDC_CLIENT_ID \
-		-oidc-client-secret $$OIDC_CLIENT_SECRET \
-		-oidc-issuer-url $$OIDC_ISSUER_URL
-
 .PHONY: dex
 dex:
-	docker run \
+	-docker run \
 		--rm \
-		-v $$(pwd)/test/dex/dex-config.yaml:/etc/dex/config.docker.yaml \
+		--name dex \
+		-d \
+		-v $(shell pwd)/test/dex/dex-config.yaml:/etc/dex/config.docker.yaml \
 		-p 5556:5556 dexidp/dex:v2.41.1-distroless
+
+.PHONY: run
+run: dex db
+	go run main.go \
+		-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable\
+		-log-level debug \
+		-oidc-client-id trail-tools-test \
+		-oidc-client-secret abracadabra \
+		-oidc-issuer-url http://0.0.0.0:5556/dex
 
 .PHONY: web-deps
 web-deps:
 	docker run \
 		--rm \
-		-v $$(pwd)/web:/srv \
-		--user $$(id -u):$$(id -g) \
+		-v $(shell pwd)/web:/srv \
+		--user $(shell id -u):$(shell id -g) \
 		-w /srv \
 		-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 		-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 		node:$(NPM_TAG) npm install
 
-.PHONY: web-lint
-web-lint:
+.PHONY: tsc
+tsc:
 	docker run \
 		--rm \
-		-v $$(pwd)/web:/srv \
-		--user $$(id -u):$$(id -g) \
+		-v $(shell pwd)/web:/srv \
+		--user $(shell id -u):$(shell id -g) \
 		-w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 		-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 		node:$(NPM_TAG) npx tsc --noEmit
+
+.PHONY: eslint
+eslint:
 	docker run \
 		--rm \
-		-v $$(pwd)/web:/srv \
-		--user $$(id -u):$$(id -g) \
+		-v $(shell pwd)/web:/srv \
+		--user $(shell id -u):$(shell id -g) \
 		-w /srv \
 		-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 		-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 		node:$(NPM_TAG) npx eslint
 
+.PHONY: web-lint
+web-lint: tsc eslint
+
 .PHONY: web-format
 web-format:
 	docker run \
 		--rm \
-		-v $$(pwd)/web:/srv \
-		--user $$(id -u):$$(id -g) \
+		-v $(shell pwd)/web:/srv \
+		--user $(shell id -u):$(shell id -g) \
 		-w /srv -e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 		-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 		node:$(NPM_TAG) npx prettier --write .
 
-.PHONY: web
-web:
+.PHONY: esbuild
+esbuild:
 	go tool esbuild web/index.tsx \
 		--minify \
 		--bundle \
 		--outdir=web/dist \
 		--sourcemap \
 		--target=es6
+
+.PHONY: tailwindcss
+tailwindcss:
 	docker run \
 		--rm \
-		-v $$(pwd)/web:/srv \
-		--user $$(id -u):$$(id -g) \
+		-v $(shell pwd)/web:/srv \
+		--user $(shell id -u):$(shell id -g) \
 		-w /srv \
 		-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 		-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 		node:$(NPM_TAG) npx tailwindcss --minify -i base.css -o dist/index.css
 
 .PHONY: watch
-watch:
+watch: dex db
 	-/usr/bin/env bash -c "\
 		trap 'kill %1 %2' EXIT;\
 		go tool esbuild web/index.tsx \
@@ -114,8 +123,8 @@ watch:
 		docker run \
 			-t \
 			--rm \
-			-v $$(pwd)/web:/srv \
-			--user $$(id -u):$$(id -g) \
+			-v $(shell pwd)/web:/srv \
+			--user $(shell id -u):$(shell id -g) \
 			-w /srv \
 			-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 			-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
@@ -123,14 +132,14 @@ watch:
 		go run main.go \
 			-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
 			-log-level debug \
-			-oidc-client-id $$OIDC_CLIENT_ID \
-			-oidc-client-secret $$OIDC_CLIENT_SECRET \
-			-oidc-issuer-url $$OIDC_ISSUER_URL \
-			-serve-dir $$(pwd)/web/dist \
+			-oidc-client-id trail-tools-test \
+			-oidc-client-secret abracadabra \
+			-oidc-issuer-url http://0.0.0.0:5556/dex \
+			-serve-dir $(shell pwd)/web/dist \
 	"
 
 .PHONY: gen
-gen: sqlc buf web
+gen: sqlc buf esbuild tailwindcss
 
 .PHONY: lint
 lint: web-lint buf-lint
