@@ -50,16 +50,6 @@ const (
 	AthleteServiceCreateBloodLactateMeasureProcedure = "/athletes.v1.AthleteService/CreateBloodLactateMeasure"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	athleteServiceServiceDescriptor                         = v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService")
-	athleteServiceCreateAthleteMethodDescriptor             = athleteServiceServiceDescriptor.Methods().ByName("CreateAthlete")
-	athleteServiceListAthletesMethodDescriptor              = athleteServiceServiceDescriptor.Methods().ByName("ListAthletes")
-	athleteServiceDeleteAthleteMethodDescriptor             = athleteServiceServiceDescriptor.Methods().ByName("DeleteAthlete")
-	athleteServiceCreateActivityMethodDescriptor            = athleteServiceServiceDescriptor.Methods().ByName("CreateActivity")
-	athleteServiceCreateBloodLactateMeasureMethodDescriptor = athleteServiceServiceDescriptor.Methods().ByName("CreateBloodLactateMeasure")
-)
-
 // AthleteServiceClient is a client for the athletes.v1.AthleteService service.
 type AthleteServiceClient interface {
 	CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error)
@@ -78,35 +68,36 @@ type AthleteServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewAthleteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AthleteServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	athleteServiceMethods := v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods()
 	return &athleteServiceClient{
 		createAthlete: connect.NewClient[v1.CreateAthleteRequest, v1.CreateAthleteResponse](
 			httpClient,
 			baseURL+AthleteServiceCreateAthleteProcedure,
-			connect.WithSchema(athleteServiceCreateAthleteMethodDescriptor),
+			connect.WithSchema(athleteServiceMethods.ByName("CreateAthlete")),
 			connect.WithClientOptions(opts...),
 		),
 		listAthletes: connect.NewClient[v1.ListAthletesRequest, v1.ListAthletesResponse](
 			httpClient,
 			baseURL+AthleteServiceListAthletesProcedure,
-			connect.WithSchema(athleteServiceListAthletesMethodDescriptor),
+			connect.WithSchema(athleteServiceMethods.ByName("ListAthletes")),
 			connect.WithClientOptions(opts...),
 		),
 		deleteAthlete: connect.NewClient[v1.DeleteAthleteRequest, v1.DeleteAthleteResponse](
 			httpClient,
 			baseURL+AthleteServiceDeleteAthleteProcedure,
-			connect.WithSchema(athleteServiceDeleteAthleteMethodDescriptor),
+			connect.WithSchema(athleteServiceMethods.ByName("DeleteAthlete")),
 			connect.WithClientOptions(opts...),
 		),
 		createActivity: connect.NewClient[v1.CreateActivityRequest, v1.CreateActivityResponse](
 			httpClient,
 			baseURL+AthleteServiceCreateActivityProcedure,
-			connect.WithSchema(athleteServiceCreateActivityMethodDescriptor),
+			connect.WithSchema(athleteServiceMethods.ByName("CreateActivity")),
 			connect.WithClientOptions(opts...),
 		),
 		createBloodLactateMeasure: connect.NewClient[v1.CreateBloodLactateMeasureRequest, v1.CreateBloodLactateMeasureResponse](
 			httpClient,
 			baseURL+AthleteServiceCreateBloodLactateMeasureProcedure,
-			connect.WithSchema(athleteServiceCreateBloodLactateMeasureMethodDescriptor),
+			connect.WithSchema(athleteServiceMethods.ByName("CreateBloodLactateMeasure")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -161,34 +152,35 @@ type AthleteServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAthleteServiceHandler(svc AthleteServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	athleteServiceMethods := v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods()
 	athleteServiceCreateAthleteHandler := connect.NewUnaryHandler(
 		AthleteServiceCreateAthleteProcedure,
 		svc.CreateAthlete,
-		connect.WithSchema(athleteServiceCreateAthleteMethodDescriptor),
+		connect.WithSchema(athleteServiceMethods.ByName("CreateAthlete")),
 		connect.WithHandlerOptions(opts...),
 	)
 	athleteServiceListAthletesHandler := connect.NewUnaryHandler(
 		AthleteServiceListAthletesProcedure,
 		svc.ListAthletes,
-		connect.WithSchema(athleteServiceListAthletesMethodDescriptor),
+		connect.WithSchema(athleteServiceMethods.ByName("ListAthletes")),
 		connect.WithHandlerOptions(opts...),
 	)
 	athleteServiceDeleteAthleteHandler := connect.NewUnaryHandler(
 		AthleteServiceDeleteAthleteProcedure,
 		svc.DeleteAthlete,
-		connect.WithSchema(athleteServiceDeleteAthleteMethodDescriptor),
+		connect.WithSchema(athleteServiceMethods.ByName("DeleteAthlete")),
 		connect.WithHandlerOptions(opts...),
 	)
 	athleteServiceCreateActivityHandler := connect.NewUnaryHandler(
 		AthleteServiceCreateActivityProcedure,
 		svc.CreateActivity,
-		connect.WithSchema(athleteServiceCreateActivityMethodDescriptor),
+		connect.WithSchema(athleteServiceMethods.ByName("CreateActivity")),
 		connect.WithHandlerOptions(opts...),
 	)
 	athleteServiceCreateBloodLactateMeasureHandler := connect.NewUnaryHandler(
 		AthleteServiceCreateBloodLactateMeasureProcedure,
 		svc.CreateBloodLactateMeasure,
-		connect.WithSchema(athleteServiceCreateBloodLactateMeasureMethodDescriptor),
+		connect.WithSchema(athleteServiceMethods.ByName("CreateBloodLactateMeasure")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/athletes.v1.AthleteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
