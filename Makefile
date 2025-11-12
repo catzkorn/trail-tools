@@ -1,4 +1,4 @@
-NPM_TAG:=23.7.0-alpine
+NPM_TAG:=25.1.0-alpine
 DEX_TAG:=v2.41.1-distroless
 CPUS ?= $(shell (nproc --all || sysctl -n hw.ncpu) 2>/dev/null || echo 1)
 MAKEFLAGS += --jobs=$(CPUS)
