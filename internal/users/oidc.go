@@ -31,10 +31,7 @@ func (r *Repository) CreateOIDCSession(ctx context.Context, subject string, expi
 	querier := r.querier.WithTx(tx)
 	user, err := querier.CreateOIDCUser(ctx, subject)
 	if err != nil {
-		fmt.Errorf("failed to create new oidc user: %w", err)
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to get oidc user: %w", err)
+		return "", fmt.Errorf("failed to create new oidc user: %w", err)
 	}
 	sessionID, err := querier.CreateSession(ctx, &internal.CreateSessionParams{
 		UserID: user.ID,

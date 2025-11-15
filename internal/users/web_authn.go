@@ -17,7 +17,7 @@ import (
 func (r *Repository) CreateWebAuthnUser(ctx context.Context, name string) (*WebAuthnUser, error) {
 	dbUser, err := r.querier.CreateWebAuthnUser(ctx, name)
 	if err != nil {
-		fmt.Errorf("failed to create WebAuthn user in DB: %w", err)
+		return nil, fmt.Errorf("failed to create WebAuthn user in DB: %w", err)
 	}
 	user, err := newWebAuthnUser(ctx, dbUser.ID, dbUser.Name, dbUser.WebAuthnUserID, r.querier)
 	if err != nil {

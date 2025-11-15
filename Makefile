@@ -5,7 +5,7 @@ MAKEFLAGS += --jobs=$(CPUS)
 
 .PHONY: db
 db:
-	-docker run --rm -it --name postgres -p 5432:5432 -d -e POSTGRES_PASSWORD=password postgres:latest && sleep 5
+	-docker run --rm -it --name postgres -p 5432:5432 -d -e POSTGRES_PASSWORD=password postgres:latest 2> /dev/null && sleep 5
 
 .PHONY: sqlc
 sqlc:
@@ -27,6 +27,10 @@ buf-format:
 go-format:
 	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go tool gofumpt -w
 
+.PHONY: go-lint
+go-lint:
+	go tool honnef.co/go/tools/cmd/staticcheck ./...
+
 .PHONY: dex
 dex:
 	-docker run \
@@ -34,7 +38,7 @@ dex:
 		--name dex \
 		-d \
 		-v $(shell pwd)/test/dex/dex-config.yaml:/etc/dex/config.docker.yaml \
-		-p 5556:5556 dexidp/dex:v2.41.1-distroless
+		-p 5556:5556 dexidp/dex:v2.41.1-distroless 2> /dev/null
 
 .PHONY: run
 run: dex db
@@ -108,6 +112,7 @@ tailwindcss:
 		-w /srv \
 		-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 		-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
+		-e BROWSERSLIST_IGNORE_OLD_DATA=true \
 		node:$(NPM_TAG) npx tailwindcss --minify -i base.css -o dist/index.css
 
 .PHONY: watch
@@ -119,7 +124,7 @@ watch: dex db
 			--outdir=web/dist \
 			--sourcemap \
 			--target=es6 \
-			--watch=forever & \
+			--watch=forever 2> /dev/null & \
 		docker run \
 			-t \
 			--rm \
@@ -128,6 +133,7 @@ watch: dex db
 			-w /srv \
 			-e NPM_CONFIG_CACHE=/srv/node_modules/.npm \
 			-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
+			-e BROWSERSLIST_IGNORE_OLD_DATA=true \
 			node:$(NPM_TAG) npx -s tailwindcss -i base.css -o dist/index.css --watch & \
 		go run main.go \
 			-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
@@ -142,7 +148,7 @@ watch: dex db
 gen: sqlc buf esbuild tailwindcss
 
 .PHONY: lint
-lint: web-lint buf-lint
+lint: web-lint buf-lint go-lint
 
 .PHONY: format
 format: go-format web-format buf-format
