@@ -19,6 +19,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
+	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/oidc"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -27,6 +28,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
 	wauthn "github.com/go-webauthn/webauthn/webauthn"
+	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -238,16 +240,21 @@ func run(
 	mux.Handle("/favicon.svg", fileServer)
 	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
-	mux.Handle("/",
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFileFS(w, r, webFs, "index.html")
-		}),
-	)
+	mux.Handle("/", html.ServeIndexHTML(serveDir != ""))
+
+	// Add auto-reloading middleware if serving from a directory
+	var srvHandler http.Handler = mux
+	if serveDir != "" {
+		srvHandler, err = reload.NewMiddleware(srvHandler, serveDir, log)
+		if err != nil {
+			return fmt.Errorf("failed to create reload middleware: %w", err)
+		}
+	}
 
 	srv := &http.Server{
 		Addr: address,
 		// Use h2c so we can serve HTTP/2 without TLS.
-		Handler: h2c.NewHandler(mux, &http2.Server{}),
+		Handler: h2c.NewHandler(srvHandler, &http2.Server{}),
 	}
 	serveFn := srv.ListenAndServe
 	if cert.Certificate != nil {
