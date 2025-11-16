@@ -135,7 +135,7 @@ watch: dex db
 			-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 			-e BROWSERSLIST_IGNORE_OLD_DATA=true \
 			node:$(NPM_TAG) npx -s tailwindcss -i base.css -o dist/index.css --watch & \
-		go run main.go \
+		go tool github.com/mitranim/gow -s run main.go \
 			-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
 			-log-level debug \
 			-oidc-client-id trail-tools-test \

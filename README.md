@@ -17,10 +17,8 @@ $ make run
 
 ## Development
 
-To run the server with auto-rebuild of the frontend and CSS, run:
+To run the server with auto-rebuild of the backend, frontend and CSS, run:
 
 ```
 $ make watch
 ```
-
-Change to the Go server requires restarting the command.
