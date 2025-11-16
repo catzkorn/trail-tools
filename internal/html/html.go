@@ -1,6 +1,7 @@
 package html
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -10,7 +11,8 @@ import (
 const templateName = "index.html"
 
 var indexTemplate = template.Must(template.New(templateName).Parse(
-	`<!doctype html>
+	fmt.Sprintf(
+		`<!doctype html>
 <html lang="en" class="h-full bg-gray-100">
   <head>
     <meta charset="UTF-8" />
@@ -25,16 +27,18 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
     <div id="root" class="h-full"></div>
   </body>
   {{- if .Watch }}
-  {{ .ReloadScript }}
+  %s
   {{- end }}
 </html>
-`))
+`,
+		reload.Script,
+	),
+))
 
 func ServeIndexHTML(watch bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		indexTemplate.ExecuteTemplate(w, templateName, map[string]any{
-			"Watch":        watch,
-			"ReloadScript": reload.Script,
+		indexTemplate.ExecuteTemplate(w, templateName, map[string]bool{
+			"Watch": watch,
 		})
 	})
 }
