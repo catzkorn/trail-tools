@@ -10,6 +10,7 @@ import (
 )
 
 func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, error) {
+	fmt.Println("Getting session for ID:", sessionID)
 	id, err := store.StringToUUID(sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
