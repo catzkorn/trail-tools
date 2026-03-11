@@ -19,6 +19,7 @@ func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %w", err)
 	}
+	fmt.Println("Started transaction for session retrieval")
 	defer tx.Rollback(context.Background())
 	querier := r.querier.WithTx(tx)
 	user, err := querier.GetSessionUser(ctx, id)
