@@ -20,6 +20,7 @@ type OIDCUser struct {
 // to identify the user. A DB entry will be created if one does not already
 // exist.
 func (r *Repository) CreateOIDCSession(ctx context.Context, subject string, expiry time.Time) (string, error) {
+	fmt.Println("Creating OIDC session for subject:", subject)
 	if expiry.Before(time.Now()) {
 		return "", errors.New("expiry must be in the future")
 	}
