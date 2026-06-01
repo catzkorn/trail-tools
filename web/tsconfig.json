@@ -8,10 +8,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
-      "@components/*": ["components/*"],
-      "@pages/*": ["pages/*"]
+      "@components/*": ["./components/*"],
+      "gen/*": ["./gen/*"],
+      "helpers/*": ["./helpers/*"],
+      "pages/*": ["./pages/*"]
     }
   },
   "exclude": ["node_modules", "dist"]
