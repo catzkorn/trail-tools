@@ -14,10 +14,10 @@ const App: React.FC = () => {
     getCurrentUser,
     {},
     {
-      retry: (failureCount, error) => {
+      retry: (failureCount, err) => {
         // Disable automatic retries on Unauthenticated errors
         // since we expect it if the user is not logged in.
-        if (error.code === Code.Unauthenticated) {
+        if (err.code === Code.Unauthenticated) {
           return false;
         }
         return failureCount < 3;

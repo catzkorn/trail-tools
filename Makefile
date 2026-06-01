@@ -24,7 +24,7 @@ UID_GID := $(shell id -u):$(shell id -g)
 
 # Boilerplate for running a one-off node tool against ./web in a container, as
 # the host user so written files aren't owned by root. Append the command, e.g.
-# `$(NODE_RUN) npx eslint`.
+# `$(NODE_RUN) npx oxlint`.
 NODE_RUN := $(CONTAINER_BIN) run --rm \
 	-v $(CURDIR)/web:/srv \
 	--user $(UID_GID) \
@@ -132,12 +132,12 @@ web-deps: ## Install web dependencies
 tsc:
 	$(NODE_RUN) npx tsc --noEmit
 
-.PHONY: eslint
-eslint:
-	$(NODE_RUN) npx eslint
+.PHONY: oxlint
+oxlint:
+	$(NODE_RUN) npx oxlint --type-aware
 
 .PHONY: web-lint
-web-lint: tsc eslint
+web-lint: tsc oxlint
 
 .PHONY: web-format
 web-format:
