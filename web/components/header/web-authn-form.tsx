@@ -1,38 +1,14 @@
 import { Button, Input } from "@headlessui/react";
 import { KeyIcon } from "@heroicons/react/24/outline";
-import { base64URLStringToBuffer } from "helpers/base64-url";
 import type { ChangeEvent } from "react";
 import React, { useEffect, useState, useTransition } from "react";
 
 import SignInButton from "./sign-in-button";
 
-interface WebAuthnResponse {
-  publicKey: PublicKey;
-}
-
-interface PublicKey {
-  pubKeyCredParams: PublicKeyCredentialParameters[];
-  rp: PublicKeyCredentialRpEntity;
-  user: User;
-  challenge: string;
-
-  authenticatorSelection?: AuthenticatorSelectionCriteria;
-  excludeCredentials?: PublicKeyCredentialDescriptor[];
-  timeout?: number;
-  hints?: string[];
-  attestation?: AttestationConveyancePreference;
-  attestationFormats?: string[];
-  extensions?: object;
-}
-
-interface User {
-  name: string;
-  displayName: string;
-  id: string;
 // Validate the shape of an untrusted /webauthn/*/begin response before use.
-// Narrowing from `unknown` avoids blindly asserting `resp.json()`'s `any`.
-// The browser credential API validates the rest and throws on bad input.
-const isWebAuthnResponse = (data: unknown): data is WebAuthnResponse => {
+// Narrowing from `unknown` avoids trusting `resp.json()`'s `any` blindly.
+// The browser parse/create/get APIs validate the rest and throw on bad input.
+const hasPublicKeyChallenge = (data: unknown): boolean => {
   if (typeof data !== "object" || data === null || !("publicKey" in data)) {
     return false;
   }
@@ -45,23 +21,34 @@ const isWebAuthnResponse = (data: unknown): data is WebAuthnResponse => {
   );
 };
 
+const isRequestOptionsResponse = (
+  data: unknown
+): data is { publicKey: PublicKeyCredentialRequestOptionsJSON } =>
+  hasPublicKeyChallenge(data);
+
+const isCreationOptionsResponse = (
+  data: unknown
+): data is { publicKey: PublicKeyCredentialCreationOptionsJSON } =>
+  hasPublicKeyChallenge(data);
+
 const WebAuthnForm: React.FC = () => {
   const [isPending, startTransition] = useTransition();
   const [username, setUsername] = useState("");
 
   useEffect(() => {
     const triggerPasskeyRetrieval = async () => {
+      try {
+        const resp = await fetch("/webauthn/login/begin");
         const data: unknown = await resp.json();
-        if (!isWebAuthnResponse(data)) {
+        if (!isRequestOptionsResponse(data)) {
           throw new Error("unexpected /webauthn/login/begin response");
         }
         const cred = await navigator.credentials.get({
           // Note: this component is only rendered if conditional mediation is available.
           mediation: "conditional",
-          publicKey: {
-            ...data.publicKey,
-            challenge: base64URLStringToBuffer(data.publicKey.challenge),
-          },
+          publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(
+            data.publicKey
+          ),
         });
         if (cred === null) {
           console.error("failed to retrieve credential");
@@ -91,19 +78,16 @@ const WebAuthnForm: React.FC = () => {
       if (username === "") {
         return;
       }
+      try {
+        const resp = await fetch(`/webauthn/register/begin?name=${username}`);
         const data: unknown = await resp.json();
-        if (!isWebAuthnResponse(data)) {
+        if (!isCreationOptionsResponse(data)) {
           throw new Error("unexpected /webauthn/register/begin response");
         }
         const cred = await navigator.credentials.create({
-          publicKey: {
-            ...data.publicKey,
-            challenge: base64URLStringToBuffer(data.publicKey.challenge),
-            user: {
-              ...data.publicKey.user,
-              id: base64URLStringToBuffer(data.publicKey.user.id),
-            },
-          },
+          publicKey: PublicKeyCredential.parseCreationOptionsFromJSON(
+            data.publicKey
+          ),
         });
         if (cred === null) {
           console.error("failed to create credential");
