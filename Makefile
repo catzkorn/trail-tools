@@ -141,7 +141,7 @@ web-lint: tsc oxlint
 
 .PHONY: web-format
 web-format:
-	$(NODE_RUN) npx prettier --write .
+	$(NODE_RUN) npx oxfmt
 
 .PHONY: esbuild
 esbuild:

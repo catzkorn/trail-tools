@@ -15,10 +15,5 @@
     "eqeqeq": "error",
     "typescript/no-unsafe-type-assertion": "off"
   },
-  "ignorePatterns": [
-    "gen/**",
-    "dist/**",
-    "node_modules/**",
-    "*.config.mjs"
-  ]
+  "ignorePatterns": ["gen/**", "dist/**", "node_modules/**", "*.config.mjs"]
 }
