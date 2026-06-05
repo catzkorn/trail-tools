@@ -60,7 +60,7 @@ const SignInButton: React.FC<SignInButtonProps> = ({ logo, text }) => {
   return (
     <div
       aria-label={text}
-      className="flex items-center justify-center bg-white border border-button-border-light rounded-md p-0.5 pr-3 hover:shadow-md"
+      className="flex items-center justify-center bg-white border rounded-md p-0.5 pr-3 hover:shadow-md"
     >
       <div className="flex items-center justify-center bg-white w-9 h-9 rounded-l p-1">
         {logo}

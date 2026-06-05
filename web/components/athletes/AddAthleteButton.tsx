@@ -87,7 +87,7 @@ const AddAthleteButton: React.FC = () => {
                             onChange={(e) => {
                               setAthleteName(e.target.value);
                             }}
-                            className="mt-3 block w-full rounded-md border border-button-border-light rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
+                            className="mt-3 block w-full rounded-md border bg-white px-3 py-1.5 text-base text-gray-900"
                           />
                           {addAthleteRPC.error !== null && (
                             <div className="text-red-500">

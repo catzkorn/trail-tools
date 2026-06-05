@@ -111,7 +111,7 @@ const WebAuthnForm: React.FC = () => {
         <Input
           type="text"
           placeholder="Enter your username"
-          className="block w-full rounded-md border border-button-border-light rounded-md bg-white px-3 py-1.5 text-base text-gray-900"
+          className="block w-full rounded-md border bg-white px-3 py-1.5 text-base text-gray-900"
           autoComplete="username webauthn"
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
             setUsername(e.target.value);
