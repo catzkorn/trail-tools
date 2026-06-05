@@ -29,7 +29,21 @@ interface User {
   name: string;
   displayName: string;
   id: string;
-}
+// Validate the shape of an untrusted /webauthn/*/begin response before use.
+// Narrowing from `unknown` avoids blindly asserting `resp.json()`'s `any`.
+// The browser credential API validates the rest and throws on bad input.
+const isWebAuthnResponse = (data: unknown): data is WebAuthnResponse => {
+  if (typeof data !== "object" || data === null || !("publicKey" in data)) {
+    return false;
+  }
+  const { publicKey } = data;
+  return (
+    typeof publicKey === "object" &&
+    publicKey !== null &&
+    "challenge" in publicKey &&
+    typeof publicKey.challenge === "string"
+  );
+};
 
 const WebAuthnForm: React.FC = () => {
   const [isPending, startTransition] = useTransition();
@@ -37,9 +51,10 @@ const WebAuthnForm: React.FC = () => {
 
   useEffect(() => {
     const triggerPasskeyRetrieval = async () => {
-      try {
-        const resp = await fetch("/webauthn/login/begin");
-        const data = (await resp.json()) as WebAuthnResponse;
+        const data: unknown = await resp.json();
+        if (!isWebAuthnResponse(data)) {
+          throw new Error("unexpected /webauthn/login/begin response");
+        }
         const cred = await navigator.credentials.get({
           // Note: this component is only rendered if conditional mediation is available.
           mediation: "conditional",
@@ -76,9 +91,10 @@ const WebAuthnForm: React.FC = () => {
       if (username === "") {
         return;
       }
-      try {
-        const resp = await fetch(`/webauthn/register/begin?name=${username}`);
-        const data = (await resp.json()) as WebAuthnResponse;
+        const data: unknown = await resp.json();
+        if (!isWebAuthnResponse(data)) {
+          throw new Error("unexpected /webauthn/register/begin response");
+        }
         const cred = await navigator.credentials.create({
           publicKey: {
             ...data.publicKey,

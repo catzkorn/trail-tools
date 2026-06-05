@@ -13,7 +13,6 @@
   },
   "rules": {
     "eqeqeq": "error",
-    "typescript/no-unsafe-type-assertion": "off",
 
     "typescript/consistent-type-imports": "error",
     "react/self-closing-comp": "error",
