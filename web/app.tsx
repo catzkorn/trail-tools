@@ -1,11 +1,11 @@
-import Header from "@components/header/Header";
-import Loading from "@components/Loading";
+import Header from "@components/header/header";
+import Loading from "@components/loading";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
 import { getCurrentUser } from "gen/users/v1/users-UserService_connectquery";
-import { User } from "gen/users/v1/users_pb";
-import AthletesPage from "pages/Athletes";
-import SettingsPage from "pages/Settings";
+import type { User } from "gen/users/v1/users_pb";
+import AthletesPage from "pages/athletes";
+import SettingsPage from "pages/settings";
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 
@@ -16,13 +16,14 @@ const App: React.FC = () => {
     {
       retry: (failureCount, err) => {
         // Disable automatic retries on Unauthenticated errors
-        // since we expect it if the user is not logged in.
+        // Since we expect it if the user is not logged in.
         if (err.code === Code.Unauthenticated) {
           return false;
         }
         return failureCount < 3;
       },
-      staleTime: 1000 * 60 * 60 * 24 * 7, // 7 24 hour days
+      // 7 24 hour days
+      staleTime: 1000 * 60 * 60 * 24 * 7,
     }
   );
 
@@ -49,7 +50,7 @@ const App: React.FC = () => {
       </div>
     );
   } else {
-    user = data.user;
+    ({ user } = data);
   }
 
   return (

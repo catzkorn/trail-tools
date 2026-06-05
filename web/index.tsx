@@ -4,9 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import App from "./App";
 
-const rootDiv = document.getElementById("root");
+import App from "./app";
+
+const rootDiv = document.querySelector("#root");
 if (rootDiv === null) {
   throw new Error("Root div not found");
 }

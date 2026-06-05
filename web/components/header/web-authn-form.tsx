@@ -1,8 +1,10 @@
 import { Button, Input } from "@headlessui/react";
 import { KeyIcon } from "@heroicons/react/24/outline";
-import { base64URLStringToBuffer } from "helpers/base64URL";
-import React, { ChangeEvent, useEffect, useState, useTransition } from "react";
-import SignInButton from "./SignInButton";
+import { base64URLStringToBuffer } from "helpers/base64-url";
+import type { ChangeEvent } from "react";
+import React, { useEffect, useState, useTransition } from "react";
+
+import SignInButton from "./sign-in-button";
 
 interface WebAuthnResponse {
   publicKey: PublicKey;
@@ -39,12 +41,12 @@ const WebAuthnForm: React.FC = () => {
         const resp = await fetch("/webauthn/login/begin");
         const data = (await resp.json()) as WebAuthnResponse;
         const cred = await navigator.credentials.get({
+          // Note: this component is only rendered if conditional mediation is available.
+          mediation: "conditional",
           publicKey: {
             ...data.publicKey,
             challenge: base64URLStringToBuffer(data.publicKey.challenge),
           },
-          // Note: this component is only rendered if conditional mediation is available.
-          mediation: "conditional",
         });
         if (cred === null) {
           console.error("failed to retrieve credential");
@@ -58,12 +60,12 @@ const WebAuthnForm: React.FC = () => {
           method: "POST",
         });
         // Reload the window to reload with the session cookie set
-        window.location.reload();
-      } catch (err: unknown) {
+        globalThis.location.reload();
+      } catch (error: unknown) {
         // Note: React strict mode will cause the first AbortError
-        // from this component in dev mode. This does not happen when
-        // building minified code.
-        console.error(err);
+        // From this component in dev mode. This does not happen when
+        // Building minified code.
+        console.error(error);
       }
     };
     void triggerPasskeyRetrieval();
@@ -75,16 +77,16 @@ const WebAuthnForm: React.FC = () => {
         return;
       }
       try {
-        const resp = await fetch("/webauthn/register/begin?name=" + username);
+        const resp = await fetch(`/webauthn/register/begin?name=${username}`);
         const data = (await resp.json()) as WebAuthnResponse;
         const cred = await navigator.credentials.create({
           publicKey: {
             ...data.publicKey,
+            challenge: base64URLStringToBuffer(data.publicKey.challenge),
             user: {
               ...data.publicKey.user,
               id: base64URLStringToBuffer(data.publicKey.user.id),
             },
-            challenge: base64URLStringToBuffer(data.publicKey.challenge),
           },
         });
         if (cred === null) {
@@ -99,9 +101,9 @@ const WebAuthnForm: React.FC = () => {
           method: "POST",
         });
         // Reload the window to reload with the session cookie set
-        window.location.reload();
-      } catch (err) {
-        console.error(err);
+        globalThis.location.reload();
+      } catch (error) {
+        console.error(error);
       }
     });
   };
@@ -113,8 +115,8 @@ const WebAuthnForm: React.FC = () => {
           placeholder="Enter your username"
           className="block w-full rounded-md border bg-white px-3 py-1.5 text-base text-gray-900"
           autoComplete="username webauthn"
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            setUsername(e.target.value);
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            setUsername(event.target.value);
           }}
         />
         <Button onClick={handleSubmit} disabled={isPending}>

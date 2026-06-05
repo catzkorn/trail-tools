@@ -13,7 +13,29 @@
   },
   "rules": {
     "eqeqeq": "error",
-    "typescript/no-unsafe-type-assertion": "off"
+    "typescript/no-unsafe-type-assertion": "off",
+
+    "typescript/consistent-type-imports": "error",
+    "react/self-closing-comp": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "arrow-body-style": "error",
+    "prefer-destructuring": "error",
+    "prefer-template": "error",
+    "require-unicode-regexp": "error",
+    "unicorn/catch-error-name": "error",
+    "unicorn/prefer-query-selector": "error",
+    "unicorn/prefer-code-point": "error",
+    "unicorn/prefer-ternary": "error",
+
+    "unicorn/prefer-string-replace-all": "error",
+    "unicorn/prefer-global-this": "error",
+    "id-length": "error",
+    "func-style": "error",
+    "no-inline-comments": "error",
+    "capitalized-comments": "error",
+
+    "unicorn/filename-case": "error",
+    "sort-keys": "error"
   },
   "ignorePatterns": ["gen/**", "dist/**", "node_modules/**", "*.config.mjs"]
 }

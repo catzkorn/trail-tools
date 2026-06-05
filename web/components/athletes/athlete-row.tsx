@@ -12,7 +12,7 @@ import {
   deleteAthlete,
   listAthletes,
 } from "gen/athletes/v1/athletes-AthleteService_connectquery";
-import { Athlete } from "gen/athletes/v1/athletes_pb";
+import type { Athlete } from "gen/athletes/v1/athletes_pb";
 import React, { useState } from "react";
 
 interface AthleteRowProps {
@@ -26,8 +26,8 @@ const AthleteRow: React.FC<AthleteRowProps> = ({ athlete }) => {
       // Invalidate any listAthletes queries
       await queryClient.invalidateQueries({
         queryKey: createConnectQueryKey({
-          schema: listAthletes,
           cardinality: undefined,
+          schema: listAthletes,
         }),
       });
     },
@@ -78,8 +78,8 @@ const AthleteRow: React.FC<AthleteRowProps> = ({ athlete }) => {
                         <p>{deleteAthleteRPC.error.message}</p>
                       )}
                       <Button
-                        onClick={(e) => {
-                          e.preventDefault();
+                        onClick={(event) => {
+                          event.preventDefault();
                           deleteAthleteRPC.mutate({ id: athlete.id });
                           setIsOpen(false);
                         }}

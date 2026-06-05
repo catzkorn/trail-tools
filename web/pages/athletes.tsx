@@ -1,6 +1,6 @@
-import Athletes from "@components/athletes/Athletes";
-import SignInDialog from "@components/header/SignInDialog";
-import { User } from "gen/users/v1/users_pb";
+import Athletes from "@components/athletes/athletes";
+import SignInDialog from "@components/header/sign-in-dialog";
+import type { User } from "gen/users/v1/users_pb";
 import React from "react";
 
 interface AthletesPageProps {

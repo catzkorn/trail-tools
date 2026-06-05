@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import SignInButton, { GoogleLogo } from "./SignInButton";
-import WebAuthnForm from "./WebAuthnForm";
+
+import SignInButton, { GoogleLogo } from "./sign-in-button";
+import WebAuthnForm from "./web-authn-form";
 
 const SignInDialog: React.FC = () => {
   const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(false);

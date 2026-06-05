@@ -1,6 +1,8 @@
-export function base64URLStringToBuffer(base64URLString: string): ArrayBuffer {
+export const base64URLStringToBuffer = (
+  base64URLString: string
+): ArrayBuffer => {
   // Convert from Base64URL to Base64
-  const base64 = base64URLString.replace(/-/g, "+").replace(/_/g, "/");
+  const base64 = base64URLString.replaceAll("-", "+").replaceAll("_", "/");
   /**
    * Pad with '=' until it's a multiple of four
    * (4 - (85 % 4 = 1) = 3) % 4 = 3 padding
@@ -19,9 +21,9 @@ export function base64URLStringToBuffer(base64URLString: string): ArrayBuffer {
   const buffer = new ArrayBuffer(binary.length);
   const bytes = new Uint8Array(buffer);
 
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+  for (let index = 0; index < binary.length; index++) {
+    bytes[index] = binary.codePointAt(index) ?? 0;
   }
 
   return buffer;
-}
+};

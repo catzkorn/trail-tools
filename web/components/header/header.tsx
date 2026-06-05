@@ -1,6 +1,6 @@
-import UserNav from "@components/header/UserNav";
+import UserNav from "@components/header/user-nav";
 import { Disclosure } from "@headlessui/react";
-import { User } from "gen/users/v1/users_pb";
+import type { User } from "gen/users/v1/users_pb";
 import React from "react";
 import { Link } from "react-router-dom";
 
