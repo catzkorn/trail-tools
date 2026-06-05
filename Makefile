@@ -44,7 +44,7 @@ SERVER_FLAGS := \
 
 # Production asset builds, shared by the standalone targets and by `gen`.
 ESBUILD_PROD := go tool esbuild web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
-TAILWIND_PROD := $(NODE_RUN) npx tailwindcss --minify -i base.css -o dist/index.css
+TAILWIND_PROD := $(NODE_RUN) npx @tailwindcss/cli --minify -i base.css -o dist/index.css
 
 # Block until dex is accepting TCP connections on its port.
 # bash's /dev/tcp needs no extra tooling; fail after ~30s.
@@ -163,7 +163,7 @@ watch: dex db ## Run backend + assets with live reload
 			--sourcemap \
 			--target=es6 \
 			--watch=forever 2> /dev/null & \
-		$(NODE_RUN) npx -s tailwindcss -i base.css -o dist/index.css --watch & \
+		$(NODE_RUN) npx -s @tailwindcss/cli -i base.css -o dist/index.css --watch & \
 		go tool github.com/mitranim/gow -s run main.go $(SERVER_FLAGS) -serve-dir $(CURDIR)/web/dist \
 	"
 
