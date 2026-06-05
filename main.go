@@ -30,8 +30,6 @@ import (
 	wauthn "github.com/go-webauthn/webauthn/webauthn"
 	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 const (
@@ -251,13 +249,20 @@ func run(
 		}
 	}
 
+	// Serve HTTP/2 without TLS (h2c) alongside HTTP/1.1.
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
+
 	srv := &http.Server{
-		Addr: address,
-		// Use h2c so we can serve HTTP/2 without TLS.
-		Handler: h2c.NewHandler(srvHandler, &http2.Server{}),
+		Addr:      address,
+		Handler:   srvHandler,
+		Protocols: protocols,
 	}
 	serveFn := srv.ListenAndServe
 	if cert.Certificate != nil {
+		// Over TLS, negotiate HTTP/2 via ALPN instead of h2c.
+		protocols.SetHTTP2(true)
 		srv.TLSConfig = &tls.Config{
 			Certificates: []tls.Certificate{cert},
 		}
