@@ -1,6 +1,6 @@
-import AddAthleteButton from "@components/athletes/AddAthleteButton";
-import AthletesTable from "@components/athletes/AthletesTable";
-import Loading from "@components/Loading";
+import AddAthleteButton from "@components/athletes/add-athlete-button";
+import AthletesTable from "@components/athletes/athletes-table";
+import Loading from "@components/loading";
 import { useQuery } from "@connectrpc/connect-query";
 import { Button } from "@headlessui/react";
 import { listAthletes } from "gen/athletes/v1/athletes-AthleteService_connectquery";
@@ -26,7 +26,7 @@ const Athletes: React.FC = () => {
     );
   }
 
-  const athletes = data.athletes;
+  const { athletes } = data;
 
   return (
     <div className="flex flex-col grow gap-4 px-4">

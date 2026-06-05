@@ -25,8 +25,8 @@ const AddAthleteButton: React.FC = () => {
       // Invalidate any listAthletes queries
       await queryClient.invalidateQueries({
         queryKey: createConnectQueryKey({
-          schema: listAthletes,
           cardinality: undefined,
+          schema: listAthletes,
         }),
       });
     },
@@ -70,8 +70,8 @@ const AddAthleteButton: React.FC = () => {
                       Add athlete
                     </DialogTitle>
                     <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
+                      onSubmit={(event) => {
+                        event.preventDefault();
                         addAthleteRPC.mutate({ name: athleteName });
                         setIsOpen(false);
                       }}
@@ -84,8 +84,8 @@ const AddAthleteButton: React.FC = () => {
                             name="athlete_name"
                             type="text"
                             autoFocus
-                            onChange={(e) => {
-                              setAthleteName(e.target.value);
+                            onChange={(event) => {
+                              setAthleteName(event.target.value);
                             }}
                             className="mt-3 block w-full rounded-md border bg-white px-3 py-1.5 text-base text-gray-900"
                           />
