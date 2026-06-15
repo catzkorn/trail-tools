@@ -162,7 +162,7 @@ func (h *handler) callback(w http.ResponseWriter, r *http.Request) {
 		Name:     cookieIDToken,
 		Value:    rawIDToken,
 		Expires:  idToken.Expiry,
-		Secure:   true,
+		Secure:   r.TLS != nil,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
@@ -181,7 +181,7 @@ func (h *handler) callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to get OIDC user", http.StatusInternalServerError)
 		return
 	}
-	authn.SetSessionCookie(w, sessionID, idToken.Expiry)
+	authn.SetSessionCookie(w, sessionID, idToken.Expiry, r.TLS != nil)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -199,7 +199,7 @@ func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value strin
 		Name:     name,
 		Value:    value,
 		MaxAge:   int(time.Hour.Seconds()),
-		Secure:   true,
+		Secure:   r.TLS != nil,
 		HttpOnly: true,
 	}
 	http.SetCookie(w, c)

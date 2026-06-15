@@ -47,7 +47,7 @@ func (h *handler) registerBegin(w http.ResponseWriter, r *http.Request) {
 		Name: webAuthnCookieName,
 		// Encode with base64 to avoid issues with quotes in the cookie value
 		Value:    base64.RawURLEncoding.EncodeToString(cookieVal),
-		Secure:   true,
+		Secure:   r.TLS != nil,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/webauthn/register",
@@ -125,6 +125,6 @@ func (h *handler) registerFinish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to create session", http.StatusInternalServerError)
 		return
 	}
-	authn.SetSessionCookie(w, sessionID, sessionExpiry)
+	authn.SetSessionCookie(w, sessionID, sessionExpiry, r.TLS != nil)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
