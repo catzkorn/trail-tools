@@ -62,12 +62,14 @@ func GetUser(ctx context.Context) (users.User, bool) {
 }
 
 // SetSessionCookie is called by the auth method login handlers on successful login.
-func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time) {
+// secure should be set when the request was served over TLS; otherwise the
+// browser (e.g. Safari) drops the cookie on plain http://localhost in dev.
+func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    sessionID,
 		MaxAge:   int(time.Until(expiry).Seconds()),
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
