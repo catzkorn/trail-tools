@@ -17,7 +17,7 @@ const SignInDialog: React.FC = () => {
     ]).then(() => {
       setIsWebAuthnSupported(true);
     });
-  });
+  }, []);
 
   return (
     <div className="flex justify-center items-center">

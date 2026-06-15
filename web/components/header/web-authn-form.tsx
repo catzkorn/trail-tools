@@ -1,7 +1,7 @@
 import { Button, Input } from "@headlessui/react";
 import { KeyIcon } from "@heroicons/react/24/outline";
 import type { ChangeEvent } from "react";
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useRef, useState, useTransition } from "react";
 
 import SignInButton from "./sign-in-button";
 
@@ -34,8 +34,14 @@ const isCreationOptionsResponse = (
 const WebAuthnForm: React.FC = () => {
   const [isPending, startTransition] = useTransition();
   const [username, setUsername] = useState("");
+  // Holds the in-flight conditional login request so registration can abort it.
+  // The browser only permits one outstanding credentials request at a time, so
+  // calling navigator.credentials.create() while this get() is pending throws.
+  const conditionalLogin = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    conditionalLogin.current = controller;
     const triggerPasskeyRetrieval = async () => {
       try {
         const resp = await fetch("/webauthn/login/begin");
@@ -46,6 +52,7 @@ const WebAuthnForm: React.FC = () => {
         const cred = await navigator.credentials.get({
           // Note: this component is only rendered if conditional mediation is available.
           mediation: "conditional",
+          signal: controller.signal,
           publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(
             data.publicKey
           ),
@@ -64,20 +71,26 @@ const WebAuthnForm: React.FC = () => {
         // Reload the window to reload with the session cookie set
         globalThis.location.reload();
       } catch (error: unknown) {
-        // Note: React strict mode will cause the first AbortError
-        // From this component in dev mode. This does not happen when
-        // Building minified code.
+        // Aborting the conditional request (on unmount or to start registration)
+        // rejects the get() with an AbortError. That's expected, so don't log it.
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
         console.error(error);
       }
     };
     void triggerPasskeyRetrieval();
-  });
+    return () => controller.abort();
+  }, []);
 
   const handleSubmit = () => {
     startTransition(async () => {
       if (username === "") {
         return;
       }
+      // Cancel the pending conditional login so create() isn't rejected with
+      // "a request is already pending".
+      conditionalLogin.current?.abort();
       try {
         const resp = await fetch(`/webauthn/register/begin?name=${username}`);
         const data: unknown = await resp.json();
