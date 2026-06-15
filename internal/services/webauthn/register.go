@@ -31,7 +31,11 @@ func (h *handler) registerBegin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
-	options, session, err := h.webauthn.BeginRegistration(user)
+
+	options, session, err := h.webauthn.BeginRegistration(
+		user,
+		webauthn.WithResidentKeyRequirement(protocol.ResidentKeyRequirementRequired),
+	)
 	if err != nil {
 		h.log.ErrorContext(r.Context(), "failed to begin registration", slogor.Err(err))
 		http.Error(w, "failed to begin registration", http.StatusInternalServerError)
