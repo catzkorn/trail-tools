@@ -46,3 +46,46 @@ returning *;
 -- name: DeleteRace :execrows
 delete from races
 where id = $1 and user_id = $2;
+
+-- name: CreateRacePlan :one
+insert into race_plans (
+  user_id,
+  race_id,
+  sections
+) values (
+  $1, $2, $3
+)
+returning *;
+
+-- name: GetRacePlan :one
+select * from race_plans
+where id = $1 and user_id = $2;
+
+-- name: GetRacePlanByShareToken :one
+select * from race_plans
+where share_token = $1;
+
+-- name: ListRacePlans :many
+select * from race_plans
+where user_id = $1;
+
+-- name: UpdateRacePlanSections :one
+update race_plans set
+  sections = $3,
+  update_time = now()
+where id = $1 and user_id = $2
+returning *;
+
+-- name: SetRacePlanShareToken :one
+update race_plans set
+  share_token = $3
+where id = $1 and user_id = $2
+returning *;
+
+-- name: DeleteRacePlan :execrows
+delete from race_plans
+where id = $1 and user_id = $2;
+
+-- name: GetRaceByID :one
+select * from races
+where id = $1;

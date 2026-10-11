@@ -1,8 +1,9 @@
-// Package races stores races.
+// Package races stores races and race plans.
 package races
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// Repository stores races.
+// Repository stores races and race plans.
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB
@@ -134,11 +135,130 @@ func (r *Repository) UpdateRace(ctx context.Context, race *Race) (*Race, error) 
 	return raceFromDB(dbRace), nil
 }
 
-// DeleteRace deletes a race.
+// DeleteRace deletes a race and its race plans.
 func (r *Repository) DeleteRace(ctx context.Context, userID, raceID pgtype.UUID) error {
 	n, err := r.q.DeleteRace(ctx, &internal.DeleteRaceParams{ID: raceID, UserID: userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete race: %w", err)
+	}
+	if n == 0 {
+		return store.ErrNotFound
+	}
+	return nil
+}
+
+// RacePlan is a race plan. The plan's sections are stored as an opaque JSON
+// document.
+type RacePlan struct {
+	ID       pgtype.UUID
+	UserID   pgtype.UUID
+	RaceID   pgtype.UUID
+	Sections []byte
+	// Empty if the plan is not shared.
+	ShareToken string
+	CreateTime time.Time
+	UpdateTime time.Time
+}
+
+// CreateRacePlan stores a new race plan.
+func (r *Repository) CreateRacePlan(ctx context.Context, userID, raceID pgtype.UUID, sections []byte) (*RacePlan, error) {
+	plan, err := r.q.CreateRacePlan(ctx, &internal.CreateRacePlanParams{UserID: userID, RaceID: raceID, Sections: sections})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create race plan: %w", err)
+	}
+	return planFromDB(plan), nil
+}
+
+// GetRacePlan gets one of the user's race plans.
+func (r *Repository) GetRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*RacePlan, error) {
+	plan, err := r.q.GetRacePlan(ctx, &internal.GetRacePlanParams{ID: planID, UserID: userID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get race plan: %w", err)
+	}
+	return planFromDB(plan), nil
+}
+
+// GetSharedRacePlan gets a shared race plan and its race by share token.
+func (r *Repository) GetSharedRacePlan(ctx context.Context, token string) (*RacePlan, *Race, error) {
+	if token == "" {
+		return nil, nil, store.ErrNotFound
+	}
+	plan, err := r.q.GetRacePlanByShareToken(ctx, pgtype.Text{String: token, Valid: true})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil, store.ErrNotFound
+		}
+		return nil, nil, fmt.Errorf("failed to get shared race plan: %w", err)
+	}
+	race, err := r.q.GetRaceByID(ctx, plan.RaceID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get race: %w", err)
+	}
+	return planFromDB(plan), raceFromDB(race), nil
+}
+
+// ListRacePlans lists the user's race plans.
+func (r *Repository) ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*RacePlan, error) {
+	dbPlans, err := r.q.ListRacePlans(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list race plans: %w", err)
+	}
+	plans := make([]*RacePlan, len(dbPlans))
+	for i, plan := range dbPlans {
+		plans[i] = planFromDB(plan)
+	}
+	return plans, nil
+}
+
+// UpdateRacePlanSections replaces the sections of a race plan.
+func (r *Repository) UpdateRacePlanSections(ctx context.Context, userID, planID pgtype.UUID, sections []byte) (*RacePlan, error) {
+	plan, err := r.q.UpdateRacePlanSections(ctx, &internal.UpdateRacePlanSectionsParams{ID: planID, UserID: userID, Sections: sections})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to update race plan: %w", err)
+	}
+	return planFromDB(plan), nil
+}
+
+// ShareRacePlan creates a share token for a race plan, or returns the
+// existing one.
+func (r *Repository) ShareRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*RacePlan, error) {
+	plan, err := r.GetRacePlan(ctx, userID, planID)
+	if err != nil {
+		return nil, err
+	}
+	if plan.ShareToken != "" {
+		return plan, nil
+	}
+	return r.setShareToken(ctx, userID, planID, pgtype.Text{String: rand.Text(), Valid: true})
+}
+
+// UnshareRacePlan removes a race plan's share token.
+func (r *Repository) UnshareRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*RacePlan, error) {
+	return r.setShareToken(ctx, userID, planID, pgtype.Text{})
+}
+
+func (r *Repository) setShareToken(ctx context.Context, userID, planID pgtype.UUID, token pgtype.Text) (*RacePlan, error) {
+	plan, err := r.q.SetRacePlanShareToken(ctx, &internal.SetRacePlanShareTokenParams{ID: planID, UserID: userID, ShareToken: token})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to set share token: %w", err)
+	}
+	return planFromDB(plan), nil
+}
+
+// DeleteRacePlan deletes one of the user's race plans.
+func (r *Repository) DeleteRacePlan(ctx context.Context, userID, planID pgtype.UUID) error {
+	n, err := r.q.DeleteRacePlan(ctx, &internal.DeleteRacePlanParams{ID: planID, UserID: userID})
+	if err != nil {
+		return fmt.Errorf("failed to delete race plan: %w", err)
 	}
 	if n == 0 {
 		return store.ErrNotFound
@@ -174,4 +294,16 @@ func raceFromDB(r *internal.Race) *Race {
 		race.Priority = Priority(r.Priority.RacePriority)
 	}
 	return race
+}
+
+func planFromDB(p *internal.RacePlan) *RacePlan {
+	return &RacePlan{
+		ID:         p.ID,
+		UserID:     p.UserID,
+		RaceID:     p.RaceID,
+		Sections:   p.Sections,
+		ShareToken: p.ShareToken.String,
+		CreateTime: p.CreateTime.Time,
+		UpdateTime: p.UpdateTime.Time,
+	}
 }

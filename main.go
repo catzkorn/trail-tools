@@ -36,6 +36,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	"github.com/catzkorn/trail-tools/internal/services/race"
+	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -276,6 +277,7 @@ func run(
 	routeService := route.NewService(log, routeRepo, activityRepo, mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, baseURL)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -291,6 +293,7 @@ func run(
 		func() (string, http.Handler) { return routesv1connect.NewRouteServiceHandler(routeService) },
 		func() (string, http.Handler) { return geov1connect.NewGeoServiceHandler(geoService) },
 		func() (string, http.Handler) { return racesv1connect.NewRaceServiceHandler(raceService) },
+		func() (string, http.Handler) { return racesv1connect.NewRacePlanServiceHandler(racePlanService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)

@@ -82,6 +82,38 @@ func (q *Queries) CreateRace(ctx context.Context, arg *CreateRaceParams) (*Race,
 	return &i, err
 }
 
+const createRacePlan = `-- name: CreateRacePlan :one
+insert into race_plans (
+  user_id,
+  race_id,
+  sections
+) values (
+  $1, $2, $3
+)
+returning id, user_id, race_id, sections, share_token, create_time, update_time
+`
+
+type CreateRacePlanParams struct {
+	UserID   pgtype.UUID
+	RaceID   pgtype.UUID
+	Sections []byte
+}
+
+func (q *Queries) CreateRacePlan(ctx context.Context, arg *CreateRacePlanParams) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, createRacePlan, arg.UserID, arg.RaceID, arg.Sections)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.Sections,
+		&i.ShareToken,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
 const deleteRace = `-- name: DeleteRace :execrows
 delete from races
 where id = $1 and user_id = $2
@@ -94,6 +126,24 @@ type DeleteRaceParams struct {
 
 func (q *Queries) DeleteRace(ctx context.Context, arg *DeleteRaceParams) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteRace, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteRacePlan = `-- name: DeleteRacePlan :execrows
+delete from race_plans
+where id = $1 and user_id = $2
+`
+
+type DeleteRacePlanParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteRacePlan(ctx context.Context, arg *DeleteRacePlanParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRacePlan, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -131,6 +181,112 @@ func (q *Queries) GetRace(ctx context.Context, arg *GetRaceParams) (*Race, error
 		&i.UpdateTime,
 	)
 	return &i, err
+}
+
+const getRaceByID = `-- name: GetRaceByID :one
+select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time from races
+where id = $1
+`
+
+func (q *Queries) GetRaceByID(ctx context.Context, id pgtype.UUID) (*Race, error) {
+	row := q.db.QueryRow(ctx, getRaceByID, id)
+	var i Race
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Date,
+		&i.StartTime,
+		&i.Location,
+		&i.WebsiteURL,
+		&i.DistanceMeters,
+		&i.ElevationGainMeters,
+		&i.CutoffSeconds,
+		&i.Priority,
+		&i.CourseRouteID,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const getRacePlan = `-- name: GetRacePlan :one
+select id, user_id, race_id, sections, share_token, create_time, update_time from race_plans
+where id = $1 and user_id = $2
+`
+
+type GetRacePlanParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetRacePlan(ctx context.Context, arg *GetRacePlanParams) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, getRacePlan, arg.ID, arg.UserID)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.Sections,
+		&i.ShareToken,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const getRacePlanByShareToken = `-- name: GetRacePlanByShareToken :one
+select id, user_id, race_id, sections, share_token, create_time, update_time from race_plans
+where share_token = $1
+`
+
+func (q *Queries) GetRacePlanByShareToken(ctx context.Context, shareToken pgtype.Text) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, getRacePlanByShareToken, shareToken)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.Sections,
+		&i.ShareToken,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const listRacePlans = `-- name: ListRacePlans :many
+select id, user_id, race_id, sections, share_token, create_time, update_time from race_plans
+where user_id = $1
+`
+
+func (q *Queries) ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*RacePlan, error) {
+	rows, err := q.db.Query(ctx, listRacePlans, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlan
+	for rows.Next() {
+		var i RacePlan
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.RaceID,
+			&i.Sections,
+			&i.ShareToken,
+			&i.CreateTime,
+			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listRaces = `-- name: ListRaces :many
@@ -173,6 +329,34 @@ func (q *Queries) ListRaces(ctx context.Context, userID pgtype.UUID) ([]*Race, e
 		return nil, err
 	}
 	return items, nil
+}
+
+const setRacePlanShareToken = `-- name: SetRacePlanShareToken :one
+update race_plans set
+  share_token = $3
+where id = $1 and user_id = $2
+returning id, user_id, race_id, sections, share_token, create_time, update_time
+`
+
+type SetRacePlanShareTokenParams struct {
+	ID         pgtype.UUID
+	UserID     pgtype.UUID
+	ShareToken pgtype.Text
+}
+
+func (q *Queries) SetRacePlanShareToken(ctx context.Context, arg *SetRacePlanShareTokenParams) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, setRacePlanShareToken, arg.ID, arg.UserID, arg.ShareToken)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.Sections,
+		&i.ShareToken,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
 }
 
 const updateRace = `-- name: UpdateRace :one
@@ -240,6 +424,35 @@ func (q *Queries) UpdateRace(ctx context.Context, arg *UpdateRaceParams) (*Race,
 		&i.Priority,
 		&i.CourseRouteID,
 		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const updateRacePlanSections = `-- name: UpdateRacePlanSections :one
+update race_plans set
+  sections = $3,
+  update_time = now()
+where id = $1 and user_id = $2
+returning id, user_id, race_id, sections, share_token, create_time, update_time
+`
+
+type UpdateRacePlanSectionsParams struct {
+	ID       pgtype.UUID
+	UserID   pgtype.UUID
+	Sections []byte
+}
+
+func (q *Queries) UpdateRacePlanSections(ctx context.Context, arg *UpdateRacePlanSectionsParams) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, updateRacePlanSections, arg.ID, arg.UserID, arg.Sections)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.Sections,
+		&i.ShareToken,
 		&i.CreateTime,
 		&i.UpdateTime,
 	)

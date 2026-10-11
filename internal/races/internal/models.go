@@ -420,6 +420,16 @@ type Race struct {
 	UpdateTime          pgtype.Timestamptz
 }
 
+type RacePlan struct {
+	ID         pgtype.UUID
+	UserID     pgtype.UUID
+	RaceID     pgtype.UUID
+	Sections   []byte
+	ShareToken pgtype.Text
+	CreateTime pgtype.Timestamptz
+	UpdateTime pgtype.Timestamptz
+}
+
 type Route struct {
 	ID          pgtype.UUID
 	UserID      pgtype.UUID

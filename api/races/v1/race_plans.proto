@@ -1,0 +1,454 @@
+syntax = "proto3";
+
+package races.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "races/v1/races.proto";
+import "routes/v1/routes.proto";
+
+// RacePlanService manages race day plans. A race plan is an opinionated
+// document with a fixed set of sections that every trail race plan should
+// cover: goals, checkpoints with pacing and cutoffs, fueling, gear, crew,
+// contingencies, race morning and mental strategy.
+//
+// The server analyses each plan: it computes arrival times at each checkpoint,
+// buffers against cutoffs, fuel totals per segment against the hourly targets
+// and segment elevation from the race course, and checks the plan against a
+// list of rules. Work through the rules until they all pass.
+//
+// Plans can be shared with others, such as crew, via a share link.
+service RacePlanService {
+  // Create a race plan for a race. The plan is seeded with the race's
+  // details and empty entries for the core contingency scenarios.
+  rpc CreateRacePlan(CreateRacePlanRequest) returns (CreateRacePlanResponse);
+  // Get a race plan with its race and analysis.
+  rpc GetRacePlan(GetRacePlanRequest) returns (GetRacePlanResponse);
+  // List the user's race plans.
+  rpc ListRacePlans(ListRacePlansRequest) returns (ListRacePlansResponse);
+  // Update sections of a race plan. Each top level field is a section that is
+  // replaced as a whole, e.g. updating "checkpoints" replaces all
+  // checkpoints. Returns the updated plan and analysis.
+  rpc UpdateRacePlan(UpdateRacePlanRequest) returns (UpdateRacePlanResponse);
+  // Delete a race plan.
+  rpc DeleteRacePlan(DeleteRacePlanRequest) returns (DeleteRacePlanResponse);
+  // Create a share link for a race plan. Anyone with the link can view the
+  // plan. Calling this again returns the existing link.
+  rpc ShareRacePlan(ShareRacePlanRequest) returns (ShareRacePlanResponse);
+  // Revoke a race plan's share link.
+  rpc UnshareRacePlan(UnshareRacePlanRequest) returns (UnshareRacePlanResponse);
+  // Get a shared race plan by its share token. Does not require
+  // authentication.
+  rpc GetSharedRacePlan(GetSharedRacePlanRequest) returns (GetSharedRacePlanResponse);
+}
+
+// A race plan.
+message RacePlan {
+  // The ID of the plan.
+  string id = 1;
+  // The ID of the race this plan is for.
+  string race_id = 2;
+  // The share URL, if the plan is shared.
+  string share_url = 3;
+  // When the plan was created.
+  google.protobuf.Timestamp create_time = 4;
+  // When the plan was last updated.
+  google.protobuf.Timestamp update_time = 5;
+
+  // Section: finish time goals.
+  RaceGoals goals = 6;
+  // Section: checkpoints and aid stations in course order, ending with the
+  // finish. Each checkpoint describes the segment leading to it from the
+  // previous checkpoint (or the start).
+  repeated Checkpoint checkpoints = 7;
+  // Section: overall pacing strategy.
+  PacingStrategy pacing = 8;
+  // Section: fueling and hydration targets and products.
+  NutritionStrategy nutrition = 9;
+  // Section: gear, mandatory kit and drop bags.
+  repeated GearItem gear = 10;
+  // Section: crew logistics.
+  CrewPlan crew = 11;
+  // Section: what to do when things go wrong.
+  repeated Contingency contingencies = 12;
+  // Section: the race morning timeline, from waking up to the start.
+  repeated TimelineItem race_morning = 13;
+  // Section: mental strategy.
+  MentalStrategy mental = 14;
+  // Free text notes that don't fit anywhere else.
+  string notes = 15;
+}
+
+// Finish time goals, from most to least ambitious.
+message RaceGoals {
+  // The A goal finish time in seconds: everything goes right.
+  int32 a_finish_seconds = 1;
+  // The B goal finish time in seconds: a solid day.
+  int32 b_finish_seconds = 2;
+  // The C goal finish time in seconds: a tough day, but still finishing.
+  int32 c_finish_seconds = 3;
+  // Notes on the goals, e.g. non-time goals like "enjoy the descents".
+  string notes = 4;
+}
+
+// A checkpoint, aid station or the finish, together with the segment leading
+// to it.
+message Checkpoint {
+  // The name of the checkpoint, e.g. "CP3 Col de la Seigne" or "Finish".
+  string name = 1;
+  // Cumulative distance from the start in meters.
+  double distance_meters = 2;
+  // Elevation gain on the segment leading to this checkpoint, in meters. If
+  // 0 and the race has a course route, the analysis uses the course.
+  double elevation_gain_meters = 3;
+  // Elevation loss on the segment leading to this checkpoint, in meters. If
+  // 0 and the race has a course route, the analysis uses the course.
+  double elevation_loss_meters = 4;
+  // The cutoff as elapsed time from the start, in seconds. 0 if none.
+  int32 cutoff_seconds = 5;
+  // Whether crew can meet the runner here.
+  bool crew_access = 6;
+  // Whether a drop bag is available here.
+  bool drop_bag = 7;
+  // What the aid station offers, e.g. "water, electrolyte, gels, soup".
+  string aid = 8;
+  // The planned time to run the segment leading to this checkpoint, in
+  // seconds.
+  int32 planned_segment_seconds = 9;
+  // The planned time spent at this checkpoint, in seconds.
+  int32 planned_stop_seconds = 10;
+  // Pacing and effort notes for the segment, e.g. "power hike the climb, HR
+  // under 150".
+  string segment_strategy = 11;
+  // Fuel to consume on the segment leading to this checkpoint.
+  repeated Intake intake = 12;
+  // What to do at the checkpoint, e.g. "refill both flasks, swap socks".
+  string tasks = 13;
+  // Instructions for crew at this checkpoint. Required if crew_access is set
+  // and the plan has crew.
+  string crew_instructions = 14;
+  // The contents of the drop bag at this checkpoint. Required if drop_bag is
+  // set.
+  string drop_bag_contents = 15;
+}
+
+// An amount of a nutrition product.
+message Intake {
+  // The name of the product, matching a product in the nutrition section.
+  string product = 1;
+  // The number of servings.
+  double quantity = 2;
+}
+
+// Overall pacing strategy.
+message PacingStrategy {
+  // The overall approach, e.g. "start conservatively, run the flats and
+  // descents, hike everything steep, push from the last climb".
+  string strategy = 1;
+  // Hike climbs steeper than this grade, in percent. 0 if not set.
+  double hike_grade_percent = 2;
+  // Heart rate cap in beats per minute for the first half. 0 if not set.
+  int32 heart_rate_cap_bpm = 3;
+  // Notes on effort, e.g. RPE targets or how to handle the night.
+  string notes = 4;
+}
+
+// Fueling and hydration targets.
+message NutritionStrategy {
+  // Target carbohydrate intake in grams per hour.
+  double carbs_grams_per_hour = 1;
+  // Target fluid intake in milliliters per hour.
+  double fluid_ml_per_hour = 2;
+  // Target sodium intake in milligrams per hour.
+  double sodium_mg_per_hour = 3;
+  // The products available. Intakes in checkpoints refer to these by name.
+  repeated NutritionProduct products = 4;
+  // Notes, e.g. caffeine strategy or what to eat at aid stations.
+  string notes = 5;
+}
+
+// A nutrition product and what one serving contains.
+message NutritionProduct {
+  // The name of the product, e.g. "Maurten Gel 100".
+  string name = 1;
+  // Carbohydrate per serving in grams.
+  double carbs_grams = 2;
+  // Sodium per serving in milligrams.
+  double sodium_mg = 3;
+  // Fluid per serving in milliliters, for drinks.
+  double fluid_ml = 4;
+  // Caffeine per serving in milligrams.
+  double caffeine_mg = 5;
+}
+
+// An item of gear.
+message GearItem {
+  // The name of the item, e.g. "Waterproof jacket with taped seams".
+  string name = 1;
+  // Whether the item is on the race's mandatory kit list.
+  bool mandatory = 2;
+  // Where the item is, e.g. "worn", "vest", "drop bag CP3" or "crew".
+  string location = 3;
+  // Whether the item is packed. Used as a checklist before the race.
+  bool packed = 4;
+  // Notes about the item.
+  string notes = 5;
+}
+
+// Crew logistics.
+message CrewPlan {
+  // Whether the runner has crew. If not, crew instructions are not required.
+  bool has_crew = 1;
+  // Who is crewing and how to reach them.
+  string members = 2;
+  // Logistics, e.g. driving between checkpoints, parking and timings.
+  string notes = 3;
+}
+
+// ContingencyScenario is a kind of problem that can occur during a race.
+enum ContingencyScenario {
+  CONTINGENCY_SCENARIO_UNSPECIFIED = 0;
+  // Nausea, vomiting or stomach problems.
+  CONTINGENCY_SCENARIO_GI_DISTRESS = 1;
+  // Falling behind the plan or getting close to cutoffs.
+  CONTINGENCY_SCENARIO_BEHIND_SCHEDULE = 2;
+  // Bonking, low energy or sleepiness.
+  CONTINGENCY_SCENARIO_LOW_ENERGY = 3;
+  // Falls, blisters, chafing, cramps or other injuries.
+  CONTINGENCY_SCENARIO_INJURY = 4;
+  // Heat, cold, rain, storms or snow.
+  CONTINGENCY_SCENARIO_WEATHER = 5;
+  // Broken poles, dead headlamp, lost bottle, etc.
+  CONTINGENCY_SCENARIO_GEAR_FAILURE = 6;
+  // Low motivation or a mental low point.
+  CONTINGENCY_SCENARIO_LOW_MOTIVATION = 7;
+  // Getting lost or missing a marker.
+  CONTINGENCY_SCENARIO_NAVIGATION = 8;
+  // Anything else.
+  CONTINGENCY_SCENARIO_OTHER = 9;
+}
+
+// A plan for a problem.
+message Contingency {
+  // The kind of problem.
+  ContingencyScenario scenario = 1;
+  // How to recognise the problem, e.g. "can't stomach gels".
+  string trigger = 2;
+  // What to do about it.
+  string response = 3;
+}
+
+// An item in a timeline.
+message TimelineItem {
+  // The local time (HH:MM, 24 hour clock).
+  string time = 1;
+  // What happens at this time.
+  string description = 2;
+}
+
+// Mental strategy.
+message MentalStrategy {
+  // Short mantras to repeat during the race.
+  repeated string mantras = 1;
+  // Notes, e.g. how to break the race down or what to think about on the
+  // hardest climb.
+  string notes = 2;
+}
+
+// The computed analysis of a checkpoint.
+message CheckpointAnalysis {
+  // The name of the checkpoint.
+  string name = 1;
+  // The length of the segment leading to the checkpoint in meters.
+  double segment_distance_meters = 2;
+  // The elevation gain of the segment in meters, from the plan or the course.
+  double segment_elevation_gain_meters = 3;
+  // The elevation loss of the segment in meters, from the plan or the course.
+  double segment_elevation_loss_meters = 4;
+  // The planned arrival as elapsed time from the start, in seconds.
+  int32 arrival_seconds = 5;
+  // The planned local arrival time (HH:MM), prefixed with the day number if
+  // after the first day, e.g. "Day 2 03:15".
+  string arrival_clock_time = 6;
+  // The planned departure as elapsed time from the start, in seconds.
+  int32 departure_seconds = 7;
+  // The time between the planned arrival and the cutoff in seconds. Negative
+  // if the plan misses the cutoff. Only meaningful if has_cutoff is set.
+  int32 cutoff_buffer_seconds = 8;
+  // Whether the checkpoint has a cutoff.
+  bool has_cutoff = 9;
+  // The planned average pace of the segment in seconds per kilometer.
+  double segment_pace_seconds_per_km = 10;
+  // Planned carbohydrate intake on the segment in grams.
+  double carbs_grams = 11;
+  // Target carbohydrate intake for the segment in grams.
+  double carbs_target_grams = 12;
+  // Planned fluid intake on the segment in milliliters.
+  double fluid_ml = 13;
+  // Target fluid intake for the segment in milliliters.
+  double fluid_target_ml = 14;
+  // Planned sodium intake on the segment in milligrams.
+  double sodium_mg = 15;
+  // Target sodium intake for the segment in milligrams.
+  double sodium_target_mg = 16;
+}
+
+// RuleStatus is the result of checking a rule.
+enum RuleStatus {
+  RULE_STATUS_UNSPECIFIED = 0;
+  // The rule is satisfied.
+  RULE_STATUS_PASS = 1;
+  // The rule is satisfied but something looks risky.
+  RULE_STATUS_WARN = 2;
+  // The rule is not satisfied.
+  RULE_STATUS_FAIL = 3;
+}
+
+// The result of checking a plan against a rule.
+message RuleResult {
+  // A stable identifier for the rule, e.g. "cutoff-buffers".
+  string id = 1;
+  // The plan section the rule applies to, e.g. "checkpoints".
+  string section = 2;
+  // A short title for the rule.
+  string title = 3;
+  // What the rule requires and why.
+  string description = 4;
+  // The result.
+  RuleStatus status = 5;
+  // Details of the result, e.g. which checkpoints fail.
+  string message = 6;
+}
+
+// The computed analysis of a race plan.
+message RacePlanAnalysis {
+  // The analysis of each checkpoint, in order.
+  repeated CheckpointAnalysis checkpoints = 1;
+  // The planned finish as elapsed time in seconds.
+  int32 planned_finish_seconds = 2;
+  // The planned local finish time, e.g. "18:45" or "Day 2 03:15".
+  string planned_finish_clock_time = 3;
+  // Total planned carbohydrate intake in grams.
+  double total_carbs_grams = 4;
+  // Total planned fluid intake in milliliters.
+  double total_fluid_ml = 5;
+  // Total planned sodium intake in milligrams.
+  double total_sodium_mg = 6;
+  // Total planned caffeine intake in milligrams.
+  double total_caffeine_mg = 7;
+  // The result of each rule.
+  repeated RuleResult rules = 8;
+  // The number of rules that pass or warn.
+  int32 rules_passed = 9;
+  // The total number of rules.
+  int32 rules_total = 10;
+}
+
+message CreateRacePlanRequest {
+  // The ID of the race to plan for.
+  string race_id = 1;
+}
+
+message CreateRacePlanResponse {
+  // The created plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the plan.
+  RacePlanAnalysis analysis = 3;
+}
+
+message GetRacePlanRequest {
+  // The ID of the plan.
+  string id = 1;
+}
+
+message GetRacePlanResponse {
+  // The plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the plan.
+  RacePlanAnalysis analysis = 3;
+}
+
+message ListRacePlansRequest {}
+
+// A race plan with its race, for listings.
+message RacePlanSummary {
+  // The ID of the plan.
+  string id = 1;
+  // The race.
+  Race race = 2;
+  // The number of rules that pass or warn.
+  int32 rules_passed = 3;
+  // The total number of rules.
+  int32 rules_total = 4;
+  // Whether the plan is shared.
+  bool shared = 5;
+  // When the plan was last updated.
+  google.protobuf.Timestamp update_time = 6;
+}
+
+message ListRacePlansResponse {
+  // The user's race plans in race date order.
+  repeated RacePlanSummary plans = 1;
+}
+
+message UpdateRacePlanRequest {
+  // The plan to update. The ID must be set.
+  RacePlan plan = 1;
+  // The sections to update, e.g. "checkpoints,nutrition". If empty, all
+  // sections are replaced.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateRacePlanResponse {
+  // The updated plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the updated plan.
+  RacePlanAnalysis analysis = 3;
+}
+
+message DeleteRacePlanRequest {
+  // The ID of the plan to delete.
+  string id = 1;
+}
+
+message DeleteRacePlanResponse {}
+
+message ShareRacePlanRequest {
+  // The ID of the plan to share.
+  string id = 1;
+}
+
+message ShareRacePlanResponse {
+  // The URL anyone can use to view the plan.
+  string share_url = 1;
+}
+
+message UnshareRacePlanRequest {
+  // The ID of the plan to stop sharing.
+  string id = 1;
+}
+
+message UnshareRacePlanResponse {}
+
+message GetSharedRacePlanRequest {
+  // The share token from the share URL.
+  string token = 1;
+}
+
+message GetSharedRacePlanResponse {
+  // The plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the plan.
+  RacePlanAnalysis analysis = 3;
+  // The race course path, if the race has a course route, downsampled for
+  // display.
+  repeated routes.v1.RoutePoint course = 4;
+}
