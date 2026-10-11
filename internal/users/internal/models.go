@@ -113,6 +113,59 @@ func (e PasskeyCeremony) Valid() bool {
 	return false
 }
 
+type RacePriority string
+
+const (
+	RacePriorityA RacePriority = "a"
+	RacePriorityB RacePriority = "b"
+	RacePriorityC RacePriority = "c"
+)
+
+func (e *RacePriority) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RacePriority(s)
+	case string:
+		*e = RacePriority(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RacePriority: %T", src)
+	}
+	return nil
+}
+
+type NullRacePriority struct {
+	RacePriority RacePriority
+	Valid        bool // Valid is true if RacePriority is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRacePriority) Scan(value interface{}) error {
+	if value == nil {
+		ns.RacePriority, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RacePriority.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRacePriority) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RacePriority), nil
+}
+
+func (e RacePriority) Valid() bool {
+	switch e {
+	case RacePriorityA,
+		RacePriorityB,
+		RacePriorityC:
+		return true
+	}
+	return false
+}
+
 type RouteSource string
 
 const (
@@ -404,6 +457,24 @@ type PasskeyUser struct {
 	ID         pgtype.UUID
 	UserHandle []byte
 	Name       string
+}
+
+type Race struct {
+	ID                  pgtype.UUID
+	UserID              pgtype.UUID
+	Name                string
+	Date                pgtype.Date
+	StartTime           string
+	Location            string
+	WebsiteUrl          string
+	DistanceMeters      float64
+	ElevationGainMeters float64
+	CutoffSeconds       int32
+	Priority            NullRacePriority
+	CourseRouteID       pgtype.UUID
+	Notes               string
+	CreateTime          pgtype.Timestamptz
+	UpdateTime          pgtype.Timestamptz
 }
 
 type Route struct {

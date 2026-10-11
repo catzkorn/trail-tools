@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package races.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// RaceService manages the races the user is targeting. Races are used as goal
+// races in training plans and as the subject of race plans.
+service RaceService {
+  // Create a race.
+  rpc CreateRace(CreateRaceRequest) returns (CreateRaceResponse);
+  // Get a race by ID.
+  rpc GetRace(GetRaceRequest) returns (GetRaceResponse);
+  // List the user's races in date order.
+  rpc ListRaces(ListRacesRequest) returns (ListRacesResponse);
+  // Update a race.
+  rpc UpdateRace(UpdateRaceRequest) returns (UpdateRaceResponse);
+  // Delete a race. Its race plans are deleted too.
+  rpc DeleteRace(DeleteRaceRequest) returns (DeleteRaceResponse);
+}
+
+// RacePriority is how important a race is to the season.
+enum RacePriority {
+  RACE_PRIORITY_UNSPECIFIED = 0;
+  // A goal race the season is built around. Requires a full taper.
+  RACE_PRIORITY_A = 1;
+  // An important race. Requires a short taper.
+  RACE_PRIORITY_B = 2;
+  // A training race or tune-up. No taper.
+  RACE_PRIORITY_C = 3;
+}
+
+// A race.
+message Race {
+  // The ID of the race. Ignored when creating a race.
+  string id = 1;
+  // The name of the race.
+  string name = 2;
+  // The date of the race (YYYY-MM-DD).
+  string date = 3;
+  // The local start time (HH:MM, 24 hour clock).
+  string start_time = 4;
+  // Where the race takes place.
+  string location = 5;
+  // The race website.
+  string website_url = 6;
+  // The race distance in meters.
+  double distance_meters = 7;
+  // The total elevation gain in meters.
+  double elevation_gain_meters = 8;
+  // The overall time limit in seconds. 0 if none.
+  int32 cutoff_seconds = 9;
+  // How important the race is.
+  RacePriority priority = 10;
+  // The ID of a route with the race course, e.g. imported from the race's GPX
+  // file. Used to compute segment elevation in race plans.
+  string course_route_id = 11;
+  // Free text notes, e.g. terrain, weather, qualification requirements.
+  string notes = 12;
+  // When the race was created.
+  google.protobuf.Timestamp create_time = 13;
+  // When the race was last updated.
+  google.protobuf.Timestamp update_time = 14;
+}
+
+message CreateRaceRequest {
+  // The race to create.
+  Race race = 1;
+}
+
+message CreateRaceResponse {
+  // The created race.
+  Race race = 1;
+}
+
+message GetRaceRequest {
+  // The ID of the race.
+  string id = 1;
+}
+
+message GetRaceResponse {
+  // The race.
+  Race race = 1;
+}
+
+message ListRacesRequest {}
+
+message ListRacesResponse {
+  // The user's races in date order.
+  repeated Race races = 1;
+}
+
+message UpdateRaceRequest {
+  // The race to update. The ID must be set.
+  Race race = 1;
+  // The fields to update, e.g. "date,course_route_id". If empty, all fields
+  // are replaced.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateRaceResponse {
+  // The updated race.
+  Race race = 1;
+}
+
+message DeleteRaceRequest {
+  // The ID of the race to delete.
+  string id = 1;
+}
+
+message DeleteRaceResponse {}
