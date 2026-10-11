@@ -130,6 +130,20 @@
   line-height: 16px;
 }
 
+/* Weather forecast markers. */
+.forecast-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  font-size: 14px;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+}
+
 @media print {
   .leaflet-control-container {
     display: none;
