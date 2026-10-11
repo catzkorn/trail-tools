@@ -28,7 +28,7 @@ make lint     # Run all linters
 
 ### Code Generation Pipeline
 
-1. **Protobuf**: `api/*/v1/*.proto` → `internal/gen/` (Go) + `web/gen/` (TypeScript)
+1. **Protobuf**: `api/*/v1/*.proto` → `internal/gen/` (Go) + `web/gen/` (TypeScript) + `internal/apidesc/descriptor.binpb` (descriptor set with comments, embedded for MCP)
 2. **SQLC**: `internal/*/queries/*.sql` + migrations → `internal/*/internal/*.sql.go`
 3. **Frontend**: `web/index.tsx` → `web/dist/` via esbuild + Tailwind CSS
 4. **Asset Embedding**: `web/dist/` → embedded in Go binary via `//go:embed dist` in `web/web.go`

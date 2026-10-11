@@ -8,6 +8,7 @@ package racesv1
 
 import (
 	v1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	v11 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -5700,14 +5701,14 @@ var File_races_v1_race_plans_proto protoreflect.FileDescriptor
 
 const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\n" +
-	"\x19races/v1/race_plans.proto\x12\braces.v1\x1a\x10geo/v1/geo.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14races/v1/races.proto\x1a\x16routes/v1/routes.proto\"\xd8\x05\n" +
+	"\x19races/v1/race_plans.proto\x12\braces.v1\x1a\x10geo/v1/geo.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x14races/v1/races.proto\x1a\x16routes/v1/routes.proto\"\x80\x06\n" +
 	"\bRacePlan\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\arace_id\x18\x02 \x01(\tR\x06raceId\x12\x1b\n" +
-	"\tshare_url\x18\x03 \x01(\tR\bshareUrl\x12;\n" +
-	"\vcreate_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"createTime\x12;\n" +
-	"\vupdate_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\arace_id\x18\x02 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x06raceId\x12#\n" +
+	"\tshare_url\x18\x03 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\bshareUrl\x12C\n" +
+	"\vcreate_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"createTime\x12C\n" +
+	"\vupdate_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"updateTime\x12)\n" +
 	"\x05goals\x18\x06 \x01(\v2\x13.races.v1.RaceGoalsR\x05goals\x126\n" +
 	"\vcheckpoints\x18\a \x03(\v2\x14.races.v1.CheckpointR\vcheckpoints\x120\n" +
@@ -5719,8 +5720,8 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\rcontingencies\x18\f \x03(\v2\x15.races.v1.ContingencyR\rcontingencies\x129\n" +
 	"\frace_morning\x18\r \x03(\v2\x16.races.v1.TimelineItemR\vraceMorning\x120\n" +
 	"\x06mental\x18\x0e \x01(\v2\x18.races.v1.MentalStrategyR\x06mental\x12\x14\n" +
-	"\x05notes\x18\x0f \x01(\tR\x05notes\x12,\n" +
-	"\brace_day\x18\x10 \x01(\v2\x11.races.v1.RaceDayR\araceDay\"\x9f\x01\n" +
+	"\x05notes\x18\x0f \x01(\tR\x05notes\x124\n" +
+	"\brace_day\x18\x10 \x01(\v2\x11.races.v1.RaceDayB\x06\xaa\x9f\x19\x02\b\x01R\araceDay\"\x9f\x01\n" +
 	"\tRaceGoals\x12(\n" +
 	"\x10a_finish_seconds\x18\x01 \x01(\x05R\x0eaFinishSeconds\x12(\n" +
 	"\x10b_finish_seconds\x18\x02 \x01(\x05R\x0ebFinishSeconds\x12(\n" +
@@ -5984,7 +5985,7 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\x17RULE_STATUS_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10RULE_STATUS_PASS\x10\x01\x12\x14\n" +
 	"\x10RULE_STATUS_WARN\x10\x02\x12\x14\n" +
-	"\x10RULE_STATUS_FAIL\x10\x032\xc4\a\n" +
+	"\x10RULE_STATUS_FAIL\x10\x032\xcc\a\n" +
 	"\x0fRacePlanService\x12S\n" +
 	"\x0eCreateRacePlan\x12\x1f.races.v1.CreateRacePlanRequest\x1a .races.v1.CreateRacePlanResponse\x12J\n" +
 	"\vGetRacePlan\x12\x1c.races.v1.GetRacePlanRequest\x1a\x1d.races.v1.GetRacePlanResponse\x12P\n" +
@@ -5992,8 +5993,8 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\x0eUpdateRacePlan\x12\x1f.races.v1.UpdateRacePlanRequest\x1a .races.v1.UpdateRacePlanResponse\x12S\n" +
 	"\x0eDeleteRacePlan\x12\x1f.races.v1.DeleteRacePlanRequest\x1a .races.v1.DeleteRacePlanResponse\x12P\n" +
 	"\rShareRacePlan\x12\x1e.races.v1.ShareRacePlanRequest\x1a\x1f.races.v1.ShareRacePlanResponse\x12V\n" +
-	"\x0fUnshareRacePlan\x12 .races.v1.UnshareRacePlanRequest\x1a!.races.v1.UnshareRacePlanResponse\x12\\\n" +
-	"\x11GetSharedRacePlan\x12\".races.v1.GetSharedRacePlanRequest\x1a#.races.v1.GetSharedRacePlanResponse\x12Y\n" +
+	"\x0fUnshareRacePlan\x12 .races.v1.UnshareRacePlanRequest\x1a!.races.v1.UnshareRacePlanResponse\x12d\n" +
+	"\x11GetSharedRacePlan\x12\".races.v1.GetSharedRacePlanRequest\x1a#.races.v1.GetSharedRacePlanResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12Y\n" +
 	"\x10GetRaceDayStatus\x12!.races.v1.GetRaceDayStatusRequest\x1a\".races.v1.GetRaceDayStatusResponse\x12P\n" +
 	"\rUpdateRaceDay\x12\x1e.races.v1.UpdateRaceDayRequest\x1a\x1f.races.v1.UpdateRaceDayResponse\x12_\n" +
 	"\x12SetCheckpointSplit\x12#.races.v1.SetCheckpointSplitRequest\x1a$.races.v1.SetCheckpointSplitResponseB\x9e\x01\n" +

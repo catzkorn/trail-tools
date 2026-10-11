@@ -7,6 +7,7 @@
 package racesv1
 
 import (
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -988,7 +989,7 @@ var File_races_v1_races_proto protoreflect.FileDescriptor
 
 const file_races_v1_races_proto_rawDesc = "" +
 	"\n" +
-	"\x14races/v1/races.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8a\x04\n" +
+	"\x14races/v1/races.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\x9a\x04\n" +
 	"\x04Race\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1004,10 +1005,10 @@ const file_races_v1_races_proto_rawDesc = "" +
 	"\bpriority\x18\n" +
 	" \x01(\x0e2\x16.races.v1.RacePriorityR\bpriority\x12&\n" +
 	"\x0fcourse_route_id\x18\v \x01(\tR\rcourseRouteId\x12\x14\n" +
-	"\x05notes\x18\f \x01(\tR\x05notes\x12;\n" +
-	"\vcreate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"createTime\x12;\n" +
-	"\vupdate_time\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"\x05notes\x18\f \x01(\tR\x05notes\x12C\n" +
+	"\vcreate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"createTime\x12C\n" +
+	"\vupdate_time\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"updateTime\"7\n" +
 	"\x11CreateRaceRequest\x12\"\n" +
 	"\x04race\x18\x01 \x01(\v2\x0e.races.v1.RaceR\x04race\"8\n" +

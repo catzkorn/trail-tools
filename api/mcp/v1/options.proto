@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package mcp.v1;
+
+import "google/protobuf/descriptor.proto";
+
+// MethodOptions controls how an RPC is exposed as an MCP tool.
+// By default, every RPC is exposed as a tool.
+message MethodOptions {
+  // Exclude the method from the MCP server.
+  bool exclude = 1;
+}
+
+// FieldOptions controls how a field is presented in MCP tool schemas.
+message FieldOptions {
+  // The field is set by the server and ignored on input. It is hidden from
+  // tool input schemas.
+  bool output_only = 1;
+}
+
+extend google.protobuf.MethodOptions {
+  // MCP options for this method.
+  MethodOptions method = 51700;
+}
+
+extend google.protobuf.FieldOptions {
+  // MCP options for this field.
+  FieldOptions field = 51701;
+}

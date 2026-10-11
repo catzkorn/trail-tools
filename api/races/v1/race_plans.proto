@@ -5,6 +5,7 @@ package races.v1;
 import "geo/v1/geo.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
 import "races/v1/races.proto";
 import "routes/v1/routes.proto";
 
@@ -44,7 +45,9 @@ service RacePlanService {
   rpc UnshareRacePlan(UnshareRacePlanRequest) returns (UnshareRacePlanResponse);
   // Get a shared race plan by its share token. Does not require
   // authentication.
-  rpc GetSharedRacePlan(GetSharedRacePlanRequest) returns (GetSharedRacePlanResponse);
+  rpc GetSharedRacePlan(GetSharedRacePlanRequest) returns (GetSharedRacePlanResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
   // Get the live race day status of a plan: the recorded checkpoint times,
   // the runner's latest LiveTrack position and estimated arrival times at
   // the remaining checkpoints. Identify the plan by its ID (authenticated) or
@@ -66,13 +69,13 @@ message RacePlan {
   // The ID of the plan.
   string id = 1;
   // The ID of the race this plan is for.
-  string race_id = 2;
+  string race_id = 2 [(mcp.v1.field).output_only = true];
   // The share URL, if the plan is shared.
-  string share_url = 3;
+  string share_url = 3 [(mcp.v1.field).output_only = true];
   // When the plan was created.
-  google.protobuf.Timestamp create_time = 4;
+  google.protobuf.Timestamp create_time = 4 [(mcp.v1.field).output_only = true];
   // When the plan was last updated.
-  google.protobuf.Timestamp update_time = 5;
+  google.protobuf.Timestamp update_time = 5 [(mcp.v1.field).output_only = true];
 
   // Section: finish time goals.
   RaceGoals goals = 6;
@@ -98,7 +101,7 @@ message RacePlan {
   string notes = 15;
   // What happened on race day. Updated with UpdateRaceDay, not
   // UpdateRacePlan.
-  RaceDay race_day = 16;
+  RaceDay race_day = 16 [(mcp.v1.field).output_only = true];
 }
 
 // Finish time goals, from most to least ambitious.
