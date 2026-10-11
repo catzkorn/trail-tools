@@ -129,11 +129,15 @@ instance and only uses CPU during requests, and Neon suspends the database
 when it's idle.
 
 The Google Cloud configuration is managed with Terraform in
-[`infra/`](infra), with its state in a Cloud Storage bucket. GitHub Actions
-authenticates to Google Cloud with Workload Identity Federation, so there are
-no stored credentials: pushes to `main` as the `github-terraform` service
-account, which can apply changes, and pull requests as the read-only
-`github-terraform-plan` service account.
+[`infra/`](infra), with its state in a Cloud Storage bucket. Pushes to `main`
+are deployed by the `deploy` job in [CI](.github/workflows/ci.yml) once all
+checks pass: it builds the image with [ko](https://ko.build) and runs
+`terraform apply` with it.
+
+GitHub Actions authenticates to Google Cloud with Workload Identity
+Federation, so there are no stored credentials: pushes to `main` as the
+`github-terraform` service account, which can apply changes, and pull
+requests as the read-only `github-terraform-plan` service account.
 
 Pull requests that change `infra/` get a comment with the Terraform plan,
 from the [Terraform plan](.github/workflows/terraform.yml) workflow. It
