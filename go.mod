@@ -4,6 +4,7 @@ go 1.26.7
 
 require (
 	connectrpc.com/connect v1.21.0
+	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-passkeys/go-passkeys v0.4.1
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e
@@ -59,6 +60,7 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
