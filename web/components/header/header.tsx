@@ -16,6 +16,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { end: false, label: "Athletes", to: "/athletes" },
   { end: false, label: "Routes", to: "/routes" },
+  { end: false, label: "Races", to: "/races" },
   { end: false, label: "Weather", to: "/forecast" },
   { end: false, label: "Activities", to: "/activities" },
   { end: false, label: "Settings", to: "/settings" },
