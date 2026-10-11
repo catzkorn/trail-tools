@@ -12,11 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run make format
         run: |
           make format
@@ -27,11 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run make lint
         run: |
           make web-deps
@@ -42,11 +46,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run make gen
         run: |
           make web-deps
@@ -61,9 +67,9 @@ jobs:
         go-version: ["stable", "oldstable"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
       - name: Run go build
@@ -74,11 +80,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run go test
         run: go test -race ./...
 
@@ -87,11 +95,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - run: |
           make web-deps
           go mod tidy
