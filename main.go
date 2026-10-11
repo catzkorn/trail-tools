@@ -15,12 +15,15 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
+	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -158,12 +161,17 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
+	activityRepo, err := activities.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create activity repository: %w", err)
+	}
 
 	userService := user.NewService(log, users)
 	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
 	}
+	activityService := activity.NewService(log, activityRepo)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -174,6 +182,7 @@ func run(
 		},
 		func() (string, http.Handler) { return usersv1connect.NewUserServiceHandler(userService) },
 		func() (string, http.Handler) { return authv1connect.NewAuthServiceHandler(authService) },
+		func() (string, http.Handler) { return activitiesv1connect.NewActivityServiceHandler(activityService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)

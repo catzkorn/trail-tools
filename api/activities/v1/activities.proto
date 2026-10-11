@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package activities.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// ActivityService queries the user's recorded activities, synced from Strava.
+// Use it to understand training history: volume, long runs, vertical gain,
+// pace and heart rate trends.
+service ActivityService {
+  // List activities, most recent first.
+  rpc ListActivities(ListActivitiesRequest) returns (ListActivitiesResponse);
+  // Get a single activity, optionally with its recorded data streams (GPS,
+  // elevation, heart rate, etc.).
+  rpc GetActivity(GetActivityRequest) returns (GetActivityResponse);
+  // Summarize activity totals per week or month over a date range. Weeks start
+  // on Monday. Periods without activities are included with zero totals.
+  rpc SummarizeActivities(SummarizeActivitiesRequest) returns (SummarizeActivitiesResponse);
+}
+
+// An activity recorded by the user.
+message Activity {
+  // The ID of the activity.
+  string id = 1;
+  // The Strava activity ID.
+  string strava_id = 2;
+  // The name of the activity.
+  string name = 3;
+  // The description of the activity. Only available once streams are synced.
+  string description = 4;
+  // The Strava sport type, e.g. Run, TrailRun, Hike, Ride, Workout.
+  string sport_type = 5;
+  // When the activity started.
+  google.protobuf.Timestamp start_time = 6;
+  // The local date the activity started on (YYYY-MM-DD).
+  string start_date_local = 7;
+  // The IANA timezone the activity was recorded in, e.g. Europe/London.
+  string timezone = 8;
+  // Distance in meters.
+  double distance_meters = 9;
+  // Moving time in seconds.
+  int32 moving_time_seconds = 10;
+  // Elapsed time in seconds.
+  int32 elapsed_time_seconds = 11;
+  // Total elevation gain in meters.
+  double elevation_gain_meters = 12;
+  // Average speed in meters per second.
+  double average_speed_mps = 13;
+  // Maximum speed in meters per second.
+  double max_speed_mps = 14;
+  // Average heart rate in beats per minute, 0 if not recorded.
+  double average_heartrate_bpm = 15;
+  // Maximum heart rate in beats per minute, 0 if not recorded.
+  double max_heartrate_bpm = 16;
+  // Average cadence in steps per minute, 0 if not recorded.
+  double average_cadence_spm = 17;
+  // The Google encoded polyline of the activity's route at low resolution.
+  string summary_polyline = 18;
+  // Whether detailed data streams have been synced for this activity.
+  bool has_streams = 19;
+  // The recording device name.
+  string device_name = 20;
+  // Strava's relative effort score, 0 if not available.
+  int32 relative_effort = 21;
+}
+
+// Detailed data recorded during an activity. All streams have the same length
+// and are indexed together; a stream is empty if it was not recorded.
+message ActivityStreams {
+  // Seconds since the start of the activity.
+  repeated int32 time_seconds = 1;
+  // Cumulative distance in meters.
+  repeated double distance_meters = 2;
+  // Latitude in decimal degrees.
+  repeated double lat = 3;
+  // Longitude in decimal degrees.
+  repeated double lng = 4;
+  // Elevation in meters.
+  repeated double altitude_meters = 5;
+  // Heart rate in beats per minute.
+  repeated double heartrate_bpm = 6;
+  // Cadence in steps per minute.
+  repeated double cadence_spm = 7;
+  // Smoothed speed in meters per second.
+  repeated double velocity_mps = 8;
+  // Smoothed grade in percent.
+  repeated double grade_percent = 9;
+}
+
+message ListActivitiesRequest {
+  // Only include activities starting on or after this local date (YYYY-MM-DD).
+  string start_date = 1;
+  // Only include activities starting on or before this local date
+  // (YYYY-MM-DD).
+  string end_date = 2;
+  // Only include these sport types, e.g. ["Run", "TrailRun"]. Defaults to all.
+  repeated string sport_types = 3;
+  // Maximum number of activities to return. Defaults to 50, maximum 500.
+  int32 page_size = 4;
+  // The next_page_token from a previous response, to get the next page.
+  string page_token = 5;
+}
+
+message ListActivitiesResponse {
+  // The activities.
+  repeated Activity activities = 1;
+  // A token to get the next page, empty if there are no more activities.
+  string next_page_token = 2;
+}
+
+message GetActivityRequest {
+  // The ID of the activity.
+  string id = 1;
+  // Include the recorded data streams.
+  bool include_streams = 2;
+  // Downsample the streams to at most this many points. Defaults to 1000,
+  // maximum 20000. Streams can be large; keep this small unless detail is
+  // needed.
+  int32 max_stream_points = 3;
+}
+
+message GetActivityResponse {
+  // The activity.
+  Activity activity = 1;
+  // The data streams, if requested and available.
+  ActivityStreams streams = 2;
+}
+
+// SummaryInterval is the length of a summary period.
+enum SummaryInterval {
+  SUMMARY_INTERVAL_UNSPECIFIED = 0;
+  // Calendar weeks starting on Monday.
+  SUMMARY_INTERVAL_WEEK = 1;
+  // Calendar months.
+  SUMMARY_INTERVAL_MONTH = 2;
+}
+
+message SummarizeActivitiesRequest {
+  // The first local date to include (YYYY-MM-DD). Rounded down to the start of
+  // the interval.
+  string start_date = 1;
+  // The last local date to include (YYYY-MM-DD).
+  string end_date = 2;
+  // The length of each period. Defaults to WEEK.
+  SummaryInterval interval = 3;
+  // Only include these sport types, e.g. ["Run", "TrailRun"]. Defaults to all.
+  repeated string sport_types = 4;
+}
+
+// Activity totals for a period.
+message ActivitySummary {
+  // The first date of the period (YYYY-MM-DD).
+  string start_date = 1;
+  // The last date of the period (YYYY-MM-DD).
+  string end_date = 2;
+  // The number of activities.
+  int32 activity_count = 3;
+  // Total distance in meters.
+  double distance_meters = 4;
+  // Total moving time in seconds.
+  int32 moving_time_seconds = 5;
+  // Total elevation gain in meters.
+  double elevation_gain_meters = 6;
+  // The longest single activity distance in meters.
+  double longest_distance_meters = 7;
+}
+
+message SummarizeActivitiesResponse {
+  // One summary per period, in chronological order.
+  repeated ActivitySummary summaries = 1;
+}
