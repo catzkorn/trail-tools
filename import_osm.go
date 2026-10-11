@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
@@ -39,13 +38,17 @@ func importOSM(args []string) int {
 	demURL := fs.String("dem-url", routing.DefaultDEMURL, "The base URL of the HGT elevation tiles")
 	demCache := fs.String("dem-cache", routing.DefaultDEMCache, "The directory to cache elevation tiles in")
 	logLevel := fs.String("log-level", "info", "The log level to use")
+	logFormat := fs.String("log-format", "text", "The log format: \"text\" for terminals, or \"json\" for Cloud Logging")
 	_ = fs.Parse(args)
-	var level slog.Level
-	if err := level.UnmarshalText([]byte(*logLevel)); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse log level: %v\n", err)
+	if err := setFlagsFromEnv(fs); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
 		return 1
 	}
-	log := slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp), slogor.SetLevel(level)))
+	log, err := newLogger(*logLevel, *logFormat)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
+		return 1
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := runImportOSM(ctx, log, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache); err != nil {
