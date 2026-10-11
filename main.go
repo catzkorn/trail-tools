@@ -24,12 +24,14 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
@@ -37,6 +39,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -238,6 +241,10 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create route repository: %w", err)
 	}
+	raceRepo, err := races.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create race repository: %w", err)
+	}
 	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
@@ -272,6 +279,7 @@ func run(
 	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, filepath.Join(os.TempDir(), "trail-tools-dem")))
 	defer importRunner.Wait()
 	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
+	raceService := race.NewService(log, raceRepo, routeRepo)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -287,6 +295,7 @@ func run(
 		func() (string, http.Handler) { return routesv1connect.NewRouteServiceHandler(routeService) },
 		func() (string, http.Handler) { return geov1connect.NewGeoServiceHandler(geoService) },
 		func() (string, http.Handler) { return routingv1connect.NewMapDataServiceHandler(mapDataService) },
+		func() (string, http.Handler) { return racesv1connect.NewRaceServiceHandler(raceService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)
