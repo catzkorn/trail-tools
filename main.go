@@ -15,11 +15,13 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/cloudrun"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
@@ -56,6 +58,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
 )
@@ -72,6 +75,11 @@ var (
 		"log-level",
 		"info",
 		"The log level to use",
+	)
+	logFormat = flag.String(
+		"log-format",
+		"text",
+		"The log format: \"text\" for terminals, or \"json\" for structured logging platforms like Cloud Logging",
 	)
 	databaseUrl = flag.String(
 		"database-url",
@@ -103,6 +111,12 @@ var (
 		"",
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
+	)
+	publicURL = flag.String(
+		"public-url",
+		"",
+		"The public URL of the application, used for OAuth redirects and share links."+
+			" Defaults to http(s)://<hostname>:<port>",
 	)
 	stravaClientID = flag.String(
 		"strava-client-id",
@@ -142,6 +156,12 @@ var (
 		strings.Join(mapdata.DefaultOverpassURLs, ","),
 		"Comma separated Overpass API URLs used to query OpenStreetMap, tried in order",
 	)
+	importJob = flag.String(
+		"import-job",
+		"",
+		"The Cloud Run job that imports OpenStreetMap data, as projects/<project>/locations/<region>/jobs/<job>."+
+			" If unset, imports run in the server",
+	)
 )
 
 func main() {
@@ -149,17 +169,32 @@ func main() {
 		os.Exit(importOSM(os.Args[2:]))
 	}
 	flag.Parse()
+	if err := setFlagsFromEnv(flag.CommandLine); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
+		os.Exit(1)
+	}
 	var slogLevel slog.Level
 	if err := slogLevel.UnmarshalText([]byte(*logLevel)); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to parse log level: %v\n", err)
 		os.Exit(1)
 	}
-	logger := slog.New(slogor.NewHandler(
-		os.Stdout,
-		slogor.SetTimeFormat(time.Stamp),
-		slogor.SetLevel(slogLevel),
-	))
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	var handler slog.Handler
+	switch *logFormat {
+	case "text":
+		handler = slogor.NewHandler(
+			os.Stdout,
+			slogor.SetTimeFormat(time.Stamp),
+			slogor.SetLevel(slogLevel),
+		)
+	case "json":
+		handler = newJSONLogHandler(slogLevel)
+	default:
+		fmt.Fprintf(os.Stderr, "Invalid log format %q, expected text or json\n", *logFormat)
+		os.Exit(1)
+	}
+	logger := slog.New(handler)
+	// Cloud Run sends SIGTERM to stop instances.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := run(
 		ctx,
@@ -170,12 +205,14 @@ func main() {
 		*tlsKeyPath,
 		*tlsCertPath,
 		*serveDir,
+		*publicURL,
 		*stravaClientID,
 		*stravaClientSecret,
 		*adminBootstrapToken,
 		*stravaSyncMode,
 		*schedulerServiceAccount,
 		*schedulerAudience,
+		*importJob,
 		mapdata.Config{
 			OverpassURLs: strings.Split(*overpassURLs, ","),
 		},
@@ -194,12 +231,14 @@ func run(
 	tlsKeyPath string,
 	tlsCertPath string,
 	serveDir string,
+	publicURL string,
 	stravaClientID string,
 	stravaClientSecret string,
 	adminBootstrapToken string,
 	stravaSyncMode string,
 	schedulerServiceAccount string,
 	schedulerAudience string,
+	importJob string,
 	mapConfig mapdata.Config,
 ) error {
 	switch {
@@ -231,6 +270,9 @@ func run(
 			return fmt.Errorf("failed to load TLS certificate: %w", err)
 		}
 		baseURL = "https://" + address
+	}
+	if publicURL != "" {
+		baseURL = strings.TrimSuffix(publicURL, "/")
 	}
 	db, err := store.New(ctx, log, dbUrl)
 	if err != nil {
@@ -291,9 +333,6 @@ func run(
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
-	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, filepath.Join(os.TempDir(), "trail-tools-dem")))
-	defer importRunner.Wait()
-	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
@@ -301,6 +340,21 @@ func run(
 	// authorization server instead of API tokens.
 	oauthServer := oauth.NewServer(log, users, baseURL, mcpPath)
 	oauthService := oauthsvc.NewService(log, oauthServer, users)
+	// Imports of OpenStreetMap data need more memory than the server has on
+	// Cloud Run, so they run as a Cloud Run job there.
+	var importRunner mapdatasvc.ImportRunner
+	if importJob != "" {
+		job, err := cloudrun.NewJob(ctx, importJob)
+		if err != nil {
+			return fmt.Errorf("failed to create the import job client: %w", err)
+		}
+		importRunner = jobImportRunner{job: job}
+	} else {
+		localRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, filepath.Join(os.TempDir(), "trail-tools-dem")))
+		defer localRunner.Wait()
+		importRunner = localRunner
+	}
+	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -458,4 +512,63 @@ func run(
 		return fmt.Errorf("failed to serve: %w", err)
 	}
 	return nil
+}
+
+// envPrefix is the prefix of environment variables that set flags.
+const envPrefix = "TRAIL_TOOLS_"
+
+// setFlagsFromEnv sets flags that weren't set on the command line from
+// environment variables named TRAIL_TOOLS_<FLAG>, e.g. TRAIL_TOOLS_DATABASE_URL
+// for -database-url. This allows passing secrets through the environment.
+func setFlagsFromEnv(fs *flag.FlagSet) error {
+	set := map[string]bool{}
+	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
+	var err error
+	fs.VisitAll(func(f *flag.Flag) {
+		if set[f.Name] || err != nil {
+			return
+		}
+		name := envPrefix + strings.ToUpper(strings.ReplaceAll(f.Name, "-", "_"))
+		if value, ok := os.LookupEnv(name); ok {
+			if setErr := f.Value.Set(value); setErr != nil {
+				err = fmt.Errorf("invalid value for %s: %w", name, setErr)
+			}
+		}
+	})
+	return err
+}
+
+// newJSONLogHandler returns a handler logging JSON lines in the format of
+// Google Cloud Logging's structured logs.
+func newJSONLogHandler(level slog.Level) slog.Handler {
+	return slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if len(groups) > 0 {
+				return a
+			}
+			switch a.Key {
+			case slog.MessageKey:
+				a.Key = "message"
+			case slog.LevelKey:
+				a.Key = "severity"
+				if lvl, ok := a.Value.Any().(slog.Level); ok && lvl == slog.LevelWarn {
+					a.Value = slog.StringValue("WARNING")
+				}
+			case slog.TimeKey:
+				a.Key = "time"
+			}
+			return a
+		},
+	})
+}
+
+// jobImportRunner runs imports as executions of a Cloud Run job, which runs
+// the import-osm command.
+type jobImportRunner struct {
+	job *cloudrun.Job
+}
+
+func (r jobImportRunner) Run(ctx context.Context, id pgtype.UUID) error {
+	return r.job.Run(ctx, []string{"import-osm", "-import-id", store.UUIDToString(id)})
 }

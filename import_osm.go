@@ -40,13 +40,28 @@ func importOSM(args []string) int {
 	demURL := fs.String("dem-url", routing.DefaultDEMURL, "The base URL of the HGT elevation tiles")
 	demCache := fs.String("dem-cache", filepath.Join(os.TempDir(), "trail-tools-dem"), "The directory to cache elevation tiles in")
 	logLevel := fs.String("log-level", "info", "The log level to use")
+	logFormat := fs.String("log-format", "text", "The log format: \"text\" for terminals, or \"json\" for Cloud Logging")
 	_ = fs.Parse(args)
+	if err := setFlagsFromEnv(fs); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
+		return 1
+	}
 	var level slog.Level
 	if err := level.UnmarshalText([]byte(*logLevel)); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to parse log level: %v\n", err)
 		return 1
 	}
-	log := slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp), slogor.SetLevel(level)))
+	var handler slog.Handler
+	switch *logFormat {
+	case "text":
+		handler = slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp), slogor.SetLevel(level))
+	case "json":
+		handler = newJSONLogHandler(level)
+	default:
+		fmt.Fprintf(os.Stderr, "Invalid log format %q, expected text or json\n", *logFormat)
+		return 1
+	}
+	log := slog.New(handler)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := runImportOSM(ctx, log, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache); err != nil {

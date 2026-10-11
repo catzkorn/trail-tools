@@ -90,9 +90,8 @@ access tokens last 30 days and are refreshed automatically; an app that isn't
 used for 90 days needs to be connected again.
 
 claude.ai connects from Anthropic's servers, so the server must be reachable
-from the internet over HTTPS at the URL you enter, as it's the OAuth issuer
-and resource. The server's URL is `https://<hostname>:<port>`, from
-`-hostname`, `-port` and the TLS flags.
+from the internet over HTTPS, and `-public-url` (`TRAIL_TOOLS_PUBLIC_URL`)
+must be the URL you enter, as it's the OAuth issuer and resource.
 
 How it works: `/mcp` answers unauthenticated requests with a
 `WWW-Authenticate` header pointing at the protected resource metadata
@@ -169,7 +168,9 @@ the area shown in the middle of the map. The server picks the smallest
 [Geofabrik](https://download.geofabrik.de) extract covering the area, reads
 only the paths inside it, and looks up elevations from the SRTM derived tiles
 of the [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/)
-dataset. Imports run in the server.
+dataset. Locally, imports run in the server. On Cloud Run they run as
+executions of the `trail-tools-import` job, set with `-import-job`, as they
+need more memory than the service has.
 
 Imports can also be run from the command line, e.g. to import a whole
 extract:
@@ -185,7 +186,8 @@ Storage grows with the area and density of paths: all of Switzerland takes
 about 715 MB, a 100 by 100 km box of it about 230 MB and Liechtenstein about
 4.5 MB. Neon's free plan has 0.5 GB of storage. Memory grows with the area
 imported, as only the paths inside it are kept: a 100 km² area of the
-Switzerland extract peaks at under 400 MB.
+Switzerland extract peaks at under 400 MB, plus the downloaded extract, which
+Cloud Run keeps in memory.
 
 ### Map data services
 
