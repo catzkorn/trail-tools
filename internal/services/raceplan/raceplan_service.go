@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/catzkorn/trail-tools/internal/authn"
@@ -38,6 +39,7 @@ type RacePlanRepository interface {
 	ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*races.RacePlan, error)
 	UpdateRacePlanSections(ctx context.Context, userID, planID pgtype.UUID, sections []byte) (*races.RacePlan, error)
 	ShareRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*races.RacePlan, error)
+	SetRaceDay(ctx context.Context, planID pgtype.UUID, raceDay []byte) (*races.RacePlan, error)
 	UnshareRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*races.RacePlan, error)
 	DeleteRacePlan(ctx context.Context, userID, planID pgtype.UUID) error
 }
@@ -48,20 +50,24 @@ type RouteRepository interface {
 
 // Service implements API handlers for the race plan service.
 type Service struct {
-	log     *slog.Logger
-	repo    RacePlanRepository
-	routes  RouteRepository
-	baseURL string
+	log         *slog.Logger
+	repo        RacePlanRepository
+	routes      RouteRepository
+	liveTracker LiveTracker
+	baseURL     string
+	nowFn       func() time.Time
 }
 
 // NewService creates a new Service. baseURL is the public URL of the server,
 // used to create share links.
-func NewService(log *slog.Logger, repo RacePlanRepository, routes RouteRepository, baseURL string) *Service {
+func NewService(log *slog.Logger, repo RacePlanRepository, routes RouteRepository, liveTracker LiveTracker, baseURL string) *Service {
 	return &Service{
-		log:     log,
-		repo:    repo,
-		routes:  routes,
-		baseURL: strings.TrimSuffix(baseURL, "/"),
+		log:         log,
+		repo:        repo,
+		routes:      routes,
+		liveTracker: liveTracker,
+		baseURL:     strings.TrimSuffix(baseURL, "/"),
+		nowFn:       time.Now,
 	}
 }
 
@@ -175,7 +181,7 @@ func (s *Service) UpdateRacePlan(ctx context.Context, req *connect.Request[races
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to decode race plan")
 	}
-	if err := protomask.Apply(current, req.Msg.GetPlan(), req.Msg.GetUpdateMask(), "id", "race_id", "share_url", "create_time", "update_time"); err != nil {
+	if err := protomask.Apply(current, req.Msg.GetPlan(), req.Msg.GetUpdateMask(), "id", "race_id", "share_url", "create_time", "update_time", "race_day"); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%w; valid sections are %s", err, strings.Join(sections, ", ")))
 	}
 	if err := validatePlan(current); err != nil {
@@ -339,6 +345,9 @@ func raceInfo(r *races.Race, course []geo.Point) RaceInfo {
 // setOutputFields sets the fields of a plan that are not stored in its
 // sections.
 func setOutputFields(plan *racesv1.RacePlan, stored *races.RacePlan, shareURL string) {
+	if raceDay, err := decodeRaceDay(stored.RaceDay); err == nil {
+		plan.SetRaceDay(raceDay)
+	}
 	plan.SetId(store.UUIDToString(stored.ID))
 	plan.SetRaceId(store.UUIDToString(stored.RaceID))
 	plan.SetShareUrl(shareURL)

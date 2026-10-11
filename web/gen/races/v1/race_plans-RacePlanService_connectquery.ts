@@ -64,3 +64,32 @@ export const unshareRacePlan = RacePlanService.method.unshareRacePlan;
  * @generated from rpc races.v1.RacePlanService.GetSharedRacePlan
  */
 export const getSharedRacePlan = RacePlanService.method.getSharedRacePlan;
+
+/**
+ * Get the live race day status of a plan: the recorded checkpoint times,
+ * the runner's latest LiveTrack position and estimated arrival times at
+ * the remaining checkpoints. Identify the plan by its ID (authenticated) or
+ * its share token (unauthenticated).
+ *
+ * @generated from rpc races.v1.RacePlanService.GetRaceDayStatus
+ */
+export const getRaceDayStatus = RacePlanService.method.getRaceDayStatus;
+
+/**
+ * Update the race day data of a plan: the actual start time, the LiveTrack
+ * link and the checkpoint times. Anyone with the share link can update it,
+ * so crew can record times. Returns the updated status.
+ *
+ * @generated from rpc races.v1.RacePlanService.UpdateRaceDay
+ */
+export const updateRaceDay = RacePlanService.method.updateRaceDay;
+
+/**
+ * Set or clear the recorded times at a single checkpoint, leaving the
+ * other checkpoints unchanged. Use this rather than UpdateRaceDay to record
+ * times, so crew recording at different checkpoints at the same time don't
+ * overwrite each other. Returns the updated status.
+ *
+ * @generated from rpc races.v1.RacePlanService.SetCheckpointSplit
+ */
+export const setCheckpointSplit = RacePlanService.method.setCheckpointSplit;

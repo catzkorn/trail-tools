@@ -90,7 +90,7 @@ insert into race_plans (
 ) values (
   $1, $2, $3
 )
-returning id, user_id, race_id, sections, share_token, create_time, update_time
+returning id, user_id, race_id, sections, share_token, create_time, update_time, race_day
 `
 
 type CreateRacePlanParams struct {
@@ -110,6 +110,7 @@ func (q *Queries) CreateRacePlan(ctx context.Context, arg *CreateRacePlanParams)
 		&i.ShareToken,
 		&i.CreateTime,
 		&i.UpdateTime,
+		&i.RaceDay,
 	)
 	return &i, err
 }
@@ -212,7 +213,7 @@ func (q *Queries) GetRaceByID(ctx context.Context, id pgtype.UUID) (*Race, error
 }
 
 const getRacePlan = `-- name: GetRacePlan :one
-select id, user_id, race_id, sections, share_token, create_time, update_time from race_plans
+select id, user_id, race_id, sections, share_token, create_time, update_time, race_day from race_plans
 where id = $1 and user_id = $2
 `
 
@@ -232,12 +233,13 @@ func (q *Queries) GetRacePlan(ctx context.Context, arg *GetRacePlanParams) (*Rac
 		&i.ShareToken,
 		&i.CreateTime,
 		&i.UpdateTime,
+		&i.RaceDay,
 	)
 	return &i, err
 }
 
 const getRacePlanByShareToken = `-- name: GetRacePlanByShareToken :one
-select id, user_id, race_id, sections, share_token, create_time, update_time from race_plans
+select id, user_id, race_id, sections, share_token, create_time, update_time, race_day from race_plans
 where share_token = $1
 `
 
@@ -252,12 +254,13 @@ func (q *Queries) GetRacePlanByShareToken(ctx context.Context, shareToken pgtype
 		&i.ShareToken,
 		&i.CreateTime,
 		&i.UpdateTime,
+		&i.RaceDay,
 	)
 	return &i, err
 }
 
 const listRacePlans = `-- name: ListRacePlans :many
-select id, user_id, race_id, sections, share_token, create_time, update_time from race_plans
+select id, user_id, race_id, sections, share_token, create_time, update_time, race_day from race_plans
 where user_id = $1
 `
 
@@ -278,6 +281,7 @@ func (q *Queries) ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*Rac
 			&i.ShareToken,
 			&i.CreateTime,
 			&i.UpdateTime,
+			&i.RaceDay,
 		); err != nil {
 			return nil, err
 		}
@@ -331,11 +335,39 @@ func (q *Queries) ListRaces(ctx context.Context, userID pgtype.UUID) ([]*Race, e
 	return items, nil
 }
 
+const setRacePlanRaceDay = `-- name: SetRacePlanRaceDay :one
+update race_plans set
+  race_day = $2
+where id = $1
+returning id, user_id, race_id, sections, share_token, create_time, update_time, race_day
+`
+
+type SetRacePlanRaceDayParams struct {
+	ID      pgtype.UUID
+	RaceDay []byte
+}
+
+func (q *Queries) SetRacePlanRaceDay(ctx context.Context, arg *SetRacePlanRaceDayParams) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, setRacePlanRaceDay, arg.ID, arg.RaceDay)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.Sections,
+		&i.ShareToken,
+		&i.CreateTime,
+		&i.UpdateTime,
+		&i.RaceDay,
+	)
+	return &i, err
+}
+
 const setRacePlanShareToken = `-- name: SetRacePlanShareToken :one
 update race_plans set
   share_token = $3
 where id = $1 and user_id = $2
-returning id, user_id, race_id, sections, share_token, create_time, update_time
+returning id, user_id, race_id, sections, share_token, create_time, update_time, race_day
 `
 
 type SetRacePlanShareTokenParams struct {
@@ -355,6 +387,7 @@ func (q *Queries) SetRacePlanShareToken(ctx context.Context, arg *SetRacePlanSha
 		&i.ShareToken,
 		&i.CreateTime,
 		&i.UpdateTime,
+		&i.RaceDay,
 	)
 	return &i, err
 }
@@ -435,7 +468,7 @@ update race_plans set
   sections = $3,
   update_time = now()
 where id = $1 and user_id = $2
-returning id, user_id, race_id, sections, share_token, create_time, update_time
+returning id, user_id, race_id, sections, share_token, create_time, update_time, race_day
 `
 
 type UpdateRacePlanSectionsParams struct {
@@ -455,6 +488,7 @@ func (q *Queries) UpdateRacePlanSections(ctx context.Context, arg *UpdateRacePla
 		&i.ShareToken,
 		&i.CreateTime,
 		&i.UpdateTime,
+		&i.RaceDay,
 	)
 	return &i, err
 }
