@@ -81,12 +81,55 @@ sync from Settings.
 
 ### AI agents (MCP)
 
-The MCP server is at `http://localhost:8080/mcp` (streamable HTTP). Create an
-API token under Settings, then for example in Claude Code:
+The MCP server is at `<public URL>/mcp`, e.g. `http://localhost:8080/mcp`
+(streamable HTTP). Clients connect with OAuth or an API token.
+
+#### claude.ai, Claude Desktop and other OAuth clients
+
+Custom connectors in claude.ai and Claude Desktop, ChatGPT and other remote MCP
+clients sign in with OAuth:
+
+1. In claude.ai, open Settings → Connectors → Add custom connector, and enter
+   `https://<your domain>/mcp` as the URL. Leave the OAuth client ID and
+   secret empty: clients register themselves.
+2. Connect. You're sent to Trail Tools, where you sign in with your passkey
+   and approve the connection.
+3. The connector is now available in claude.ai, and in the Claude apps signed
+   in to the same account.
+
+Connected apps are listed under Settings, where you can disconnect them. Their
+access tokens last 30 days and are refreshed automatically; an app that isn't
+used for 90 days needs to be connected again.
+
+claude.ai connects from Anthropic's servers, so the server must be reachable
+from the internet over HTTPS at the URL you enter, as it's the OAuth issuer
+and resource. The server's URL is `https://<hostname>:<port>`, from
+`-hostname`, `-port` and the TLS flags.
+
+How it works: `/mcp` answers unauthenticated requests with a
+`WWW-Authenticate` header pointing at the protected resource metadata
+(`/.well-known/oauth-protected-resource/mcp`), which points at the
+authorization server metadata (`/.well-known/oauth-authorization-server`).
+Clients register dynamically at `/oauth/register`, without anything being
+stored: the registration is encoded in the client ID. Only redirect URIs of
+known clients are accepted: loopback addresses, HTTPS on an allowlist
+(claude.ai, claude.com, chatgpt.com, vscode.dev) and a few desktop app schemes
+(see `internal/oauth`). `/oauth/authorize` requires PKCE (S256) and shows a
+consent page, and `/oauth/token` issues opaque access tokens and rotating
+refresh tokens, stored hashed.
+
+#### API tokens
+
+Clients that support custom headers can use an API token instead. Create one
+under Settings, then for example in Claude Code:
 
 ```sh
 $ claude mcp add --transport http trail-tools http://localhost:8080/mcp --header "Authorization: Bearer <token>"
 ```
+
+Without the header, Claude Code connects with OAuth instead.
+
+#### Tools
 
 The MCP tools are generated from the Connect API at startup: every RPC is a
 tool with the same name, its input schema comes from the request message and
