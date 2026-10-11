@@ -62,8 +62,10 @@ type RouteServiceClient interface {
 	// route (set route_id to reuse its unchanged legs) before calling
 	// UpdateRoute.
 	PreviewRoute(context.Context, *connect.Request[v1.PreviewRouteRequest]) (*connect.Response[v1.PreviewRouteResponse], error)
-	// Create and save a new route from waypoints, a GPX file or an existing
-	// activity.
+	// Create and save a new route from waypoints, a GPX file, an existing
+	// activity or another route. A recorded track can be kept exactly, or
+	// turned into an editable route that follows it with as few waypoints as
+	// possible (see the conversion field).
 	CreateRoute(context.Context, *connect.Request[v1.CreateRouteRequest]) (*connect.Response[v1.CreateRouteResponse], error)
 	// Get a route by ID.
 	GetRoute(context.Context, *connect.Request[v1.GetRouteRequest]) (*connect.Response[v1.GetRouteResponse], error)
@@ -197,8 +199,10 @@ type RouteServiceHandler interface {
 	// route (set route_id to reuse its unchanged legs) before calling
 	// UpdateRoute.
 	PreviewRoute(context.Context, *connect.Request[v1.PreviewRouteRequest]) (*connect.Response[v1.PreviewRouteResponse], error)
-	// Create and save a new route from waypoints, a GPX file or an existing
-	// activity.
+	// Create and save a new route from waypoints, a GPX file, an existing
+	// activity or another route. A recorded track can be kept exactly, or
+	// turned into an editable route that follows it with as few waypoints as
+	// possible (see the conversion field).
 	CreateRoute(context.Context, *connect.Request[v1.CreateRouteRequest]) (*connect.Response[v1.CreateRouteResponse], error)
 	// Get a route by ID.
 	GetRoute(context.Context, *connect.Request[v1.GetRouteRequest]) (*connect.Response[v1.GetRouteResponse], error)

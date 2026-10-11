@@ -13,6 +13,7 @@ import (
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -87,7 +88,9 @@ func (s *Service) CreateRoute(ctx context.Context, req *connect.Request[routesv1
 			return nil, connect.NewError(connect.CodeUnavailable, err)
 		}
 		route.Source = routes.SourceGPX
-		route.Waypoints, route.Legs = legsFromTrack(track.Points)
+		if err := s.routeFromTrack(ctx, route, track.Points, req.Msg.GetConversion()); err != nil {
+			return nil, err
+		}
 		if route.Name == "" {
 			route.Name = track.Name
 		}
@@ -101,12 +104,30 @@ func (s *Service) CreateRoute(ctx context.Context, req *connect.Request[routesv1
 			return nil, err
 		}
 		route.Source = routes.SourceActivity
-		route.Waypoints, route.Legs = legsFromTrack(points)
+		if err := s.routeFromTrack(ctx, route, points, req.Msg.GetConversion()); err != nil {
+			return nil, err
+		}
 		if route.Name == "" {
 			route.Name = activity.Name
 		}
+	case routesv1.CreateRouteRequest_RouteId_case:
+		saved, err := s.getRoute(ctx, req.Msg.GetRouteId())
+		if err != nil {
+			return nil, err
+		}
+		points, _ := saved.Path()
+		if len(points) < 2 {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("the route has no path"))
+		}
+		route.Source = saved.Source
+		if err := s.routeFromTrack(ctx, route, points, req.Msg.GetConversion()); err != nil {
+			return nil, err
+		}
+		if route.Name == "" {
+			route.Name = saved.Name
+		}
 	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("one of waypoints, gpx or activity_id must be set"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("one of waypoints, gpx, activity_id or route_id must be set"))
 	}
 	if route.Name == "" {
 		route.Name = "Untitled route"
@@ -201,6 +222,21 @@ func (s *Service) DeleteRoute(ctx context.Context, req *connect.Request[routesv1
 	return connect.NewResponse(routesv1.DeleteRouteResponse_builder{}.Build()), nil
 }
 
+// routeFromTrack sets a route's waypoints and legs from a recorded track,
+// keeping the track exactly or snapping it to the map.
+func (s *Service) routeFromTrack(ctx context.Context, route *routes.Route, track []geo.Point, conversion routesv1.TrackConversion) error {
+	if conversion != routesv1.TrackConversion_TRACK_CONVERSION_SNAP {
+		route.Waypoints, route.Legs = legsFromTrack(track)
+		return nil
+	}
+	waypoints, legs, err := s.snapTrack(ctx, track)
+	if err != nil {
+		return s.toConnectError(err, "failed to snap the track to the map")
+	}
+	route.Waypoints, route.Legs = waypoints, legs
+	return nil
+}
+
 // getRoute gets one of the authenticated user's routes by ID.
 func (s *Service) getRoute(ctx context.Context, id string) (*routes.Route, error) {
 	userID, ok := authn.GetUserID(ctx)
@@ -292,6 +328,8 @@ func (s *Service) toConnectError(err error, msg string) error {
 		return connect.NewError(connect.CodeNotFound, errors.New("route not found"))
 	case errors.Is(err, errInvalidRoute):
 		return connect.NewError(connect.CodeInvalidArgument, err)
+	case errors.Is(err, mapdata.ErrRoutingBusy):
+		return connect.NewError(connect.CodeUnavailable, err)
 	case errors.Is(err, context.Canceled):
 		return connect.NewError(connect.CodeCanceled, err)
 	default:

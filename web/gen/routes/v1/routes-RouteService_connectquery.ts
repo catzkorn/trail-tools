@@ -16,8 +16,10 @@ import { RouteService } from "./routes_pb";
 export const previewRoute = RouteService.method.previewRoute;
 
 /**
- * Create and save a new route from waypoints, a GPX file or an existing
- * activity.
+ * Create and save a new route from waypoints, a GPX file, an existing
+ * activity or another route. A recorded track can be kept exactly, or
+ * turned into an editable route that follows it with as few waypoints as
+ * possible (see the conversion field).
  *
  * @generated from rpc routes.v1.RouteService.CreateRoute
  */

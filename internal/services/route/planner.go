@@ -180,9 +180,17 @@ func (s *Service) routeLeg(ctx context.Context, heat *heatmap, from, to routes.L
 	default:
 		return routes.Leg{}, fmt.Errorf("%w: unknown profile %q", errInvalidRoute, profile)
 	}
+	if errors.Is(err, mapdata.ErrRoutingBusy) {
+		return routes.Leg{}, err
+	}
 	if err != nil {
 		return routes.Leg{}, fmt.Errorf("%w: %w; try moving the waypoints closer to a trail or road, or use the STRAIGHT profile", errInvalidRoute, err)
 	}
+	return legFromPath(from, to, profile, path), nil
+}
+
+// legFromPath creates a leg from a routed path.
+func legFromPath(from, to routes.LatLng, profile routes.Profile, path *mapdata.RoutedPath) routes.Leg {
 	// Make the leg start and end exactly at the waypoints, so the route is
 	// continuous even if routing snapped them to the nearest way.
 	points := append([]geo.Point{{Lat: from.Lat, Lng: from.Lng, Ele: path.Points[0].Ele}}, path.Points...)
@@ -191,7 +199,7 @@ func (s *Service) routeLeg(ctx context.Context, heat *heatmap, from, to routes.L
 	terrains[len(terrains)-1] = geo.TerrainUnknown
 	terrains = append(terrains, geo.TerrainUnknown)
 	points, terrains = dedupe(points, terrains)
-	return routes.NewLeg(from, to, profile, points, terrains), nil
+	return routes.NewLeg(from, to, profile, points, terrains)
 }
 
 // dedupe removes consecutive duplicate points, keeping the terrain of the

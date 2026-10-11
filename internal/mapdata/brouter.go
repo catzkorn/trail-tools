@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
 )
@@ -39,6 +41,14 @@ type brouterResponse struct {
 	} `json:"features"`
 }
 
+// ErrRoutingBusy is returned when the BRouter server refuses requests because
+// too many were made, as the public server does when its rate limit is hit.
+var ErrRoutingBusy = errors.New("the routing service is busy; try again in a few minutes")
+
+// routeRetryDelays are the delays before retrying a request that the BRouter
+// server refused because it was busy.
+var routeRetryDelays = []time.Duration{time.Second, 3 * time.Second}
+
 // MaxAlternatives is the number of alternative routes BRouter can compute
 // between two points, with alternative indexes 0 to MaxAlternatives-1.
 const MaxAlternatives = 4
@@ -55,18 +65,47 @@ func (c *Client) Route(ctx context.Context, from, to geo.Point, profile string, 
 	q.Set("profile", profile)
 	q.Set("alternativeidx", strconv.Itoa(alternative))
 	q.Set("format", "geojson")
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.conf.BRouterURL+"?"+q.Encode(), nil)
+	for attempt := 0; ; attempt++ {
+		resp, err := c.route(ctx, c.conf.BRouterURL+"?"+q.Encode())
+		if !errors.Is(err, ErrRoutingBusy) || attempt >= len(routeRetryDelays) {
+			return resp, err
+		}
+		select {
+		case <-time.After(routeRetryDelays[attempt]):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+}
+
+func (c *Client) route(ctx context.Context, url string) (*RoutedPath, error) {
+	select {
+	case c.brouter <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	defer func() { <-c.brouter }()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 	var resp brouterResponse
 	if err := c.do(req, &resp); err != nil {
-		if statusErr := (*StatusError)(nil); errors.As(err, &statusErr) && statusErr.StatusCode < 500 {
+		statusErr := (*StatusError)(nil)
+		if !errors.As(err, &statusErr) {
+			return nil, fmt.Errorf("routing failed: %w", err)
+		}
+		switch {
+		case statusErr.StatusCode == http.StatusTooManyRequests || statusErr.StatusCode == http.StatusServiceUnavailable ||
+			strings.Contains(statusErr.Body, "retry later"):
+			return nil, ErrRoutingBusy
+		case statusErr.StatusCode < 500:
 			// BRouter returns errors such as "from-position not mapped" as 4xx
 			// responses with a plain text body.
 			return nil, fmt.Errorf("routing failed: %s", statusErr.Body)
+		default:
+			return nil, fmt.Errorf("routing failed: %w", err)
 		}
-		return nil, fmt.Errorf("routing failed: %w", err)
 	}
 	return parseBRouterResponse(&resp)
 }

@@ -83,7 +83,7 @@ func TestNewServer(t *testing.T) {
 		{
 			name:        "CreateRoute",
 			title:       "Create Route",
-			description: "Create and save a new route from waypoints, a GPX file or an existing activity.",
+			description: "Create and save a new route from waypoints, a GPX file, an existing activity or another route. A recorded track can be kept exactly, or turned into an editable route that follows it with as few waypoints as possible (see the conversion field).",
 		},
 		{
 			name:        "GetRoute",

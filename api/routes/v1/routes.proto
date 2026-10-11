@@ -23,8 +23,10 @@ service RouteService {
   // route (set route_id to reuse its unchanged legs) before calling
   // UpdateRoute.
   rpc PreviewRoute(PreviewRouteRequest) returns (PreviewRouteResponse);
-  // Create and save a new route from waypoints, a GPX file or an existing
-  // activity.
+  // Create and save a new route from waypoints, a GPX file, an existing
+  // activity or another route. A recorded track can be kept exactly, or
+  // turned into an editable route that follows it with as few waypoints as
+  // possible (see the conversion field).
   rpc CreateRoute(CreateRouteRequest) returns (CreateRouteResponse);
   // Get a route by ID.
   rpc GetRoute(GetRouteRequest) returns (GetRouteResponse);
@@ -69,6 +71,26 @@ enum RoutingProfile {
   // has no activities near the leg. Slower than TRAIL, as each leg is routed
   // several times.
   ROUTING_PROFILE_HEATMAP = 4;
+}
+
+// TrackConversion controls how a recorded track, from a GPX file, an
+// activity or another route, becomes a route.
+enum TrackConversion {
+  // Defaults to EXACT.
+  TRACK_CONVERSION_UNSPECIFIED = 0;
+  // Keep the recorded track exactly. Waypoints are placed about every
+  // kilometer, but the path between them is the recording, so the route can't
+  // be meaningfully redesigned by moving waypoints. Best for official race
+  // courses and routes that must match a recording.
+  TRACK_CONVERSION_EXACT = 1;
+  // Fit an editable route to the track, with as few waypoints as possible.
+  // Legs are snapped to trails (or roads) that follow the track within about
+  // 40 meters, and sections without a matching mapped path become STRAIGHT
+  // legs. The result is a normal waypoint route that can be reshaped by
+  // moving one of its few waypoints, but its path may differ slightly from
+  // the recording. Slower than EXACT, as many candidate legs are routed. Best
+  // for using a previous run as the starting point of a new route.
+  TRACK_CONVERSION_SNAP = 2;
 }
 
 // RouteSource describes how a route was created.
@@ -212,9 +234,16 @@ message CreateRouteRequest {
     string gpx = 4;
     // The ID of a synced activity whose GPS track becomes the route.
     string activity_id = 5;
+    // The ID of a saved route whose path becomes the new route, e.g. to make
+    // an editable copy of an imported route with conversion SNAP. The saved
+    // route is not changed.
+    string route_id = 8;
   }
   // Include the full path in the response.
   bool include_points = 6;
+  // How a GPX file, activity or route becomes the new route. Ignored for
+  // waypoints. Defaults to EXACT.
+  TrackConversion conversion = 7;
 }
 
 message CreateRouteResponse {

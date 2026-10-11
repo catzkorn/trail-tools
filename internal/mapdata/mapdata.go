@@ -64,10 +64,16 @@ func (c Config) withDefaults() Config {
 	return c
 }
 
+// maxConcurrentRoutes is the number of BRouter requests made at once, to
+// stay within the public server's rate limit.
+const maxConcurrentRoutes = 2
+
 // Client is a client for the map data services.
 type Client struct {
 	conf      Config
 	nominatim *throttle
+	// brouter limits concurrent BRouter requests.
+	brouter chan struct{}
 }
 
 // New creates a new Client.
@@ -76,6 +82,7 @@ func New(conf Config) *Client {
 		conf: conf.withDefaults(),
 		// Nominatim's usage policy allows at most 1 request per second.
 		nominatim: newThrottle(time.Second),
+		brouter:   make(chan struct{}, maxConcurrentRoutes),
 	}
 }
 

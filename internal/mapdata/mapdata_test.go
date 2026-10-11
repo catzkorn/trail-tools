@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -74,6 +75,27 @@ func TestRouteError(t *testing.T) {
 	_, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 1}, mapdata.ProfileShortest, 0)
 	if err == nil || !strings.Contains(err.Error(), "not mapped") {
 		t.Errorf("unexpected error %v", err)
+	}
+}
+
+func TestRouteBusy(t *testing.T) {
+	t.Parallel()
+	var requests atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if requests.Add(1) == 1 {
+			// The public server's rate limit.
+			http.Error(w, "Please, retry later!", http.StatusForbidden)
+			return
+		}
+		fmt.Fprint(w, brouterResponse)
+	}))
+	t.Cleanup(srv.Close)
+	client := mapdata.New(mapdata.Config{BRouterURL: srv.URL})
+	if _, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 0.003}, mapdata.ProfileHikingMountain, 0); err != nil {
+		t.Fatalf("Route should retry when busy: %v", err)
+	}
+	if requests.Load() != 2 {
+		t.Errorf("got %d requests, want 2", requests.Load())
 	}
 }
 
