@@ -61,6 +61,11 @@ type Bounds struct {
 	MinLat, MinLng, MaxLat, MaxLng float64
 }
 
+// Contains reports whether p is within the bounds.
+func (b Bounds) Contains(p Point) bool {
+	return p.Lat >= b.MinLat && p.Lat <= b.MaxLat && p.Lng >= b.MinLng && p.Lng <= b.MaxLng
+}
+
 // BoundsOf returns the bounding box of the points. ok is false if there are no
 // points.
 func BoundsOf(points []Point) (b Bounds, ok bool) {

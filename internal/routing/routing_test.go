@@ -140,6 +140,19 @@ func TestRoute(t *testing.T) {
 	}
 }
 
+func TestRegions(t *testing.T) {
+	t.Parallel()
+	router := newRouter(t)
+	regions, err := router.Regions(context.Background())
+	if err != nil {
+		t.Fatalf("Regions: %v", err)
+	}
+	// Importing the region twice replaced it.
+	if _, _, bounds := testGraph(); len(regions) != 1 || regions[0] != bounds {
+		t.Errorf("got regions %v, want %v", regions, bounds)
+	}
+}
+
 func TestRouteErrors(t *testing.T) {
 	t.Parallel()
 	router := newRouter(t)

@@ -35,6 +35,8 @@ const (
 // Router routes paths on the map.
 type Router interface {
 	Route(ctx context.Context, req routing.Request) (*routing.Path, error)
+	// Regions returns the bounds of the areas paths can be routed in.
+	Regions(ctx context.Context) ([]geo.Bounds, error)
 }
 
 // MapData provides elevation data.

@@ -49,6 +49,9 @@ const (
 	// RouteServiceDeleteRouteProcedure is the fully-qualified name of the RouteService's DeleteRoute
 	// RPC.
 	RouteServiceDeleteRouteProcedure = "/routes.v1.RouteService/DeleteRoute"
+	// RouteServiceCheckTrackCoverageProcedure is the fully-qualified name of the RouteService's
+	// CheckTrackCoverage RPC.
+	RouteServiceCheckTrackCoverageProcedure = "/routes.v1.RouteService/CheckTrackCoverage"
 )
 
 // RouteServiceClient is a client for the routes.v1.RouteService service.
@@ -59,8 +62,10 @@ type RouteServiceClient interface {
 	// route (set route_id to reuse its unchanged legs) before calling
 	// UpdateRoute.
 	PreviewRoute(context.Context, *connect.Request[v1.PreviewRouteRequest]) (*connect.Response[v1.PreviewRouteResponse], error)
-	// Create and save a new route from waypoints, a GPX file or an existing
-	// activity.
+	// Create and save a new route from waypoints, a GPX file, an existing
+	// activity or another route. A recorded track can be kept exactly, or
+	// turned into an editable route that follows it with as few waypoints as
+	// possible (see the conversion field).
 	CreateRoute(context.Context, *connect.Request[v1.CreateRouteRequest]) (*connect.Response[v1.CreateRouteResponse], error)
 	// Get a route by ID.
 	GetRoute(context.Context, *connect.Request[v1.GetRouteRequest]) (*connect.Response[v1.GetRouteResponse], error)
@@ -73,6 +78,12 @@ type RouteServiceClient interface {
 	UpdateRoute(context.Context, *connect.Request[v1.UpdateRouteRequest]) (*connect.Response[v1.UpdateRouteResponse], error)
 	// Delete a route.
 	DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error)
+	// Check how much of a recorded track lies within the map data that tracks
+	// are snapped to. Snapping only follows mapped paths where map data has
+	// been imported; elsewhere the route becomes STRAIGHT legs. Call this
+	// before creating a route with conversion SNAP, and keep the track EXACT
+	// if much of it isn't covered.
+	CheckTrackCoverage(context.Context, *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error)
 }
 
 // NewRouteServiceClient constructs a client for the routes.v1.RouteService service. By default, it
@@ -122,17 +133,25 @@ func NewRouteServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(routeServiceMethods.ByName("DeleteRoute")),
 			connect.WithClientOptions(opts...),
 		),
+		checkTrackCoverage: connect.NewClient[v1.CheckTrackCoverageRequest, v1.CheckTrackCoverageResponse](
+			httpClient,
+			baseURL+RouteServiceCheckTrackCoverageProcedure,
+			connect.WithSchema(routeServiceMethods.ByName("CheckTrackCoverage")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // routeServiceClient implements RouteServiceClient.
 type routeServiceClient struct {
-	previewRoute *connect.Client[v1.PreviewRouteRequest, v1.PreviewRouteResponse]
-	createRoute  *connect.Client[v1.CreateRouteRequest, v1.CreateRouteResponse]
-	getRoute     *connect.Client[v1.GetRouteRequest, v1.GetRouteResponse]
-	listRoutes   *connect.Client[v1.ListRoutesRequest, v1.ListRoutesResponse]
-	updateRoute  *connect.Client[v1.UpdateRouteRequest, v1.UpdateRouteResponse]
-	deleteRoute  *connect.Client[v1.DeleteRouteRequest, v1.DeleteRouteResponse]
+	previewRoute       *connect.Client[v1.PreviewRouteRequest, v1.PreviewRouteResponse]
+	createRoute        *connect.Client[v1.CreateRouteRequest, v1.CreateRouteResponse]
+	getRoute           *connect.Client[v1.GetRouteRequest, v1.GetRouteResponse]
+	listRoutes         *connect.Client[v1.ListRoutesRequest, v1.ListRoutesResponse]
+	updateRoute        *connect.Client[v1.UpdateRouteRequest, v1.UpdateRouteResponse]
+	deleteRoute        *connect.Client[v1.DeleteRouteRequest, v1.DeleteRouteResponse]
+	checkTrackCoverage *connect.Client[v1.CheckTrackCoverageRequest, v1.CheckTrackCoverageResponse]
 }
 
 // PreviewRoute calls routes.v1.RouteService.PreviewRoute.
@@ -165,6 +184,11 @@ func (c *routeServiceClient) DeleteRoute(ctx context.Context, req *connect.Reque
 	return c.deleteRoute.CallUnary(ctx, req)
 }
 
+// CheckTrackCoverage calls routes.v1.RouteService.CheckTrackCoverage.
+func (c *routeServiceClient) CheckTrackCoverage(ctx context.Context, req *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error) {
+	return c.checkTrackCoverage.CallUnary(ctx, req)
+}
+
 // RouteServiceHandler is an implementation of the routes.v1.RouteService service.
 type RouteServiceHandler interface {
 	// Compute a route through the given waypoints without saving it. Returns the
@@ -173,8 +197,10 @@ type RouteServiceHandler interface {
 	// route (set route_id to reuse its unchanged legs) before calling
 	// UpdateRoute.
 	PreviewRoute(context.Context, *connect.Request[v1.PreviewRouteRequest]) (*connect.Response[v1.PreviewRouteResponse], error)
-	// Create and save a new route from waypoints, a GPX file or an existing
-	// activity.
+	// Create and save a new route from waypoints, a GPX file, an existing
+	// activity or another route. A recorded track can be kept exactly, or
+	// turned into an editable route that follows it with as few waypoints as
+	// possible (see the conversion field).
 	CreateRoute(context.Context, *connect.Request[v1.CreateRouteRequest]) (*connect.Response[v1.CreateRouteResponse], error)
 	// Get a route by ID.
 	GetRoute(context.Context, *connect.Request[v1.GetRouteRequest]) (*connect.Response[v1.GetRouteResponse], error)
@@ -187,6 +213,12 @@ type RouteServiceHandler interface {
 	UpdateRoute(context.Context, *connect.Request[v1.UpdateRouteRequest]) (*connect.Response[v1.UpdateRouteResponse], error)
 	// Delete a route.
 	DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error)
+	// Check how much of a recorded track lies within the map data that tracks
+	// are snapped to. Snapping only follows mapped paths where map data has
+	// been imported; elsewhere the route becomes STRAIGHT legs. Call this
+	// before creating a route with conversion SNAP, and keep the track EXACT
+	// if much of it isn't covered.
+	CheckTrackCoverage(context.Context, *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error)
 }
 
 // NewRouteServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -232,6 +264,13 @@ func NewRouteServiceHandler(svc RouteServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(routeServiceMethods.ByName("DeleteRoute")),
 		connect.WithHandlerOptions(opts...),
 	)
+	routeServiceCheckTrackCoverageHandler := connect.NewUnaryHandler(
+		RouteServiceCheckTrackCoverageProcedure,
+		svc.CheckTrackCoverage,
+		connect.WithSchema(routeServiceMethods.ByName("CheckTrackCoverage")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/routes.v1.RouteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RouteServicePreviewRouteProcedure:
@@ -246,6 +285,8 @@ func NewRouteServiceHandler(svc RouteServiceHandler, opts ...connect.HandlerOpti
 			routeServiceUpdateRouteHandler.ServeHTTP(w, r)
 		case RouteServiceDeleteRouteProcedure:
 			routeServiceDeleteRouteHandler.ServeHTTP(w, r)
+		case RouteServiceCheckTrackCoverageProcedure:
+			routeServiceCheckTrackCoverageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -277,4 +318,8 @@ func (UnimplementedRouteServiceHandler) UpdateRoute(context.Context, *connect.Re
 
 func (UnimplementedRouteServiceHandler) DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("routes.v1.RouteService.DeleteRoute is not implemented"))
+}
+
+func (UnimplementedRouteServiceHandler) CheckTrackCoverage(context.Context, *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("routes.v1.RouteService.CheckTrackCoverage is not implemented"))
 }

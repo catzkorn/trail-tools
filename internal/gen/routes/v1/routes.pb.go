@@ -86,6 +86,64 @@ func (x RoutingProfile) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// TrackConversion controls how a recorded track, from a GPX file, an
+// activity or another route, becomes a route.
+type TrackConversion int32
+
+const (
+	// Defaults to EXACT.
+	TrackConversion_TRACK_CONVERSION_UNSPECIFIED TrackConversion = 0
+	// Keep the recorded track exactly. Waypoints are placed about every
+	// kilometer, but the path between them is the recording, so the route can't
+	// be meaningfully redesigned by moving waypoints. Best for official race
+	// courses and routes that must match a recording.
+	TrackConversion_TRACK_CONVERSION_EXACT TrackConversion = 1
+	// Fit an editable route to the track, with as few waypoints as possible.
+	// Legs are snapped to trails (or roads) that follow the track within about
+	// 40 meters, and sections without a matching mapped path become STRAIGHT
+	// legs. The result is a normal waypoint route that can be reshaped by
+	// moving one of its few waypoints, but its path may differ slightly from
+	// the recording. Slower than EXACT, as many candidate legs are routed. Best
+	// for using a previous run as the starting point of a new route.
+	TrackConversion_TRACK_CONVERSION_SNAP TrackConversion = 2
+)
+
+// Enum value maps for TrackConversion.
+var (
+	TrackConversion_name = map[int32]string{
+		0: "TRACK_CONVERSION_UNSPECIFIED",
+		1: "TRACK_CONVERSION_EXACT",
+		2: "TRACK_CONVERSION_SNAP",
+	}
+	TrackConversion_value = map[string]int32{
+		"TRACK_CONVERSION_UNSPECIFIED": 0,
+		"TRACK_CONVERSION_EXACT":       1,
+		"TRACK_CONVERSION_SNAP":        2,
+	}
+)
+
+func (x TrackConversion) Enum() *TrackConversion {
+	p := new(TrackConversion)
+	*p = x
+	return p
+}
+
+func (x TrackConversion) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TrackConversion) Descriptor() protoreflect.EnumDescriptor {
+	return file_routes_v1_routes_proto_enumTypes[1].Descriptor()
+}
+
+func (TrackConversion) Type() protoreflect.EnumType {
+	return &file_routes_v1_routes_proto_enumTypes[1]
+}
+
+func (x TrackConversion) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // RouteSource describes how a route was created.
 type RouteSource int32
 
@@ -126,11 +184,11 @@ func (x RouteSource) String() string {
 }
 
 func (RouteSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_routes_v1_routes_proto_enumTypes[1].Descriptor()
+	return file_routes_v1_routes_proto_enumTypes[2].Descriptor()
 }
 
 func (RouteSource) Type() protoreflect.EnumType {
-	return &file_routes_v1_routes_proto_enumTypes[1]
+	return &file_routes_v1_routes_proto_enumTypes[2]
 }
 
 func (x RouteSource) Number() protoreflect.EnumNumber {
@@ -1049,6 +1107,7 @@ type CreateRouteRequest struct {
 	xxx_hidden_Description   string                      `protobuf:"bytes,2,opt,name=description,proto3"`
 	xxx_hidden_Source        isCreateRouteRequest_Source `protobuf_oneof:"source"`
 	xxx_hidden_IncludePoints bool                        `protobuf:"varint,6,opt,name=include_points,json=includePoints,proto3"`
+	xxx_hidden_Conversion    TrackConversion             `protobuf:"varint,7,opt,name=conversion,proto3,enum=routes.v1.TrackConversion"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -1119,11 +1178,27 @@ func (x *CreateRouteRequest) GetActivityId() string {
 	return ""
 }
 
+func (x *CreateRouteRequest) GetRouteId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*createRouteRequest_RouteId); ok {
+			return x.RouteId
+		}
+	}
+	return ""
+}
+
 func (x *CreateRouteRequest) GetIncludePoints() bool {
 	if x != nil {
 		return x.xxx_hidden_IncludePoints
 	}
 	return false
+}
+
+func (x *CreateRouteRequest) GetConversion() TrackConversion {
+	if x != nil {
+		return x.xxx_hidden_Conversion
+	}
+	return TrackConversion_TRACK_CONVERSION_UNSPECIFIED
 }
 
 func (x *CreateRouteRequest) SetName(v string) {
@@ -1150,8 +1225,16 @@ func (x *CreateRouteRequest) SetActivityId(v string) {
 	x.xxx_hidden_Source = &createRouteRequest_ActivityId{v}
 }
 
+func (x *CreateRouteRequest) SetRouteId(v string) {
+	x.xxx_hidden_Source = &createRouteRequest_RouteId{v}
+}
+
 func (x *CreateRouteRequest) SetIncludePoints(v bool) {
 	x.xxx_hidden_IncludePoints = v
+}
+
+func (x *CreateRouteRequest) SetConversion(v TrackConversion) {
+	x.xxx_hidden_Conversion = v
 }
 
 func (x *CreateRouteRequest) HasSource() bool {
@@ -1185,6 +1268,14 @@ func (x *CreateRouteRequest) HasActivityId() bool {
 	return ok
 }
 
+func (x *CreateRouteRequest) HasRouteId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*createRouteRequest_RouteId)
+	return ok
+}
+
 func (x *CreateRouteRequest) ClearSource() {
 	x.xxx_hidden_Source = nil
 }
@@ -1207,10 +1298,17 @@ func (x *CreateRouteRequest) ClearActivityId() {
 	}
 }
 
+func (x *CreateRouteRequest) ClearRouteId() {
+	if _, ok := x.xxx_hidden_Source.(*createRouteRequest_RouteId); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
 const CreateRouteRequest_Source_not_set_case case_CreateRouteRequest_Source = 0
 const CreateRouteRequest_Waypoints_case case_CreateRouteRequest_Source = 3
 const CreateRouteRequest_Gpx_case case_CreateRouteRequest_Source = 4
 const CreateRouteRequest_ActivityId_case case_CreateRouteRequest_Source = 5
+const CreateRouteRequest_RouteId_case case_CreateRouteRequest_Source = 8
 
 func (x *CreateRouteRequest) WhichSource() case_CreateRouteRequest_Source {
 	if x == nil {
@@ -1223,6 +1321,8 @@ func (x *CreateRouteRequest) WhichSource() case_CreateRouteRequest_Source {
 		return CreateRouteRequest_Gpx_case
 	case *createRouteRequest_ActivityId:
 		return CreateRouteRequest_ActivityId_case
+	case *createRouteRequest_RouteId:
+		return CreateRouteRequest_RouteId_case
 	default:
 		return CreateRouteRequest_Source_not_set_case
 	}
@@ -1244,9 +1344,16 @@ type CreateRouteRequest_builder struct {
 	Gpx *string
 	// The ID of a synced activity whose GPS track becomes the route.
 	ActivityId *string
+	// The ID of a saved route whose path becomes the new route, e.g. to make
+	// an editable copy of an imported route with conversion SNAP. The saved
+	// route is not changed.
+	RouteId *string
 	// -- end of xxx_hidden_Source
 	// Include the full path in the response.
 	IncludePoints bool
+	// How a GPX file, activity or route becomes the new route. Ignored for
+	// waypoints. Defaults to EXACT.
+	Conversion TrackConversion
 }
 
 func (b0 CreateRouteRequest_builder) Build() *CreateRouteRequest {
@@ -1264,7 +1371,11 @@ func (b0 CreateRouteRequest_builder) Build() *CreateRouteRequest {
 	if b.ActivityId != nil {
 		x.xxx_hidden_Source = &createRouteRequest_ActivityId{*b.ActivityId}
 	}
+	if b.RouteId != nil {
+		x.xxx_hidden_Source = &createRouteRequest_RouteId{*b.RouteId}
+	}
 	x.xxx_hidden_IncludePoints = b.IncludePoints
+	x.xxx_hidden_Conversion = b.Conversion
 	return m0
 }
 
@@ -1297,11 +1408,20 @@ type createRouteRequest_ActivityId struct {
 	ActivityId string `protobuf:"bytes,5,opt,name=activity_id,json=activityId,proto3,oneof"`
 }
 
+type createRouteRequest_RouteId struct {
+	// The ID of a saved route whose path becomes the new route, e.g. to make
+	// an editable copy of an imported route with conversion SNAP. The saved
+	// route is not changed.
+	RouteId string `protobuf:"bytes,8,opt,name=route_id,json=routeId,proto3,oneof"`
+}
+
 func (*createRouteRequest_Waypoints) isCreateRouteRequest_Source() {}
 
 func (*createRouteRequest_Gpx) isCreateRouteRequest_Source() {}
 
 func (*createRouteRequest_ActivityId) isCreateRouteRequest_Source() {}
+
+func (*createRouteRequest_RouteId) isCreateRouteRequest_Source() {}
 
 type CreateRouteResponse struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1958,6 +2078,276 @@ func (b0 DeleteRouteResponse_builder) Build() *DeleteRouteResponse {
 	return m0
 }
 
+type CheckTrackCoverageRequest struct {
+	state             protoimpl.MessageState             `protogen:"opaque.v1"`
+	xxx_hidden_Source isCheckTrackCoverageRequest_Source `protobuf_oneof:"source"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CheckTrackCoverageRequest) Reset() {
+	*x = CheckTrackCoverageRequest{}
+	mi := &file_routes_v1_routes_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckTrackCoverageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckTrackCoverageRequest) ProtoMessage() {}
+
+func (x *CheckTrackCoverageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_routes_v1_routes_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CheckTrackCoverageRequest) GetGpx() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_Gpx); ok {
+			return x.Gpx
+		}
+	}
+	return ""
+}
+
+func (x *CheckTrackCoverageRequest) GetActivityId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_ActivityId); ok {
+			return x.ActivityId
+		}
+	}
+	return ""
+}
+
+func (x *CheckTrackCoverageRequest) GetRouteId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_RouteId); ok {
+			return x.RouteId
+		}
+	}
+	return ""
+}
+
+func (x *CheckTrackCoverageRequest) SetGpx(v string) {
+	x.xxx_hidden_Source = &checkTrackCoverageRequest_Gpx{v}
+}
+
+func (x *CheckTrackCoverageRequest) SetActivityId(v string) {
+	x.xxx_hidden_Source = &checkTrackCoverageRequest_ActivityId{v}
+}
+
+func (x *CheckTrackCoverageRequest) SetRouteId(v string) {
+	x.xxx_hidden_Source = &checkTrackCoverageRequest_RouteId{v}
+}
+
+func (x *CheckTrackCoverageRequest) HasSource() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Source != nil
+}
+
+func (x *CheckTrackCoverageRequest) HasGpx() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_Gpx)
+	return ok
+}
+
+func (x *CheckTrackCoverageRequest) HasActivityId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_ActivityId)
+	return ok
+}
+
+func (x *CheckTrackCoverageRequest) HasRouteId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_RouteId)
+	return ok
+}
+
+func (x *CheckTrackCoverageRequest) ClearSource() {
+	x.xxx_hidden_Source = nil
+}
+
+func (x *CheckTrackCoverageRequest) ClearGpx() {
+	if _, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_Gpx); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
+func (x *CheckTrackCoverageRequest) ClearActivityId() {
+	if _, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_ActivityId); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
+func (x *CheckTrackCoverageRequest) ClearRouteId() {
+	if _, ok := x.xxx_hidden_Source.(*checkTrackCoverageRequest_RouteId); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
+const CheckTrackCoverageRequest_Source_not_set_case case_CheckTrackCoverageRequest_Source = 0
+const CheckTrackCoverageRequest_Gpx_case case_CheckTrackCoverageRequest_Source = 1
+const CheckTrackCoverageRequest_ActivityId_case case_CheckTrackCoverageRequest_Source = 2
+const CheckTrackCoverageRequest_RouteId_case case_CheckTrackCoverageRequest_Source = 3
+
+func (x *CheckTrackCoverageRequest) WhichSource() case_CheckTrackCoverageRequest_Source {
+	if x == nil {
+		return CheckTrackCoverageRequest_Source_not_set_case
+	}
+	switch x.xxx_hidden_Source.(type) {
+	case *checkTrackCoverageRequest_Gpx:
+		return CheckTrackCoverageRequest_Gpx_case
+	case *checkTrackCoverageRequest_ActivityId:
+		return CheckTrackCoverageRequest_ActivityId_case
+	case *checkTrackCoverageRequest_RouteId:
+		return CheckTrackCoverageRequest_RouteId_case
+	default:
+		return CheckTrackCoverageRequest_Source_not_set_case
+	}
+}
+
+type CheckTrackCoverageRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The track to check. Exactly one must be set.
+
+	// Fields of oneof xxx_hidden_Source:
+	// The contents of a GPX file. The first track (or route) is checked.
+	Gpx *string
+	// The ID of a synced activity.
+	ActivityId *string
+	// The ID of a saved route.
+	RouteId *string
+	// -- end of xxx_hidden_Source
+}
+
+func (b0 CheckTrackCoverageRequest_builder) Build() *CheckTrackCoverageRequest {
+	m0 := &CheckTrackCoverageRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Gpx != nil {
+		x.xxx_hidden_Source = &checkTrackCoverageRequest_Gpx{*b.Gpx}
+	}
+	if b.ActivityId != nil {
+		x.xxx_hidden_Source = &checkTrackCoverageRequest_ActivityId{*b.ActivityId}
+	}
+	if b.RouteId != nil {
+		x.xxx_hidden_Source = &checkTrackCoverageRequest_RouteId{*b.RouteId}
+	}
+	return m0
+}
+
+type case_CheckTrackCoverageRequest_Source protoreflect.FieldNumber
+
+func (x case_CheckTrackCoverageRequest_Source) String() string {
+	md := file_routes_v1_routes_proto_msgTypes[17].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isCheckTrackCoverageRequest_Source interface {
+	isCheckTrackCoverageRequest_Source()
+}
+
+type checkTrackCoverageRequest_Gpx struct {
+	// The contents of a GPX file. The first track (or route) is checked.
+	Gpx string `protobuf:"bytes,1,opt,name=gpx,proto3,oneof"`
+}
+
+type checkTrackCoverageRequest_ActivityId struct {
+	// The ID of a synced activity.
+	ActivityId string `protobuf:"bytes,2,opt,name=activity_id,json=activityId,proto3,oneof"`
+}
+
+type checkTrackCoverageRequest_RouteId struct {
+	// The ID of a saved route.
+	RouteId string `protobuf:"bytes,3,opt,name=route_id,json=routeId,proto3,oneof"`
+}
+
+func (*checkTrackCoverageRequest_Gpx) isCheckTrackCoverageRequest_Source() {}
+
+func (*checkTrackCoverageRequest_ActivityId) isCheckTrackCoverageRequest_Source() {}
+
+func (*checkTrackCoverageRequest_RouteId) isCheckTrackCoverageRequest_Source() {}
+
+type CheckTrackCoverageResponse struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CoveredFraction float64                `protobuf:"fixed64,1,opt,name=covered_fraction,json=coveredFraction,proto3"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *CheckTrackCoverageResponse) Reset() {
+	*x = CheckTrackCoverageResponse{}
+	mi := &file_routes_v1_routes_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckTrackCoverageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckTrackCoverageResponse) ProtoMessage() {}
+
+func (x *CheckTrackCoverageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_routes_v1_routes_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CheckTrackCoverageResponse) GetCoveredFraction() float64 {
+	if x != nil {
+		return x.xxx_hidden_CoveredFraction
+	}
+	return 0
+}
+
+func (x *CheckTrackCoverageResponse) SetCoveredFraction(v float64) {
+	x.xxx_hidden_CoveredFraction = v
+}
+
+type CheckTrackCoverageResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The fraction of the track's length, from 0 to 1, within the areas map
+	// data has been imported for.
+	CoveredFraction float64
+}
+
+func (b0 CheckTrackCoverageResponse_builder) Build() *CheckTrackCoverageResponse {
+	m0 := &CheckTrackCoverageResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CoveredFraction = b.CoveredFraction
+	return m0
+}
+
 var File_routes_v1_routes_proto protoreflect.FileDescriptor
 
 const file_routes_v1_routes_proto_rawDesc = "" +
@@ -2009,15 +2399,19 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\tWaypoints\x12,\n" +
 	"\twaypoints\x18\x01 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x123\n" +
 	"\aprofile\x18\x02 \x01(\x0e2\x19.routes.v1.RoutingProfileR\aprofile\x12<\n" +
-	"\fleg_profiles\x18\x03 \x03(\x0e2\x19.routes.v1.RoutingProfileR\vlegProfiles\"\xe8\x01\n" +
+	"\fleg_profiles\x18\x03 \x03(\x0e2\x19.routes.v1.RoutingProfileR\vlegProfiles\"\xc1\x02\n" +
 	"\x12CreateRouteRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x124\n" +
 	"\twaypoints\x18\x03 \x01(\v2\x14.routes.v1.WaypointsH\x00R\twaypoints\x12\x12\n" +
 	"\x03gpx\x18\x04 \x01(\tH\x00R\x03gpx\x12!\n" +
 	"\vactivity_id\x18\x05 \x01(\tH\x00R\n" +
-	"activityId\x12%\n" +
-	"\x0einclude_points\x18\x06 \x01(\bR\rincludePointsB\b\n" +
+	"activityId\x12\x1b\n" +
+	"\broute_id\x18\b \x01(\tH\x00R\arouteId\x12%\n" +
+	"\x0einclude_points\x18\x06 \x01(\bR\rincludePoints\x12:\n" +
+	"\n" +
+	"conversion\x18\a \x01(\x0e2\x1a.routes.v1.TrackConversionR\n" +
+	"conversionB\b\n" +
 	"\x06source\"=\n" +
 	"\x13CreateRouteResponse\x12&\n" +
 	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\"H\n" +
@@ -2041,18 +2435,30 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\"$\n" +
 	"\x12DeleteRouteRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x15\n" +
-	"\x13DeleteRouteResponse*\xa5\x01\n" +
+	"\x13DeleteRouteResponse\"y\n" +
+	"\x19CheckTrackCoverageRequest\x12\x12\n" +
+	"\x03gpx\x18\x01 \x01(\tH\x00R\x03gpx\x12!\n" +
+	"\vactivity_id\x18\x02 \x01(\tH\x00R\n" +
+	"activityId\x12\x1b\n" +
+	"\broute_id\x18\x03 \x01(\tH\x00R\arouteIdB\b\n" +
+	"\x06source\"G\n" +
+	"\x1aCheckTrackCoverageResponse\x12)\n" +
+	"\x10covered_fraction\x18\x01 \x01(\x01R\x0fcoveredFraction*\xa5\x01\n" +
 	"\x0eRoutingProfile\x12\x1f\n" +
 	"\x1bROUTING_PROFILE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15ROUTING_PROFILE_TRAIL\x10\x01\x12\x1c\n" +
 	"\x18ROUTING_PROFILE_SHORTEST\x10\x02\x12\x1c\n" +
 	"\x18ROUTING_PROFILE_STRAIGHT\x10\x03\x12\x1b\n" +
-	"\x17ROUTING_PROFILE_HEATMAP\x10\x04*x\n" +
+	"\x17ROUTING_PROFILE_HEATMAP\x10\x04*j\n" +
+	"\x0fTrackConversion\x12 \n" +
+	"\x1cTRACK_CONVERSION_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16TRACK_CONVERSION_EXACT\x10\x01\x12\x19\n" +
+	"\x15TRACK_CONVERSION_SNAP\x10\x02*x\n" +
 	"\vRouteSource\x12\x1c\n" +
 	"\x18ROUTE_SOURCE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16ROUTE_SOURCE_WAYPOINTS\x10\x01\x12\x14\n" +
 	"\x10ROUTE_SOURCE_GPX\x10\x02\x12\x19\n" +
-	"\x15ROUTE_SOURCE_ACTIVITY\x10\x032\xd9\x03\n" +
+	"\x15ROUTE_SOURCE_ACTIVITY\x10\x032\xc1\x04\n" +
 	"\fRouteService\x12O\n" +
 	"\fPreviewRoute\x12\x1e.routes.v1.PreviewRouteRequest\x1a\x1f.routes.v1.PreviewRouteResponse\x12L\n" +
 	"\vCreateRoute\x12\x1d.routes.v1.CreateRouteRequest\x1a\x1e.routes.v1.CreateRouteResponse\x12C\n" +
@@ -2060,77 +2466,84 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\n" +
 	"ListRoutes\x12\x1c.routes.v1.ListRoutesRequest\x1a\x1d.routes.v1.ListRoutesResponse\x12L\n" +
 	"\vUpdateRoute\x12\x1d.routes.v1.UpdateRouteRequest\x1a\x1e.routes.v1.UpdateRouteResponse\x12L\n" +
-	"\vDeleteRoute\x12\x1d.routes.v1.DeleteRouteRequest\x1a\x1e.routes.v1.DeleteRouteResponseB\xa2\x01\n" +
+	"\vDeleteRoute\x12\x1d.routes.v1.DeleteRouteRequest\x1a\x1e.routes.v1.DeleteRouteResponse\x12f\n" +
+	"\x12CheckTrackCoverage\x12$.routes.v1.CheckTrackCoverageRequest\x1a%.routes.v1.CheckTrackCoverageResponse\"\x03\x90\x02\x01B\xa2\x01\n" +
 	"\rcom.routes.v1B\vRoutesProtoP\x01Z?github.com/catzkorn/trail-tools/internal/gen/routes/v1;routesv1\xa2\x02\x03RXX\xaa\x02\tRoutes.V1\xca\x02\tRoutes\\V1\xe2\x02\x15Routes\\V1\\GPBMetadata\xea\x02\n" +
 	"Routes::V1b\x06proto3"
 
-var file_routes_v1_routes_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_routes_v1_routes_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_routes_v1_routes_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_routes_v1_routes_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_routes_v1_routes_proto_goTypes = []any{
-	(RoutingProfile)(0),           // 0: routes.v1.RoutingProfile
-	(RouteSource)(0),              // 1: routes.v1.RouteSource
-	(*RoutePoint)(nil),            // 2: routes.v1.RoutePoint
-	(*TerrainShare)(nil),          // 3: routes.v1.TerrainShare
-	(*RouteStats)(nil),            // 4: routes.v1.RouteStats
-	(*Route)(nil),                 // 5: routes.v1.Route
-	(*PreviewRouteRequest)(nil),   // 6: routes.v1.PreviewRouteRequest
-	(*PreviewRouteResponse)(nil),  // 7: routes.v1.PreviewRouteResponse
-	(*Waypoints)(nil),             // 8: routes.v1.Waypoints
-	(*CreateRouteRequest)(nil),    // 9: routes.v1.CreateRouteRequest
-	(*CreateRouteResponse)(nil),   // 10: routes.v1.CreateRouteResponse
-	(*GetRouteRequest)(nil),       // 11: routes.v1.GetRouteRequest
-	(*GetRouteResponse)(nil),      // 12: routes.v1.GetRouteResponse
-	(*ListRoutesRequest)(nil),     // 13: routes.v1.ListRoutesRequest
-	(*ListRoutesResponse)(nil),    // 14: routes.v1.ListRoutesResponse
-	(*UpdateRouteRequest)(nil),    // 15: routes.v1.UpdateRouteRequest
-	(*UpdateRouteResponse)(nil),   // 16: routes.v1.UpdateRouteResponse
-	(*DeleteRouteRequest)(nil),    // 17: routes.v1.DeleteRouteRequest
-	(*DeleteRouteResponse)(nil),   // 18: routes.v1.DeleteRouteResponse
-	(v1.Terrain)(0),               // 19: geo.v1.Terrain
-	(*v1.LatLng)(nil),             // 20: geo.v1.LatLng
-	(*timestamppb.Timestamp)(nil), // 21: google.protobuf.Timestamp
+	(RoutingProfile)(0),                // 0: routes.v1.RoutingProfile
+	(TrackConversion)(0),               // 1: routes.v1.TrackConversion
+	(RouteSource)(0),                   // 2: routes.v1.RouteSource
+	(*RoutePoint)(nil),                 // 3: routes.v1.RoutePoint
+	(*TerrainShare)(nil),               // 4: routes.v1.TerrainShare
+	(*RouteStats)(nil),                 // 5: routes.v1.RouteStats
+	(*Route)(nil),                      // 6: routes.v1.Route
+	(*PreviewRouteRequest)(nil),        // 7: routes.v1.PreviewRouteRequest
+	(*PreviewRouteResponse)(nil),       // 8: routes.v1.PreviewRouteResponse
+	(*Waypoints)(nil),                  // 9: routes.v1.Waypoints
+	(*CreateRouteRequest)(nil),         // 10: routes.v1.CreateRouteRequest
+	(*CreateRouteResponse)(nil),        // 11: routes.v1.CreateRouteResponse
+	(*GetRouteRequest)(nil),            // 12: routes.v1.GetRouteRequest
+	(*GetRouteResponse)(nil),           // 13: routes.v1.GetRouteResponse
+	(*ListRoutesRequest)(nil),          // 14: routes.v1.ListRoutesRequest
+	(*ListRoutesResponse)(nil),         // 15: routes.v1.ListRoutesResponse
+	(*UpdateRouteRequest)(nil),         // 16: routes.v1.UpdateRouteRequest
+	(*UpdateRouteResponse)(nil),        // 17: routes.v1.UpdateRouteResponse
+	(*DeleteRouteRequest)(nil),         // 18: routes.v1.DeleteRouteRequest
+	(*DeleteRouteResponse)(nil),        // 19: routes.v1.DeleteRouteResponse
+	(*CheckTrackCoverageRequest)(nil),  // 20: routes.v1.CheckTrackCoverageRequest
+	(*CheckTrackCoverageResponse)(nil), // 21: routes.v1.CheckTrackCoverageResponse
+	(v1.Terrain)(0),                    // 22: geo.v1.Terrain
+	(*v1.LatLng)(nil),                  // 23: geo.v1.LatLng
+	(*timestamppb.Timestamp)(nil),      // 24: google.protobuf.Timestamp
 }
 var file_routes_v1_routes_proto_depIdxs = []int32{
-	19, // 0: routes.v1.TerrainShare.terrain:type_name -> geo.v1.Terrain
-	3,  // 1: routes.v1.RouteStats.terrain:type_name -> routes.v1.TerrainShare
+	22, // 0: routes.v1.TerrainShare.terrain:type_name -> geo.v1.Terrain
+	4,  // 1: routes.v1.RouteStats.terrain:type_name -> routes.v1.TerrainShare
 	0,  // 2: routes.v1.Route.profile:type_name -> routes.v1.RoutingProfile
-	20, // 3: routes.v1.Route.waypoints:type_name -> geo.v1.LatLng
+	23, // 3: routes.v1.Route.waypoints:type_name -> geo.v1.LatLng
 	0,  // 4: routes.v1.Route.leg_profiles:type_name -> routes.v1.RoutingProfile
-	2,  // 5: routes.v1.Route.points:type_name -> routes.v1.RoutePoint
-	4,  // 6: routes.v1.Route.stats:type_name -> routes.v1.RouteStats
-	1,  // 7: routes.v1.Route.source:type_name -> routes.v1.RouteSource
-	21, // 8: routes.v1.Route.create_time:type_name -> google.protobuf.Timestamp
-	21, // 9: routes.v1.Route.update_time:type_name -> google.protobuf.Timestamp
-	20, // 10: routes.v1.PreviewRouteRequest.waypoints:type_name -> geo.v1.LatLng
+	3,  // 5: routes.v1.Route.points:type_name -> routes.v1.RoutePoint
+	5,  // 6: routes.v1.Route.stats:type_name -> routes.v1.RouteStats
+	2,  // 7: routes.v1.Route.source:type_name -> routes.v1.RouteSource
+	24, // 8: routes.v1.Route.create_time:type_name -> google.protobuf.Timestamp
+	24, // 9: routes.v1.Route.update_time:type_name -> google.protobuf.Timestamp
+	23, // 10: routes.v1.PreviewRouteRequest.waypoints:type_name -> geo.v1.LatLng
 	0,  // 11: routes.v1.PreviewRouteRequest.profile:type_name -> routes.v1.RoutingProfile
 	0,  // 12: routes.v1.PreviewRouteRequest.leg_profiles:type_name -> routes.v1.RoutingProfile
-	5,  // 13: routes.v1.PreviewRouteResponse.route:type_name -> routes.v1.Route
-	20, // 14: routes.v1.Waypoints.waypoints:type_name -> geo.v1.LatLng
+	6,  // 13: routes.v1.PreviewRouteResponse.route:type_name -> routes.v1.Route
+	23, // 14: routes.v1.Waypoints.waypoints:type_name -> geo.v1.LatLng
 	0,  // 15: routes.v1.Waypoints.profile:type_name -> routes.v1.RoutingProfile
 	0,  // 16: routes.v1.Waypoints.leg_profiles:type_name -> routes.v1.RoutingProfile
-	8,  // 17: routes.v1.CreateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
-	5,  // 18: routes.v1.CreateRouteResponse.route:type_name -> routes.v1.Route
-	5,  // 19: routes.v1.GetRouteResponse.route:type_name -> routes.v1.Route
-	5,  // 20: routes.v1.ListRoutesResponse.routes:type_name -> routes.v1.Route
-	8,  // 21: routes.v1.UpdateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
-	5,  // 22: routes.v1.UpdateRouteResponse.route:type_name -> routes.v1.Route
-	6,  // 23: routes.v1.RouteService.PreviewRoute:input_type -> routes.v1.PreviewRouteRequest
-	9,  // 24: routes.v1.RouteService.CreateRoute:input_type -> routes.v1.CreateRouteRequest
-	11, // 25: routes.v1.RouteService.GetRoute:input_type -> routes.v1.GetRouteRequest
-	13, // 26: routes.v1.RouteService.ListRoutes:input_type -> routes.v1.ListRoutesRequest
-	15, // 27: routes.v1.RouteService.UpdateRoute:input_type -> routes.v1.UpdateRouteRequest
-	17, // 28: routes.v1.RouteService.DeleteRoute:input_type -> routes.v1.DeleteRouteRequest
-	7,  // 29: routes.v1.RouteService.PreviewRoute:output_type -> routes.v1.PreviewRouteResponse
-	10, // 30: routes.v1.RouteService.CreateRoute:output_type -> routes.v1.CreateRouteResponse
-	12, // 31: routes.v1.RouteService.GetRoute:output_type -> routes.v1.GetRouteResponse
-	14, // 32: routes.v1.RouteService.ListRoutes:output_type -> routes.v1.ListRoutesResponse
-	16, // 33: routes.v1.RouteService.UpdateRoute:output_type -> routes.v1.UpdateRouteResponse
-	18, // 34: routes.v1.RouteService.DeleteRoute:output_type -> routes.v1.DeleteRouteResponse
-	29, // [29:35] is the sub-list for method output_type
-	23, // [23:29] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	9,  // 17: routes.v1.CreateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
+	1,  // 18: routes.v1.CreateRouteRequest.conversion:type_name -> routes.v1.TrackConversion
+	6,  // 19: routes.v1.CreateRouteResponse.route:type_name -> routes.v1.Route
+	6,  // 20: routes.v1.GetRouteResponse.route:type_name -> routes.v1.Route
+	6,  // 21: routes.v1.ListRoutesResponse.routes:type_name -> routes.v1.Route
+	9,  // 22: routes.v1.UpdateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
+	6,  // 23: routes.v1.UpdateRouteResponse.route:type_name -> routes.v1.Route
+	7,  // 24: routes.v1.RouteService.PreviewRoute:input_type -> routes.v1.PreviewRouteRequest
+	10, // 25: routes.v1.RouteService.CreateRoute:input_type -> routes.v1.CreateRouteRequest
+	12, // 26: routes.v1.RouteService.GetRoute:input_type -> routes.v1.GetRouteRequest
+	14, // 27: routes.v1.RouteService.ListRoutes:input_type -> routes.v1.ListRoutesRequest
+	16, // 28: routes.v1.RouteService.UpdateRoute:input_type -> routes.v1.UpdateRouteRequest
+	18, // 29: routes.v1.RouteService.DeleteRoute:input_type -> routes.v1.DeleteRouteRequest
+	20, // 30: routes.v1.RouteService.CheckTrackCoverage:input_type -> routes.v1.CheckTrackCoverageRequest
+	8,  // 31: routes.v1.RouteService.PreviewRoute:output_type -> routes.v1.PreviewRouteResponse
+	11, // 32: routes.v1.RouteService.CreateRoute:output_type -> routes.v1.CreateRouteResponse
+	13, // 33: routes.v1.RouteService.GetRoute:output_type -> routes.v1.GetRouteResponse
+	15, // 34: routes.v1.RouteService.ListRoutes:output_type -> routes.v1.ListRoutesResponse
+	17, // 35: routes.v1.RouteService.UpdateRoute:output_type -> routes.v1.UpdateRouteResponse
+	19, // 36: routes.v1.RouteService.DeleteRoute:output_type -> routes.v1.DeleteRouteResponse
+	21, // 37: routes.v1.RouteService.CheckTrackCoverage:output_type -> routes.v1.CheckTrackCoverageResponse
+	31, // [31:38] is the sub-list for method output_type
+	24, // [24:31] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_routes_v1_routes_proto_init() }
@@ -2142,15 +2555,21 @@ func file_routes_v1_routes_proto_init() {
 		(*createRouteRequest_Waypoints)(nil),
 		(*createRouteRequest_Gpx)(nil),
 		(*createRouteRequest_ActivityId)(nil),
+		(*createRouteRequest_RouteId)(nil),
 	}
 	file_routes_v1_routes_proto_msgTypes[13].OneofWrappers = []any{}
+	file_routes_v1_routes_proto_msgTypes[17].OneofWrappers = []any{
+		(*checkTrackCoverageRequest_Gpx)(nil),
+		(*checkTrackCoverageRequest_ActivityId)(nil),
+		(*checkTrackCoverageRequest_RouteId)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routes_v1_routes_proto_rawDesc), len(file_routes_v1_routes_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   17,
+			NumEnums:      3,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

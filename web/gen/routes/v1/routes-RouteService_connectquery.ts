@@ -16,8 +16,10 @@ import { RouteService } from "./routes_pb";
 export const previewRoute = RouteService.method.previewRoute;
 
 /**
- * Create and save a new route from waypoints, a GPX file or an existing
- * activity.
+ * Create and save a new route from waypoints, a GPX file, an existing
+ * activity or another route. A recorded track can be kept exactly, or
+ * turned into an editable route that follows it with as few waypoints as
+ * possible (see the conversion field).
  *
  * @generated from rpc routes.v1.RouteService.CreateRoute
  */
@@ -53,3 +55,14 @@ export const updateRoute = RouteService.method.updateRoute;
  * @generated from rpc routes.v1.RouteService.DeleteRoute
  */
 export const deleteRoute = RouteService.method.deleteRoute;
+
+/**
+ * Check how much of a recorded track lies within the map data that tracks
+ * are snapped to. Snapping only follows mapped paths where map data has
+ * been imported; elsewhere the route becomes STRAIGHT legs. Call this
+ * before creating a route with conversion SNAP, and keep the track EXACT
+ * if much of it isn't covered.
+ *
+ * @generated from rpc routes.v1.RouteService.CheckTrackCoverage
+ */
+export const checkTrackCoverage = RouteService.method.checkTrackCoverage;
