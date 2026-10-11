@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file routes/v1/routes.proto.
  */
 export const file_routes_v1_routes: GenFile = /*@__PURE__*/
-  fileDesc("ChZyb3V0ZXMvdjEvcm91dGVzLnByb3RvEglyb3V0ZXMudjEiWQoKUm91dGVQb2ludBILCgNsYXQYASABKAESCwoDbG5nGAIgASgBEhgKEGVsZXZhdGlvbl9tZXRlcnMYAyABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBIlsKDFRlcnJhaW5TaGFyZRIgCgd0ZXJyYWluGAEgASgOMg8uZ2VvLnYxLlRlcnJhaW4SFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEhAKCGZyYWN0aW9uGAMgASgBIo0CCgpSb3V0ZVN0YXRzEhcKD2Rpc3RhbmNlX21ldGVycxgBIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAMgASgBEhwKFG1pbl9lbGV2YXRpb25fbWV0ZXJzGAQgASgBEhwKFG1heF9lbGV2YXRpb25fbWV0ZXJzGAUgASgBEh8KF21heF9jbGltYl9ncmFkZV9wZXJjZW50GAYgASgBEiEKGW1heF9kZXNjZW50X2dyYWRlX3BlcmNlbnQYByABKAESKAoHdGVycmFpbhgIIAMoCzIXLnJvdXRlcy52MS5UZXJyYWluU2hhcmUi3AIKBVJvdXRlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKgoHcHJvZmlsZRgEIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIhCgl3YXlwb2ludHMYBSADKAsyDi5nZW8udjEuTGF0TG5nEiUKBnBvaW50cxgGIAMoCzIVLnJvdXRlcy52MS5Sb3V0ZVBvaW50EiQKBXN0YXRzGAcgASgLMhUucm91dGVzLnYxLlJvdXRlU3RhdHMSJgoGc291cmNlGAggASgOMhYucm91dGVzLnYxLlJvdXRlU291cmNlEi8KC2NyZWF0ZV90aW1lGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgt1cGRhdGVfdGltZRgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAifAoTUHJldmlld1JvdXRlUmVxdWVzdBIhCgl3YXlwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nEioKB3Byb2ZpbGUYAiABKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSFgoOaW5jbHVkZV9wb2ludHMYAyABKAgiNwoUUHJldmlld1JvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiWgoJV2F5cG9pbnRzEiEKCXdheXBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmcSKgoHcHJvZmlsZRgCIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZSKqAQoSQ3JlYXRlUm91dGVSZXF1ZXN0EgwKBG5hbWUYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkSKQoJd2F5cG9pbnRzGAMgASgLMhQucm91dGVzLnYxLldheXBvaW50c0gAEg0KA2dweBgEIAEoCUgAEhUKC2FjdGl2aXR5X2lkGAUgASgJSAASFgoOaW5jbHVkZV9wb2ludHMYBiABKAhCCAoGc291cmNlIjYKE0NyZWF0ZVJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiNQoPR2V0Um91dGVSZXF1ZXN0EgoKAmlkGAEgASgJEhYKDmluY2x1ZGVfcG9pbnRzGAIgASgIIjMKEEdldFJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiEwoRTGlzdFJvdXRlc1JlcXVlc3QiNgoSTGlzdFJvdXRlc1Jlc3BvbnNlEiAKBnJvdXRlcxgBIAMoCzIQLnJvdXRlcy52MS5Sb3V0ZSKnAQoSVXBkYXRlUm91dGVSZXF1ZXN0EgoKAmlkGAEgASgJEhEKBG5hbWUYAiABKAlIAIgBARIYCgtkZXNjcmlwdGlvbhgDIAEoCUgBiAEBEicKCXdheXBvaW50cxgEIAEoCzIULnJvdXRlcy52MS5XYXlwb2ludHMSFgoOaW5jbHVkZV9wb2ludHMYBSABKAhCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uIjYKE1VwZGF0ZVJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiIAoSRGVsZXRlUm91dGVSZXF1ZXN0EgoKAmlkGAEgASgJIhUKE0RlbGV0ZVJvdXRlUmVzcG9uc2UqiAEKDlJvdXRpbmdQcm9maWxlEh8KG1JPVVRJTkdfUFJPRklMRV9VTlNQRUNJRklFRBAAEhkKFVJPVVRJTkdfUFJPRklMRV9UUkFJTBABEhwKGFJPVVRJTkdfUFJPRklMRV9TSE9SVEVTVBACEhwKGFJPVVRJTkdfUFJPRklMRV9TVFJBSUdIVBADKngKC1JvdXRlU291cmNlEhwKGFJPVVRFX1NPVVJDRV9VTlNQRUNJRklFRBAAEhoKFlJPVVRFX1NPVVJDRV9XQVlQT0lOVFMQARIUChBST1VURV9TT1VSQ0VfR1BYEAISGQoVUk9VVEVfU09VUkNFX0FDVElWSVRZEAMy2QMKDFJvdXRlU2VydmljZRJPCgxQcmV2aWV3Um91dGUSHi5yb3V0ZXMudjEuUHJldmlld1JvdXRlUmVxdWVzdBofLnJvdXRlcy52MS5QcmV2aWV3Um91dGVSZXNwb25zZRJMCgtDcmVhdGVSb3V0ZRIdLnJvdXRlcy52MS5DcmVhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuQ3JlYXRlUm91dGVSZXNwb25zZRJDCghHZXRSb3V0ZRIaLnJvdXRlcy52MS5HZXRSb3V0ZVJlcXVlc3QaGy5yb3V0ZXMudjEuR2V0Um91dGVSZXNwb25zZRJJCgpMaXN0Um91dGVzEhwucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXF1ZXN0Gh0ucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXNwb25zZRJMCgtVcGRhdGVSb3V0ZRIdLnJvdXRlcy52MS5VcGRhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuVXBkYXRlUm91dGVSZXNwb25zZRJMCgtEZWxldGVSb3V0ZRIdLnJvdXRlcy52MS5EZWxldGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuRGVsZXRlUm91dGVSZXNwb25zZUKiAQoNY29tLnJvdXRlcy52MUILUm91dGVzUHJvdG9QAVo/Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcm91dGVzL3YxO3JvdXRlc3YxogIDUlhYqgIJUm91dGVzLlYxygIJUm91dGVzXFYx4gIVUm91dGVzXFYxXEdQQk1ldGFkYXRh6gIKUm91dGVzOjpWMWIGcHJvdG8z", [file_geo_v1_geo, file_google_protobuf_timestamp]);
+  fileDesc("ChZyb3V0ZXMvdjEvcm91dGVzLnByb3RvEglyb3V0ZXMudjEiWQoKUm91dGVQb2ludBILCgNsYXQYASABKAESCwoDbG5nGAIgASgBEhgKEGVsZXZhdGlvbl9tZXRlcnMYAyABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBIlsKDFRlcnJhaW5TaGFyZRIgCgd0ZXJyYWluGAEgASgOMg8uZ2VvLnYxLlRlcnJhaW4SFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEhAKCGZyYWN0aW9uGAMgASgBIo0CCgpSb3V0ZVN0YXRzEhcKD2Rpc3RhbmNlX21ldGVycxgBIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAMgASgBEhwKFG1pbl9lbGV2YXRpb25fbWV0ZXJzGAQgASgBEhwKFG1heF9lbGV2YXRpb25fbWV0ZXJzGAUgASgBEh8KF21heF9jbGltYl9ncmFkZV9wZXJjZW50GAYgASgBEiEKGW1heF9kZXNjZW50X2dyYWRlX3BlcmNlbnQYByABKAESKAoHdGVycmFpbhgIIAMoCzIXLnJvdXRlcy52MS5UZXJyYWluU2hhcmUi3AIKBVJvdXRlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKgoHcHJvZmlsZRgEIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIhCgl3YXlwb2ludHMYBSADKAsyDi5nZW8udjEuTGF0TG5nEiUKBnBvaW50cxgGIAMoCzIVLnJvdXRlcy52MS5Sb3V0ZVBvaW50EiQKBXN0YXRzGAcgASgLMhUucm91dGVzLnYxLlJvdXRlU3RhdHMSJgoGc291cmNlGAggASgOMhYucm91dGVzLnYxLlJvdXRlU291cmNlEi8KC2NyZWF0ZV90aW1lGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgt1cGRhdGVfdGltZRgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAifAoTUHJldmlld1JvdXRlUmVxdWVzdBIhCgl3YXlwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nEioKB3Byb2ZpbGUYAiABKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSFgoOaW5jbHVkZV9wb2ludHMYAyABKAgiNwoUUHJldmlld1JvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiWgoJV2F5cG9pbnRzEiEKCXdheXBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmcSKgoHcHJvZmlsZRgCIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZSKqAQoSQ3JlYXRlUm91dGVSZXF1ZXN0EgwKBG5hbWUYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkSKQoJd2F5cG9pbnRzGAMgASgLMhQucm91dGVzLnYxLldheXBvaW50c0gAEg0KA2dweBgEIAEoCUgAEhUKC2FjdGl2aXR5X2lkGAUgASgJSAASFgoOaW5jbHVkZV9wb2ludHMYBiABKAhCCAoGc291cmNlIjYKE0NyZWF0ZVJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiNQoPR2V0Um91dGVSZXF1ZXN0EgoKAmlkGAEgASgJEhYKDmluY2x1ZGVfcG9pbnRzGAIgASgIIjMKEEdldFJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiEwoRTGlzdFJvdXRlc1JlcXVlc3QiNgoSTGlzdFJvdXRlc1Jlc3BvbnNlEiAKBnJvdXRlcxgBIAMoCzIQLnJvdXRlcy52MS5Sb3V0ZSKnAQoSVXBkYXRlUm91dGVSZXF1ZXN0EgoKAmlkGAEgASgJEhEKBG5hbWUYAiABKAlIAIgBARIYCgtkZXNjcmlwdGlvbhgDIAEoCUgBiAEBEicKCXdheXBvaW50cxgEIAEoCzIULnJvdXRlcy52MS5XYXlwb2ludHMSFgoOaW5jbHVkZV9wb2ludHMYBSABKAhCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uIjYKE1VwZGF0ZVJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiIAoSRGVsZXRlUm91dGVSZXF1ZXN0EgoKAmlkGAEgASgJIhUKE0RlbGV0ZVJvdXRlUmVzcG9uc2Ui4wEKF0dldFJvdXRlRm9yZWNhc3RSZXF1ZXN0EhIKCHJvdXRlX2lkGAEgASgJSAASDQoDZ3B4GAIgASgJSAASHwoEcGF0aBgDIAEoCzIPLnJvdXRlcy52MS5QYXRoSAASLgoKc3RhcnRfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEQoJc3BlZWRfa21oGAUgASgBEh0KFWNsaW1iX21ldGVyc19wZXJfaG91chgGIAEoARIYChBpbnRlcnZhbF9taW51dGVzGAcgASgFQggKBnNvdXJjZSImCgRQYXRoEh4KBnBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmciuAQKDUZvcmVjYXN0UG9pbnQSKgoEa2luZBgBIAEoDjIcLnJvdXRlcy52MS5Gb3JlY2FzdFBvaW50S2luZBIoCgR0aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIXCg9kaXN0YW5jZV9tZXRlcnMYAyABKAESIAoIbG9jYXRpb24YBCABKAsyDi5nZW8udjEuTGF0TG5nEhgKEGVsZXZhdGlvbl9tZXRlcnMYBSABKAESGwoTdGVtcGVyYXR1cmVfY2Vsc2l1cxgGIAEoARIkChxhcHBhcmVudF90ZW1wZXJhdHVyZV9jZWxzaXVzGAcgASgBEikKIXByZWNpcGl0YXRpb25fcHJvYmFiaWxpdHlfcGVyY2VudBgIIAEoBRIYChBwcmVjaXBpdGF0aW9uX21tGAkgASgBEhMKC3Nub3dmYWxsX2NtGAogASgBEhYKDndpbmRfc3BlZWRfa21oGAsgASgBEhYKDndpbmRfZ3VzdHNfa21oGAwgASgBEh4KFndpbmRfZGlyZWN0aW9uX2RlZ3JlZXMYDSABKAUSGwoTY2xvdWRfY292ZXJfcGVyY2VudBgOIAEoBRIdChVmcmVlemluZ19sZXZlbF9tZXRlcnMYDyABKAESEAoIdXZfaW5kZXgYECABKAESDgoGaXNfZGF5GBEgASgIEhQKDHdlYXRoZXJfY29kZRgSIAEoBRIbChN3ZWF0aGVyX2Rlc2NyaXB0aW9uGBMgASgJIv4BChhHZXRSb3V0ZUZvcmVjYXN0UmVzcG9uc2USKAoGcG9pbnRzGAEgAygLMhgucm91dGVzLnYxLkZvcmVjYXN0UG9pbnQSLwoLZmluaXNoX3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhgKEGR1cmF0aW9uX3NlY29uZHMYAyABKAUSFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgFIAEoARIQCgh3YXJuaW5ncxgGIAMoCRIjCgRwYXRoGAcgAygLMhUucm91dGVzLnYxLlJvdXRlUG9pbnQqiAEKDlJvdXRpbmdQcm9maWxlEh8KG1JPVVRJTkdfUFJPRklMRV9VTlNQRUNJRklFRBAAEhkKFVJPVVRJTkdfUFJPRklMRV9UUkFJTBABEhwKGFJPVVRJTkdfUFJPRklMRV9TSE9SVEVTVBACEhwKGFJPVVRJTkdfUFJPRklMRV9TVFJBSUdIVBADKngKC1JvdXRlU291cmNlEhwKGFJPVVRFX1NPVVJDRV9VTlNQRUNJRklFRBAAEhoKFlJPVVRFX1NPVVJDRV9XQVlQT0lOVFMQARIUChBST1VURV9TT1VSQ0VfR1BYEAISGQoVUk9VVEVfU09VUkNFX0FDVElWSVRZEAMqvQEKEUZvcmVjYXN0UG9pbnRLaW5kEiMKH0ZPUkVDQVNUX1BPSU5UX0tJTkRfVU5TUEVDSUZJRUQQABIdChlGT1JFQ0FTVF9QT0lOVF9LSU5EX1NUQVJUEAESIAocRk9SRUNBU1RfUE9JTlRfS0lORF9JTlRFUlZBTBACEiIKHkZPUkVDQVNUX1BPSU5UX0tJTkRfSElHSF9QT0lOVBADEh4KGkZPUkVDQVNUX1BPSU5UX0tJTkRfRklOSVNIEAQytgQKDFJvdXRlU2VydmljZRJPCgxQcmV2aWV3Um91dGUSHi5yb3V0ZXMudjEuUHJldmlld1JvdXRlUmVxdWVzdBofLnJvdXRlcy52MS5QcmV2aWV3Um91dGVSZXNwb25zZRJMCgtDcmVhdGVSb3V0ZRIdLnJvdXRlcy52MS5DcmVhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuQ3JlYXRlUm91dGVSZXNwb25zZRJDCghHZXRSb3V0ZRIaLnJvdXRlcy52MS5HZXRSb3V0ZVJlcXVlc3QaGy5yb3V0ZXMudjEuR2V0Um91dGVSZXNwb25zZRJJCgpMaXN0Um91dGVzEhwucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXF1ZXN0Gh0ucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXNwb25zZRJMCgtVcGRhdGVSb3V0ZRIdLnJvdXRlcy52MS5VcGRhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuVXBkYXRlUm91dGVSZXNwb25zZRJMCgtEZWxldGVSb3V0ZRIdLnJvdXRlcy52MS5EZWxldGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuRGVsZXRlUm91dGVSZXNwb25zZRJbChBHZXRSb3V0ZUZvcmVjYXN0EiIucm91dGVzLnYxLkdldFJvdXRlRm9yZWNhc3RSZXF1ZXN0GiMucm91dGVzLnYxLkdldFJvdXRlRm9yZWNhc3RSZXNwb25zZUKiAQoNY29tLnJvdXRlcy52MUILUm91dGVzUHJvdG9QAVo/Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcm91dGVzL3YxO3JvdXRlc3YxogIDUlhYqgIJUm91dGVzLlYxygIJUm91dGVzXFYx4gIVUm91dGVzXFYxXEdQQk1ldGFkYXRh6gIKUm91dGVzOjpWMWIGcHJvdG8z", [file_geo_v1_geo, file_google_protobuf_timestamp]);
 
 /**
  * A point along a route path.
@@ -591,6 +591,313 @@ export const DeleteRouteResponseSchema: GenMessage<DeleteRouteResponse> = /*@__P
   messageDesc(file_routes_v1_routes, 16);
 
 /**
+ * @generated from message routes.v1.GetRouteForecastRequest
+ */
+export type GetRouteForecastRequest = Message<"routes.v1.GetRouteForecastRequest"> & {
+  /**
+   * The route to forecast. Exactly one must be set.
+   *
+   * @generated from oneof routes.v1.GetRouteForecastRequest.source
+   */
+  source: {
+    /**
+     * The ID of a saved route.
+     *
+     * @generated from field: string route_id = 1;
+     */
+    value: string;
+    case: "routeId";
+  } | {
+    /**
+     * The contents of a GPX file. The first track (or route) is used.
+     *
+     * @generated from field: string gpx = 2;
+     */
+    value: string;
+    case: "gpx";
+  } | {
+    /**
+     * A path as a list of coordinates. Elevations are looked up.
+     *
+     * @generated from field: routes.v1.Path path = 3;
+     */
+    value: Path;
+    case: "path";
+  } | { case: undefined; value?: undefined };
+
+  /**
+   * The planned start time.
+   *
+   * @generated from field: google.protobuf.Timestamp start_time = 4;
+   */
+  startTime?: Timestamp | undefined;
+
+  /**
+   * The average moving speed on flat ground in kilometers per hour.
+   *
+   * @generated from field: double speed_kmh = 5;
+   */
+  speedKmh: number;
+
+  /**
+   * The climbing rate in meters of elevation gain per hour. If set, time for
+   * climbing is added on top of the flat speed, like Naismith's rule (a
+   * typical value for a strong hiker is 600). If 0, only the flat speed is
+   * used.
+   *
+   * @generated from field: double climb_meters_per_hour = 6;
+   */
+  climbMetersPerHour: number;
+
+  /**
+   * How often to sample the forecast along the route, in minutes. Defaults
+   * to 60, minimum 15.
+   *
+   * @generated from field: int32 interval_minutes = 7;
+   */
+  intervalMinutes: number;
+};
+
+/**
+ * Describes the message routes.v1.GetRouteForecastRequest.
+ * Use `create(GetRouteForecastRequestSchema)` to create a new message.
+ */
+export const GetRouteForecastRequestSchema: GenMessage<GetRouteForecastRequest> = /*@__PURE__*/
+  messageDesc(file_routes_v1_routes, 17);
+
+/**
+ * A path as a list of coordinates.
+ *
+ * @generated from message routes.v1.Path
+ */
+export type Path = Message<"routes.v1.Path"> & {
+  /**
+   * The coordinates of the path, in order. At least 2 are required.
+   *
+   * @generated from field: repeated geo.v1.LatLng points = 1;
+   */
+  points: LatLng[];
+};
+
+/**
+ * Describes the message routes.v1.Path.
+ * Use `create(PathSchema)` to create a new message.
+ */
+export const PathSchema: GenMessage<Path> = /*@__PURE__*/
+  messageDesc(file_routes_v1_routes, 18);
+
+/**
+ * The weather forecast at a point along the route at the time the runner is
+ * expected to be there.
+ *
+ * @generated from message routes.v1.ForecastPoint
+ */
+export type ForecastPoint = Message<"routes.v1.ForecastPoint"> & {
+  /**
+   * What the point represents.
+   *
+   * @generated from field: routes.v1.ForecastPointKind kind = 1;
+   */
+  kind: ForecastPointKind;
+
+  /**
+   * The expected time at the point.
+   *
+   * @generated from field: google.protobuf.Timestamp time = 2;
+   */
+  time?: Timestamp | undefined;
+
+  /**
+   * The distance from the start in meters.
+   *
+   * @generated from field: double distance_meters = 3;
+   */
+  distanceMeters: number;
+
+  /**
+   * The location of the point.
+   *
+   * @generated from field: geo.v1.LatLng location = 4;
+   */
+  location?: LatLng | undefined;
+
+  /**
+   * The elevation of the point in meters.
+   *
+   * @generated from field: double elevation_meters = 5;
+   */
+  elevationMeters: number;
+
+  /**
+   * Air temperature at 2m in degrees Celsius.
+   *
+   * @generated from field: double temperature_celsius = 6;
+   */
+  temperatureCelsius: number;
+
+  /**
+   * Apparent (feels like) temperature in degrees Celsius, including wind
+   * chill.
+   *
+   * @generated from field: double apparent_temperature_celsius = 7;
+   */
+  apparentTemperatureCelsius: number;
+
+  /**
+   * Probability of precipitation in percent.
+   *
+   * @generated from field: int32 precipitation_probability_percent = 8;
+   */
+  precipitationProbabilityPercent: number;
+
+  /**
+   * Precipitation in the hour in millimeters.
+   *
+   * @generated from field: double precipitation_mm = 9;
+   */
+  precipitationMm: number;
+
+  /**
+   * Snowfall in the hour in centimeters.
+   *
+   * @generated from field: double snowfall_cm = 10;
+   */
+  snowfallCm: number;
+
+  /**
+   * Wind speed at 10m in kilometers per hour.
+   *
+   * @generated from field: double wind_speed_kmh = 11;
+   */
+  windSpeedKmh: number;
+
+  /**
+   * Wind gusts at 10m in kilometers per hour.
+   *
+   * @generated from field: double wind_gusts_kmh = 12;
+   */
+  windGustsKmh: number;
+
+  /**
+   * The direction the wind comes from, in degrees.
+   *
+   * @generated from field: int32 wind_direction_degrees = 13;
+   */
+  windDirectionDegrees: number;
+
+  /**
+   * Cloud cover in percent.
+   *
+   * @generated from field: int32 cloud_cover_percent = 14;
+   */
+  cloudCoverPercent: number;
+
+  /**
+   * The height of the 0 degree Celsius level in meters.
+   *
+   * @generated from field: double freezing_level_meters = 15;
+   */
+  freezingLevelMeters: number;
+
+  /**
+   * The UV index.
+   *
+   * @generated from field: double uv_index = 16;
+   */
+  uvIndex: number;
+
+  /**
+   * Whether it is daylight.
+   *
+   * @generated from field: bool is_day = 17;
+   */
+  isDay: boolean;
+
+  /**
+   * The WMO weather code.
+   *
+   * @generated from field: int32 weather_code = 18;
+   */
+  weatherCode: number;
+
+  /**
+   * A description of the weather code, e.g. "Light rain".
+   *
+   * @generated from field: string weather_description = 19;
+   */
+  weatherDescription: string;
+};
+
+/**
+ * Describes the message routes.v1.ForecastPoint.
+ * Use `create(ForecastPointSchema)` to create a new message.
+ */
+export const ForecastPointSchema: GenMessage<ForecastPoint> = /*@__PURE__*/
+  messageDesc(file_routes_v1_routes, 19);
+
+/**
+ * @generated from message routes.v1.GetRouteForecastResponse
+ */
+export type GetRouteForecastResponse = Message<"routes.v1.GetRouteForecastResponse"> & {
+  /**
+   * The forecast points in time order.
+   *
+   * @generated from field: repeated routes.v1.ForecastPoint points = 1;
+   */
+  points: ForecastPoint[];
+
+  /**
+   * The expected finish time.
+   *
+   * @generated from field: google.protobuf.Timestamp finish_time = 2;
+   */
+  finishTime?: Timestamp | undefined;
+
+  /**
+   * The expected duration in seconds.
+   *
+   * @generated from field: int32 duration_seconds = 3;
+   */
+  durationSeconds: number;
+
+  /**
+   * The route distance in meters.
+   *
+   * @generated from field: double distance_meters = 4;
+   */
+  distanceMeters: number;
+
+  /**
+   * The route elevation gain in meters.
+   *
+   * @generated from field: double elevation_gain_meters = 5;
+   */
+  elevationGainMeters: number;
+
+  /**
+   * Hazards found in the forecast, e.g. "Thunderstorms possible at 14:00
+   * near km 18.2".
+   *
+   * @generated from field: repeated string warnings = 6;
+   */
+  warnings: string[];
+
+  /**
+   * The path of the route, downsampled for display.
+   *
+   * @generated from field: repeated routes.v1.RoutePoint path = 7;
+   */
+  path: RoutePoint[];
+};
+
+/**
+ * Describes the message routes.v1.GetRouteForecastResponse.
+ * Use `create(GetRouteForecastResponseSchema)` to create a new message.
+ */
+export const GetRouteForecastResponseSchema: GenMessage<GetRouteForecastResponse> = /*@__PURE__*/
+  messageDesc(file_routes_v1_routes, 20);
+
+/**
  * RoutingProfile controls how legs between waypoints are computed.
  *
  * @generated from enum routes.v1.RoutingProfile
@@ -671,6 +978,52 @@ export const RouteSourceSchema: GenEnum<RouteSource> = /*@__PURE__*/
   enumDesc(file_routes_v1_routes, 1);
 
 /**
+ * The kind of a forecast point.
+ *
+ * @generated from enum routes.v1.ForecastPointKind
+ */
+export enum ForecastPointKind {
+  /**
+   * @generated from enum value: FORECAST_POINT_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The start of the route.
+   *
+   * @generated from enum value: FORECAST_POINT_KIND_START = 1;
+   */
+  START = 1,
+
+  /**
+   * A point reached at a regular interval after the start.
+   *
+   * @generated from enum value: FORECAST_POINT_KIND_INTERVAL = 2;
+   */
+  INTERVAL = 2,
+
+  /**
+   * The highest point of the route.
+   *
+   * @generated from enum value: FORECAST_POINT_KIND_HIGH_POINT = 3;
+   */
+  HIGH_POINT = 3,
+
+  /**
+   * The end of the route.
+   *
+   * @generated from enum value: FORECAST_POINT_KIND_FINISH = 4;
+   */
+  FINISH = 4,
+}
+
+/**
+ * Describes the enum routes.v1.ForecastPointKind.
+ */
+export const ForecastPointKindSchema: GenEnum<ForecastPointKind> = /*@__PURE__*/
+  enumDesc(file_routes_v1_routes, 2);
+
+/**
  * RouteService creates and edits running routes. A route is defined by an
  * ordered list of waypoints. The path between consecutive waypoints (a leg) is
  * computed by snapping to OpenStreetMap trails and roads using the route's
@@ -748,6 +1101,23 @@ export const RouteService: GenService<{
     methodKind: "unary";
     input: typeof DeleteRouteRequestSchema;
     output: typeof DeleteRouteResponseSchema;
+  },
+  /**
+   * Get an hourly weather forecast along a route for a planned start time and
+   * speed. The route can be a saved route, a GPX file or a list of
+   * coordinates. The server estimates where the runner will be at each hour
+   * and returns the forecast for that place and time, adjusted to the
+   * elevation of the point. It also returns the forecast at the highest point
+   * and the finish, and warnings about hazards such as thunderstorms, freezing
+   * levels below the route, strong gusts and darkness. Forecasts are available
+   * up to 15 days ahead.
+   *
+   * @generated from rpc routes.v1.RouteService.GetRouteForecast
+   */
+  getRouteForecast: {
+    methodKind: "unary";
+    input: typeof GetRouteForecastRequestSchema;
+    output: typeof GetRouteForecastResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_routes_v1_routes, 0);

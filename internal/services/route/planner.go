@@ -31,10 +31,11 @@ const (
 	maxConcurrentLegs = 4
 )
 
-// MapData provides routing and elevation data.
+// MapData provides routing, elevation and weather data.
 type MapData interface {
 	Route(ctx context.Context, from, to geo.Point, profile string) (*mapdata.RoutedPath, error)
 	FillElevations(ctx context.Context, points []geo.Point, maxLookups int) error
+	Forecast(ctx context.Context, queries []mapdata.ForecastQuery) ([]mapdata.Weather, error)
 }
 
 // errInvalidRoute is wrapped by errors caused by invalid input, such as

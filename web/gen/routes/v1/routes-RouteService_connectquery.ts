@@ -51,3 +51,17 @@ export const updateRoute = RouteService.method.updateRoute;
  * @generated from rpc routes.v1.RouteService.DeleteRoute
  */
 export const deleteRoute = RouteService.method.deleteRoute;
+
+/**
+ * Get an hourly weather forecast along a route for a planned start time and
+ * speed. The route can be a saved route, a GPX file or a list of
+ * coordinates. The server estimates where the runner will be at each hour
+ * and returns the forecast for that place and time, adjusted to the
+ * elevation of the point. It also returns the forecast at the highest point
+ * and the finish, and warnings about hazards such as thunderstorms, freezing
+ * levels below the route, strong gusts and darkness. Forecasts are available
+ * up to 15 days ahead.
+ *
+ * @generated from rpc routes.v1.RouteService.GetRouteForecast
+ */
+export const getRouteForecast = RouteService.method.getRouteForecast;

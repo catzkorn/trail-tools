@@ -29,6 +29,8 @@ type Config struct {
 	NominatimURL string
 	// The Open-Meteo elevation API URL.
 	ElevationURL string
+	// The Open-Meteo forecast API URL.
+	ForecastURL string
 	// The HTTP client to use. Defaults to a client with a 60 second timeout.
 	HTTPClient *http.Client
 }
@@ -52,6 +54,9 @@ func (c Config) withDefaults() Config {
 	}
 	if c.ElevationURL == "" {
 		c.ElevationURL = "https://api.open-meteo.com/v1/elevation"
+	}
+	if c.ForecastURL == "" {
+		c.ForecastURL = "https://api.open-meteo.com/v1/forecast"
 	}
 	if c.HTTPClient == nil {
 		c.HTTPClient = &http.Client{Timeout: 60 * time.Second}

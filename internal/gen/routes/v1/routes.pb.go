@@ -126,6 +126,61 @@ func (x RouteSource) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// The kind of a forecast point.
+type ForecastPointKind int32
+
+const (
+	ForecastPointKind_FORECAST_POINT_KIND_UNSPECIFIED ForecastPointKind = 0
+	// The start of the route.
+	ForecastPointKind_FORECAST_POINT_KIND_START ForecastPointKind = 1
+	// A point reached at a regular interval after the start.
+	ForecastPointKind_FORECAST_POINT_KIND_INTERVAL ForecastPointKind = 2
+	// The highest point of the route.
+	ForecastPointKind_FORECAST_POINT_KIND_HIGH_POINT ForecastPointKind = 3
+	// The end of the route.
+	ForecastPointKind_FORECAST_POINT_KIND_FINISH ForecastPointKind = 4
+)
+
+// Enum value maps for ForecastPointKind.
+var (
+	ForecastPointKind_name = map[int32]string{
+		0: "FORECAST_POINT_KIND_UNSPECIFIED",
+		1: "FORECAST_POINT_KIND_START",
+		2: "FORECAST_POINT_KIND_INTERVAL",
+		3: "FORECAST_POINT_KIND_HIGH_POINT",
+		4: "FORECAST_POINT_KIND_FINISH",
+	}
+	ForecastPointKind_value = map[string]int32{
+		"FORECAST_POINT_KIND_UNSPECIFIED": 0,
+		"FORECAST_POINT_KIND_START":       1,
+		"FORECAST_POINT_KIND_INTERVAL":    2,
+		"FORECAST_POINT_KIND_HIGH_POINT":  3,
+		"FORECAST_POINT_KIND_FINISH":      4,
+	}
+)
+
+func (x ForecastPointKind) Enum() *ForecastPointKind {
+	p := new(ForecastPointKind)
+	*p = x
+	return p
+}
+
+func (x ForecastPointKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ForecastPointKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_routes_v1_routes_proto_enumTypes[2].Descriptor()
+}
+
+func (ForecastPointKind) Type() protoreflect.EnumType {
+	return &file_routes_v1_routes_proto_enumTypes[2]
+}
+
+func (x ForecastPointKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // A point along a route path.
 type RoutePoint struct {
 	state                      protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1869,6 +1924,874 @@ func (b0 DeleteRouteResponse_builder) Build() *DeleteRouteResponse {
 	return m0
 }
 
+type GetRouteForecastRequest struct {
+	state                         protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Source             isGetRouteForecastRequest_Source `protobuf_oneof:"source"`
+	xxx_hidden_StartTime          *timestamppb.Timestamp           `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3"`
+	xxx_hidden_SpeedKmh           float64                          `protobuf:"fixed64,5,opt,name=speed_kmh,json=speedKmh,proto3"`
+	xxx_hidden_ClimbMetersPerHour float64                          `protobuf:"fixed64,6,opt,name=climb_meters_per_hour,json=climbMetersPerHour,proto3"`
+	xxx_hidden_IntervalMinutes    int32                            `protobuf:"varint,7,opt,name=interval_minutes,json=intervalMinutes,proto3"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
+}
+
+func (x *GetRouteForecastRequest) Reset() {
+	*x = GetRouteForecastRequest{}
+	mi := &file_routes_v1_routes_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRouteForecastRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRouteForecastRequest) ProtoMessage() {}
+
+func (x *GetRouteForecastRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_routes_v1_routes_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetRouteForecastRequest) GetRouteId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_RouteId); ok {
+			return x.RouteId
+		}
+	}
+	return ""
+}
+
+func (x *GetRouteForecastRequest) GetGpx() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_Gpx); ok {
+			return x.Gpx
+		}
+	}
+	return ""
+}
+
+func (x *GetRouteForecastRequest) GetPath() *Path {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_Path); ok {
+			return x.Path
+		}
+	}
+	return nil
+}
+
+func (x *GetRouteForecastRequest) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_StartTime
+	}
+	return nil
+}
+
+func (x *GetRouteForecastRequest) GetSpeedKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_SpeedKmh
+	}
+	return 0
+}
+
+func (x *GetRouteForecastRequest) GetClimbMetersPerHour() float64 {
+	if x != nil {
+		return x.xxx_hidden_ClimbMetersPerHour
+	}
+	return 0
+}
+
+func (x *GetRouteForecastRequest) GetIntervalMinutes() int32 {
+	if x != nil {
+		return x.xxx_hidden_IntervalMinutes
+	}
+	return 0
+}
+
+func (x *GetRouteForecastRequest) SetRouteId(v string) {
+	x.xxx_hidden_Source = &getRouteForecastRequest_RouteId{v}
+}
+
+func (x *GetRouteForecastRequest) SetGpx(v string) {
+	x.xxx_hidden_Source = &getRouteForecastRequest_Gpx{v}
+}
+
+func (x *GetRouteForecastRequest) SetPath(v *Path) {
+	if v == nil {
+		x.xxx_hidden_Source = nil
+		return
+	}
+	x.xxx_hidden_Source = &getRouteForecastRequest_Path{v}
+}
+
+func (x *GetRouteForecastRequest) SetStartTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_StartTime = v
+}
+
+func (x *GetRouteForecastRequest) SetSpeedKmh(v float64) {
+	x.xxx_hidden_SpeedKmh = v
+}
+
+func (x *GetRouteForecastRequest) SetClimbMetersPerHour(v float64) {
+	x.xxx_hidden_ClimbMetersPerHour = v
+}
+
+func (x *GetRouteForecastRequest) SetIntervalMinutes(v int32) {
+	x.xxx_hidden_IntervalMinutes = v
+}
+
+func (x *GetRouteForecastRequest) HasSource() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Source != nil
+}
+
+func (x *GetRouteForecastRequest) HasRouteId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_RouteId)
+	return ok
+}
+
+func (x *GetRouteForecastRequest) HasGpx() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_Gpx)
+	return ok
+}
+
+func (x *GetRouteForecastRequest) HasPath() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_Path)
+	return ok
+}
+
+func (x *GetRouteForecastRequest) HasStartTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_StartTime != nil
+}
+
+func (x *GetRouteForecastRequest) ClearSource() {
+	x.xxx_hidden_Source = nil
+}
+
+func (x *GetRouteForecastRequest) ClearRouteId() {
+	if _, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_RouteId); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
+func (x *GetRouteForecastRequest) ClearGpx() {
+	if _, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_Gpx); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
+func (x *GetRouteForecastRequest) ClearPath() {
+	if _, ok := x.xxx_hidden_Source.(*getRouteForecastRequest_Path); ok {
+		x.xxx_hidden_Source = nil
+	}
+}
+
+func (x *GetRouteForecastRequest) ClearStartTime() {
+	x.xxx_hidden_StartTime = nil
+}
+
+const GetRouteForecastRequest_Source_not_set_case case_GetRouteForecastRequest_Source = 0
+const GetRouteForecastRequest_RouteId_case case_GetRouteForecastRequest_Source = 1
+const GetRouteForecastRequest_Gpx_case case_GetRouteForecastRequest_Source = 2
+const GetRouteForecastRequest_Path_case case_GetRouteForecastRequest_Source = 3
+
+func (x *GetRouteForecastRequest) WhichSource() case_GetRouteForecastRequest_Source {
+	if x == nil {
+		return GetRouteForecastRequest_Source_not_set_case
+	}
+	switch x.xxx_hidden_Source.(type) {
+	case *getRouteForecastRequest_RouteId:
+		return GetRouteForecastRequest_RouteId_case
+	case *getRouteForecastRequest_Gpx:
+		return GetRouteForecastRequest_Gpx_case
+	case *getRouteForecastRequest_Path:
+		return GetRouteForecastRequest_Path_case
+	default:
+		return GetRouteForecastRequest_Source_not_set_case
+	}
+}
+
+type GetRouteForecastRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The route to forecast. Exactly one must be set.
+
+	// Fields of oneof xxx_hidden_Source:
+	// The ID of a saved route.
+	RouteId *string
+	// The contents of a GPX file. The first track (or route) is used.
+	Gpx *string
+	// A path as a list of coordinates. Elevations are looked up.
+	Path *Path
+	// -- end of xxx_hidden_Source
+	// The planned start time.
+	StartTime *timestamppb.Timestamp
+	// The average moving speed on flat ground in kilometers per hour.
+	SpeedKmh float64
+	// The climbing rate in meters of elevation gain per hour. If set, time for
+	// climbing is added on top of the flat speed, like Naismith's rule (a
+	// typical value for a strong hiker is 600). If 0, only the flat speed is
+	// used.
+	ClimbMetersPerHour float64
+	// How often to sample the forecast along the route, in minutes. Defaults
+	// to 60, minimum 15.
+	IntervalMinutes int32
+}
+
+func (b0 GetRouteForecastRequest_builder) Build() *GetRouteForecastRequest {
+	m0 := &GetRouteForecastRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.RouteId != nil {
+		x.xxx_hidden_Source = &getRouteForecastRequest_RouteId{*b.RouteId}
+	}
+	if b.Gpx != nil {
+		x.xxx_hidden_Source = &getRouteForecastRequest_Gpx{*b.Gpx}
+	}
+	if b.Path != nil {
+		x.xxx_hidden_Source = &getRouteForecastRequest_Path{b.Path}
+	}
+	x.xxx_hidden_StartTime = b.StartTime
+	x.xxx_hidden_SpeedKmh = b.SpeedKmh
+	x.xxx_hidden_ClimbMetersPerHour = b.ClimbMetersPerHour
+	x.xxx_hidden_IntervalMinutes = b.IntervalMinutes
+	return m0
+}
+
+type case_GetRouteForecastRequest_Source protoreflect.FieldNumber
+
+func (x case_GetRouteForecastRequest_Source) String() string {
+	md := file_routes_v1_routes_proto_msgTypes[17].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isGetRouteForecastRequest_Source interface {
+	isGetRouteForecastRequest_Source()
+}
+
+type getRouteForecastRequest_RouteId struct {
+	// The ID of a saved route.
+	RouteId string `protobuf:"bytes,1,opt,name=route_id,json=routeId,proto3,oneof"`
+}
+
+type getRouteForecastRequest_Gpx struct {
+	// The contents of a GPX file. The first track (or route) is used.
+	Gpx string `protobuf:"bytes,2,opt,name=gpx,proto3,oneof"`
+}
+
+type getRouteForecastRequest_Path struct {
+	// A path as a list of coordinates. Elevations are looked up.
+	Path *Path `protobuf:"bytes,3,opt,name=path,proto3,oneof"`
+}
+
+func (*getRouteForecastRequest_RouteId) isGetRouteForecastRequest_Source() {}
+
+func (*getRouteForecastRequest_Gpx) isGetRouteForecastRequest_Source() {}
+
+func (*getRouteForecastRequest_Path) isGetRouteForecastRequest_Source() {}
+
+// A path as a list of coordinates.
+type Path struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Points *[]*v1.LatLng          `protobuf:"bytes,1,rep,name=points,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Path) Reset() {
+	*x = Path{}
+	mi := &file_routes_v1_routes_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Path) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Path) ProtoMessage() {}
+
+func (x *Path) ProtoReflect() protoreflect.Message {
+	mi := &file_routes_v1_routes_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Path) GetPoints() []*v1.LatLng {
+	if x != nil {
+		if x.xxx_hidden_Points != nil {
+			return *x.xxx_hidden_Points
+		}
+	}
+	return nil
+}
+
+func (x *Path) SetPoints(v []*v1.LatLng) {
+	x.xxx_hidden_Points = &v
+}
+
+type Path_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The coordinates of the path, in order. At least 2 are required.
+	Points []*v1.LatLng
+}
+
+func (b0 Path_builder) Build() *Path {
+	m0 := &Path{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Points = &b.Points
+	return m0
+}
+
+// The weather forecast at a point along the route at the time the runner is
+// expected to be there.
+type ForecastPoint struct {
+	state                                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind                            ForecastPointKind      `protobuf:"varint,1,opt,name=kind,proto3,enum=routes.v1.ForecastPointKind"`
+	xxx_hidden_Time                            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time,proto3"`
+	xxx_hidden_DistanceMeters                  float64                `protobuf:"fixed64,3,opt,name=distance_meters,json=distanceMeters,proto3"`
+	xxx_hidden_Location                        *v1.LatLng             `protobuf:"bytes,4,opt,name=location,proto3"`
+	xxx_hidden_ElevationMeters                 float64                `protobuf:"fixed64,5,opt,name=elevation_meters,json=elevationMeters,proto3"`
+	xxx_hidden_TemperatureCelsius              float64                `protobuf:"fixed64,6,opt,name=temperature_celsius,json=temperatureCelsius,proto3"`
+	xxx_hidden_ApparentTemperatureCelsius      float64                `protobuf:"fixed64,7,opt,name=apparent_temperature_celsius,json=apparentTemperatureCelsius,proto3"`
+	xxx_hidden_PrecipitationProbabilityPercent int32                  `protobuf:"varint,8,opt,name=precipitation_probability_percent,json=precipitationProbabilityPercent,proto3"`
+	xxx_hidden_PrecipitationMm                 float64                `protobuf:"fixed64,9,opt,name=precipitation_mm,json=precipitationMm,proto3"`
+	xxx_hidden_SnowfallCm                      float64                `protobuf:"fixed64,10,opt,name=snowfall_cm,json=snowfallCm,proto3"`
+	xxx_hidden_WindSpeedKmh                    float64                `protobuf:"fixed64,11,opt,name=wind_speed_kmh,json=windSpeedKmh,proto3"`
+	xxx_hidden_WindGustsKmh                    float64                `protobuf:"fixed64,12,opt,name=wind_gusts_kmh,json=windGustsKmh,proto3"`
+	xxx_hidden_WindDirectionDegrees            int32                  `protobuf:"varint,13,opt,name=wind_direction_degrees,json=windDirectionDegrees,proto3"`
+	xxx_hidden_CloudCoverPercent               int32                  `protobuf:"varint,14,opt,name=cloud_cover_percent,json=cloudCoverPercent,proto3"`
+	xxx_hidden_FreezingLevelMeters             float64                `protobuf:"fixed64,15,opt,name=freezing_level_meters,json=freezingLevelMeters,proto3"`
+	xxx_hidden_UvIndex                         float64                `protobuf:"fixed64,16,opt,name=uv_index,json=uvIndex,proto3"`
+	xxx_hidden_IsDay                           bool                   `protobuf:"varint,17,opt,name=is_day,json=isDay,proto3"`
+	xxx_hidden_WeatherCode                     int32                  `protobuf:"varint,18,opt,name=weather_code,json=weatherCode,proto3"`
+	xxx_hidden_WeatherDescription              string                 `protobuf:"bytes,19,opt,name=weather_description,json=weatherDescription,proto3"`
+	unknownFields                              protoimpl.UnknownFields
+	sizeCache                                  protoimpl.SizeCache
+}
+
+func (x *ForecastPoint) Reset() {
+	*x = ForecastPoint{}
+	mi := &file_routes_v1_routes_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ForecastPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ForecastPoint) ProtoMessage() {}
+
+func (x *ForecastPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_routes_v1_routes_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ForecastPoint) GetKind() ForecastPointKind {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ForecastPointKind_FORECAST_POINT_KIND_UNSPECIFIED
+}
+
+func (x *ForecastPoint) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Time
+	}
+	return nil
+}
+
+func (x *ForecastPoint) GetDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_DistanceMeters
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetLocation() *v1.LatLng {
+	if x != nil {
+		return x.xxx_hidden_Location
+	}
+	return nil
+}
+
+func (x *ForecastPoint) GetElevationMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_ElevationMeters
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetTemperatureCelsius() float64 {
+	if x != nil {
+		return x.xxx_hidden_TemperatureCelsius
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetApparentTemperatureCelsius() float64 {
+	if x != nil {
+		return x.xxx_hidden_ApparentTemperatureCelsius
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetPrecipitationProbabilityPercent() int32 {
+	if x != nil {
+		return x.xxx_hidden_PrecipitationProbabilityPercent
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetPrecipitationMm() float64 {
+	if x != nil {
+		return x.xxx_hidden_PrecipitationMm
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetSnowfallCm() float64 {
+	if x != nil {
+		return x.xxx_hidden_SnowfallCm
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetWindSpeedKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_WindSpeedKmh
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetWindGustsKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_WindGustsKmh
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetWindDirectionDegrees() int32 {
+	if x != nil {
+		return x.xxx_hidden_WindDirectionDegrees
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetCloudCoverPercent() int32 {
+	if x != nil {
+		return x.xxx_hidden_CloudCoverPercent
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetFreezingLevelMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_FreezingLevelMeters
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetUvIndex() float64 {
+	if x != nil {
+		return x.xxx_hidden_UvIndex
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetIsDay() bool {
+	if x != nil {
+		return x.xxx_hidden_IsDay
+	}
+	return false
+}
+
+func (x *ForecastPoint) GetWeatherCode() int32 {
+	if x != nil {
+		return x.xxx_hidden_WeatherCode
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetWeatherDescription() string {
+	if x != nil {
+		return x.xxx_hidden_WeatherDescription
+	}
+	return ""
+}
+
+func (x *ForecastPoint) SetKind(v ForecastPointKind) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *ForecastPoint) SetTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Time = v
+}
+
+func (x *ForecastPoint) SetDistanceMeters(v float64) {
+	x.xxx_hidden_DistanceMeters = v
+}
+
+func (x *ForecastPoint) SetLocation(v *v1.LatLng) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *ForecastPoint) SetElevationMeters(v float64) {
+	x.xxx_hidden_ElevationMeters = v
+}
+
+func (x *ForecastPoint) SetTemperatureCelsius(v float64) {
+	x.xxx_hidden_TemperatureCelsius = v
+}
+
+func (x *ForecastPoint) SetApparentTemperatureCelsius(v float64) {
+	x.xxx_hidden_ApparentTemperatureCelsius = v
+}
+
+func (x *ForecastPoint) SetPrecipitationProbabilityPercent(v int32) {
+	x.xxx_hidden_PrecipitationProbabilityPercent = v
+}
+
+func (x *ForecastPoint) SetPrecipitationMm(v float64) {
+	x.xxx_hidden_PrecipitationMm = v
+}
+
+func (x *ForecastPoint) SetSnowfallCm(v float64) {
+	x.xxx_hidden_SnowfallCm = v
+}
+
+func (x *ForecastPoint) SetWindSpeedKmh(v float64) {
+	x.xxx_hidden_WindSpeedKmh = v
+}
+
+func (x *ForecastPoint) SetWindGustsKmh(v float64) {
+	x.xxx_hidden_WindGustsKmh = v
+}
+
+func (x *ForecastPoint) SetWindDirectionDegrees(v int32) {
+	x.xxx_hidden_WindDirectionDegrees = v
+}
+
+func (x *ForecastPoint) SetCloudCoverPercent(v int32) {
+	x.xxx_hidden_CloudCoverPercent = v
+}
+
+func (x *ForecastPoint) SetFreezingLevelMeters(v float64) {
+	x.xxx_hidden_FreezingLevelMeters = v
+}
+
+func (x *ForecastPoint) SetUvIndex(v float64) {
+	x.xxx_hidden_UvIndex = v
+}
+
+func (x *ForecastPoint) SetIsDay(v bool) {
+	x.xxx_hidden_IsDay = v
+}
+
+func (x *ForecastPoint) SetWeatherCode(v int32) {
+	x.xxx_hidden_WeatherCode = v
+}
+
+func (x *ForecastPoint) SetWeatherDescription(v string) {
+	x.xxx_hidden_WeatherDescription = v
+}
+
+func (x *ForecastPoint) HasTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Time != nil
+}
+
+func (x *ForecastPoint) HasLocation() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Location != nil
+}
+
+func (x *ForecastPoint) ClearTime() {
+	x.xxx_hidden_Time = nil
+}
+
+func (x *ForecastPoint) ClearLocation() {
+	x.xxx_hidden_Location = nil
+}
+
+type ForecastPoint_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// What the point represents.
+	Kind ForecastPointKind
+	// The expected time at the point.
+	Time *timestamppb.Timestamp
+	// The distance from the start in meters.
+	DistanceMeters float64
+	// The location of the point.
+	Location *v1.LatLng
+	// The elevation of the point in meters.
+	ElevationMeters float64
+	// Air temperature at 2m in degrees Celsius.
+	TemperatureCelsius float64
+	// Apparent (feels like) temperature in degrees Celsius, including wind
+	// chill.
+	ApparentTemperatureCelsius float64
+	// Probability of precipitation in percent.
+	PrecipitationProbabilityPercent int32
+	// Precipitation in the hour in millimeters.
+	PrecipitationMm float64
+	// Snowfall in the hour in centimeters.
+	SnowfallCm float64
+	// Wind speed at 10m in kilometers per hour.
+	WindSpeedKmh float64
+	// Wind gusts at 10m in kilometers per hour.
+	WindGustsKmh float64
+	// The direction the wind comes from, in degrees.
+	WindDirectionDegrees int32
+	// Cloud cover in percent.
+	CloudCoverPercent int32
+	// The height of the 0 degree Celsius level in meters.
+	FreezingLevelMeters float64
+	// The UV index.
+	UvIndex float64
+	// Whether it is daylight.
+	IsDay bool
+	// The WMO weather code.
+	WeatherCode int32
+	// A description of the weather code, e.g. "Light rain".
+	WeatherDescription string
+}
+
+func (b0 ForecastPoint_builder) Build() *ForecastPoint {
+	m0 := &ForecastPoint{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_DistanceMeters = b.DistanceMeters
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_ElevationMeters = b.ElevationMeters
+	x.xxx_hidden_TemperatureCelsius = b.TemperatureCelsius
+	x.xxx_hidden_ApparentTemperatureCelsius = b.ApparentTemperatureCelsius
+	x.xxx_hidden_PrecipitationProbabilityPercent = b.PrecipitationProbabilityPercent
+	x.xxx_hidden_PrecipitationMm = b.PrecipitationMm
+	x.xxx_hidden_SnowfallCm = b.SnowfallCm
+	x.xxx_hidden_WindSpeedKmh = b.WindSpeedKmh
+	x.xxx_hidden_WindGustsKmh = b.WindGustsKmh
+	x.xxx_hidden_WindDirectionDegrees = b.WindDirectionDegrees
+	x.xxx_hidden_CloudCoverPercent = b.CloudCoverPercent
+	x.xxx_hidden_FreezingLevelMeters = b.FreezingLevelMeters
+	x.xxx_hidden_UvIndex = b.UvIndex
+	x.xxx_hidden_IsDay = b.IsDay
+	x.xxx_hidden_WeatherCode = b.WeatherCode
+	x.xxx_hidden_WeatherDescription = b.WeatherDescription
+	return m0
+}
+
+type GetRouteForecastResponse struct {
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Points              *[]*ForecastPoint      `protobuf:"bytes,1,rep,name=points,proto3"`
+	xxx_hidden_FinishTime          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=finish_time,json=finishTime,proto3"`
+	xxx_hidden_DurationSeconds     int32                  `protobuf:"varint,3,opt,name=duration_seconds,json=durationSeconds,proto3"`
+	xxx_hidden_DistanceMeters      float64                `protobuf:"fixed64,4,opt,name=distance_meters,json=distanceMeters,proto3"`
+	xxx_hidden_ElevationGainMeters float64                `protobuf:"fixed64,5,opt,name=elevation_gain_meters,json=elevationGainMeters,proto3"`
+	xxx_hidden_Warnings            []string               `protobuf:"bytes,6,rep,name=warnings,proto3"`
+	xxx_hidden_Path                *[]*RoutePoint         `protobuf:"bytes,7,rep,name=path,proto3"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
+}
+
+func (x *GetRouteForecastResponse) Reset() {
+	*x = GetRouteForecastResponse{}
+	mi := &file_routes_v1_routes_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRouteForecastResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRouteForecastResponse) ProtoMessage() {}
+
+func (x *GetRouteForecastResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_routes_v1_routes_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetRouteForecastResponse) GetPoints() []*ForecastPoint {
+	if x != nil {
+		if x.xxx_hidden_Points != nil {
+			return *x.xxx_hidden_Points
+		}
+	}
+	return nil
+}
+
+func (x *GetRouteForecastResponse) GetFinishTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_FinishTime
+	}
+	return nil
+}
+
+func (x *GetRouteForecastResponse) GetDurationSeconds() int32 {
+	if x != nil {
+		return x.xxx_hidden_DurationSeconds
+	}
+	return 0
+}
+
+func (x *GetRouteForecastResponse) GetDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_DistanceMeters
+	}
+	return 0
+}
+
+func (x *GetRouteForecastResponse) GetElevationGainMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_ElevationGainMeters
+	}
+	return 0
+}
+
+func (x *GetRouteForecastResponse) GetWarnings() []string {
+	if x != nil {
+		return x.xxx_hidden_Warnings
+	}
+	return nil
+}
+
+func (x *GetRouteForecastResponse) GetPath() []*RoutePoint {
+	if x != nil {
+		if x.xxx_hidden_Path != nil {
+			return *x.xxx_hidden_Path
+		}
+	}
+	return nil
+}
+
+func (x *GetRouteForecastResponse) SetPoints(v []*ForecastPoint) {
+	x.xxx_hidden_Points = &v
+}
+
+func (x *GetRouteForecastResponse) SetFinishTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_FinishTime = v
+}
+
+func (x *GetRouteForecastResponse) SetDurationSeconds(v int32) {
+	x.xxx_hidden_DurationSeconds = v
+}
+
+func (x *GetRouteForecastResponse) SetDistanceMeters(v float64) {
+	x.xxx_hidden_DistanceMeters = v
+}
+
+func (x *GetRouteForecastResponse) SetElevationGainMeters(v float64) {
+	x.xxx_hidden_ElevationGainMeters = v
+}
+
+func (x *GetRouteForecastResponse) SetWarnings(v []string) {
+	x.xxx_hidden_Warnings = v
+}
+
+func (x *GetRouteForecastResponse) SetPath(v []*RoutePoint) {
+	x.xxx_hidden_Path = &v
+}
+
+func (x *GetRouteForecastResponse) HasFinishTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_FinishTime != nil
+}
+
+func (x *GetRouteForecastResponse) ClearFinishTime() {
+	x.xxx_hidden_FinishTime = nil
+}
+
+type GetRouteForecastResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The forecast points in time order.
+	Points []*ForecastPoint
+	// The expected finish time.
+	FinishTime *timestamppb.Timestamp
+	// The expected duration in seconds.
+	DurationSeconds int32
+	// The route distance in meters.
+	DistanceMeters float64
+	// The route elevation gain in meters.
+	ElevationGainMeters float64
+	// Hazards found in the forecast, e.g. "Thunderstorms possible at 14:00
+	// near km 18.2".
+	Warnings []string
+	// The path of the route, downsampled for display.
+	Path []*RoutePoint
+}
+
+func (b0 GetRouteForecastResponse_builder) Build() *GetRouteForecastResponse {
+	m0 := &GetRouteForecastResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Points = &b.Points
+	x.xxx_hidden_FinishTime = b.FinishTime
+	x.xxx_hidden_DurationSeconds = b.DurationSeconds
+	x.xxx_hidden_DistanceMeters = b.DistanceMeters
+	x.xxx_hidden_ElevationGainMeters = b.ElevationGainMeters
+	x.xxx_hidden_Warnings = b.Warnings
+	x.xxx_hidden_Path = &b.Path
+	return m0
+}
+
 var File_routes_v1_routes_proto protoreflect.FileDescriptor
 
 const file_routes_v1_routes_proto_rawDesc = "" +
@@ -1948,7 +2871,50 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\"$\n" +
 	"\x12DeleteRouteRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x15\n" +
-	"\x13DeleteRouteResponse*\x88\x01\n" +
+	"\x13DeleteRouteResponse\"\xb1\x02\n" +
+	"\x17GetRouteForecastRequest\x12\x1b\n" +
+	"\broute_id\x18\x01 \x01(\tH\x00R\arouteId\x12\x12\n" +
+	"\x03gpx\x18\x02 \x01(\tH\x00R\x03gpx\x12%\n" +
+	"\x04path\x18\x03 \x01(\v2\x0f.routes.v1.PathH\x00R\x04path\x129\n" +
+	"\n" +
+	"start_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x12\x1b\n" +
+	"\tspeed_kmh\x18\x05 \x01(\x01R\bspeedKmh\x121\n" +
+	"\x15climb_meters_per_hour\x18\x06 \x01(\x01R\x12climbMetersPerHour\x12)\n" +
+	"\x10interval_minutes\x18\a \x01(\x05R\x0fintervalMinutesB\b\n" +
+	"\x06source\".\n" +
+	"\x04Path\x12&\n" +
+	"\x06points\x18\x01 \x03(\v2\x0e.geo.v1.LatLngR\x06points\"\xe8\x06\n" +
+	"\rForecastPoint\x120\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x1c.routes.v1.ForecastPointKindR\x04kind\x12.\n" +
+	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12'\n" +
+	"\x0fdistance_meters\x18\x03 \x01(\x01R\x0edistanceMeters\x12*\n" +
+	"\blocation\x18\x04 \x01(\v2\x0e.geo.v1.LatLngR\blocation\x12)\n" +
+	"\x10elevation_meters\x18\x05 \x01(\x01R\x0felevationMeters\x12/\n" +
+	"\x13temperature_celsius\x18\x06 \x01(\x01R\x12temperatureCelsius\x12@\n" +
+	"\x1capparent_temperature_celsius\x18\a \x01(\x01R\x1aapparentTemperatureCelsius\x12J\n" +
+	"!precipitation_probability_percent\x18\b \x01(\x05R\x1fprecipitationProbabilityPercent\x12)\n" +
+	"\x10precipitation_mm\x18\t \x01(\x01R\x0fprecipitationMm\x12\x1f\n" +
+	"\vsnowfall_cm\x18\n" +
+	" \x01(\x01R\n" +
+	"snowfallCm\x12$\n" +
+	"\x0ewind_speed_kmh\x18\v \x01(\x01R\fwindSpeedKmh\x12$\n" +
+	"\x0ewind_gusts_kmh\x18\f \x01(\x01R\fwindGustsKmh\x124\n" +
+	"\x16wind_direction_degrees\x18\r \x01(\x05R\x14windDirectionDegrees\x12.\n" +
+	"\x13cloud_cover_percent\x18\x0e \x01(\x05R\x11cloudCoverPercent\x122\n" +
+	"\x15freezing_level_meters\x18\x0f \x01(\x01R\x13freezingLevelMeters\x12\x19\n" +
+	"\buv_index\x18\x10 \x01(\x01R\auvIndex\x12\x15\n" +
+	"\x06is_day\x18\x11 \x01(\bR\x05isDay\x12!\n" +
+	"\fweather_code\x18\x12 \x01(\x05R\vweatherCode\x12/\n" +
+	"\x13weather_description\x18\x13 \x01(\tR\x12weatherDescription\"\xd8\x02\n" +
+	"\x18GetRouteForecastResponse\x120\n" +
+	"\x06points\x18\x01 \x03(\v2\x18.routes.v1.ForecastPointR\x06points\x12;\n" +
+	"\vfinish_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"finishTime\x12)\n" +
+	"\x10duration_seconds\x18\x03 \x01(\x05R\x0fdurationSeconds\x12'\n" +
+	"\x0fdistance_meters\x18\x04 \x01(\x01R\x0edistanceMeters\x122\n" +
+	"\x15elevation_gain_meters\x18\x05 \x01(\x01R\x13elevationGainMeters\x12\x1a\n" +
+	"\bwarnings\x18\x06 \x03(\tR\bwarnings\x12)\n" +
+	"\x04path\x18\a \x03(\v2\x15.routes.v1.RoutePointR\x04path*\x88\x01\n" +
 	"\x0eRoutingProfile\x12\x1f\n" +
 	"\x1bROUTING_PROFILE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15ROUTING_PROFILE_TRAIL\x10\x01\x12\x1c\n" +
@@ -1958,7 +2924,13 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x18ROUTE_SOURCE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16ROUTE_SOURCE_WAYPOINTS\x10\x01\x12\x14\n" +
 	"\x10ROUTE_SOURCE_GPX\x10\x02\x12\x19\n" +
-	"\x15ROUTE_SOURCE_ACTIVITY\x10\x032\xd9\x03\n" +
+	"\x15ROUTE_SOURCE_ACTIVITY\x10\x03*\xbd\x01\n" +
+	"\x11ForecastPointKind\x12#\n" +
+	"\x1fFORECAST_POINT_KIND_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19FORECAST_POINT_KIND_START\x10\x01\x12 \n" +
+	"\x1cFORECAST_POINT_KIND_INTERVAL\x10\x02\x12\"\n" +
+	"\x1eFORECAST_POINT_KIND_HIGH_POINT\x10\x03\x12\x1e\n" +
+	"\x1aFORECAST_POINT_KIND_FINISH\x10\x042\xb6\x04\n" +
 	"\fRouteService\x12O\n" +
 	"\fPreviewRoute\x12\x1e.routes.v1.PreviewRouteRequest\x1a\x1f.routes.v1.PreviewRouteResponse\x12L\n" +
 	"\vCreateRoute\x12\x1d.routes.v1.CreateRouteRequest\x1a\x1e.routes.v1.CreateRouteResponse\x12C\n" +
@@ -1966,74 +2938,91 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\n" +
 	"ListRoutes\x12\x1c.routes.v1.ListRoutesRequest\x1a\x1d.routes.v1.ListRoutesResponse\x12L\n" +
 	"\vUpdateRoute\x12\x1d.routes.v1.UpdateRouteRequest\x1a\x1e.routes.v1.UpdateRouteResponse\x12L\n" +
-	"\vDeleteRoute\x12\x1d.routes.v1.DeleteRouteRequest\x1a\x1e.routes.v1.DeleteRouteResponseB\xa2\x01\n" +
+	"\vDeleteRoute\x12\x1d.routes.v1.DeleteRouteRequest\x1a\x1e.routes.v1.DeleteRouteResponse\x12[\n" +
+	"\x10GetRouteForecast\x12\".routes.v1.GetRouteForecastRequest\x1a#.routes.v1.GetRouteForecastResponseB\xa2\x01\n" +
 	"\rcom.routes.v1B\vRoutesProtoP\x01Z?github.com/catzkorn/trail-tools/internal/gen/routes/v1;routesv1\xa2\x02\x03RXX\xaa\x02\tRoutes.V1\xca\x02\tRoutes\\V1\xe2\x02\x15Routes\\V1\\GPBMetadata\xea\x02\n" +
 	"Routes::V1b\x06proto3"
 
-var file_routes_v1_routes_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_routes_v1_routes_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_routes_v1_routes_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_routes_v1_routes_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_routes_v1_routes_proto_goTypes = []any{
-	(RoutingProfile)(0),           // 0: routes.v1.RoutingProfile
-	(RouteSource)(0),              // 1: routes.v1.RouteSource
-	(*RoutePoint)(nil),            // 2: routes.v1.RoutePoint
-	(*TerrainShare)(nil),          // 3: routes.v1.TerrainShare
-	(*RouteStats)(nil),            // 4: routes.v1.RouteStats
-	(*Route)(nil),                 // 5: routes.v1.Route
-	(*PreviewRouteRequest)(nil),   // 6: routes.v1.PreviewRouteRequest
-	(*PreviewRouteResponse)(nil),  // 7: routes.v1.PreviewRouteResponse
-	(*Waypoints)(nil),             // 8: routes.v1.Waypoints
-	(*CreateRouteRequest)(nil),    // 9: routes.v1.CreateRouteRequest
-	(*CreateRouteResponse)(nil),   // 10: routes.v1.CreateRouteResponse
-	(*GetRouteRequest)(nil),       // 11: routes.v1.GetRouteRequest
-	(*GetRouteResponse)(nil),      // 12: routes.v1.GetRouteResponse
-	(*ListRoutesRequest)(nil),     // 13: routes.v1.ListRoutesRequest
-	(*ListRoutesResponse)(nil),    // 14: routes.v1.ListRoutesResponse
-	(*UpdateRouteRequest)(nil),    // 15: routes.v1.UpdateRouteRequest
-	(*UpdateRouteResponse)(nil),   // 16: routes.v1.UpdateRouteResponse
-	(*DeleteRouteRequest)(nil),    // 17: routes.v1.DeleteRouteRequest
-	(*DeleteRouteResponse)(nil),   // 18: routes.v1.DeleteRouteResponse
-	(v1.Terrain)(0),               // 19: geo.v1.Terrain
-	(*v1.LatLng)(nil),             // 20: geo.v1.LatLng
-	(*timestamppb.Timestamp)(nil), // 21: google.protobuf.Timestamp
+	(RoutingProfile)(0),              // 0: routes.v1.RoutingProfile
+	(RouteSource)(0),                 // 1: routes.v1.RouteSource
+	(ForecastPointKind)(0),           // 2: routes.v1.ForecastPointKind
+	(*RoutePoint)(nil),               // 3: routes.v1.RoutePoint
+	(*TerrainShare)(nil),             // 4: routes.v1.TerrainShare
+	(*RouteStats)(nil),               // 5: routes.v1.RouteStats
+	(*Route)(nil),                    // 6: routes.v1.Route
+	(*PreviewRouteRequest)(nil),      // 7: routes.v1.PreviewRouteRequest
+	(*PreviewRouteResponse)(nil),     // 8: routes.v1.PreviewRouteResponse
+	(*Waypoints)(nil),                // 9: routes.v1.Waypoints
+	(*CreateRouteRequest)(nil),       // 10: routes.v1.CreateRouteRequest
+	(*CreateRouteResponse)(nil),      // 11: routes.v1.CreateRouteResponse
+	(*GetRouteRequest)(nil),          // 12: routes.v1.GetRouteRequest
+	(*GetRouteResponse)(nil),         // 13: routes.v1.GetRouteResponse
+	(*ListRoutesRequest)(nil),        // 14: routes.v1.ListRoutesRequest
+	(*ListRoutesResponse)(nil),       // 15: routes.v1.ListRoutesResponse
+	(*UpdateRouteRequest)(nil),       // 16: routes.v1.UpdateRouteRequest
+	(*UpdateRouteResponse)(nil),      // 17: routes.v1.UpdateRouteResponse
+	(*DeleteRouteRequest)(nil),       // 18: routes.v1.DeleteRouteRequest
+	(*DeleteRouteResponse)(nil),      // 19: routes.v1.DeleteRouteResponse
+	(*GetRouteForecastRequest)(nil),  // 20: routes.v1.GetRouteForecastRequest
+	(*Path)(nil),                     // 21: routes.v1.Path
+	(*ForecastPoint)(nil),            // 22: routes.v1.ForecastPoint
+	(*GetRouteForecastResponse)(nil), // 23: routes.v1.GetRouteForecastResponse
+	(v1.Terrain)(0),                  // 24: geo.v1.Terrain
+	(*v1.LatLng)(nil),                // 25: geo.v1.LatLng
+	(*timestamppb.Timestamp)(nil),    // 26: google.protobuf.Timestamp
 }
 var file_routes_v1_routes_proto_depIdxs = []int32{
-	19, // 0: routes.v1.TerrainShare.terrain:type_name -> geo.v1.Terrain
-	3,  // 1: routes.v1.RouteStats.terrain:type_name -> routes.v1.TerrainShare
+	24, // 0: routes.v1.TerrainShare.terrain:type_name -> geo.v1.Terrain
+	4,  // 1: routes.v1.RouteStats.terrain:type_name -> routes.v1.TerrainShare
 	0,  // 2: routes.v1.Route.profile:type_name -> routes.v1.RoutingProfile
-	20, // 3: routes.v1.Route.waypoints:type_name -> geo.v1.LatLng
-	2,  // 4: routes.v1.Route.points:type_name -> routes.v1.RoutePoint
-	4,  // 5: routes.v1.Route.stats:type_name -> routes.v1.RouteStats
+	25, // 3: routes.v1.Route.waypoints:type_name -> geo.v1.LatLng
+	3,  // 4: routes.v1.Route.points:type_name -> routes.v1.RoutePoint
+	5,  // 5: routes.v1.Route.stats:type_name -> routes.v1.RouteStats
 	1,  // 6: routes.v1.Route.source:type_name -> routes.v1.RouteSource
-	21, // 7: routes.v1.Route.create_time:type_name -> google.protobuf.Timestamp
-	21, // 8: routes.v1.Route.update_time:type_name -> google.protobuf.Timestamp
-	20, // 9: routes.v1.PreviewRouteRequest.waypoints:type_name -> geo.v1.LatLng
+	26, // 7: routes.v1.Route.create_time:type_name -> google.protobuf.Timestamp
+	26, // 8: routes.v1.Route.update_time:type_name -> google.protobuf.Timestamp
+	25, // 9: routes.v1.PreviewRouteRequest.waypoints:type_name -> geo.v1.LatLng
 	0,  // 10: routes.v1.PreviewRouteRequest.profile:type_name -> routes.v1.RoutingProfile
-	5,  // 11: routes.v1.PreviewRouteResponse.route:type_name -> routes.v1.Route
-	20, // 12: routes.v1.Waypoints.waypoints:type_name -> geo.v1.LatLng
+	6,  // 11: routes.v1.PreviewRouteResponse.route:type_name -> routes.v1.Route
+	25, // 12: routes.v1.Waypoints.waypoints:type_name -> geo.v1.LatLng
 	0,  // 13: routes.v1.Waypoints.profile:type_name -> routes.v1.RoutingProfile
-	8,  // 14: routes.v1.CreateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
-	5,  // 15: routes.v1.CreateRouteResponse.route:type_name -> routes.v1.Route
-	5,  // 16: routes.v1.GetRouteResponse.route:type_name -> routes.v1.Route
-	5,  // 17: routes.v1.ListRoutesResponse.routes:type_name -> routes.v1.Route
-	8,  // 18: routes.v1.UpdateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
-	5,  // 19: routes.v1.UpdateRouteResponse.route:type_name -> routes.v1.Route
-	6,  // 20: routes.v1.RouteService.PreviewRoute:input_type -> routes.v1.PreviewRouteRequest
-	9,  // 21: routes.v1.RouteService.CreateRoute:input_type -> routes.v1.CreateRouteRequest
-	11, // 22: routes.v1.RouteService.GetRoute:input_type -> routes.v1.GetRouteRequest
-	13, // 23: routes.v1.RouteService.ListRoutes:input_type -> routes.v1.ListRoutesRequest
-	15, // 24: routes.v1.RouteService.UpdateRoute:input_type -> routes.v1.UpdateRouteRequest
-	17, // 25: routes.v1.RouteService.DeleteRoute:input_type -> routes.v1.DeleteRouteRequest
-	7,  // 26: routes.v1.RouteService.PreviewRoute:output_type -> routes.v1.PreviewRouteResponse
-	10, // 27: routes.v1.RouteService.CreateRoute:output_type -> routes.v1.CreateRouteResponse
-	12, // 28: routes.v1.RouteService.GetRoute:output_type -> routes.v1.GetRouteResponse
-	14, // 29: routes.v1.RouteService.ListRoutes:output_type -> routes.v1.ListRoutesResponse
-	16, // 30: routes.v1.RouteService.UpdateRoute:output_type -> routes.v1.UpdateRouteResponse
-	18, // 31: routes.v1.RouteService.DeleteRoute:output_type -> routes.v1.DeleteRouteResponse
-	26, // [26:32] is the sub-list for method output_type
-	20, // [20:26] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	9,  // 14: routes.v1.CreateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
+	6,  // 15: routes.v1.CreateRouteResponse.route:type_name -> routes.v1.Route
+	6,  // 16: routes.v1.GetRouteResponse.route:type_name -> routes.v1.Route
+	6,  // 17: routes.v1.ListRoutesResponse.routes:type_name -> routes.v1.Route
+	9,  // 18: routes.v1.UpdateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
+	6,  // 19: routes.v1.UpdateRouteResponse.route:type_name -> routes.v1.Route
+	21, // 20: routes.v1.GetRouteForecastRequest.path:type_name -> routes.v1.Path
+	26, // 21: routes.v1.GetRouteForecastRequest.start_time:type_name -> google.protobuf.Timestamp
+	25, // 22: routes.v1.Path.points:type_name -> geo.v1.LatLng
+	2,  // 23: routes.v1.ForecastPoint.kind:type_name -> routes.v1.ForecastPointKind
+	26, // 24: routes.v1.ForecastPoint.time:type_name -> google.protobuf.Timestamp
+	25, // 25: routes.v1.ForecastPoint.location:type_name -> geo.v1.LatLng
+	22, // 26: routes.v1.GetRouteForecastResponse.points:type_name -> routes.v1.ForecastPoint
+	26, // 27: routes.v1.GetRouteForecastResponse.finish_time:type_name -> google.protobuf.Timestamp
+	3,  // 28: routes.v1.GetRouteForecastResponse.path:type_name -> routes.v1.RoutePoint
+	7,  // 29: routes.v1.RouteService.PreviewRoute:input_type -> routes.v1.PreviewRouteRequest
+	10, // 30: routes.v1.RouteService.CreateRoute:input_type -> routes.v1.CreateRouteRequest
+	12, // 31: routes.v1.RouteService.GetRoute:input_type -> routes.v1.GetRouteRequest
+	14, // 32: routes.v1.RouteService.ListRoutes:input_type -> routes.v1.ListRoutesRequest
+	16, // 33: routes.v1.RouteService.UpdateRoute:input_type -> routes.v1.UpdateRouteRequest
+	18, // 34: routes.v1.RouteService.DeleteRoute:input_type -> routes.v1.DeleteRouteRequest
+	20, // 35: routes.v1.RouteService.GetRouteForecast:input_type -> routes.v1.GetRouteForecastRequest
+	8,  // 36: routes.v1.RouteService.PreviewRoute:output_type -> routes.v1.PreviewRouteResponse
+	11, // 37: routes.v1.RouteService.CreateRoute:output_type -> routes.v1.CreateRouteResponse
+	13, // 38: routes.v1.RouteService.GetRoute:output_type -> routes.v1.GetRouteResponse
+	15, // 39: routes.v1.RouteService.ListRoutes:output_type -> routes.v1.ListRoutesResponse
+	17, // 40: routes.v1.RouteService.UpdateRoute:output_type -> routes.v1.UpdateRouteResponse
+	19, // 41: routes.v1.RouteService.DeleteRoute:output_type -> routes.v1.DeleteRouteResponse
+	23, // 42: routes.v1.RouteService.GetRouteForecast:output_type -> routes.v1.GetRouteForecastResponse
+	36, // [36:43] is the sub-list for method output_type
+	29, // [29:36] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_routes_v1_routes_proto_init() }
@@ -2047,13 +3036,18 @@ func file_routes_v1_routes_proto_init() {
 		(*createRouteRequest_ActivityId)(nil),
 	}
 	file_routes_v1_routes_proto_msgTypes[13].OneofWrappers = []any{}
+	file_routes_v1_routes_proto_msgTypes[17].OneofWrappers = []any{
+		(*getRouteForecastRequest_RouteId)(nil),
+		(*getRouteForecastRequest_Gpx)(nil),
+		(*getRouteForecastRequest_Path)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routes_v1_routes_proto_rawDesc), len(file_routes_v1_routes_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   17,
+			NumEnums:      3,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

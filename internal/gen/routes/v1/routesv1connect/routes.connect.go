@@ -49,6 +49,9 @@ const (
 	// RouteServiceDeleteRouteProcedure is the fully-qualified name of the RouteService's DeleteRoute
 	// RPC.
 	RouteServiceDeleteRouteProcedure = "/routes.v1.RouteService/DeleteRoute"
+	// RouteServiceGetRouteForecastProcedure is the fully-qualified name of the RouteService's
+	// GetRouteForecast RPC.
+	RouteServiceGetRouteForecastProcedure = "/routes.v1.RouteService/GetRouteForecast"
 )
 
 // RouteServiceClient is a client for the routes.v1.RouteService service.
@@ -71,6 +74,15 @@ type RouteServiceClient interface {
 	UpdateRoute(context.Context, *connect.Request[v1.UpdateRouteRequest]) (*connect.Response[v1.UpdateRouteResponse], error)
 	// Delete a route.
 	DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error)
+	// Get an hourly weather forecast along a route for a planned start time and
+	// speed. The route can be a saved route, a GPX file or a list of
+	// coordinates. The server estimates where the runner will be at each hour
+	// and returns the forecast for that place and time, adjusted to the
+	// elevation of the point. It also returns the forecast at the highest point
+	// and the finish, and warnings about hazards such as thunderstorms, freezing
+	// levels below the route, strong gusts and darkness. Forecasts are available
+	// up to 15 days ahead.
+	GetRouteForecast(context.Context, *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error)
 }
 
 // NewRouteServiceClient constructs a client for the routes.v1.RouteService service. By default, it
@@ -120,17 +132,24 @@ func NewRouteServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(routeServiceMethods.ByName("DeleteRoute")),
 			connect.WithClientOptions(opts...),
 		),
+		getRouteForecast: connect.NewClient[v1.GetRouteForecastRequest, v1.GetRouteForecastResponse](
+			httpClient,
+			baseURL+RouteServiceGetRouteForecastProcedure,
+			connect.WithSchema(routeServiceMethods.ByName("GetRouteForecast")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // routeServiceClient implements RouteServiceClient.
 type routeServiceClient struct {
-	previewRoute *connect.Client[v1.PreviewRouteRequest, v1.PreviewRouteResponse]
-	createRoute  *connect.Client[v1.CreateRouteRequest, v1.CreateRouteResponse]
-	getRoute     *connect.Client[v1.GetRouteRequest, v1.GetRouteResponse]
-	listRoutes   *connect.Client[v1.ListRoutesRequest, v1.ListRoutesResponse]
-	updateRoute  *connect.Client[v1.UpdateRouteRequest, v1.UpdateRouteResponse]
-	deleteRoute  *connect.Client[v1.DeleteRouteRequest, v1.DeleteRouteResponse]
+	previewRoute     *connect.Client[v1.PreviewRouteRequest, v1.PreviewRouteResponse]
+	createRoute      *connect.Client[v1.CreateRouteRequest, v1.CreateRouteResponse]
+	getRoute         *connect.Client[v1.GetRouteRequest, v1.GetRouteResponse]
+	listRoutes       *connect.Client[v1.ListRoutesRequest, v1.ListRoutesResponse]
+	updateRoute      *connect.Client[v1.UpdateRouteRequest, v1.UpdateRouteResponse]
+	deleteRoute      *connect.Client[v1.DeleteRouteRequest, v1.DeleteRouteResponse]
+	getRouteForecast *connect.Client[v1.GetRouteForecastRequest, v1.GetRouteForecastResponse]
 }
 
 // PreviewRoute calls routes.v1.RouteService.PreviewRoute.
@@ -163,6 +182,11 @@ func (c *routeServiceClient) DeleteRoute(ctx context.Context, req *connect.Reque
 	return c.deleteRoute.CallUnary(ctx, req)
 }
 
+// GetRouteForecast calls routes.v1.RouteService.GetRouteForecast.
+func (c *routeServiceClient) GetRouteForecast(ctx context.Context, req *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error) {
+	return c.getRouteForecast.CallUnary(ctx, req)
+}
+
 // RouteServiceHandler is an implementation of the routes.v1.RouteService service.
 type RouteServiceHandler interface {
 	// Compute a route through the given waypoints without saving it. Returns the
@@ -183,6 +207,15 @@ type RouteServiceHandler interface {
 	UpdateRoute(context.Context, *connect.Request[v1.UpdateRouteRequest]) (*connect.Response[v1.UpdateRouteResponse], error)
 	// Delete a route.
 	DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error)
+	// Get an hourly weather forecast along a route for a planned start time and
+	// speed. The route can be a saved route, a GPX file or a list of
+	// coordinates. The server estimates where the runner will be at each hour
+	// and returns the forecast for that place and time, adjusted to the
+	// elevation of the point. It also returns the forecast at the highest point
+	// and the finish, and warnings about hazards such as thunderstorms, freezing
+	// levels below the route, strong gusts and darkness. Forecasts are available
+	// up to 15 days ahead.
+	GetRouteForecast(context.Context, *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error)
 }
 
 // NewRouteServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -228,6 +261,12 @@ func NewRouteServiceHandler(svc RouteServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(routeServiceMethods.ByName("DeleteRoute")),
 		connect.WithHandlerOptions(opts...),
 	)
+	routeServiceGetRouteForecastHandler := connect.NewUnaryHandler(
+		RouteServiceGetRouteForecastProcedure,
+		svc.GetRouteForecast,
+		connect.WithSchema(routeServiceMethods.ByName("GetRouteForecast")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/routes.v1.RouteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RouteServicePreviewRouteProcedure:
@@ -242,6 +281,8 @@ func NewRouteServiceHandler(svc RouteServiceHandler, opts ...connect.HandlerOpti
 			routeServiceUpdateRouteHandler.ServeHTTP(w, r)
 		case RouteServiceDeleteRouteProcedure:
 			routeServiceDeleteRouteHandler.ServeHTTP(w, r)
+		case RouteServiceGetRouteForecastProcedure:
+			routeServiceGetRouteForecastHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -273,4 +314,8 @@ func (UnimplementedRouteServiceHandler) UpdateRoute(context.Context, *connect.Re
 
 func (UnimplementedRouteServiceHandler) DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("routes.v1.RouteService.DeleteRoute is not implemented"))
+}
+
+func (UnimplementedRouteServiceHandler) GetRouteForecast(context.Context, *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("routes.v1.RouteService.GetRouteForecast is not implemented"))
 }
