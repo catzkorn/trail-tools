@@ -88,6 +88,7 @@ sqlc:
 .PHONY: buf
 buf:
 	go tool buf generate
+	go tool buf build api --as-file-descriptor-set -o internal/apidesc/descriptor.binpb
 
 .PHONY: buf-lint
 buf-lint:

@@ -7,6 +7,7 @@
 package stravav1
 
 import (
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -622,7 +623,7 @@ var File_strava_v1_strava_proto protoreflect.FileDescriptor
 
 const file_strava_v1_strava_proto_rawDesc = "" +
 	"\n" +
-	"\x16strava/v1/strava.proto\x12\tstrava.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc2\x03\n" +
+	"\x16strava/v1/strava.proto\x12\tstrava.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xc2\x03\n" +
 	"\x10StravaConnection\x12\x1c\n" +
 	"\tconnected\x18\x01 \x01(\bR\tconnected\x12!\n" +
 	"\fathlete_name\x18\x02 \x01(\tR\vathleteName\x12\x1d\n" +
@@ -658,12 +659,12 @@ const file_strava_v1_strava_proto_rawDesc = "" +
 	"\x0fSYNC_STATE_IDLE\x10\x01\x12\x16\n" +
 	"\x12SYNC_STATE_RUNNING\x10\x02\x12\x1b\n" +
 	"\x17SYNC_STATE_RATE_LIMITED\x10\x03\x12\x15\n" +
-	"\x11SYNC_STATE_FAILED\x10\x042\x9d\x02\n" +
+	"\x11SYNC_STATE_FAILED\x10\x042\xa5\x02\n" +
 	"\rStravaService\x12d\n" +
 	"\x13GetStravaConnection\x12%.strava.v1.GetStravaConnectionRequest\x1a&.strava.v1.GetStravaConnectionResponse\x12I\n" +
 	"\n" +
-	"SyncStrava\x12\x1c.strava.v1.SyncStravaRequest\x1a\x1d.strava.v1.SyncStravaResponse\x12[\n" +
-	"\x10DisconnectStrava\x12\".strava.v1.DisconnectStravaRequest\x1a#.strava.v1.DisconnectStravaResponseB\xa2\x01\n" +
+	"SyncStrava\x12\x1c.strava.v1.SyncStravaRequest\x1a\x1d.strava.v1.SyncStravaResponse\x12c\n" +
+	"\x10DisconnectStrava\x12\".strava.v1.DisconnectStravaRequest\x1a#.strava.v1.DisconnectStravaResponse\"\x06\xa2\x9f\x19\x02\b\x01B\xa2\x01\n" +
 	"\rcom.strava.v1B\vStravaProtoP\x01Z?github.com/catzkorn/trail-tools/internal/gen/strava/v1;stravav1\xa2\x02\x03SXX\xaa\x02\tStrava.V1\xca\x02\tStrava\\V1\xe2\x02\x15Strava\\V1\\GPBMetadata\xea\x02\n" +
 	"Strava::V1b\x06proto3"
 

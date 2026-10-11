@@ -7,6 +7,7 @@
 package usersv1
 
 import (
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -750,7 +751,7 @@ var File_users_v1_users_proto protoreflect.FileDescriptor
 
 const file_users_v1_users_proto_rawDesc = "" +
 	"\n" +
-	"\x14users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\x01\n" +
+	"\x14users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xb5\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
@@ -781,12 +782,12 @@ const file_users_v1_users_proto_rawDesc = "" +
 	"\x06tokens\x18\x01 \x03(\v2\x12.users.v1.APITokenR\x06tokens\"'\n" +
 	"\x15DeleteAPITokenRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
-	"\x16DeleteAPITokenResponse2\xde\x02\n" +
+	"\x16DeleteAPITokenResponse2\xf6\x02\n" +
 	"\vUserService\x12S\n" +
-	"\x0eGetCurrentUser\x12\x1f.users.v1.GetCurrentUserRequest\x1a .users.v1.GetCurrentUserResponse\x12S\n" +
-	"\x0eCreateAPIToken\x12\x1f.users.v1.CreateAPITokenRequest\x1a .users.v1.CreateAPITokenResponse\x12P\n" +
-	"\rListAPITokens\x12\x1e.users.v1.ListAPITokensRequest\x1a\x1f.users.v1.ListAPITokensResponse\x12S\n" +
-	"\x0eDeleteAPIToken\x12\x1f.users.v1.DeleteAPITokenRequest\x1a .users.v1.DeleteAPITokenResponseB\x9a\x01\n" +
+	"\x0eGetCurrentUser\x12\x1f.users.v1.GetCurrentUserRequest\x1a .users.v1.GetCurrentUserResponse\x12[\n" +
+	"\x0eCreateAPIToken\x12\x1f.users.v1.CreateAPITokenRequest\x1a .users.v1.CreateAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12X\n" +
+	"\rListAPITokens\x12\x1e.users.v1.ListAPITokensRequest\x1a\x1f.users.v1.ListAPITokensResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12[\n" +
+	"\x0eDeleteAPIToken\x12\x1f.users.v1.DeleteAPITokenRequest\x1a .users.v1.DeleteAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01B\x9a\x01\n" +
 	"\fcom.users.v1B\n" +
 	"UsersProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/users/v1;usersv1\xa2\x02\x03UXX\xaa\x02\bUsers.V1\xca\x02\bUsers\\V1\xe2\x02\x14Users\\V1\\GPBMetadata\xea\x02\tUsers::V1b\x06proto3"
 

@@ -5,6 +5,7 @@ package plans.v1;
 import "geo/v1/geo.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
 
 // TrainingPlanService manages training plans of up to a year leading to one or
 // more goal races. A plan is organised at three levels:
@@ -65,9 +66,9 @@ message TrainingPlan {
   // The IDs of the goal races the plan builds towards. See RaceService.
   repeated string goal_race_ids = 6;
   // When the plan was created.
-  google.protobuf.Timestamp create_time = 7;
+  google.protobuf.Timestamp create_time = 7 [(mcp.v1.field).output_only = true];
   // When the plan was last updated.
-  google.protobuf.Timestamp update_time = 8;
+  google.protobuf.Timestamp update_time = 8 [(mcp.v1.field).output_only = true];
 }
 
 // PeriodGranularity is the length of a plan period.
@@ -82,7 +83,7 @@ enum PeriodGranularity {
 // A month or week in a training plan, with its focus and volume targets.
 message PlanPeriod {
   // The ID of the period.
-  string id = 1;
+  string id = 1 [(mcp.v1.field).output_only = true];
   // Whether this is a month or a week.
   PeriodGranularity granularity = 2;
   // The first day of the period (YYYY-MM-DD). The first of the month for
@@ -135,7 +136,7 @@ message Workout {
   // The ID of the workout. Ignored when creating workouts.
   string id = 1;
   // The ID of the plan the workout belongs to.
-  string plan_id = 2;
+  string plan_id = 2 [(mcp.v1.field).output_only = true];
   // The date of the workout (YYYY-MM-DD).
   string date = 3;
   // The type of workout.

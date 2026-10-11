@@ -4,20 +4,29 @@ package routing.v1;
 
 import "geo/v1/geo.proto";
 import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
 
 // MapDataService manages the OpenStreetMap data that routes are routed on.
 // Routing only works inside imported regions. Only administrators can use it.
 service MapDataService {
   // Get the imported regions with the space they take, the recent imports and
   // the size of the database.
-  rpc GetMapData(GetMapDataRequest) returns (GetMapDataResponse);
+  rpc GetMapData(GetMapDataRequest) returns (GetMapDataResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
   // Find the OpenStreetMap extracts that importing an area would read.
-  rpc FindExtracts(FindExtractsRequest) returns (FindExtractsResponse);
+  rpc FindExtracts(FindExtractsRequest) returns (FindExtractsResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
   // Start importing an area into a region, replacing any earlier import of
   // the region. Only one import runs at a time.
-  rpc StartImport(StartImportRequest) returns (StartImportResponse);
+  rpc StartImport(StartImportRequest) returns (StartImportResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
   // Delete a region and its part of the routing graph, to free space.
-  rpc DeleteRegion(DeleteRegionRequest) returns (DeleteRegionResponse);
+  rpc DeleteRegion(DeleteRegionRequest) returns (DeleteRegionResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
 }
 
 // A rectangular area, by its corners.

@@ -4,6 +4,7 @@ package routes.v1;
 
 import "geo/v1/geo.proto";
 import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
 
 // RouteService creates and edits running routes. A route is defined by an
 // ordered list of waypoints. The path between consecutive waypoints (a leg) is
@@ -158,7 +159,7 @@ message RouteStats {
 // A route between waypoints.
 message Route {
   // The ID of the route.
-  string id = 1;
+  string id = 1 [(mcp.v1.field).output_only = true];
   // The name of the route.
   string name = 2;
   // A free text description of the route, such as its purpose, highlights or
@@ -173,17 +174,17 @@ message Route {
   // profile of the leg from waypoints[i] to waypoints[i+1], so there is one
   // fewer entry than waypoints. UNSPECIFIED for legs imported from a GPX file
   // or an activity. Not set by ListRoutes.
-  repeated RoutingProfile leg_profiles = 11;
+  repeated RoutingProfile leg_profiles = 11 [(mcp.v1.field).output_only = true];
   // The full path of the route. Only set when requested with include_points.
-  repeated RoutePoint points = 6;
+  repeated RoutePoint points = 6 [(mcp.v1.field).output_only = true];
   // Statistics computed from the path.
-  RouteStats stats = 7;
+  RouteStats stats = 7 [(mcp.v1.field).output_only = true];
   // How the route was created.
-  RouteSource source = 8;
+  RouteSource source = 8 [(mcp.v1.field).output_only = true];
   // When the route was created.
-  google.protobuf.Timestamp create_time = 9;
+  google.protobuf.Timestamp create_time = 9 [(mcp.v1.field).output_only = true];
   // When the route was last updated.
-  google.protobuf.Timestamp update_time = 10;
+  google.protobuf.Timestamp update_time = 10 [(mcp.v1.field).output_only = true];
 }
 
 message PreviewRouteRequest {

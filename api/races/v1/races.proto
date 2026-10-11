@@ -4,6 +4,7 @@ package races.v1;
 
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
 
 // RaceService manages the races the user is targeting. Races are used as goal
 // races in training plans and as the subject of race plans.
@@ -59,9 +60,9 @@ message Race {
   // Free text notes, e.g. terrain, weather, qualification requirements.
   string notes = 12;
   // When the race was created.
-  google.protobuf.Timestamp create_time = 13;
+  google.protobuf.Timestamp create_time = 13 [(mcp.v1.field).output_only = true];
   // When the race was last updated.
-  google.protobuf.Timestamp update_time = 14;
+  google.protobuf.Timestamp update_time = 14 [(mcp.v1.field).output_only = true];
 }
 
 message CreateRaceRequest {

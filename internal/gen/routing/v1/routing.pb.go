@@ -8,6 +8,7 @@ package routingv1
 
 import (
 	v1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1051,7 +1052,7 @@ var File_routing_v1_routing_proto protoreflect.FileDescriptor
 const file_routing_v1_routing_proto_rawDesc = "" +
 	"\n" +
 	"\x18routing/v1/routing.proto\x12\n" +
-	"routing.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"d\n" +
+	"routing.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"d\n" +
 	"\x04Area\x12-\n" +
 	"\n" +
 	"south_west\x18\x01 \x01(\v2\x0e.geo.v1.LatLngR\tsouthWest\x12-\n" +
@@ -1101,13 +1102,13 @@ const file_routing_v1_routing_proto_rawDesc = "" +
 	"\x13IMPORT_STATE_QUEUED\x10\x01\x12\x18\n" +
 	"\x14IMPORT_STATE_RUNNING\x10\x02\x12\x15\n" +
 	"\x11IMPORT_STATE_DONE\x10\x03\x12\x17\n" +
-	"\x13IMPORT_STATE_FAILED\x10\x042\xd3\x02\n" +
-	"\x0eMapDataService\x12K\n" +
+	"\x13IMPORT_STATE_FAILED\x10\x042\xf3\x02\n" +
+	"\x0eMapDataService\x12S\n" +
 	"\n" +
-	"GetMapData\x12\x1d.routing.v1.GetMapDataRequest\x1a\x1e.routing.v1.GetMapDataResponse\x12Q\n" +
-	"\fFindExtracts\x12\x1f.routing.v1.FindExtractsRequest\x1a .routing.v1.FindExtractsResponse\x12N\n" +
-	"\vStartImport\x12\x1e.routing.v1.StartImportRequest\x1a\x1f.routing.v1.StartImportResponse\x12Q\n" +
-	"\fDeleteRegion\x12\x1f.routing.v1.DeleteRegionRequest\x1a .routing.v1.DeleteRegionResponseB\xaa\x01\n" +
+	"GetMapData\x12\x1d.routing.v1.GetMapDataRequest\x1a\x1e.routing.v1.GetMapDataResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12Y\n" +
+	"\fFindExtracts\x12\x1f.routing.v1.FindExtractsRequest\x1a .routing.v1.FindExtractsResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12V\n" +
+	"\vStartImport\x12\x1e.routing.v1.StartImportRequest\x1a\x1f.routing.v1.StartImportResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12Y\n" +
+	"\fDeleteRegion\x12\x1f.routing.v1.DeleteRegionRequest\x1a .routing.v1.DeleteRegionResponse\"\x06\xa2\x9f\x19\x02\b\x01B\xaa\x01\n" +
 	"\x0ecom.routing.v1B\fRoutingProtoP\x01ZAgithub.com/catzkorn/trail-tools/internal/gen/routing/v1;routingv1\xa2\x02\x03RXX\xaa\x02\n" +
 	"Routing.V1\xca\x02\n" +
 	"Routing\\V1\xe2\x02\x16Routing\\V1\\GPBMetadata\xea\x02\vRouting::V1b\x06proto3"

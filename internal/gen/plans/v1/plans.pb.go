@@ -8,6 +8,7 @@ package plansv1
 
 import (
 	v1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -2332,7 +2333,7 @@ var File_plans_v1_plans_proto protoreflect.FileDescriptor
 
 const file_plans_v1_plans_proto_rawDesc = "" +
 	"\n" +
-	"\x14plans/v1/plans.proto\x12\bplans.v1\x1a\x10geo/v1/geo.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xac\x02\n" +
+	"\x14plans/v1/plans.proto\x12\bplans.v1\x1a\x10geo/v1/geo.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xbc\x02\n" +
 	"\fTrainingPlan\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -2340,14 +2341,14 @@ const file_plans_v1_plans_proto_rawDesc = "" +
 	"\n" +
 	"start_date\x18\x04 \x01(\tR\tstartDate\x12\x19\n" +
 	"\bend_date\x18\x05 \x01(\tR\aendDate\x12\"\n" +
-	"\rgoal_race_ids\x18\x06 \x03(\tR\vgoalRaceIds\x12;\n" +
-	"\vcreate_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"createTime\x12;\n" +
-	"\vupdate_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"updateTime\"\xd5\x02\n" +
+	"\rgoal_race_ids\x18\x06 \x03(\tR\vgoalRaceIds\x12C\n" +
+	"\vcreate_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"createTime\x12C\n" +
+	"\vupdate_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"updateTime\"\xdd\x02\n" +
 	"\n" +
-	"PlanPeriod\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12=\n" +
+	"PlanPeriod\x12\x16\n" +
+	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12=\n" +
 	"\vgranularity\x18\x02 \x01(\x0e2\x1b.plans.v1.PeriodGranularityR\vgranularity\x12\x1d\n" +
 	"\n" +
 	"start_date\x18\x03 \x01(\tR\tstartDate\x12\x14\n" +
@@ -2355,10 +2356,10 @@ const file_plans_v1_plans_proto_rawDesc = "" +
 	"\x05notes\x18\x05 \x01(\tR\x05notes\x124\n" +
 	"\x16target_distance_meters\x18\x06 \x01(\x01R\x14targetDistanceMeters\x12?\n" +
 	"\x1ctarget_elevation_gain_meters\x18\a \x01(\x01R\x19targetElevationGainMeters\x126\n" +
-	"\x17target_duration_seconds\x18\b \x01(\x05R\x15targetDurationSeconds\"\xdf\x03\n" +
+	"\x17target_duration_seconds\x18\b \x01(\x05R\x15targetDurationSeconds\"\xe7\x03\n" +
 	"\aWorkout\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\aplan_id\x18\x02 \x01(\tR\x06planId\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\aplan_id\x18\x02 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x06planId\x12\x12\n" +
 	"\x04date\x18\x03 \x01(\tR\x04date\x12)\n" +
 	"\x04type\x18\x04 \x01(\x0e2\x15.plans.v1.WorkoutTypeR\x04type\x12\x14\n" +
 	"\x05title\x18\x05 \x01(\tR\x05title\x12 \n" +

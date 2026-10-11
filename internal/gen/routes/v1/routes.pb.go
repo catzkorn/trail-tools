@@ -8,6 +8,7 @@ package routesv1
 
 import (
 	v1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -3275,7 +3276,7 @@ var File_routes_v1_routes_proto protoreflect.FileDescriptor
 
 const file_routes_v1_routes_proto_rawDesc = "" +
 	"\n" +
-	"\x16routes/v1/routes.proto\x12\troutes.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x84\x01\n" +
+	"\x16routes/v1/routes.proto\x12\troutes.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\x84\x01\n" +
 	"\n" +
 	"RoutePoint\x12\x10\n" +
 	"\x03lat\x18\x01 \x01(\x01R\x03lat\x12\x10\n" +
@@ -3295,21 +3296,21 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x14max_elevation_meters\x18\x05 \x01(\x01R\x12maxElevationMeters\x125\n" +
 	"\x17max_climb_grade_percent\x18\x06 \x01(\x01R\x14maxClimbGradePercent\x129\n" +
 	"\x19max_descent_grade_percent\x18\a \x01(\x01R\x16maxDescentGradePercent\x121\n" +
-	"\aterrain\x18\b \x03(\v2\x17.routes.v1.TerrainShareR\aterrain\"\xf4\x03\n" +
-	"\x05Route\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\aterrain\x18\b \x03(\v2\x17.routes.v1.TerrainShareR\aterrain\"\xac\x04\n" +
+	"\x05Route\x12\x16\n" +
+	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x123\n" +
 	"\aprofile\x18\x04 \x01(\x0e2\x19.routes.v1.RoutingProfileR\aprofile\x12,\n" +
-	"\twaypoints\x18\x05 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x12<\n" +
-	"\fleg_profiles\x18\v \x03(\x0e2\x19.routes.v1.RoutingProfileR\vlegProfiles\x12-\n" +
-	"\x06points\x18\x06 \x03(\v2\x15.routes.v1.RoutePointR\x06points\x12+\n" +
-	"\x05stats\x18\a \x01(\v2\x15.routes.v1.RouteStatsR\x05stats\x12.\n" +
-	"\x06source\x18\b \x01(\x0e2\x16.routes.v1.RouteSourceR\x06source\x12;\n" +
-	"\vcreate_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"createTime\x12;\n" +
+	"\twaypoints\x18\x05 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x12D\n" +
+	"\fleg_profiles\x18\v \x03(\x0e2\x19.routes.v1.RoutingProfileB\x06\xaa\x9f\x19\x02\b\x01R\vlegProfiles\x125\n" +
+	"\x06points\x18\x06 \x03(\v2\x15.routes.v1.RoutePointB\x06\xaa\x9f\x19\x02\b\x01R\x06points\x123\n" +
+	"\x05stats\x18\a \x01(\v2\x15.routes.v1.RouteStatsB\x06\xaa\x9f\x19\x02\b\x01R\x05stats\x126\n" +
+	"\x06source\x18\b \x01(\x0e2\x16.routes.v1.RouteSourceB\x06\xaa\x9f\x19\x02\b\x01R\x06source\x12C\n" +
+	"\vcreate_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"createTime\x12C\n" +
 	"\vupdate_time\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"updateTime\"\xf8\x01\n" +
 	"\x13PreviewRouteRequest\x12,\n" +
 	"\twaypoints\x18\x01 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x123\n" +
