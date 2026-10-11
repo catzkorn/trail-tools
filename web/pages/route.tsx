@@ -1,9 +1,10 @@
 import Loading from "@components/loading";
 import type { RouteDraft } from "@components/routes/route-editor";
 import RouteEditor from "@components/routes/route-editor";
+import { hasEditableGeometry } from "@components/routes/route-edits";
 import RouteViewer from "@components/routes/route-viewer";
 import Card from "@components/ui/card";
-import { SelectField, TextField } from "@components/ui/fields";
+import { CheckboxField, SelectField, TextField } from "@components/ui/fields";
 import type { SelectOption } from "@components/ui/fields";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import { primaryButton } from "@components/ui/styles";
@@ -22,7 +23,7 @@ import {
   updateRoute,
 } from "gen/routes/v1/routes-RouteService_connectquery";
 import type { Route } from "gen/routes/v1/routes_pb";
-import { RouteService, RouteSource } from "gen/routes/v1/routes_pb";
+import { RouteService, TrackConversion } from "gen/routes/v1/routes_pb";
 import { formatDate, formatHoursMinutes, formatKm } from "helpers/format";
 import { workoutStyle } from "helpers/labels";
 import { invalidateServices } from "helpers/query";
@@ -87,11 +88,42 @@ const useRouteCreated = () => {
   };
 };
 
+interface ExactTrackFieldProps {
+  exact: boolean;
+  onChange: (exact: boolean) => void;
+}
+
+/**
+ * ExactTrackField chooses between keeping a recorded track exactly and
+ * snapping it to trails as an editable route.
+ */
+const ExactTrackField: React.FC<ExactTrackFieldProps> = ({
+  exact,
+  onChange,
+}) => (
+  <div className="flex flex-col gap-1">
+    <CheckboxField
+      label="Keep the exact track"
+      checked={exact}
+      onChange={onChange}
+    />
+    <p className="text-xs text-gray-500">
+      {exact
+        ? "The route follows the recording exactly, e.g. for an official race course, but can't be reshaped."
+        : "The route is snapped to trails with as few waypoints as possible, so you can reshape it by moving them. This can take a little while."}
+    </p>
+  </div>
+);
+
+const trackConversion = (exact: boolean): TrackConversion =>
+  exact ? TrackConversion.EXACT : TrackConversion.SNAP;
+
 const ImportGpx: React.FC = () => {
   const { onCreated, linkError } = useRouteCreated();
   const [name, setName] = useState("");
   const [gpx, setGpx] = useState("");
   const [fileName, setFileName] = useState("");
+  const [exact, setExact] = useState(false);
   const create = useMutation(createRoute, {
     onSuccess: async (response) => {
       await onCreated(response.route);
@@ -106,6 +138,7 @@ const ImportGpx: React.FC = () => {
           return;
         }
         create.mutate({
+          conversion: trackConversion(exact),
           name: name.trim() === "" ? fileName : name.trim(),
           source: { case: "gpx", value: gpx },
         });
@@ -133,6 +166,7 @@ const ImportGpx: React.FC = () => {
         onChange={setName}
         placeholder={fileName === "" ? "Route name" : fileName}
       />
+      <ExactTrackField exact={exact} onChange={setExact} />
       <ErrorText error={create.error ?? linkError} />
       <div>
         <button
@@ -152,6 +186,7 @@ const FromActivity: React.FC = () => {
   const activities = useQuery(listActivities, { pageSize: 50 });
   const [activityId, setActivityId] = useState("");
   const [name, setName] = useState("");
+  const [exact, setExact] = useState(false);
   const create = useMutation(createRoute, {
     onSuccess: async (response) => {
       await onCreated(response.route);
@@ -194,6 +229,7 @@ const FromActivity: React.FC = () => {
           return;
         }
         create.mutate({
+          conversion: trackConversion(exact),
           name: name.trim() === "" ? selected.name : name.trim(),
           source: { case: "activityId", value: selected.id },
         });
@@ -211,6 +247,7 @@ const FromActivity: React.FC = () => {
         onChange={setName}
         placeholder={selected === undefined ? "Route name" : selected.name}
       />
+      <ExactTrackField exact={exact} onChange={setExact} />
       <ErrorText error={create.error ?? linkError} />
       <div>
         <button
@@ -380,9 +417,7 @@ const ExistingRoute: React.FC = () => {
   if (route === undefined) {
     return <p>Route not found.</p>;
   }
-  const geometryEditable =
-    route.source === RouteSource.WAYPOINTS ||
-    route.source === RouteSource.UNSPECIFIED;
+  const geometryEditable = hasEditableGeometry(route);
 
   if (!editing) {
     return (
@@ -404,8 +439,9 @@ const ExistingRoute: React.FC = () => {
     <div className="flex flex-col gap-2">
       {!geometryEditable && (
         <p className="rounded-md bg-amber-50 p-2 text-sm text-amber-900">
-          This route was imported, so only its name and description can be
-          edited.
+          This route follows a recording exactly, so only its name and
+          description can be edited. Use Make editable on the route to create a
+          copy snapped to trails with a few waypoints you can move.
         </p>
       )}
       <RouteEditor

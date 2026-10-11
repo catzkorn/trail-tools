@@ -18,11 +18,15 @@ import {
   ArrowDownTrayIcon,
   CloudIcon,
   PencilSquareIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
-import { deleteRoute } from "gen/routes/v1/routes-RouteService_connectquery";
+import {
+  createRoute,
+  deleteRoute,
+} from "gen/routes/v1/routes-RouteService_connectquery";
 import type { Route } from "gen/routes/v1/routes_pb";
-import { RouteService } from "gen/routes/v1/routes_pb";
+import { RouteService, TrackConversion } from "gen/routes/v1/routes_pb";
 import { formatTimestamp } from "helpers/format";
 import { routeSourceLabel } from "helpers/labels";
 import { invalidateServices } from "helpers/query";
@@ -30,6 +34,7 @@ import type { LatLngTuple } from "leaflet";
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
+import { hasEditableGeometry } from "./route-edits";
 import {
   distanceMarkers,
   distanceStepKm,
@@ -56,6 +61,16 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
       void navigate("/routes");
     },
   });
+  // Exact imports can be copied as an editable route snapped to trails.
+  const makeEditable = useMutation(createRoute, {
+    onSuccess: async (response) => {
+      await invalidateServices(queryClient, [RouteService]);
+      if (response.route !== undefined) {
+        void navigate(`/routes/${response.route.id}`);
+      }
+    },
+  });
+  const editable = hasEditableGeometry(route);
 
   const { points, waypoints } = route;
   const tuples = useMemo(() => toTuples(points), [points]);
@@ -135,6 +150,24 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
                 <PencilSquareIcon className="size-4" />
                 Edit
               </button>
+              {!editable && (
+                <button
+                  type="button"
+                  className={secondaryButton}
+                  disabled={makeEditable.isPending}
+                  title="Create a copy snapped to trails with as few waypoints as possible, which you can reshape"
+                  onClick={() => {
+                    makeEditable.mutate({
+                      conversion: TrackConversion.SNAP,
+                      name: `${route.name} (editable)`,
+                      source: { case: "routeId", value: route.id },
+                    });
+                  }}
+                >
+                  <SparklesIcon className="size-4" />
+                  {makeEditable.isPending ? "Snapping…" : "Make editable"}
+                </button>
+              )}
               <a
                 href={`/routes/${route.id}.gpx`}
                 className={secondaryButton}
@@ -161,7 +194,7 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
                 Delete
               </ConfirmButton>
             </div>
-            <ErrorText error={remove.error} />
+            <ErrorText error={remove.error ?? makeEditable.error} />
           </div>
         </Card>
         <Card title="Statistics">

@@ -1,4 +1,5 @@
-import type { RoutingProfile } from "gen/routes/v1/routes_pb";
+import type { Route } from "gen/routes/v1/routes_pb";
+import { RouteSource, RoutingProfile } from "gen/routes/v1/routes_pb";
 
 import type { LatLngValue } from "./route-geometry";
 
@@ -13,6 +14,21 @@ export interface RouteShape {
 }
 
 export const EMPTY_SHAPE: RouteShape = { legProfiles: [], waypoints: [] };
+
+/**
+ * HasEditableGeometry reports whether a route can be reshaped by moving its
+ * waypoints: every leg was routed between waypoints. Tracks imported exactly
+ * have legs without a profile, which follow the recording.
+ */
+export const hasEditableGeometry = (route: Route): boolean => {
+  if (route.source === RouteSource.WAYPOINTS) {
+    return true;
+  }
+  return (
+    route.legProfiles.length > 0 &&
+    route.legProfiles.every((profile) => profile !== RoutingProfile.UNSPECIFIED)
+  );
+};
 
 const reversedCopy = <Item>(items: Item[]): Item[] => {
   const result: Item[] = [];

@@ -24,7 +24,7 @@ import type {
   ActivityStreams,
 } from "gen/activities/v1/activities_pb";
 import { createRoute } from "gen/routes/v1/routes-RouteService_connectquery";
-import { RouteService } from "gen/routes/v1/routes_pb";
+import { RouteService, TrackConversion } from "gen/routes/v1/routes_pb";
 import {
   formatDate,
   formatHoursMinutes,
@@ -169,13 +169,16 @@ const ActivityPage: React.FC = () => {
               disabled={makeRoute.isPending}
               onClick={() => {
                 makeRoute.mutate({
+                  conversion: TrackConversion.SNAP,
                   name: activity.name,
                   source: { case: "activityId", value: activity.id },
                 });
               }}
             >
               <MapIcon className="size-4" />
-              Create route from this activity
+              {makeRoute.isPending
+                ? "Snapping to trails…"
+                : "Create route from this activity"}
             </button>
           )}
         </div>
