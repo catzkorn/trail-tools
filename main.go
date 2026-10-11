@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
@@ -21,12 +22,16 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
+	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -106,11 +111,21 @@ var (
 		"trail-tools-scheduler",
 		"The audience of the scheduler's ID tokens",
 	)
+	brouterURL = flag.String(
+		"brouter-url",
+		"https://brouter.de/brouter",
+		"The URL of the BRouter server used for routing",
+	)
 	adminBootstrapToken = flag.String(
 		"admin-bootstrap-token",
 		"",
 		"A secret that can be used as an invitation to create the first administrator,"+
 			" at /invite/<token>, while there are no administrators",
+	)
+	overpassURLs = flag.String(
+		"overpass-urls",
+		strings.Join(mapdata.DefaultOverpassURLs, ","),
+		"Comma separated Overpass API URLs used to query OpenStreetMap, tried in order",
 	)
 )
 
@@ -143,6 +158,10 @@ func main() {
 		*stravaSyncMode,
 		*schedulerServiceAccount,
 		*schedulerAudience,
+		mapdata.Config{
+			BRouterURL:   *brouterURL,
+			OverpassURLs: strings.Split(*overpassURLs, ","),
+		},
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -164,6 +183,7 @@ func run(
 	stravaSyncMode string,
 	schedulerServiceAccount string,
 	schedulerAudience string,
+	mapConfig mapdata.Config,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -211,6 +231,11 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create activity repository: %w", err)
 	}
+	routeRepo, err := routes.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create route repository: %w", err)
+	}
+	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
 	var stravaSyncer *stravasvc.Syncer
@@ -239,6 +264,7 @@ func run(
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	routeService := route.NewService(log, routeRepo, activityRepo, mapData)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -251,6 +277,7 @@ func run(
 		func() (string, http.Handler) { return authv1connect.NewAuthServiceHandler(authService) },
 		func() (string, http.Handler) { return activitiesv1connect.NewActivityServiceHandler(activityService) },
 		func() (string, http.Handler) { return stravav1connect.NewStravaServiceHandler(stravaService) },
+		func() (string, http.Handler) { return routesv1connect.NewRouteServiceHandler(routeService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)
@@ -308,7 +335,14 @@ func run(
 	mux.Handle("/favicon.svg", fileServer)
 	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
-	mux.Handle("/", html.ServeIndexHTML(serveDir != ""))
+	indexHandler := html.ServeIndexHTML(serveDir != "")
+	mux.Handle("/", indexHandler)
+	// Serve routes as GPX files, falling back to the frontend for other
+	// /routes/ pages.
+	mux.Handle("/routes/", authenticate(routeService.GPXHandler(indexHandler)))
+	// Registering /routes/ makes the mux redirect /routes to /routes/, so
+	// serve the frontend for /routes explicitly.
+	mux.Handle("/routes", indexHandler)
 
 	// Add auto-reloading middleware if serving from a directory
 	var srvHandler http.Handler = mux

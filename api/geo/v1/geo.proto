@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package geo.v1;
+
+// A WGS84 coordinate.
+message LatLng {
+  // Latitude in decimal degrees.
+  double lat = 1;
+  // Longitude in decimal degrees.
+  double lng = 2;
+}
+
+// Terrain is a coarse classification of the surface underfoot.
+enum Terrain {
+  TERRAIN_UNSPECIFIED = 0;
+  // Asphalt, concrete or paving stones.
+  TERRAIN_PAVED = 1;
+  // Gravel or compacted fire roads and tracks.
+  TERRAIN_GRAVEL = 2;
+  // Dirt, grass or forest singletrack.
+  TERRAIN_TRAIL = 3;
+  // Rocky, scree or demanding mountain trails (SAC scale T3 or above).
+  TERRAIN_TECHNICAL = 4;
+}

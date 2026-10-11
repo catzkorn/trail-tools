@@ -54,3 +54,16 @@ To view available make targets, run:
 ```sh
 $ make help
 ```
+
+### Map data services
+
+Routing, trails and elevation come from public services that are fine for
+personal use. Their URLs can be changed with flags, e.g. to self host BRouter:
+
+| Flag             | Default                         | Used for                        |
+| ---------------- | ------------------------------- | ------------------------------- |
+| `-brouter-url`   | `https://brouter.de/brouter`    | Snapping routes to trails       |
+| `-overpass-urls` | Public Overpass API instances   | Trails and points of interest   |
+
+Public Overpass instances are often overloaded; trail and point of interest
+lookups return an error asking to retry when they all fail.
