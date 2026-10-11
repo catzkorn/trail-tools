@@ -9,6 +9,8 @@ import ActivitiesPage from "pages/activities";
 import ActivityPage from "pages/activity";
 import AthletesPage from "pages/athletes";
 import InvitePage from "pages/invite";
+import RoutePage from "pages/route";
+import RoutesPage from "pages/routes";
 import SettingsPage from "pages/settings";
 import type { ReactNode } from "react";
 import React from "react";
@@ -94,6 +96,15 @@ const App: React.FC = () => {
         <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
           <Routes>
             <Route path="/" element={<AthletesPage user={user} />} />
+            <Route path="/routes" element={protectedPage(<RoutesPage />)} />
+            <Route
+              path="/routes/new"
+              element={protectedPage(<RoutePage isNew />)}
+            />
+            <Route
+              path="/routes/:id"
+              element={protectedPage(<RoutePage isNew={false} />)}
+            />
             <Route
               path="/activities"
               element={protectedPage(<ActivitiesPage />)}
