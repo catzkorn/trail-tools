@@ -1,5 +1,11 @@
 # See https://docs.sqlc.dev/en/latest/reference/config.html for documentation on the fields
 version: "2"
+overrides:
+  go:
+    rename:
+      oauth_grant: OAuthGrant
+      oauth_grant_id: OAuthGrantID
+      oauth_authorization_code: OAuthAuthorizationCode
 sql:
   - name: "athletes"
     queries: "./internal/athletes/queries"
@@ -42,6 +48,7 @@ sql:
           - ble
           - api
           - sha256
+          - uri
   - name: "activities"
     queries: "./internal/activities/queries"
     schema: "./internal/store/migrations"
