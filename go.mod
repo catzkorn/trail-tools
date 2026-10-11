@@ -3,7 +3,7 @@ module github.com/catzkorn/trail-tools
 go 1.26.7
 
 require (
-	connectrpc.com/connect v1.21.0
+	connectrpc.com/connect/v2 v2.0.0
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/golang-migrate/migrate/v4 v4.20.1
@@ -34,6 +34,7 @@ require (
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5 // indirect
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.3 // indirect
+	connectrpc.com/connect v1.21.0 // indirect
 	connectrpc.com/otelconnect v0.9.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
@@ -156,7 +157,7 @@ require (
 )
 
 tool (
-	connectrpc.com/connect/cmd/protoc-gen-connect-go
+	connectrpc.com/connect/v2/cmd/protoc-gen-connect-go
 	github.com/bufbuild/buf/cmd/buf
 	github.com/evanw/esbuild/cmd/esbuild
 	github.com/mitranim/gow

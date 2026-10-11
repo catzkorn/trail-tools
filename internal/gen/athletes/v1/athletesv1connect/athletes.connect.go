@@ -5,221 +5,242 @@
 package athletesv1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1 "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// AthleteServiceName is the fully-qualified name of the AthleteService service.
 	AthleteServiceName = "athletes.v1.AthleteService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AthleteServiceCreateAthleteProcedure is the fully-qualified name of the AthleteService's
-	// CreateAthlete RPC.
+	// AthleteServiceCreateAthleteProcedure is the procedure name of the AthleteService's CreateAthlete
+	// RPC.
 	AthleteServiceCreateAthleteProcedure = "/athletes.v1.AthleteService/CreateAthlete"
-	// AthleteServiceListAthletesProcedure is the fully-qualified name of the AthleteService's
-	// ListAthletes RPC.
+	// AthleteServiceListAthletesProcedure is the procedure name of the AthleteService's ListAthletes
+	// RPC.
 	AthleteServiceListAthletesProcedure = "/athletes.v1.AthleteService/ListAthletes"
-	// AthleteServiceDeleteAthleteProcedure is the fully-qualified name of the AthleteService's
-	// DeleteAthlete RPC.
+	// AthleteServiceDeleteAthleteProcedure is the procedure name of the AthleteService's DeleteAthlete
+	// RPC.
 	AthleteServiceDeleteAthleteProcedure = "/athletes.v1.AthleteService/DeleteAthlete"
-	// AthleteServiceCreateActivityProcedure is the fully-qualified name of the AthleteService's
+	// AthleteServiceCreateActivityProcedure is the procedure name of the AthleteService's
 	// CreateActivity RPC.
 	AthleteServiceCreateActivityProcedure = "/athletes.v1.AthleteService/CreateActivity"
-	// AthleteServiceCreateBloodLactateMeasureProcedure is the fully-qualified name of the
-	// AthleteService's CreateBloodLactateMeasure RPC.
+	// AthleteServiceCreateBloodLactateMeasureProcedure is the procedure name of the AthleteService's
+	// CreateBloodLactateMeasure RPC.
 	AthleteServiceCreateBloodLactateMeasureProcedure = "/athletes.v1.AthleteService/CreateBloodLactateMeasure"
+)
+
+var (
+	athleteServiceCreateAthleteSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods().ByName("CreateAthlete"),
+			Procedure:  AthleteServiceCreateAthleteProcedure,
+		}
+	})
+	athleteServiceListAthletesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods().ByName("ListAthletes"),
+			Procedure:  AthleteServiceListAthletesProcedure,
+		}
+	})
+	athleteServiceDeleteAthleteSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods().ByName("DeleteAthlete"),
+			Procedure:  AthleteServiceDeleteAthleteProcedure,
+		}
+	})
+	athleteServiceCreateActivitySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods().ByName("CreateActivity"),
+			Procedure:  AthleteServiceCreateActivityProcedure,
+		}
+	})
+	athleteServiceCreateBloodLactateMeasureSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods().ByName("CreateBloodLactateMeasure"),
+			Procedure:  AthleteServiceCreateBloodLactateMeasureProcedure,
+		}
+	})
 )
 
 // AthleteServiceClient is a client for the athletes.v1.AthleteService service.
 type AthleteServiceClient interface {
-	CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error)
-	ListAthletes(context.Context, *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error)
-	DeleteAthlete(context.Context, *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error)
-	CreateActivity(context.Context, *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error)
-	CreateBloodLactateMeasure(context.Context, *connect.Request[v1.CreateBloodLactateMeasureRequest]) (*connect.Response[v1.CreateBloodLactateMeasureResponse], error)
+	CreateAthlete(context.Context, *v1.CreateAthleteRequest) (*v1.CreateAthleteResponse, error)
+	ListAthletes(context.Context, *v1.ListAthletesRequest) (*v1.ListAthletesResponse, error)
+	DeleteAthlete(context.Context, *v1.DeleteAthleteRequest) (*v1.DeleteAthleteResponse, error)
+	CreateActivity(context.Context, *v1.CreateActivityRequest) (*v1.CreateActivityResponse, error)
+	CreateBloodLactateMeasure(context.Context, *v1.CreateBloodLactateMeasureRequest) (*v1.CreateBloodLactateMeasureResponse, error)
 }
 
-// NewAthleteServiceClient constructs a client for the athletes.v1.AthleteService service. By
-// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
-// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewAthleteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AthleteServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	athleteServiceMethods := v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods()
-	return &athleteServiceClient{
-		createAthlete: connect.NewClient[v1.CreateAthleteRequest, v1.CreateAthleteResponse](
-			httpClient,
-			baseURL+AthleteServiceCreateAthleteProcedure,
-			connect.WithSchema(athleteServiceMethods.ByName("CreateAthlete")),
-			connect.WithClientOptions(opts...),
-		),
-		listAthletes: connect.NewClient[v1.ListAthletesRequest, v1.ListAthletesResponse](
-			httpClient,
-			baseURL+AthleteServiceListAthletesProcedure,
-			connect.WithSchema(athleteServiceMethods.ByName("ListAthletes")),
-			connect.WithClientOptions(opts...),
-		),
-		deleteAthlete: connect.NewClient[v1.DeleteAthleteRequest, v1.DeleteAthleteResponse](
-			httpClient,
-			baseURL+AthleteServiceDeleteAthleteProcedure,
-			connect.WithSchema(athleteServiceMethods.ByName("DeleteAthlete")),
-			connect.WithClientOptions(opts...),
-		),
-		createActivity: connect.NewClient[v1.CreateActivityRequest, v1.CreateActivityResponse](
-			httpClient,
-			baseURL+AthleteServiceCreateActivityProcedure,
-			connect.WithSchema(athleteServiceMethods.ByName("CreateActivity")),
-			connect.WithClientOptions(opts...),
-		),
-		createBloodLactateMeasure: connect.NewClient[v1.CreateBloodLactateMeasureRequest, v1.CreateBloodLactateMeasureResponse](
-			httpClient,
-			baseURL+AthleteServiceCreateBloodLactateMeasureProcedure,
-			connect.WithSchema(athleteServiceMethods.ByName("CreateBloodLactateMeasure")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// athleteServiceClient implements AthleteServiceClient.
-type athleteServiceClient struct {
-	createAthlete             *connect.Client[v1.CreateAthleteRequest, v1.CreateAthleteResponse]
-	listAthletes              *connect.Client[v1.ListAthletesRequest, v1.ListAthletesResponse]
-	deleteAthlete             *connect.Client[v1.DeleteAthleteRequest, v1.DeleteAthleteResponse]
-	createActivity            *connect.Client[v1.CreateActivityRequest, v1.CreateActivityResponse]
-	createBloodLactateMeasure *connect.Client[v1.CreateBloodLactateMeasureRequest, v1.CreateBloodLactateMeasureResponse]
-}
-
-// CreateAthlete calls athletes.v1.AthleteService.CreateAthlete.
-func (c *athleteServiceClient) CreateAthlete(ctx context.Context, req *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error) {
-	return c.createAthlete.CallUnary(ctx, req)
-}
-
-// ListAthletes calls athletes.v1.AthleteService.ListAthletes.
-func (c *athleteServiceClient) ListAthletes(ctx context.Context, req *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error) {
-	return c.listAthletes.CallUnary(ctx, req)
-}
-
-// DeleteAthlete calls athletes.v1.AthleteService.DeleteAthlete.
-func (c *athleteServiceClient) DeleteAthlete(ctx context.Context, req *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error) {
-	return c.deleteAthlete.CallUnary(ctx, req)
-}
-
-// CreateActivity calls athletes.v1.AthleteService.CreateActivity.
-func (c *athleteServiceClient) CreateActivity(ctx context.Context, req *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error) {
-	return c.createActivity.CallUnary(ctx, req)
-}
-
-// CreateBloodLactateMeasure calls athletes.v1.AthleteService.CreateBloodLactateMeasure.
-func (c *athleteServiceClient) CreateBloodLactateMeasure(ctx context.Context, req *connect.Request[v1.CreateBloodLactateMeasureRequest]) (*connect.Response[v1.CreateBloodLactateMeasureResponse], error) {
-	return c.createBloodLactateMeasure.CallUnary(ctx, req)
+// NewAthleteServiceClient constructs a client for the athletes.v1.AthleteService service. Multiple
+// service clients may share a single connect.Client.
+func NewAthleteServiceClient(client *connect.Client) AthleteServiceClient {
+	return &athleteServiceClient{client: client}
 }
 
 // AthleteServiceHandler is an implementation of the athletes.v1.AthleteService service.
 type AthleteServiceHandler interface {
-	CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error)
-	ListAthletes(context.Context, *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error)
-	DeleteAthlete(context.Context, *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error)
-	CreateActivity(context.Context, *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error)
-	CreateBloodLactateMeasure(context.Context, *connect.Request[v1.CreateBloodLactateMeasureRequest]) (*connect.Response[v1.CreateBloodLactateMeasureResponse], error)
+	CreateAthlete(context.Context, *v1.CreateAthleteRequest) (*v1.CreateAthleteResponse, error)
+	ListAthletes(context.Context, *v1.ListAthletesRequest) (*v1.ListAthletesResponse, error)
+	DeleteAthlete(context.Context, *v1.DeleteAthleteRequest) (*v1.DeleteAthleteResponse, error)
+	CreateActivity(context.Context, *v1.CreateActivityRequest) (*v1.CreateActivityResponse, error)
+	CreateBloodLactateMeasure(context.Context, *v1.CreateBloodLactateMeasureRequest) (*v1.CreateBloodLactateMeasureResponse, error)
 }
 
-// NewAthleteServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewAthleteServiceHandler(svc AthleteServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	athleteServiceMethods := v1.File_athletes_v1_athletes_proto.Services().ByName("AthleteService").Methods()
-	athleteServiceCreateAthleteHandler := connect.NewUnaryHandler(
-		AthleteServiceCreateAthleteProcedure,
-		svc.CreateAthlete,
-		connect.WithSchema(athleteServiceMethods.ByName("CreateAthlete")),
-		connect.WithHandlerOptions(opts...),
+// RegisterAthleteServiceHandler registers svc as the athletes.v1.AthleteService implementation on
+// server.
+func RegisterAthleteServiceHandler(server *connect.Server, svc AthleteServiceHandler) {
+	adapter := athleteServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: athleteServiceCreateAthleteSpec(), Handler: adapter.createAthlete},
+		connect.Method{Spec: athleteServiceListAthletesSpec(), Handler: adapter.listAthletes},
+		connect.Method{Spec: athleteServiceDeleteAthleteSpec(), Handler: adapter.deleteAthlete},
+		connect.Method{Spec: athleteServiceCreateActivitySpec(), Handler: adapter.createActivity},
+		connect.Method{Spec: athleteServiceCreateBloodLactateMeasureSpec(), Handler: adapter.createBloodLactateMeasure},
 	)
-	athleteServiceListAthletesHandler := connect.NewUnaryHandler(
-		AthleteServiceListAthletesProcedure,
-		svc.ListAthletes,
-		connect.WithSchema(athleteServiceMethods.ByName("ListAthletes")),
-		connect.WithHandlerOptions(opts...),
-	)
-	athleteServiceDeleteAthleteHandler := connect.NewUnaryHandler(
-		AthleteServiceDeleteAthleteProcedure,
-		svc.DeleteAthlete,
-		connect.WithSchema(athleteServiceMethods.ByName("DeleteAthlete")),
-		connect.WithHandlerOptions(opts...),
-	)
-	athleteServiceCreateActivityHandler := connect.NewUnaryHandler(
-		AthleteServiceCreateActivityProcedure,
-		svc.CreateActivity,
-		connect.WithSchema(athleteServiceMethods.ByName("CreateActivity")),
-		connect.WithHandlerOptions(opts...),
-	)
-	athleteServiceCreateBloodLactateMeasureHandler := connect.NewUnaryHandler(
-		AthleteServiceCreateBloodLactateMeasureProcedure,
-		svc.CreateBloodLactateMeasure,
-		connect.WithSchema(athleteServiceMethods.ByName("CreateBloodLactateMeasure")),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/athletes.v1.AthleteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case AthleteServiceCreateAthleteProcedure:
-			athleteServiceCreateAthleteHandler.ServeHTTP(w, r)
-		case AthleteServiceListAthletesProcedure:
-			athleteServiceListAthletesHandler.ServeHTTP(w, r)
-		case AthleteServiceDeleteAthleteProcedure:
-			athleteServiceDeleteAthleteHandler.ServeHTTP(w, r)
-		case AthleteServiceCreateActivityProcedure:
-			athleteServiceCreateActivityHandler.ServeHTTP(w, r)
-		case AthleteServiceCreateBloodLactateMeasureProcedure:
-			athleteServiceCreateBloodLactateMeasureHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedAthleteServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAthleteServiceHandler struct{}
 
-func (UnimplementedAthleteServiceHandler) CreateAthlete(context.Context, *connect.Request[v1.CreateAthleteRequest]) (*connect.Response[v1.CreateAthleteResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.CreateAthlete is not implemented"))
+func (UnimplementedAthleteServiceHandler) CreateAthlete(context.Context, *v1.CreateAthleteRequest) (*v1.CreateAthleteResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "athletes.v1.AthleteService.CreateAthlete is not implemented")
 }
 
-func (UnimplementedAthleteServiceHandler) ListAthletes(context.Context, *connect.Request[v1.ListAthletesRequest]) (*connect.Response[v1.ListAthletesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.ListAthletes is not implemented"))
+func (UnimplementedAthleteServiceHandler) ListAthletes(context.Context, *v1.ListAthletesRequest) (*v1.ListAthletesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "athletes.v1.AthleteService.ListAthletes is not implemented")
 }
 
-func (UnimplementedAthleteServiceHandler) DeleteAthlete(context.Context, *connect.Request[v1.DeleteAthleteRequest]) (*connect.Response[v1.DeleteAthleteResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.DeleteAthlete is not implemented"))
+func (UnimplementedAthleteServiceHandler) DeleteAthlete(context.Context, *v1.DeleteAthleteRequest) (*v1.DeleteAthleteResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "athletes.v1.AthleteService.DeleteAthlete is not implemented")
 }
 
-func (UnimplementedAthleteServiceHandler) CreateActivity(context.Context, *connect.Request[v1.CreateActivityRequest]) (*connect.Response[v1.CreateActivityResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.CreateActivity is not implemented"))
+func (UnimplementedAthleteServiceHandler) CreateActivity(context.Context, *v1.CreateActivityRequest) (*v1.CreateActivityResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "athletes.v1.AthleteService.CreateActivity is not implemented")
 }
 
-func (UnimplementedAthleteServiceHandler) CreateBloodLactateMeasure(context.Context, *connect.Request[v1.CreateBloodLactateMeasureRequest]) (*connect.Response[v1.CreateBloodLactateMeasureResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("athletes.v1.AthleteService.CreateBloodLactateMeasure is not implemented"))
+func (UnimplementedAthleteServiceHandler) CreateBloodLactateMeasure(context.Context, *v1.CreateBloodLactateMeasureRequest) (*v1.CreateBloodLactateMeasureResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "athletes.v1.AthleteService.CreateBloodLactateMeasure is not implemented")
+}
+
+type athleteServiceClient struct {
+	client *connect.Client
+}
+
+func (c *athleteServiceClient) CreateAthlete(ctx context.Context, req *v1.CreateAthleteRequest) (*v1.CreateAthleteResponse, error) {
+	var res v1.CreateAthleteResponse
+	if err := c.client.CallUnary(ctx, athleteServiceCreateAthleteSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *athleteServiceClient) ListAthletes(ctx context.Context, req *v1.ListAthletesRequest) (*v1.ListAthletesResponse, error) {
+	var res v1.ListAthletesResponse
+	if err := c.client.CallUnary(ctx, athleteServiceListAthletesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *athleteServiceClient) DeleteAthlete(ctx context.Context, req *v1.DeleteAthleteRequest) (*v1.DeleteAthleteResponse, error) {
+	var res v1.DeleteAthleteResponse
+	if err := c.client.CallUnary(ctx, athleteServiceDeleteAthleteSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *athleteServiceClient) CreateActivity(ctx context.Context, req *v1.CreateActivityRequest) (*v1.CreateActivityResponse, error) {
+	var res v1.CreateActivityResponse
+	if err := c.client.CallUnary(ctx, athleteServiceCreateActivitySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *athleteServiceClient) CreateBloodLactateMeasure(ctx context.Context, req *v1.CreateBloodLactateMeasureRequest) (*v1.CreateBloodLactateMeasureResponse, error) {
+	var res v1.CreateBloodLactateMeasureResponse
+	if err := c.client.CallUnary(ctx, athleteServiceCreateBloodLactateMeasureSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type athleteServiceHandler struct{ svc AthleteServiceHandler }
+
+func (h athleteServiceHandler) createAthlete(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateAthleteRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateAthlete(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h athleteServiceHandler) listAthletes(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListAthletesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListAthletes(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h athleteServiceHandler) deleteAthlete(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteAthleteRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteAthlete(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h athleteServiceHandler) createActivity(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateActivityRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateActivity(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h athleteServiceHandler) createBloodLactateMeasure(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateBloodLactateMeasureRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateBloodLactateMeasure(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

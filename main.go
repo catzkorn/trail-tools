@@ -13,8 +13,12 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"slices"
+	"strings"
 	"time"
 
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
@@ -179,12 +183,12 @@ func run(
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
 
-	// Register all handlers to a single mux
-	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, athletes))
-	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log))
+	// Register all services on a single Connect server, served by the API mux
+	server := connect.NewServer()
+	athletesv1connect.RegisterAthleteServiceHandler(server, athlete.NewService(log, athletes))
+	usersv1connect.RegisterUserServiceHandler(server, user.NewService(log))
 	apiMux := http.NewServeMux()
-	apiMux.Handle(athletePath, athleteHandler)
-	apiMux.Handle(usersPath, usersHandler)
+	connecthttp.Mount(apiMux, server)
 
 	// Wrap the API mux in the OIDC authn middleware
 	// All API calls will require authentication.
@@ -201,8 +205,9 @@ func run(
 	// Only the Connect API endpoints (registered to apiMux) are authenticated.
 	mux := http.NewServeMux()
 	// Serve the Connect API handlers through the authn middleware
-	mux.Handle(athletePath, authHandler)
-	mux.Handle(usersPath, authHandler)
+	for _, path := range servicePaths(server) {
+		mux.Handle(path, authHandler)
+	}
 
 	// Serve OIDC handlers directly on the mux (unauthenticated)
 	oidcLogout, err := oidc.RegisterHandlers(ctx, log, baseURL, oidcClientID, oidcClientSecret, oidcIssuerURL, users, mux)
@@ -284,4 +289,17 @@ func run(
 		return fmt.Errorf("failed to serve: %w", err)
 	}
 	return nil
+}
+
+// servicePaths returns the URL path prefixes of the services registered on
+// server, e.g. /users.v1.UserService/.
+func servicePaths(server *connect.Server) []string {
+	var paths []string
+	for spec := range server.Specs() {
+		path := spec.Procedure[:strings.LastIndexByte(spec.Procedure, '/')+1]
+		if !slices.Contains(paths, path) {
+			paths = append(paths, path)
+		}
+	}
+	return paths
 }

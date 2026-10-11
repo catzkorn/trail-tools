@@ -5,105 +5,92 @@
 package usersv1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1 "github.com/catzkorn/trail-tools/internal/gen/users/v1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// UserServiceName is the fully-qualified name of the UserService service.
 	UserServiceName = "users.v1.UserService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// UserServiceGetCurrentUserProcedure is the fully-qualified name of the UserService's
-	// GetCurrentUser RPC.
+	// UserServiceGetCurrentUserProcedure is the procedure name of the UserService's GetCurrentUser RPC.
 	UserServiceGetCurrentUserProcedure = "/users.v1.UserService/GetCurrentUser"
+)
+
+var (
+	userServiceGetCurrentUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("GetCurrentUser"),
+			Procedure:  UserServiceGetCurrentUserProcedure,
+		}
+	})
 )
 
 // UserServiceClient is a client for the users.v1.UserService service.
 type UserServiceClient interface {
-	GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error)
+	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
 }
 
-// NewUserServiceClient constructs a client for the users.v1.UserService service. By default, it
-// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) UserServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	userServiceMethods := v1.File_users_v1_users_proto.Services().ByName("UserService").Methods()
-	return &userServiceClient{
-		getCurrentUser: connect.NewClient[v1.GetCurrentUserRequest, v1.GetCurrentUserResponse](
-			httpClient,
-			baseURL+UserServiceGetCurrentUserProcedure,
-			connect.WithSchema(userServiceMethods.ByName("GetCurrentUser")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// userServiceClient implements UserServiceClient.
-type userServiceClient struct {
-	getCurrentUser *connect.Client[v1.GetCurrentUserRequest, v1.GetCurrentUserResponse]
-}
-
-// GetCurrentUser calls users.v1.UserService.GetCurrentUser.
-func (c *userServiceClient) GetCurrentUser(ctx context.Context, req *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error) {
-	return c.getCurrentUser.CallUnary(ctx, req)
+// NewUserServiceClient constructs a client for the users.v1.UserService service. Multiple service
+// clients may share a single connect.Client.
+func NewUserServiceClient(client *connect.Client) UserServiceClient {
+	return &userServiceClient{client: client}
 }
 
 // UserServiceHandler is an implementation of the users.v1.UserService service.
 type UserServiceHandler interface {
-	GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error)
+	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
 }
 
-// NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
-// on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	userServiceMethods := v1.File_users_v1_users_proto.Services().ByName("UserService").Methods()
-	userServiceGetCurrentUserHandler := connect.NewUnaryHandler(
-		UserServiceGetCurrentUserProcedure,
-		svc.GetCurrentUser,
-		connect.WithSchema(userServiceMethods.ByName("GetCurrentUser")),
-		connect.WithHandlerOptions(opts...),
+// RegisterUserServiceHandler registers svc as the users.v1.UserService implementation on server.
+func RegisterUserServiceHandler(server *connect.Server, svc UserServiceHandler) {
+	adapter := userServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: userServiceGetCurrentUserSpec(), Handler: adapter.getCurrentUser},
 	)
-	return "/users.v1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case UserServiceGetCurrentUserProcedure:
-			userServiceGetCurrentUserHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedUserServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedUserServiceHandler struct{}
 
-func (UnimplementedUserServiceHandler) GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("users.v1.UserService.GetCurrentUser is not implemented"))
+func (UnimplementedUserServiceHandler) GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.GetCurrentUser is not implemented")
+}
+
+type userServiceClient struct {
+	client *connect.Client
+}
+
+func (c *userServiceClient) GetCurrentUser(ctx context.Context, req *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
+	var res v1.GetCurrentUserResponse
+	if err := c.client.CallUnary(ctx, userServiceGetCurrentUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type userServiceHandler struct{ svc UserServiceHandler }
+
+func (h userServiceHandler) getCurrentUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetCurrentUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetCurrentUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }
