@@ -21,7 +21,7 @@ insert into api_tokens (
   $2,
   $3
 )
-returning id, user_id, name, secret_sha256, create_time, last_used_time
+returning id, user_id, name, secret_sha256, create_time, last_used_time, oauth_grant_id, expire_time
 `
 
 type CreateAPITokenParams struct {
@@ -40,13 +40,15 @@ func (q *Queries) CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams)
 		&i.SecretSHA256,
 		&i.CreateTime,
 		&i.LastUsedTime,
+		&i.OAuthGrantID,
+		&i.ExpireTime,
 	)
 	return &i, err
 }
 
 const deleteAPIToken = `-- name: DeleteAPIToken :execrows
 delete from api_tokens
-where id = $1 and user_id = $2
+where id = $1 and user_id = $2 and oauth_grant_id is null
 `
 
 type DeleteAPITokenParams struct {
@@ -63,11 +65,12 @@ func (q *Queries) DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams)
 }
 
 const listAPITokens = `-- name: ListAPITokens :many
-select id, user_id, name, secret_sha256, create_time, last_used_time from api_tokens
-where user_id = $1
+select id, user_id, name, secret_sha256, create_time, last_used_time, oauth_grant_id, expire_time from api_tokens
+where user_id = $1 and oauth_grant_id is null
 order by create_time desc
 `
 
+// ListAPITokens lists the user's API tokens, excluding OAuth access tokens.
 func (q *Queries) ListAPITokens(ctx context.Context, userID pgtype.UUID) ([]*APIToken, error) {
 	rows, err := q.db.Query(ctx, listAPITokens, userID)
 	if err != nil {
@@ -84,6 +87,8 @@ func (q *Queries) ListAPITokens(ctx context.Context, userID pgtype.UUID) ([]*API
 			&i.SecretSHA256,
 			&i.CreateTime,
 			&i.LastUsedTime,
+			&i.OAuthGrantID,
+			&i.ExpireTime,
 		); err != nil {
 			return nil, err
 		}
@@ -98,7 +103,7 @@ func (q *Queries) ListAPITokens(ctx context.Context, userID pgtype.UUID) ([]*API
 const useAPIToken = `-- name: UseAPIToken :one
 update api_tokens
 set last_used_time = now()
-where secret_sha256 = $1
+where secret_sha256 = $1 and (expire_time is null or expire_time > now())
 returning user_id
 `
 

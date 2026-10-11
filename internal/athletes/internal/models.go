@@ -519,6 +519,8 @@ type ApiToken struct {
 	SecretSha256 []byte
 	CreateTime   pgtype.Timestamptz
 	LastUsedTime pgtype.Timestamptz
+	OAuthGrantID pgtype.UUID
+	ExpireTime   pgtype.Timestamptz
 }
 
 type Athlete struct {
@@ -546,6 +548,28 @@ type Invitation struct {
 	CreateTime  pgtype.Timestamptz
 	ExpireTime  pgtype.Timestamptz
 	UseTime     pgtype.Timestamptz
+}
+
+type OAuthAuthorizationCode struct {
+	CodeSha256    []byte
+	UserID        pgtype.UUID
+	ClientID      string
+	ClientName    string
+	RedirectUri   string
+	CodeChallenge string
+	ExpireTime    pgtype.Timestamptz
+	CreateTime    pgtype.Timestamptz
+}
+
+type OAuthGrant struct {
+	ID                 pgtype.UUID
+	UserID             pgtype.UUID
+	ClientID           string
+	ClientName         string
+	RedirectUri        string
+	RefreshTokenSha256 []byte
+	RefreshExpireTime  pgtype.Timestamptz
+	CreateTime         pgtype.Timestamptz
 }
 
 type Passkey struct {
