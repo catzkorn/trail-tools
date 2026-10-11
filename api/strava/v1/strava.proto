@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package strava.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// StravaService manages the connection to the user's Strava account and the
+// syncing of activities. The account is connected in the browser by visiting
+// /strava/connect.
+service StravaService {
+  // Get the status of the Strava connection and the most recent sync.
+  rpc GetStravaConnection(GetStravaConnectionRequest) returns (GetStravaConnectionResponse);
+  // Start syncing activities from Strava in the background. New activities
+  // are fetched first, followed by detailed data streams for each activity.
+  // Strava's API rate limits mean a full history sync can take hours; it
+  // resumes automatically. Use GetStravaConnection to follow progress.
+  rpc SyncStrava(SyncStravaRequest) returns (SyncStravaResponse);
+  // Disconnect the Strava account. Synced activities are kept.
+  rpc DisconnectStrava(DisconnectStravaRequest) returns (DisconnectStravaResponse);
+}
+
+// SyncState is the state of a Strava sync.
+enum SyncState {
+  SYNC_STATE_UNSPECIFIED = 0;
+  // No sync is running.
+  SYNC_STATE_IDLE = 1;
+  // A sync is running.
+  SYNC_STATE_RUNNING = 2;
+  // A sync is paused until the Strava rate limit resets.
+  SYNC_STATE_RATE_LIMITED = 3;
+  // The last sync failed.
+  SYNC_STATE_FAILED = 4;
+}
+
+// The status of the Strava connection.
+message StravaConnection {
+  // Whether a Strava account is connected.
+  bool connected = 1;
+  // The name of the connected Strava athlete.
+  string athlete_name = 2;
+  // The Strava athlete ID.
+  string athlete_id = 3;
+  // The state of the sync.
+  SyncState sync_state = 4;
+  // A message describing the sync state, such as an error.
+  string sync_message = 5;
+  // When the last successful sync finished.
+  google.protobuf.Timestamp last_sync_time = 6;
+  // When a rate limited sync will resume.
+  google.protobuf.Timestamp resume_time = 7;
+  // The number of synced activities.
+  int32 activity_count = 8;
+  // The number of synced activities still waiting for detailed streams.
+  int32 pending_stream_count = 9;
+  // Whether the server is configured with Strava API credentials.
+  bool configured = 10;
+}
+
+message GetStravaConnectionRequest {}
+
+message GetStravaConnectionResponse {
+  // The connection status.
+  StravaConnection connection = 1;
+}
+
+message SyncStravaRequest {
+  // Re-fetch all activities rather than only new ones. Use this to pick up
+  // edits made on Strava.
+  bool full = 1;
+}
+
+message SyncStravaResponse {
+  // The connection status after starting the sync.
+  StravaConnection connection = 1;
+}
+
+message DisconnectStravaRequest {}
+
+message DisconnectStravaResponse {}

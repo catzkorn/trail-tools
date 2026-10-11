@@ -1,0 +1,137 @@
+package activities
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/catzkorn/trail-tools/internal/activities/internal"
+	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+// SyncState is the state of a Strava sync.
+type SyncState string
+
+// Sync states.
+const (
+	SyncStateIdle        SyncState = "idle"
+	SyncStateRunning     SyncState = "running"
+	SyncStateRateLimited SyncState = "rate_limited"
+	SyncStateFailed      SyncState = "failed"
+)
+
+// StravaConnection is a user's connection to Strava.
+type StravaConnection struct {
+	UserID       pgtype.UUID
+	AthleteID    int64
+	AthleteName  string
+	AccessToken  string
+	RefreshToken string
+	Expiry       time.Time
+	SyncState    SyncState
+	SyncMessage  string
+	// Zero if the user has never synced.
+	LastSyncTime time.Time
+	// Zero unless the sync is rate limited.
+	ResumeTime time.Time
+}
+
+// UpsertStravaConnection creates or replaces the user's Strava connection.
+func (r *Repository) UpsertStravaConnection(ctx context.Context, conn *StravaConnection) (*StravaConnection, error) {
+	dbConn, err := r.q.UpsertStravaConnection(ctx, &internal.UpsertStravaConnectionParams{
+		UserID:       conn.UserID,
+		AthleteID:    conn.AthleteID,
+		AthleteName:  conn.AthleteName,
+		AccessToken:  conn.AccessToken,
+		RefreshToken: conn.RefreshToken,
+		Expiry:       pgtype.Timestamptz{Time: conn.Expiry, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert Strava connection: %w", err)
+	}
+	return connectionFromDB(dbConn), nil
+}
+
+// GetStravaConnection gets the user's Strava connection. It returns
+// store.ErrNotFound if the user has not connected Strava.
+func (r *Repository) GetStravaConnection(ctx context.Context, userID pgtype.UUID) (*StravaConnection, error) {
+	dbConn, err := r.q.GetStravaConnection(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get Strava connection: %w", err)
+	}
+	return connectionFromDB(dbConn), nil
+}
+
+// ListStravaConnections lists all users' Strava connections.
+func (r *Repository) ListStravaConnections(ctx context.Context) ([]*StravaConnection, error) {
+	dbConns, err := r.q.ListStravaConnections(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list Strava connections: %w", err)
+	}
+	conns := make([]*StravaConnection, len(dbConns))
+	for i, dbConn := range dbConns {
+		conns[i] = connectionFromDB(dbConn)
+	}
+	return conns, nil
+}
+
+// UpdateStravaTokens stores refreshed Strava tokens.
+func (r *Repository) UpdateStravaTokens(ctx context.Context, userID pgtype.UUID, accessToken, refreshToken string, expiry time.Time) error {
+	if err := r.q.UpdateStravaTokens(ctx, &internal.UpdateStravaTokensParams{
+		UserID:       userID,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		Expiry:       pgtype.Timestamptz{Time: expiry, Valid: true},
+	}); err != nil {
+		return fmt.Errorf("failed to update Strava tokens: %w", err)
+	}
+	return nil
+}
+
+// UpdateStravaSyncState records the state of the user's sync. lastSyncTime
+// and resumeTime may be zero; a zero lastSyncTime leaves it unchanged.
+func (r *Repository) UpdateStravaSyncState(ctx context.Context, userID pgtype.UUID, state SyncState, message string, resumeTime, lastSyncTime time.Time) error {
+	if err := r.q.UpdateStravaSyncState(ctx, &internal.UpdateStravaSyncStateParams{
+		UserID:       userID,
+		SyncState:    internal.StravaSyncState(state),
+		SyncMessage:  message,
+		ResumeTime:   pgtype.Timestamptz{Time: resumeTime, Valid: !resumeTime.IsZero()},
+		LastSyncTime: pgtype.Timestamptz{Time: lastSyncTime, Valid: !lastSyncTime.IsZero()},
+	}); err != nil {
+		return fmt.Errorf("failed to update Strava sync state: %w", err)
+	}
+	return nil
+}
+
+// DeleteStravaConnection deletes the user's Strava connection.
+func (r *Repository) DeleteStravaConnection(ctx context.Context, userID pgtype.UUID) error {
+	n, err := r.q.DeleteStravaConnection(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete Strava connection: %w", err)
+	}
+	if n == 0 {
+		return store.ErrNotFound
+	}
+	return nil
+}
+
+func connectionFromDB(c *internal.StravaConnection) *StravaConnection {
+	return &StravaConnection{
+		UserID:       c.UserID,
+		AthleteID:    c.AthleteID,
+		AthleteName:  c.AthleteName,
+		AccessToken:  c.AccessToken,
+		RefreshToken: c.RefreshToken,
+		Expiry:       c.Expiry.Time,
+		SyncState:    SyncState(c.SyncState),
+		SyncMessage:  c.SyncMessage,
+		LastSyncTime: c.LastSyncTime.Time,
+		ResumeTime:   c.ResumeTime.Time,
+	}
+}
