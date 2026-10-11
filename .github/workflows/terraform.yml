@@ -1,0 +1,53 @@
+name: Terraform plan
+
+# Posts a plan of the infrastructure changes on pull requests that change
+# the Terraform configuration. Changes are applied by the deploy job in
+# ci.yml when they are merged to main.
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
+
+# A new push to a pull request cancels its now stale plan.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed to authenticate to Google Cloud with Workload Identity
+      # Federation. Pull requests from forks don't get a token.
+      id-token: write
+      # Lets the job comment the plan on the pull request.
+      pull-requests: write
+    steps:
+      # https://github.com/actions/checkout/releases
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # https://github.com/google-github-actions/auth/releases
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: projects/296221712346/locations/global/workloadIdentityPools/github/providers/github
+          # A read-only service account. Pull requests can't use the one
+          # that applies changes.
+          service_account: github-terraform-plan@trail-tools-444904.iam.gserviceaccount.com
+      # https://github.com/hashicorp/setup-terraform/releases
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          # Keep in sync with ci.yml.
+          terraform_version: "1.14.8"
+      - run: terraform -chdir=infra init -input=false
+      # The plan service account can't write to the state bucket, so the
+      # state isn't locked.
+      - run: terraform -chdir=infra plan -input=false -lock=false -out .planfile
+      - name: Post the plan as a comment
+        # https://github.com/borchero/terraform-plan-comment/releases
+        uses: borchero/terraform-plan-comment@f585438eda2fa77c6f275994b92aeccd86ef3542 # v3.2.0
+        with:
+          token: ${{ github.token }}
+          planfile: .planfile
+          working-directory: infra

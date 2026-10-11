@@ -129,8 +129,17 @@ instance and only uses CPU during requests, and Neon suspends the database
 when it's idle.
 
 The Google Cloud configuration is managed with Terraform in
-[`infra/`](infra), with its state in a Cloud Storage bucket. To apply changes
-locally:
+[`infra/`](infra), with its state in a Cloud Storage bucket. GitHub Actions
+authenticates to Google Cloud with Workload Identity Federation, so there are
+no stored credentials: pushes to `main` as the `github-terraform` service
+account, which can apply changes, and pull requests as the read-only
+`github-terraform-plan` service account.
+
+Pull requests that change `infra/` get a comment with the Terraform plan,
+from the [Terraform plan](.github/workflows/terraform.yml) workflow. It
+doesn't lock the state.
+
+To apply changes locally:
 
 ```sh
 $ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
@@ -174,8 +183,9 @@ The app is served on `trailrunn.ing`, set as `domain` in
 1. Verify the domain with `gcloud domains verify <domain>`.
 2. Set `domain_enabled = true` in [`terraform.tfvars`](infra/terraform.tfvars)
    and apply it locally with `terraform -chdir=infra apply`. Only a verified
-   owner of the domain can map it, so the first apply runs with your own
-   credentials.
+   owner of the domain can map it, and the GitHub service account is not one,
+   so the first apply runs with your own credentials. Later applies from CI
+   leave the existing mapping alone.
 3. Create the DNS records from `terraform -chdir=infra output domain_records`.
    Cloud Run provisions and renews the TLS certificate, which takes up to
    about 15 minutes after the records resolve.
@@ -190,4 +200,10 @@ $ gcloud storage buckets update gs://<project>-tfstate --versioning
 ```
 
 Then update the bucket in [`versions.tf`](infra/versions.tf) and the
-variables in [`terraform.tfvars`](infra/terraform.tfvars), and apply locally.
+variables in [`terraform.tfvars`](infra/terraform.tfvars), apply locally, and
+let the Terraform service accounts manage and read the budget:
+
+```sh
+$ gcloud billing accounts add-iam-policy-binding <billing account> --member serviceAccount:github-terraform@<project>.iam.gserviceaccount.com --role roles/billing.costsManager
+$ gcloud billing accounts add-iam-policy-binding <billing account> --member serviceAccount:github-terraform-plan@<project>.iam.gserviceaccount.com --role roles/billing.viewer
+```
