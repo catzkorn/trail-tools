@@ -2,7 +2,9 @@ syntax = "proto3";
 
 package users.v1;
 
+// UserService provides information about the signed in user.
 service UserService {
+  // Get the signed in user.
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
 }
 
@@ -13,6 +15,8 @@ message User {
   string given_name = 4;
   string family_name = 5;
   string avatar_url = 6;
+  // Whether the user is an administrator, who can invite new users.
+  bool admin = 7;
 }
 
 message GetCurrentUserRequest {}

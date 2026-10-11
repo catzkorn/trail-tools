@@ -37,22 +37,12 @@ func (q *Queries) DeleteSession(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getSessionUser = `-- name: GetSessionUser :one
-select
-  user_id,
-  case 
-    when exists(select 1 from web_authn_users where sessions.user_id=web_authn_users.id) then 'webauthn'
-  end::text as type
-from sessions where sessions.id = $1 and sessions.expiry > now()
+select user_id from sessions where sessions.id = $1 and sessions.expiry > now()
 `
 
-type GetSessionUserRow struct {
-	UserID pgtype.UUID
-	Type   string
-}
-
-func (q *Queries) GetSessionUser(ctx context.Context, id pgtype.UUID) (*GetSessionUserRow, error) {
+func (q *Queries) GetSessionUser(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, getSessionUser, id)
-	var i GetSessionUserRow
-	err := row.Scan(&i.UserID, &i.Type)
-	return &i, err
+	var user_id pgtype.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
 }

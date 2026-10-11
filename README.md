@@ -23,6 +23,12 @@ To run the server with auto-rebuild of the backend, frontend and CSS, run:
 $ make watch
 ```
 
+To run the tests (starts Postgres; each test gets its own database):
+
+```sh
+$ make test
+```
+
 To view available make targets, run:
 
 ```sh

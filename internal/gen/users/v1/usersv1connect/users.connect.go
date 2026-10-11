@@ -40,6 +40,7 @@ const (
 
 // UserServiceClient is a client for the users.v1.UserService service.
 type UserServiceClient interface {
+	// Get the signed in user.
 	GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error)
 }
 
@@ -75,6 +76,7 @@ func (c *userServiceClient) GetCurrentUser(ctx context.Context, req *connect.Req
 
 // UserServiceHandler is an implementation of the users.v1.UserService service.
 type UserServiceHandler interface {
+	// Get the signed in user.
 	GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error)
 }
 

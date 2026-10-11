@@ -40,3 +40,4 @@ sql:
           - usb
           - nfc
           - ble
+          - sha256

@@ -12,111 +12,103 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type WebAuthnAuthenticatorAttachment string
+type InvitationKind string
 
 const (
-	WebAuthnAuthenticatorAttachmentPlatform      WebAuthnAuthenticatorAttachment = "platform"
-	WebAuthnAuthenticatorAttachmentCrossPlatform WebAuthnAuthenticatorAttachment = "cross-platform"
+	InvitationKindNewUser    InvitationKind = "new_user"
+	InvitationKindAddPasskey InvitationKind = "add_passkey"
 )
 
-func (e *WebAuthnAuthenticatorAttachment) Scan(src interface{}) error {
+func (e *InvitationKind) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = WebAuthnAuthenticatorAttachment(s)
+		*e = InvitationKind(s)
 	case string:
-		*e = WebAuthnAuthenticatorAttachment(s)
+		*e = InvitationKind(s)
 	default:
-		return fmt.Errorf("unsupported scan type for WebAuthnAuthenticatorAttachment: %T", src)
+		return fmt.Errorf("unsupported scan type for InvitationKind: %T", src)
 	}
 	return nil
 }
 
-type NullWebAuthnAuthenticatorAttachment struct {
-	WebAuthnAuthenticatorAttachment WebAuthnAuthenticatorAttachment
-	Valid                           bool // Valid is true if WebAuthnAuthenticatorAttachment is not NULL
+type NullInvitationKind struct {
+	InvitationKind InvitationKind
+	Valid          bool // Valid is true if InvitationKind is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullWebAuthnAuthenticatorAttachment) Scan(value interface{}) error {
+func (ns *NullInvitationKind) Scan(value interface{}) error {
 	if value == nil {
-		ns.WebAuthnAuthenticatorAttachment, ns.Valid = "", false
+		ns.InvitationKind, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.WebAuthnAuthenticatorAttachment.Scan(value)
+	return ns.InvitationKind.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullWebAuthnAuthenticatorAttachment) Value() (driver.Value, error) {
+func (ns NullInvitationKind) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.WebAuthnAuthenticatorAttachment), nil
+	return string(ns.InvitationKind), nil
 }
 
-func (e WebAuthnAuthenticatorAttachment) Valid() bool {
+func (e InvitationKind) Valid() bool {
 	switch e {
-	case WebAuthnAuthenticatorAttachmentPlatform,
-		WebAuthnAuthenticatorAttachmentCrossPlatform:
+	case InvitationKindNewUser,
+		InvitationKindAddPasskey:
 		return true
 	}
 	return false
 }
 
-type WebAuthnAuthenticatorTransport string
+type PasskeyCeremony string
 
 const (
-	WebAuthnAuthenticatorTransportUsb       WebAuthnAuthenticatorTransport = "usb"
-	WebAuthnAuthenticatorTransportNfc       WebAuthnAuthenticatorTransport = "nfc"
-	WebAuthnAuthenticatorTransportBle       WebAuthnAuthenticatorTransport = "ble"
-	WebAuthnAuthenticatorTransportSmartCard WebAuthnAuthenticatorTransport = "smart-card"
-	WebAuthnAuthenticatorTransportHybrid    WebAuthnAuthenticatorTransport = "hybrid"
-	WebAuthnAuthenticatorTransportInternal  WebAuthnAuthenticatorTransport = "internal"
+	PasskeyCeremonyRegistration PasskeyCeremony = "registration"
+	PasskeyCeremonyLogin        PasskeyCeremony = "login"
 )
 
-func (e *WebAuthnAuthenticatorTransport) Scan(src interface{}) error {
+func (e *PasskeyCeremony) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = WebAuthnAuthenticatorTransport(s)
+		*e = PasskeyCeremony(s)
 	case string:
-		*e = WebAuthnAuthenticatorTransport(s)
+		*e = PasskeyCeremony(s)
 	default:
-		return fmt.Errorf("unsupported scan type for WebAuthnAuthenticatorTransport: %T", src)
+		return fmt.Errorf("unsupported scan type for PasskeyCeremony: %T", src)
 	}
 	return nil
 }
 
-type NullWebAuthnAuthenticatorTransport struct {
-	WebAuthnAuthenticatorTransport WebAuthnAuthenticatorTransport
-	Valid                          bool // Valid is true if WebAuthnAuthenticatorTransport is not NULL
+type NullPasskeyCeremony struct {
+	PasskeyCeremony PasskeyCeremony
+	Valid           bool // Valid is true if PasskeyCeremony is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullWebAuthnAuthenticatorTransport) Scan(value interface{}) error {
+func (ns *NullPasskeyCeremony) Scan(value interface{}) error {
 	if value == nil {
-		ns.WebAuthnAuthenticatorTransport, ns.Valid = "", false
+		ns.PasskeyCeremony, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.WebAuthnAuthenticatorTransport.Scan(value)
+	return ns.PasskeyCeremony.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullWebAuthnAuthenticatorTransport) Value() (driver.Value, error) {
+func (ns NullPasskeyCeremony) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.WebAuthnAuthenticatorTransport), nil
+	return string(ns.PasskeyCeremony), nil
 }
 
-func (e WebAuthnAuthenticatorTransport) Valid() bool {
+func (e PasskeyCeremony) Valid() bool {
 	switch e {
-	case WebAuthnAuthenticatorTransportUsb,
-		WebAuthnAuthenticatorTransportNfc,
-		WebAuthnAuthenticatorTransportBle,
-		WebAuthnAuthenticatorTransportSmartCard,
-		WebAuthnAuthenticatorTransportHybrid,
-		WebAuthnAuthenticatorTransportInternal:
+	case PasskeyCeremonyRegistration,
+		PasskeyCeremonyLogin:
 		return true
 	}
 	return false
@@ -144,6 +136,50 @@ type BloodLactateMeasure struct {
 	HeartRateBpm int32
 }
 
+type Invitation struct {
+	ID          pgtype.UUID
+	TokenSha256 []byte
+	Kind        InvitationKind
+	CreatedBy   pgtype.UUID
+	UserID      pgtype.UUID
+	Note        string
+	CreateTime  pgtype.Timestamptz
+	ExpireTime  pgtype.Timestamptz
+	UseTime     pgtype.Timestamptz
+}
+
+type Passkey struct {
+	ID             []byte
+	UserID         pgtype.UUID
+	Name           string
+	PublicKey      []byte
+	Algorithm      int32
+	Aaguid         []byte
+	Transports     []string
+	BackupEligible bool
+	BackedUp       bool
+	SignCount      int64
+	CreateTime     pgtype.Timestamptz
+	LastUsedTime   pgtype.Timestamptz
+}
+
+type PasskeyChallenge struct {
+	ID           pgtype.UUID
+	Ceremony     PasskeyCeremony
+	Challenge    []byte
+	UserHandle   []byte
+	InvitationID pgtype.UUID
+	UserID       pgtype.UUID
+	Bootstrap    bool
+	ExpireTime   pgtype.Timestamptz
+}
+
+type PasskeyUser struct {
+	ID         pgtype.UUID
+	UserHandle []byte
+	Name       string
+}
+
 type Session struct {
 	ID     pgtype.UUID
 	UserID pgtype.UUID
@@ -153,32 +189,5 @@ type Session struct {
 type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
-}
-
-type WebAuthnCredential struct {
-	WebAuthnUserID                []byte
-	CreateTime                    pgtype.Timestamptz
-	ID                            []byte
-	PublicKey                     []byte
-	AttestationType               string
-	Transport                     []WebAuthnAuthenticatorTransport
-	FlagUserPresent               bool
-	FlagUserVerified              bool
-	FlagBackupEligible            bool
-	FlagBackupState               bool
-	AuthenticatorAaguid           []byte
-	AuthenticatorSignCount        int64
-	AuthenticatorCloneWarning     bool
-	AuthenticatorAttachment       WebAuthnAuthenticatorAttachment
-	AttestationClientDataJson     []byte
-	AttestationClientDataHash     []byte
-	AttestationAuthenticatorData  []byte
-	AttestationPublicKeyAlgorithm int64
-	AttestationObject             []byte
-}
-
-type WebAuthnUser struct {
-	ID             pgtype.UUID
-	WebAuthnUserID []byte
-	Name           string
+	IsAdmin    bool
 }

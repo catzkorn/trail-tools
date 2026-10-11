@@ -28,6 +28,7 @@ type User struct {
 	xxx_hidden_GivenName  string                 `protobuf:"bytes,4,opt,name=given_name,json=givenName,proto3"`
 	xxx_hidden_FamilyName string                 `protobuf:"bytes,5,opt,name=family_name,json=familyName,proto3"`
 	xxx_hidden_AvatarUrl  string                 `protobuf:"bytes,6,opt,name=avatar_url,json=avatarUrl,proto3"`
+	xxx_hidden_Admin      bool                   `protobuf:"varint,7,opt,name=admin,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -99,6 +100,13 @@ func (x *User) GetAvatarUrl() string {
 	return ""
 }
 
+func (x *User) GetAdmin() bool {
+	if x != nil {
+		return x.xxx_hidden_Admin
+	}
+	return false
+}
+
 func (x *User) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -123,6 +131,10 @@ func (x *User) SetAvatarUrl(v string) {
 	x.xxx_hidden_AvatarUrl = v
 }
 
+func (x *User) SetAdmin(v bool) {
+	x.xxx_hidden_Admin = v
+}
+
 type User_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -132,6 +144,8 @@ type User_builder struct {
 	GivenName  string
 	FamilyName string
 	AvatarUrl  string
+	// Whether the user is an administrator, who can invite new users.
+	Admin bool
 }
 
 func (b0 User_builder) Build() *User {
@@ -144,6 +158,7 @@ func (b0 User_builder) Build() *User {
 	x.xxx_hidden_GivenName = b.GivenName
 	x.xxx_hidden_FamilyName = b.FamilyName
 	x.xxx_hidden_AvatarUrl = b.AvatarUrl
+	x.xxx_hidden_Admin = b.Admin
 	return m0
 }
 
@@ -262,7 +277,7 @@ var File_users_v1_users_proto protoreflect.FileDescriptor
 
 const file_users_v1_users_proto_rawDesc = "" +
 	"\n" +
-	"\x14users/v1/users.proto\x12\busers.v1\"\x9f\x01\n" +
+	"\x14users/v1/users.proto\x12\busers.v1\"\xb5\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
@@ -272,7 +287,8 @@ const file_users_v1_users_proto_rawDesc = "" +
 	"\vfamily_name\x18\x05 \x01(\tR\n" +
 	"familyName\x12\x1d\n" +
 	"\n" +
-	"avatar_url\x18\x06 \x01(\tR\tavatarUrl\"\x17\n" +
+	"avatar_url\x18\x06 \x01(\tR\tavatarUrl\x12\x14\n" +
+	"\x05admin\x18\a \x01(\bR\x05admin\"\x17\n" +
 	"\x15GetCurrentUserRequest\"<\n" +
 	"\x16GetCurrentUserResponse\x12\"\n" +
 	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user2b\n" +

@@ -1,0 +1,204 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// AuthService signs users in with passkeys. Users can only register with an
+// invitation: administrators invite new users, and users invite themselves to
+// add a passkey on another device. Signed in users can also add a passkey on
+// the current device directly. Successful registrations and sign ins set a
+// session cookie.
+service AuthService {
+  // Get an invitation by its token, to show what it is for. Does not require
+  // authentication.
+  rpc GetInvitation(GetInvitationRequest) returns (GetInvitationResponse);
+  // Create an invitation. Only administrators can invite new users. Any user
+  // can invite themselves to add a passkey on another device.
+  rpc CreateInvitation(CreateInvitationRequest) returns (CreateInvitationResponse);
+  // List the invitations created by the signed in user, newest first.
+  rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse);
+  // Delete an invitation created by the signed in user.
+  rpc DeleteInvitation(DeleteInvitationRequest) returns (DeleteInvitationResponse);
+  // List the signed in user's passkeys.
+  rpc ListPasskeys(ListPasskeysRequest) returns (ListPasskeysResponse);
+  // Delete one of the signed in user's passkeys. The last passkey of an
+  // account can't be deleted.
+  rpc DeletePasskey(DeletePasskeyRequest) returns (DeletePasskeyResponse);
+  // Start registering a passkey, with an invitation token or as the signed in
+  // user. Returns the options for navigator.credentials.create().
+  rpc BeginPasskeyRegistration(BeginPasskeyRegistrationRequest) returns (BeginPasskeyRegistrationResponse);
+  // Finish registering a passkey with the browser's response, and sign in.
+  rpc FinishPasskeyRegistration(FinishPasskeyRegistrationRequest) returns (FinishPasskeyRegistrationResponse);
+  // Start signing in with a passkey. Returns the options for
+  // navigator.credentials.get().
+  rpc BeginPasskeyLogin(BeginPasskeyLoginRequest) returns (BeginPasskeyLoginResponse);
+  // Finish signing in with the browser's response.
+  rpc FinishPasskeyLogin(FinishPasskeyLoginRequest) returns (FinishPasskeyLoginResponse);
+}
+
+// InvitationKind is what an invitation allows.
+enum InvitationKind {
+  INVITATION_KIND_UNSPECIFIED = 0;
+  // Register a new user.
+  INVITATION_KIND_NEW_USER = 1;
+  // Add a passkey to an existing user, e.g. on another device.
+  INVITATION_KIND_ADD_PASSKEY = 2;
+}
+
+// An invitation to register a passkey.
+message Invitation {
+  // The ID of the invitation.
+  string id = 1;
+  // What the invitation allows.
+  InvitationKind kind = 2;
+  // A note about who or what the invitation is for.
+  string note = 3;
+  // The name of the user who created the invitation.
+  string created_by_name = 4;
+  // The name of the user a passkey is added to, for ADD_PASSKEY invitations.
+  string user_name = 5;
+  // When the invitation was created.
+  google.protobuf.Timestamp create_time = 6;
+  // When the invitation expires.
+  google.protobuf.Timestamp expire_time = 7;
+  // When the invitation was used, if it has been.
+  google.protobuf.Timestamp use_time = 8;
+  // Whether this is the invitation to create the first administrator.
+  bool bootstrap = 9;
+}
+
+message GetInvitationRequest {
+  // The token from the invitation link.
+  string token = 1;
+}
+
+message GetInvitationResponse {
+  // The invitation.
+  Invitation invitation = 1;
+}
+
+message CreateInvitationRequest {
+  // What the invitation allows.
+  InvitationKind kind = 1;
+  // A note about who or what the invitation is for.
+  string note = 2;
+}
+
+message CreateInvitationResponse {
+  // The invitation.
+  Invitation invitation = 1;
+  // The link to share. It contains the secret token, and can't be retrieved
+  // again.
+  string url = 2;
+}
+
+message ListInvitationsRequest {}
+
+message ListInvitationsResponse {
+  // The invitations.
+  repeated Invitation invitations = 1;
+}
+
+message DeleteInvitationRequest {
+  // The ID of the invitation.
+  string id = 1;
+}
+
+message DeleteInvitationResponse {}
+
+// A passkey of a user.
+message Passkey {
+  // The base64url encoded credential ID.
+  string id = 1;
+  // The name of the authenticator, e.g. "iCloud Keychain".
+  string name = 2;
+  // Whether the passkey is synced between devices.
+  bool backed_up = 3;
+  // When the passkey was registered.
+  google.protobuf.Timestamp create_time = 4;
+  // When the passkey was last used to sign in, if ever.
+  google.protobuf.Timestamp last_used_time = 5;
+}
+
+message ListPasskeysRequest {}
+
+message ListPasskeysResponse {
+  // The passkeys.
+  repeated Passkey passkeys = 1;
+}
+
+message DeletePasskeyRequest {
+  // The ID of the passkey.
+  string id = 1;
+}
+
+message DeletePasskeyResponse {}
+
+message BeginPasskeyRegistrationRequest {
+  // The invitation token. If empty, the passkey is added to the signed in
+  // user.
+  string invitation_token = 1;
+}
+
+message BeginPasskeyRegistrationResponse {
+  // The ID of the challenge, to pass to FinishPasskeyRegistration.
+  string challenge_id = 1;
+  // The challenge for publicKey.challenge.
+  bytes challenge = 2;
+  // The relying party ID for publicKey.rp.id.
+  string rp_id = 3;
+  // The relying party name for publicKey.rp.name.
+  string rp_name = 4;
+  // The user handle for publicKey.user.id.
+  bytes user_handle = 5;
+  // The user name for publicKey.user.name and displayName. Empty for new
+  // users, who choose their name.
+  string user_name = 6;
+  // Credential IDs for publicKey.excludeCredentials, so the same
+  // authenticator isn't registered twice.
+  repeated bytes exclude_credential_ids = 7;
+}
+
+message FinishPasskeyRegistrationRequest {
+  // The challenge ID from BeginPasskeyRegistration.
+  string challenge_id = 1;
+  // The name of the new user. Required when registering a new user.
+  string user_name = 2;
+  // The credential's response.clientDataJSON.
+  bytes client_data_json = 3;
+  // The credential's response.attestationObject.
+  bytes attestation_object = 4;
+  // The credential's response.getTransports().
+  repeated string transports = 5;
+}
+
+message FinishPasskeyRegistrationResponse {}
+
+message BeginPasskeyLoginRequest {}
+
+message BeginPasskeyLoginResponse {
+  // The ID of the challenge, to pass to FinishPasskeyLogin.
+  string challenge_id = 1;
+  // The challenge for publicKey.challenge.
+  bytes challenge = 2;
+  // The relying party ID for publicKey.rpId.
+  string rp_id = 3;
+}
+
+message FinishPasskeyLoginRequest {
+  // The challenge ID from BeginPasskeyLogin.
+  string challenge_id = 1;
+  // The credential's rawId.
+  bytes credential_id = 2;
+  // The credential's response.clientDataJSON.
+  bytes client_data_json = 3;
+  // The credential's response.authenticatorData.
+  bytes authenticator_data = 4;
+  // The credential's response.signature.
+  bytes signature = 5;
+  // The credential's response.userHandle.
+  bytes user_handle = 6;
+}
+
+message FinishPasskeyLoginResponse {}

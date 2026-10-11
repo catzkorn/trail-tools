@@ -18,15 +18,15 @@ import (
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
+	"github.com/catzkorn/trail-tools/internal/services/auth"
 	"github.com/catzkorn/trail-tools/internal/services/user"
-	"github.com/catzkorn/trail-tools/internal/services/webauthn"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
-	wauthn "github.com/go-webauthn/webauthn/webauthn"
 	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
 )
@@ -73,6 +73,12 @@ var (
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
 	)
+	adminBootstrapToken = flag.String(
+		"admin-bootstrap-token",
+		"",
+		"A secret that can be used as an invitation to create the first administrator,"+
+			" at /invite/<token>, while there are no administrators",
+	)
 )
 
 func main() {
@@ -98,6 +104,7 @@ func main() {
 		*tlsKeyPath,
 		*tlsCertPath,
 		*serveDir,
+		*adminBootstrapToken,
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -113,6 +120,7 @@ func run(
 	tlsKeyPath string,
 	tlsCertPath string,
 	serveDir string,
+	adminBootstrapToken string,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -151,12 +159,26 @@ func run(
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
 
+	userService := user.NewService(log)
+	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
+	if err != nil {
+		return fmt.Errorf("failed to create auth service: %w", err)
+	}
+
 	// Register all handlers to a single mux
-	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, athletes))
-	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log))
 	apiMux := http.NewServeMux()
-	apiMux.Handle(athletePath, athleteHandler)
-	apiMux.Handle(usersPath, usersHandler)
+	var apiPaths []string
+	for _, register := range []func() (string, http.Handler){
+		func() (string, http.Handler) {
+			return athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, athletes))
+		},
+		func() (string, http.Handler) { return usersv1connect.NewUserServiceHandler(userService) },
+		func() (string, http.Handler) { return authv1connect.NewAuthServiceHandler(authService) },
+	} {
+		path, handler := register()
+		apiMux.Handle(path, handler)
+		apiPaths = append(apiPaths, path)
+	}
 
 	// Wrap the API mux in the authn middleware. Each service checks
 	// authentication itself.
@@ -165,26 +187,16 @@ func run(
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
 
-	// Create the core mux. This contains both the Connect API, WebAuthn and HTML handlers.
+	// Create the core mux. This contains both the Connect API and HTML handlers.
 	// Only the Connect API endpoints (registered to apiMux) are authenticated.
 	mux := http.NewServeMux()
 	// Serve the Connect API handlers through the authn middleware
-	mux.Handle(athletePath, authHandler)
-	mux.Handle(usersPath, authHandler)
+	for _, path := range apiPaths {
+		mux.Handle(path, authHandler)
+	}
 
 	// Register the logout handler directly on the mux
 	authn.RegisterLogoutHandler(log, mux, users)
-
-	webAuthn, err := wauthn.New(&wauthn.Config{
-		RPDisplayName: "Trail tools",
-		RPID:          hostname,
-		RPOrigins:     []string{baseURL},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create webauthn: %w", err)
-	}
-	// Serve the WebAuthn handlers directly on the mux (unauthenticated)
-	webauthn.RegisterHandlers(mux, log, webAuthn, users)
 
 	// Create the FS used to serve the frontend.
 	webFs, _ := fs.Sub(web.Dist, "dist")
