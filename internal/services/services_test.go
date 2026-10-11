@@ -36,6 +36,7 @@ import (
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	"github.com/catzkorn/trail-tools/internal/services/race"
+	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -66,6 +67,8 @@ type env struct {
 	mapDataAPI routingv1connect.MapDataServiceClient
 	imports    *fakeImportRunner
 	races      racesv1connect.RaceServiceClient
+	racePlans  racesv1connect.RacePlanServiceClient
+	anonPlans  racesv1connect.RacePlanServiceClient
 	otherRaces racesv1connect.RaceServiceClient
 }
 
@@ -119,6 +122,7 @@ func newEnv(t *testing.T) *env {
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, "https://trail.example")
 
 	mux := http.NewServeMux()
 	mux.Handle(usersv1connect.NewUserServiceHandler(userService))
@@ -128,6 +132,7 @@ func newEnv(t *testing.T) *env {
 	mux.Handle(routesv1connect.NewRouteServiceHandler(routeService))
 	mux.Handle(geov1connect.NewGeoServiceHandler(geoService))
 	mux.Handle(racesv1connect.NewRaceServiceHandler(raceService))
+	mux.Handle(racesv1connect.NewRacePlanServiceHandler(racePlanService))
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
 	e.imports = &fakeImportRunner{}
 	mux.Handle(routingv1connect.NewMapDataServiceHandler(mapdatasvc.NewService(log, db, fakeExtracts{}, e.imports)))
@@ -147,6 +152,8 @@ func newEnv(t *testing.T) *env {
 	e.geo = geov1connect.NewGeoServiceClient(client, e.srv.URL, opts)
 	e.mapDataAPI = routingv1connect.NewMapDataServiceClient(client, e.srv.URL, opts)
 	e.races = racesv1connect.NewRaceServiceClient(client, e.srv.URL, opts)
+	e.racePlans = racesv1connect.NewRacePlanServiceClient(client, e.srv.URL, opts)
+	e.anonPlans = racesv1connect.NewRacePlanServiceClient(client, e.srv.URL)
 	e.otherRaces = racesv1connect.NewRaceServiceClient(client, e.srv.URL, connect.WithInterceptors(bearerInterceptor(otherToken)))
 	return e
 }
