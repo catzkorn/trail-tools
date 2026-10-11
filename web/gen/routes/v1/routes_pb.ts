@@ -1001,12 +1001,11 @@ export enum RoutingProfile {
   STRAIGHT = 3,
 
   /**
-   * Prefer the paths the user has run before. Several alternative trail
-   * routes are computed and the one that overlaps most with the user's
-   * personal heatmap (the GPS tracks of their synced activities, see
-   * GeoService.GetPersonalHeatmap) is used. Behaves like TRAIL where the user
-   * has no activities near the leg. Slower than TRAIL, as each leg is routed
-   * several times.
+   * Prefer the paths the user has run before: like TRAIL, but paths near the
+   * GPS tracks of the user's synced activities (their personal heatmap, see
+   * GeoService.GetPersonalHeatmap) cost half as much, so the route follows
+   * them where it reasonably can. Behaves like TRAIL where the user has no
+   * activities near the leg.
    *
    * @generated from enum value: ROUTING_PROFILE_HEATMAP = 4;
    */
@@ -1151,9 +1150,10 @@ export const ForecastPointKindSchema: GenEnum<ForecastPointKind> = /*@__PURE__*/
 /**
  * RouteService creates and edits running routes. A route is defined by an
  * ordered list of waypoints. The path between consecutive waypoints (a leg) is
- * computed by snapping to OpenStreetMap trails and roads, preferring the
+ * computed by routing on OpenStreetMap trails and roads, preferring the
  * user's own previously run paths, or as a straight line, depending on the
- * leg's routing profile. Each leg can use a different profile, so a route can
+ * leg's routing profile. Routing only works in the regions whose map data has
+ * been imported; elsewhere, or off the mapped paths, use STRAIGHT legs. Each leg can use a different profile, so a route can
  * mix trail sections with straight off-trail sections. The elevation profile,
  * distance and terrain breakdown are computed from the result. Routes can also be imported from GPX or created
  * from a previously recorded activity. Use PreviewRoute to try out waypoints

@@ -76,7 +76,7 @@ func TestRoutes(t *testing.T) {
 		created.Msg.GetRoute().GetProfile() != routesv1.RoutingProfile_ROUTING_PROFILE_TRAIL {
 		t.Errorf("unexpected route %v", created.Msg.GetRoute())
 	}
-	callsBefore := e.mapData.routeCallCount()
+	callsBefore := e.router.routeCallCount()
 	updated, err := e.routes.UpdateRoute(ctx, connect.NewRequest(routesv1.UpdateRouteRequest_builder{
 		Id:        routeID,
 		Name:      new("Bigger hill loop"),
@@ -85,7 +85,7 @@ func TestRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpdateRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount() - callsBefore; calls != 1 {
+	if calls := e.router.routeCallCount() - callsBefore; calls != 1 {
 		t.Errorf("got %d routing calls, want 1", calls)
 	}
 	if updated.Msg.GetRoute().GetName() != "Bigger hill loop" || !approx(updated.Msg.GetRoute().GetStats().GetDistanceMeters(), 3336, 5) {
@@ -273,7 +273,7 @@ func TestRouteLegProfiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PreviewRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount(); calls != 1 {
+	if calls := e.router.routeCallCount(); calls != 1 {
 		t.Errorf("got %d routing calls, want 1", calls)
 	}
 	wantLegProfiles(t, preview.Msg.GetRoute(), trail, straight)
@@ -307,7 +307,7 @@ func TestRouteLegProfiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount(); calls != 1 {
+	if calls := e.router.routeCallCount(); calls != 1 {
 		t.Errorf("got %d routing calls, want 1", calls)
 	}
 	wantLegProfiles(t, created.Msg.GetRoute(), trail, straight)
@@ -328,7 +328,7 @@ func TestRouteLegProfiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpdateRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount(); calls != 2 {
+	if calls := e.router.routeCallCount(); calls != 2 {
 		t.Errorf("got %d routing calls, want 2", calls)
 	}
 	wantLegProfiles(t, updated.Msg.GetRoute(), trail, straight, heatmap)
@@ -346,7 +346,7 @@ func TestRouteLegProfiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PreviewRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount(); calls != 3 {
+	if calls := e.router.routeCallCount(); calls != 3 {
 		t.Errorf("got %d routing calls, want 3", calls)
 	}
 	wantLegProfiles(t, preview.Msg.GetRoute(), trail, shortest, heatmap)
@@ -357,14 +357,14 @@ func TestRouteLegProfiles(t *testing.T) {
 	wantLegProfiles(t, got.Msg.GetRoute(), trail, straight, heatmap)
 
 	// The way back of an out and back route reuses the outbound legs.
-	before := e.mapData.routeCallCount()
+	before := e.router.routeCallCount()
 	outAndBack, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
 		Waypoints: latLngs(1, 0, 1.01, 0, 1.02, 0, 1.01, 0, 1, 0),
 	}.Build()))
 	if err != nil {
 		t.Fatalf("PreviewRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount() - before; calls != 2 {
+	if calls := e.router.routeCallCount() - before; calls != 2 {
 		t.Errorf("got %d routing calls, want 2", calls)
 	}
 	stats = outAndBack.Msg.GetRoute().GetStats()
@@ -388,7 +388,7 @@ func TestHeatmapRouting(t *testing.T) {
 	e := newEnv(t)
 	ctx := context.Background()
 
-	// The user has run the second alternative route between two points.
+	// The user has run a path between two points.
 	from, to := geo.Point{Lat: 0, Lng: 0}, geo.Point{Lat: 0.01, Lng: 0}
 	if _, err := e.activities.UpsertActivity(ctx, e.userID, &activities.ActivitySummary{
 		StravaID:        1,
@@ -397,66 +397,52 @@ func TestHeatmapRouting(t *testing.T) {
 		StartTime:       time.Date(2026, 9, 1, 8, 0, 0, 0, time.UTC),
 		StartDateLocal:  time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
 		Timezone:        "(GMT+00:00) Europe/London",
-		SummaryPolyline: geo.EncodePolyline(fakeRoutePath(from, to, 2)),
+		SummaryPolyline: geo.EncodePolyline(fakeRoutePath(from, to, 0.003)),
 		RawJSON:         []byte("{}"),
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	// The heatmap profile picks the alternative the user has run before. All
-	// alternatives are tried.
+	// The heatmap profile asks routing to prefer the user's activities.
 	preview, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
-		Waypoints:     latLngs(from.Lat, from.Lng, to.Lat, to.Lng),
-		Profile:       routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP,
-		IncludePoints: true,
+		Waypoints: latLngs(from.Lat, from.Lng, to.Lat, to.Lng),
+		Profile:   routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP,
 	}.Build()))
 	if err != nil {
 		t.Fatalf("PreviewRoute: %v", err)
-	}
-	if calls := e.mapData.routeCallCount(); calls != 4 {
-		t.Errorf("got %d routing calls, want 4", calls)
-	}
-	var maxLng float64
-	for _, p := range preview.Msg.GetRoute().GetPoints() {
-		maxLng = max(maxLng, p.GetLng())
-	}
-	if !approx(maxLng, 0.003, 0.0001) {
-		t.Errorf("got max longitude %v, want the second alternative at 0.003", maxLng)
 	}
 	wantLegProfiles(t, preview.Msg.GetRoute(), routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP)
-
-	// The trail profile ignores the heatmap.
-	trail, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
-		Waypoints:     latLngs(from.Lat, from.Lng, to.Lat, to.Lng),
-		IncludePoints: true,
-	}.Build()))
-	if err != nil {
-		t.Fatalf("PreviewRoute: %v", err)
+	prefer := e.router.lastPrefer()
+	if len(prefer) != 1 || len(prefer[0]) < 3 {
+		t.Fatalf("got preferred paths %v, want the activity's track", prefer)
 	}
-	for _, p := range trail.Msg.GetRoute().GetPoints() {
-		if p.GetLng() != 0 {
-			t.Fatalf("trail route should be straight, got point %v", p)
-		}
+	var maxLng float64
+	for _, p := range prefer[0] {
+		maxLng = max(maxLng, p.Lng)
+	}
+	if !approx(maxLng, 0.003, 0.0001) {
+		t.Errorf("preferred path reaches longitude %v, want 0.003", maxLng)
 	}
 
-	// Away from the user's activities, the heatmap profile routes like the
-	// trail profile, without trying alternatives.
-	before := e.mapData.routeCallCount()
-	far, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
-		Waypoints:     latLngs(10, 10, 10.01, 10),
-		Profile:       routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP,
-		IncludePoints: true,
-	}.Build()))
-	if err != nil {
+	// The trail profile doesn't.
+	if _, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints: latLngs(from.Lat, from.Lng, 0.02, 0),
+	}.Build())); err != nil {
 		t.Fatalf("PreviewRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount() - before; calls != 1 {
-		t.Errorf("got %d routing calls, want 1", calls)
+	if prefer := e.router.lastPrefer(); len(prefer) != 0 {
+		t.Errorf("trail profile preferred %d paths", len(prefer))
 	}
-	for _, p := range far.Msg.GetRoute().GetPoints() {
-		if p.GetLng() != 10 {
-			t.Fatalf("route away from the heatmap should be straight, got point %v", p)
-		}
+
+	// Away from the user's activities, there is nothing to prefer.
+	if _, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints: latLngs(10, 10, 10.01, 10),
+		Profile:   routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP,
+	}.Build())); err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if prefer := e.router.lastPrefer(); len(prefer) != 0 {
+		t.Errorf("got %d preferred paths away from the activities", len(prefer))
 	}
 }
 
@@ -510,7 +496,7 @@ func TestSnapTrack(t *testing.T) {
 
 	// The snapped route is edited like any other: moving the corner only
 	// routes the two legs next to it.
-	before := e.mapData.routeCallCount()
+	before := e.router.routeCallCount()
 	waypoints := route.GetWaypoints()
 	_, err = e.routes.UpdateRoute(ctx, connect.NewRequest(routesv1.UpdateRouteRequest_builder{
 		Id: route.GetId(),
@@ -522,7 +508,7 @@ func TestSnapTrack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpdateRoute: %v", err)
 	}
-	if calls := e.mapData.routeCallCount() - before; calls != 2 {
+	if calls := e.router.routeCallCount() - before; calls != 2 {
 		t.Errorf("got %d routing calls, want 2", calls)
 	}
 

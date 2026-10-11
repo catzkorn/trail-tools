@@ -6,98 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync/atomic"
 	"testing"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 )
-
-// A trimmed BRouter response: a path of 4 points where the first stretch is a
-// dirt path and the second an asphalt road.
-const brouterResponse = `{
-  "type": "FeatureCollection",
-  "features": [{
-    "type": "Feature",
-    "properties": {
-      "track-length": "333",
-      "messages": [
-        ["Longitude","Latitude","Elevation","Distance","CostPerKm","ElevCost","TurnCost","NodeCost","InitialCost","WayTags","NodeTags","Time","Energy"],
-        ["0","1000","10","222","1000","0","0","0","0","highway=path surface=dirt","","0","0"],
-        ["0","3000","30","111","1000","0","0","0","0","highway=tertiary surface=asphalt","","0","0"]
-      ]
-    },
-    "geometry": {"type": "LineString", "coordinates": [[0,0,0],[0,0.001,10],[0,0.002,20],[0,0.003,30]]}
-  }]
-}`
-
-func TestRoute(t *testing.T) {
-	t.Parallel()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if got := r.URL.Query().Get("profile"); got != mapdata.ProfileHikingMountain {
-			t.Errorf("unexpected profile %q", got)
-		}
-		if got := r.URL.Query().Get("lonlats"); got != "0.000000,0.000000|0.000000,0.003000" {
-			t.Errorf("unexpected lonlats %q", got)
-		}
-		if got := r.URL.Query().Get("alternativeidx"); got != "2" {
-			t.Errorf("unexpected alternativeidx %q", got)
-		}
-		if r.Header.Get("User-Agent") != mapdata.UserAgent {
-			t.Errorf("missing user agent")
-		}
-		fmt.Fprint(w, brouterResponse)
-	}))
-	t.Cleanup(srv.Close)
-	client := mapdata.New(mapdata.Config{BRouterURL: srv.URL})
-	path, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 0.003}, mapdata.ProfileHikingMountain, 2)
-	if err != nil {
-		t.Fatalf("Route: %v", err)
-	}
-	if len(path.Points) != 4 || path.Points[3].Ele != 30 {
-		t.Fatalf("unexpected points %v", path.Points)
-	}
-	want := []geo.Terrain{geo.TerrainTrail, geo.TerrainTrail, geo.TerrainPaved, geo.TerrainUnknown}
-	for i := range want {
-		if path.Terrains[i] != want[i] {
-			t.Errorf("terrain %d: got %q, want %q", i, path.Terrains[i], want[i])
-		}
-	}
-}
-
-func TestRouteError(t *testing.T) {
-	t.Parallel()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "to-position not mapped in existing datafile", http.StatusBadRequest)
-	}))
-	t.Cleanup(srv.Close)
-	client := mapdata.New(mapdata.Config{BRouterURL: srv.URL})
-	_, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 1}, mapdata.ProfileShortest, 0)
-	if err == nil || !strings.Contains(err.Error(), "not mapped") {
-		t.Errorf("unexpected error %v", err)
-	}
-}
-
-func TestRouteBusy(t *testing.T) {
-	t.Parallel()
-	var requests atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if requests.Add(1) == 1 {
-			// The public server's rate limit.
-			http.Error(w, "Please, retry later!", http.StatusForbidden)
-			return
-		}
-		fmt.Fprint(w, brouterResponse)
-	}))
-	t.Cleanup(srv.Close)
-	client := mapdata.New(mapdata.Config{BRouterURL: srv.URL})
-	if _, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 0.003}, mapdata.ProfileHikingMountain, 0); err != nil {
-		t.Fatalf("Route should retry when busy: %v", err)
-	}
-	if requests.Load() != 2 {
-		t.Errorf("got %d requests, want 2", requests.Load())
-	}
-}
 
 func TestFillElevations(t *testing.T) {
 	t.Parallel()

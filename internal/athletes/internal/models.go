@@ -661,6 +661,30 @@ type Route struct {
 	UpdateTime  pgtype.Timestamptz
 }
 
+type RoutingEdge struct {
+	ID            int64
+	Region        string
+	OsmWayID      int64
+	Source        int64
+	Target        int64
+	Geom          interface{}
+	Elevations    []float32
+	LengthMeters  float64
+	ClimbMeters   float32
+	DescentMeters float32
+	Highway       string
+	Surface       string
+	SacScale      string
+	Terrain       string
+}
+
+type RoutingRegion struct {
+	Name       string
+	Bounds     interface{}
+	EdgeCount  int32
+	ImportTime pgtype.Timestamptz
+}
+
 type Session struct {
 	ID     pgtype.UUID
 	UserID pgtype.UUID

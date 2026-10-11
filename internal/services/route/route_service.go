@@ -33,16 +33,18 @@ type Service struct {
 	log        *slog.Logger
 	routes     RouteRepository
 	activities ActivityRepository
+	router     Router
 	mapData    MapData
 	legs       *legCache
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, routes RouteRepository, activities ActivityRepository, mapData MapData) *Service {
+func NewService(log *slog.Logger, routes RouteRepository, activities ActivityRepository, router Router, mapData MapData) *Service {
 	return &Service{
 		log:        log,
 		routes:     routes,
 		activities: activities,
+		router:     router,
 		mapData:    mapData,
 		legs:       newLegCache(),
 	}

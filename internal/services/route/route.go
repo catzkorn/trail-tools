@@ -13,7 +13,6 @@ import (
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -328,8 +327,6 @@ func (s *Service) toConnectError(err error, msg string) error {
 		return connect.NewError(connect.CodeNotFound, errors.New("route not found"))
 	case errors.Is(err, errInvalidRoute):
 		return connect.NewError(connect.CodeInvalidArgument, err)
-	case errors.Is(err, mapdata.ErrRoutingBusy):
-		return connect.NewError(connect.CodeUnavailable, err)
 	case errors.Is(err, context.Canceled):
 		return connect.NewError(connect.CodeCanceled, err)
 	default:

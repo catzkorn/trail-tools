@@ -38,6 +38,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
@@ -139,11 +140,6 @@ var (
 		"trail-tools-scheduler",
 		"The audience of the scheduler's ID tokens",
 	)
-	brouterURL = flag.String(
-		"brouter-url",
-		"https://brouter.de/brouter",
-		"The URL of the BRouter server used for routing",
-	)
 	adminBootstrapToken = flag.String(
 		"admin-bootstrap-token",
 		"",
@@ -158,8 +154,11 @@ var (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "import-osm" {
+		os.Exit(importOSM(os.Args[2:]))
+	}
 	flag.Parse()
-	if err := setFlagsFromEnv(); err != nil {
+	if err := setFlagsFromEnv(flag.CommandLine); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
 		os.Exit(1)
 	}
@@ -203,7 +202,6 @@ func main() {
 		*schedulerServiceAccount,
 		*schedulerAudience,
 		mapdata.Config{
-			BRouterURL:   *brouterURL,
 			OverpassURLs: strings.Split(*overpassURLs, ","),
 		},
 	); err != nil {
@@ -320,7 +318,7 @@ func run(
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
-	routeService := route.NewService(log, routeRepo, activityRepo, mapData)
+	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
@@ -493,11 +491,11 @@ const envPrefix = "TRAIL_TOOLS_"
 // setFlagsFromEnv sets flags that weren't set on the command line from
 // environment variables named TRAIL_TOOLS_<FLAG>, e.g. TRAIL_TOOLS_DATABASE_URL
 // for -database-url. This allows passing secrets through the environment.
-func setFlagsFromEnv() error {
+func setFlagsFromEnv(fs *flag.FlagSet) error {
 	set := map[string]bool{}
-	flag.Visit(func(f *flag.Flag) { set[f.Name] = true })
+	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
 	var err error
-	flag.VisitAll(func(f *flag.Flag) {
+	fs.VisitAll(func(f *flag.Flag) {
 		if set[f.Name] || err != nil {
 			return
 		}

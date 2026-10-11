@@ -35,6 +35,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
@@ -59,6 +60,7 @@ type env struct {
 	token      string
 	srv        *httptest.Server
 	mapData    *fakeMapData
+	router     *fakeRouter
 	activities *activities.Repository
 	syncer     *stravasvc.Syncer
 	strava     *fakeStrava
@@ -106,7 +108,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := &env{t: t, db: db, mapData: &fakeMapData{}, activities: activityRepo, strava: newFakeStrava()}
+	e := &env{t: t, db: db, mapData: &fakeMapData{}, router: &fakeRouter{}, activities: activityRepo, strava: newFakeStrava()}
 	e.userID = storetest.NewUser(t, db)
 	_, e.token, err = userRepo.CreateAPIToken(ctx, e.userID, "test")
 	if err != nil {
@@ -132,7 +134,7 @@ func newEnv(t *testing.T) *env {
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil)
-	routeService := route.NewService(log, routeRepo, activityRepo, e.mapData)
+	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
@@ -214,40 +216,39 @@ func wantCode(t *testing.T, err error, code connect.Code) {
 	}
 }
 
-// fakeMapData routes legs with 11 points, where the elevation is 1000 times
-// the latitude and the terrain is trail. The best route (alternative 0) is a
-// straight line, and alternatives 1 and 2 bow east by 0.0015 degrees per
-// alternative index in the middle (see fakeRoutePath). Alternative 3 fails.
-type fakeMapData struct {
+// fakeRouter routes legs as straight lines with 11 points, where the
+// elevation is 1000 times the latitude and the terrain is trail. Points north
+// of 80 degrees can't be routed. It records the preferred paths of the last
+// request.
+type fakeRouter struct {
 	mu         sync.Mutex
 	routeCalls int
-	forecasts  []mapdata.ForecastQuery
+	prefer     [][]geo.Point
 }
 
-// fakeRoutePath returns the points of an alternative route.
-func fakeRoutePath(from, to geo.Point, alternative int) []geo.Point {
+// fakeRoutePath returns the points of a path that bows east by bow degrees
+// in the middle.
+func fakeRoutePath(from, to geo.Point, bow float64) []geo.Point {
 	var points []geo.Point
 	for i := range 11 {
 		f := float64(i) / 10
 		p := geo.Interpolate(from, to, f)
-		p.Lng += float64(alternative) * 0.0015 * math.Sin(math.Pi*f)
+		p.Lng += bow * math.Sin(math.Pi*f)
 		p.Ele = p.Lat * 1000
 		points = append(points, p)
 	}
 	return points
 }
 
-func (f *fakeMapData) Route(_ context.Context, from, to geo.Point, profile string, alternative int) (*mapdata.RoutedPath, error) {
+func (f *fakeRouter) Route(_ context.Context, req routing.Request) (*routing.Path, error) {
 	f.mu.Lock()
 	f.routeCalls++
+	f.prefer = req.Prefer
 	f.mu.Unlock()
-	if from.Lat > 80 {
-		return nil, fmt.Errorf("from-position not mapped")
+	if req.From.Lat > 80 {
+		return nil, fmt.Errorf("%w: there is no mapped path near the point", routing.ErrNotRoutable)
 	}
-	if alternative >= 3 {
-		return nil, fmt.Errorf("no alternative")
-	}
-	path := &mapdata.RoutedPath{Points: fakeRoutePath(from, to, alternative)}
+	path := &routing.Path{Points: fakeRoutePath(req.From, req.To, 0)}
 	for range path.Points {
 		path.Terrains = append(path.Terrains, geo.TerrainTrail)
 	}
@@ -255,10 +256,22 @@ func (f *fakeMapData) Route(_ context.Context, from, to geo.Point, profile strin
 	return path, nil
 }
 
-func (f *fakeMapData) routeCallCount() int {
+func (f *fakeRouter) routeCallCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.routeCalls
+}
+
+func (f *fakeRouter) lastPrefer() [][]geo.Point {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.prefer
+}
+
+// fakeMapData looks up elevations as 1000 times the latitude.
+type fakeMapData struct {
+	mu        sync.Mutex
+	forecasts []mapdata.ForecastQuery
 }
 
 func (f *fakeMapData) FillElevations(_ context.Context, points []geo.Point, _ int) error {

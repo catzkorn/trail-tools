@@ -10,37 +10,30 @@ import (
 	"github.com/catzkorn/trail-tools/internal/activities"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	// heatmapCellMeters is the size of the grid cells that routed paths are
-	// matched against the user's activities in. A path is on the heatmap if
-	// an activity passed through its cell or a neighboring cell, which
-	// tolerates GPS error and the offset between tracks and mapped ways.
-	heatmapCellMeters = 30
-	// heatmapPaddingMeters is how far around the waypoints of a leg to look
-	// for activities, as alternative routes can stray from the direct line.
+	// heatmapPaddingMeters is how far around the waypoints of a leg the
+	// user's activities are preferred, as routes can stray from the direct
+	// line.
 	heatmapPaddingMeters = 2000
-	// maxHeatmapDetour is the longest an alternative route may be, relative to
-	// the best trail route, to be picked for running on the heatmap.
-	maxHeatmapDetour = 1.5
+	// heatmapSimplifyMeters is the tolerance activity tracks are simplified
+	// with before routing prefers them.
+	heatmapSimplifyMeters = 10
 	// metersPerDegreeLat is the approximate length of a degree of latitude.
 	metersPerDegreeLat = 111320.0
 )
 
-// heatmap is the set of grid cells that the user's activities passed
-// through.
+// heatmap is the user's activity tracks around the legs routed with the
+// heatmap profile, simplified and clipped to the area.
 type heatmap struct {
-	grid  *geo.Grid
-	cells map[int]bool
+	tracks [][]geo.Point
 }
 
-// loadHeatmap loads the user's heatmap around the points.
+// loadHeatmap loads the user's activity tracks around the points.
 func (s *Service) loadHeatmap(ctx context.Context, userID pgtype.UUID, points []geo.Point) (*heatmap, error) {
 	bounds, _ := geo.BoundsOf(points)
 	bounds = padBounds(bounds, heatmapPaddingMeters)
@@ -48,18 +41,79 @@ func (s *Service) loadHeatmap(ctx context.Context, userID pgtype.UUID, points []
 	if err != nil {
 		return nil, fmt.Errorf("failed to list activity tracks: %w", err)
 	}
-	heat := &heatmap{grid: geo.NewGrid(bounds, heatmapCellMeters), cells: map[int]bool{}}
+	heat := &heatmap{}
 	for _, track := range tracks {
 		points, err := TrackPoints(track)
 		if err != nil {
 			s.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(track.ActivityID)))
 			continue
 		}
-		for cell := range heat.grid.Cells(points) {
-			heat.cells[cell] = true
+		for _, part := range clip(points, bounds) {
+			heat.tracks = append(heat.tracks, simplify(part, heatmapSimplifyMeters))
 		}
 	}
 	return heat, nil
+}
+
+// near returns the tracks passing near a leg. It is nil without a heatmap.
+func (h *heatmap) near(from, to geo.Point) [][]geo.Point {
+	if h == nil {
+		return nil
+	}
+	bounds, _ := geo.BoundsOf([]geo.Point{from, to})
+	bounds = padBounds(bounds, heatmapPaddingMeters)
+	var tracks [][]geo.Point
+	for _, track := range h.tracks {
+		if trackBounds, ok := geo.BoundsOf(track); ok && overlaps(trackBounds, bounds) {
+			tracks = append(tracks, track)
+		}
+	}
+	return tracks
+}
+
+func overlaps(a, b geo.Bounds) bool {
+	return a.MinLat <= b.MaxLat && b.MinLat <= a.MaxLat && a.MinLng <= b.MaxLng && b.MinLng <= a.MaxLng
+}
+
+// clip returns the parts of a track inside bounds, each with at least two
+// points.
+func clip(points []geo.Point, b geo.Bounds) [][]geo.Point {
+	var parts [][]geo.Point
+	var part []geo.Point
+	for _, p := range points {
+		if p.Lat >= b.MinLat && p.Lat <= b.MaxLat && p.Lng >= b.MinLng && p.Lng <= b.MaxLng {
+			part = append(part, p)
+			continue
+		}
+		if len(part) >= 2 {
+			parts = append(parts, part)
+		}
+		part = nil
+	}
+	if len(part) >= 2 {
+		parts = append(parts, part)
+	}
+	return parts
+}
+
+// simplify removes points of a track that are within tolerance meters of the
+// line through their neighbors (the Douglas-Peucker algorithm).
+func simplify(points []geo.Point, tolerance float64) []geo.Point {
+	if len(points) < 3 {
+		return points
+	}
+	worst, worstIndex := 0.0, 0
+	last := len(points) - 1
+	for i := 1; i < last; i++ {
+		if d := pointSegmentDistance(points[i], points[0], points[last]); d > worst {
+			worst, worstIndex = d, i
+		}
+	}
+	if worst <= tolerance {
+		return []geo.Point{points[0], points[last]}
+	}
+	first := simplify(points[:worstIndex+1], tolerance)
+	return append(first[:len(first)-1], simplify(points[worstIndex:], tolerance)...)
 }
 
 // padBounds grows bounds by about padding meters on each side.
@@ -73,104 +127,6 @@ func padBounds(b geo.Bounds, padding float64) geo.Bounds {
 		MaxLat: math.Min(90, b.MaxLat+padLat),
 		MaxLng: math.Min(180, b.MaxLng+padLng),
 	}
-}
-
-// near reports whether an activity passed through the cell containing p or
-// one of its neighbors.
-func (h *heatmap) near(p geo.Point) bool {
-	cell, ok := h.grid.Cell(p)
-	if !ok {
-		return false
-	}
-	row, col := cell/h.grid.Cols, cell%h.grid.Cols
-	for r := row - 1; r <= row+1; r++ {
-		for c := col - 1; c <= col+1; c++ {
-			if r < 0 || r >= h.grid.Rows || c < 0 || c >= h.grid.Cols {
-				continue
-			}
-			if h.cells[r*h.grid.Cols+c] {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// anyWithin reports whether an activity passed through the bounds.
-func (h *heatmap) anyWithin(b geo.Bounds) bool {
-	for cell := range h.cells {
-		lat, lng := h.grid.Center(cell)
-		if lat >= b.MinLat && lat <= b.MaxLat && lng >= b.MinLng && lng <= b.MaxLng {
-			return true
-		}
-	}
-	return false
-}
-
-// overlap returns the length of the path in meters and the fraction of it
-// that is on the heatmap.
-func (h *heatmap) overlap(points []geo.Point) (length, fraction float64) {
-	var covered float64
-	for i := 1; i < len(points); i++ {
-		section := geo.Densify(points[i-1], points[i], heatmapCellMeters/2)
-		for j := 1; j < len(section); j++ {
-			d := geo.Distance(section[j-1], section[j])
-			length += d
-			if h.near(geo.Interpolate(section[j-1], section[j], 0.5)) {
-				covered += d
-			}
-		}
-	}
-	if length == 0 {
-		return 0, 0
-	}
-	return length, covered / length
-}
-
-// routeOnHeatmap routes a trail leg that prefers the paths the user has run
-// before: of BRouter's alternative routes, it picks the one with the largest
-// share on the user's heatmap. Alternatives much longer than the best route
-// are ignored. Without activities near the leg, it is the best trail route.
-func (s *Service) routeOnHeatmap(ctx context.Context, heat *heatmap, from, to geo.Point) (*mapdata.RoutedPath, error) {
-	best, err := s.mapData.Route(ctx, from, to, mapdata.ProfileHikingMountain, 0)
-	if err != nil {
-		return nil, err
-	}
-	if heat == nil {
-		return best, nil
-	}
-	bounds, _ := geo.BoundsOf([]geo.Point{from, to})
-	if !heat.anyWithin(padBounds(bounds, heatmapPaddingMeters/2)) {
-		return best, nil
-	}
-	bestLength, bestFraction := heat.overlap(best.Points)
-	if bestFraction >= 1 {
-		return best, nil
-	}
-	alternatives := make([]*mapdata.RoutedPath, mapdata.MaxAlternatives)
-	g, ctx := errgroup.WithContext(ctx)
-	for i := 1; i < mapdata.MaxAlternatives; i++ {
-		g.Go(func() error {
-			// Not every leg has alternatives, so failures are ignored.
-			path, err := s.mapData.Route(ctx, from, to, mapdata.ProfileHikingMountain, i)
-			if err == nil {
-				alternatives[i] = path
-			}
-			return nil
-		})
-	}
-	_ = g.Wait()
-	maxLength := bestLength * maxHeatmapDetour
-	for _, path := range alternatives {
-		if path == nil {
-			continue
-		}
-		length, fraction := heat.overlap(path.Points)
-		if length <= maxLength && fraction > bestFraction {
-			best, bestFraction = path, fraction
-		}
-	}
-	return best, nil
 }
 
 // TrackPoints returns the points of an activity's GPS track, from its

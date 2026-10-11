@@ -9,6 +9,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/sync/errgroup"
 )
@@ -32,9 +33,13 @@ const (
 	maxConcurrentLegs = 4
 )
 
-// MapData provides routing, elevation and weather data.
+// Router routes paths on the map.
+type Router interface {
+	Route(ctx context.Context, req routing.Request) (*routing.Path, error)
+}
+
+// MapData provides elevation and weather data.
 type MapData interface {
-	Route(ctx context.Context, from, to geo.Point, profile string, alternative int) (*mapdata.RoutedPath, error)
 	FillElevations(ctx context.Context, points []geo.Point, maxLookups int) error
 	Forecast(ctx context.Context, queries []mapdata.ForecastQuery) ([]mapdata.Weather, error)
 }
@@ -162,7 +167,7 @@ func findLeg(existing []routes.Leg, from, to routes.LatLng, profile routes.Profi
 func (s *Service) routeLeg(ctx context.Context, heat *heatmap, from, to routes.LatLng, profile routes.Profile) (routes.Leg, error) {
 	fromPoint := geo.Point{Lat: from.Lat, Lng: from.Lng}
 	toPoint := geo.Point{Lat: to.Lat, Lng: to.Lng}
-	var path *mapdata.RoutedPath
+	var path *routing.Path
 	var err error
 	switch profile {
 	case routes.ProfileStraight:
@@ -172,25 +177,26 @@ func (s *Service) routeLeg(ctx context.Context, heat *heatmap, from, to routes.L
 		}
 		return routes.NewLeg(from, to, profile, points, nil), nil
 	case routes.ProfileTrail:
-		path, err = s.mapData.Route(ctx, fromPoint, toPoint, mapdata.ProfileHikingMountain, 0)
+		path, err = s.router.Route(ctx, routing.Request{From: fromPoint, To: toPoint, Profile: routing.ProfileTrail})
 	case routes.ProfileShortest:
-		path, err = s.mapData.Route(ctx, fromPoint, toPoint, mapdata.ProfileShortest, 0)
+		path, err = s.router.Route(ctx, routing.Request{From: fromPoint, To: toPoint, Profile: routing.ProfileShortest})
 	case routes.ProfileHeatmap:
-		path, err = s.routeOnHeatmap(ctx, heat, fromPoint, toPoint)
+		// Prefer the paths of the user's activities near the leg, if any.
+		path, err = s.router.Route(ctx, routing.Request{From: fromPoint, To: toPoint, Profile: routing.ProfileTrail, Prefer: heat.near(fromPoint, toPoint)})
 	default:
 		return routes.Leg{}, fmt.Errorf("%w: unknown profile %q", errInvalidRoute, profile)
 	}
-	if errors.Is(err, mapdata.ErrRoutingBusy) {
-		return routes.Leg{}, err
+	if errors.Is(err, routing.ErrNotRoutable) {
+		return routes.Leg{}, fmt.Errorf("%w: %w; try moving the waypoints closer to a trail or road, or use the STRAIGHT profile", errInvalidRoute, err)
 	}
 	if err != nil {
-		return routes.Leg{}, fmt.Errorf("%w: %w; try moving the waypoints closer to a trail or road, or use the STRAIGHT profile", errInvalidRoute, err)
+		return routes.Leg{}, err
 	}
 	return legFromPath(from, to, profile, path), nil
 }
 
 // legFromPath creates a leg from a routed path.
-func legFromPath(from, to routes.LatLng, profile routes.Profile, path *mapdata.RoutedPath) routes.Leg {
+func legFromPath(from, to routes.LatLng, profile routes.Profile, path *routing.Path) routes.Leg {
 	// Make the leg start and end exactly at the waypoints, so the route is
 	// continuous even if routing snapped them to the nearest way.
 	points := append([]geo.Point{{Lat: from.Lat, Lng: from.Lng, Ele: path.Points[0].Ele}}, path.Points...)

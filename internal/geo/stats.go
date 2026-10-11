@@ -56,8 +56,7 @@ func ClassifyTerrain(tags map[string]string) Terrain {
 	return TerrainPaved
 }
 
-// ParseTags parses space separated key=value tags, as found in BRouter
-// messages.
+// ParseTags parses space separated key=value tags.
 func ParseTags(s string) map[string]string {
 	tags := map[string]string{}
 	for _, field := range strings.Fields(s) {

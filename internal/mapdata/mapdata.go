@@ -1,6 +1,6 @@
 // Package mapdata contains clients for the public map data services used to
-// plan routes: BRouter for trail routing, Overpass and Nominatim for
-// OpenStreetMap data and Open-Meteo for elevation.
+// plan routes: Overpass and Nominatim for OpenStreetMap data and Open-Meteo
+// for elevation and weather. Routing uses the internal/routing package.
 package mapdata
 
 import (
@@ -21,8 +21,6 @@ const UserAgent = "trail-tools/0.1 (+https://github.com/catzkorn/trail-tools)"
 // Config configures the map data clients. Zero values use the public
 // services.
 type Config struct {
-	// The BRouter base URL, e.g. https://brouter.de/brouter.
-	BRouterURL string
 	// Overpass API interpreter URLs, tried in order until one succeeds.
 	OverpassURLs []string
 	// The Nominatim base URL, e.g. https://nominatim.openstreetmap.org.
@@ -43,9 +41,6 @@ var DefaultOverpassURLs = []string{
 }
 
 func (c Config) withDefaults() Config {
-	if c.BRouterURL == "" {
-		c.BRouterURL = "https://brouter.de/brouter"
-	}
 	if len(c.OverpassURLs) == 0 {
 		c.OverpassURLs = DefaultOverpassURLs
 	}
@@ -64,16 +59,10 @@ func (c Config) withDefaults() Config {
 	return c
 }
 
-// maxConcurrentRoutes is the number of BRouter requests made at once, to
-// stay within the public server's rate limit.
-const maxConcurrentRoutes = 2
-
 // Client is a client for the map data services.
 type Client struct {
 	conf      Config
 	nominatim *throttle
-	// brouter limits concurrent BRouter requests.
-	brouter chan struct{}
 }
 
 // New creates a new Client.
@@ -82,7 +71,6 @@ func New(conf Config) *Client {
 		conf: conf.withDefaults(),
 		// Nominatim's usage policy allows at most 1 request per second.
 		nominatim: newThrottle(time.Second),
-		brouter:   make(chan struct{}, maxConcurrentRoutes),
 	}
 }
 

@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -50,7 +50,7 @@ type snapLeg struct {
 	from, to int
 	profile  routes.Profile
 	// The routed path, nil for straight legs.
-	path *mapdata.RoutedPath
+	path *routing.Path
 }
 
 // trackSnapper fits a route with few waypoints to a recorded track.
@@ -147,7 +147,7 @@ func (t *trackSnapper) route(ctx context.Context, i, j int) (*snapLeg, int, erro
 			if ctx.Err() != nil {
 				return nil, -1, ctx.Err()
 			}
-			if errors.Is(err, mapdata.ErrRoutingBusy) {
+			if !errors.Is(err, routing.ErrNotRoutable) {
 				return nil, -1, err
 			}
 			// The points may not be routable, e.g. far from any mapped way.
@@ -174,10 +174,10 @@ func (t *trackSnapper) route(ctx context.Context, i, j int) (*snapLeg, int, erro
 	return nil, worst, nil
 }
 
-func (t *trackSnapper) routePath(ctx context.Context, from, to geo.Point, profile routes.Profile) (*mapdata.RoutedPath, error) {
-	brouterProfile := mapdata.ProfileHikingMountain
+func (t *trackSnapper) routePath(ctx context.Context, from, to geo.Point, profile routes.Profile) (*routing.Path, error) {
+	routingProfile := routing.ProfileTrail
 	if profile == routes.ProfileShortest {
-		brouterProfile = mapdata.ProfileShortest
+		routingProfile = routing.ProfileShortest
 	}
 	select {
 	case t.sem <- struct{}{}:
@@ -185,7 +185,7 @@ func (t *trackSnapper) routePath(ctx context.Context, from, to geo.Point, profil
 		return nil, ctx.Err()
 	}
 	defer func() { <-t.sem }()
-	return t.s.mapData.Route(ctx, from, to, brouterProfile, 0)
+	return t.s.router.Route(ctx, routing.Request{From: from, To: to, Profile: routingProfile})
 }
 
 // deviation returns how far a path strays from the track between points[i]

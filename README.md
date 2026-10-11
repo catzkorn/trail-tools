@@ -14,7 +14,8 @@ so you can bring your own AI agent to do the planning.
   month (phase and volume), week (focus and targets) and day (workouts) level,
   compared with what you actually ran.
 - **Routes**: a Strava style route editor where waypoints snap to trails or
-  roads ([BRouter](https://brouter.de)), prefer the paths you've run before
+  roads (routed with [pgRouting](https://pgrouting.org) on
+  [OpenStreetMap](https://www.openstreetmap.org) data), prefer the paths you've run before
   (your heatmap), or are joined by straight lines for off-trail sections, mixed
   within one route. Drag the route to reshape it, undo and redo, close the loop
   or turn it into an out and back. You can also import GPX files or turn a past
@@ -154,14 +155,33 @@ $ make help
 3. Implement the method in `internal/services/<domain>`. It's automatically
    exposed over MCP.
 
+### Routing data
+
+Routes are routed in Postgres with [PostGIS](https://postgis.net) and
+[pgRouting](https://pgrouting.org), on the foot accessible ways of
+OpenStreetMap extracts imported into the database. `make db` builds a Postgres
+image with both extensions. Import the regions you run in, e.g. from
+[Geofabrik](https://download.geofabrik.de):
+
+```sh
+$ make import-osm REGION=liechtenstein PBF=https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf
+```
+
+Elevations come from the SRTM derived tiles of the
+[AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) dataset,
+cached in the system temporary directory. Use `BOUNDS=south,west,north,east`
+to only import part of an extract. Importing a region again replaces it. A
+small country like Liechtenstein takes seconds and about 10 MB; larger
+extracts take more memory to import and more storage, roughly in proportion
+to their area and density of paths.
+
 ### Map data services
 
-Routing, trails and elevation come from public services that are fine for
-personal use. Their URLs can be changed with flags, e.g. to self host BRouter:
+Trails, points of interest, place search, elevations of straight legs and
+weather come from public services that are fine for personal use:
 
 | Flag             | Default                         | Used for                        |
 | ---------------- | ------------------------------- | ------------------------------- |
-| `-brouter-url`   | `https://brouter.de/brouter`    | Snapping routes to trails       |
 | `-overpass-urls` | Public Overpass API instances   | Trails and points of interest   |
 
 Public Overpass instances are often overloaded; trail and point of interest

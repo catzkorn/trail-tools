@@ -39,12 +39,11 @@ const (
 	// ("manual" mode). Use for off-trail sections, such as across a meadow or
 	// up a ridge without a path, or when routing fails.
 	RoutingProfile_ROUTING_PROFILE_STRAIGHT RoutingProfile = 3
-	// Prefer the paths the user has run before. Several alternative trail
-	// routes are computed and the one that overlaps most with the user's
-	// personal heatmap (the GPS tracks of their synced activities, see
-	// GeoService.GetPersonalHeatmap) is used. Behaves like TRAIL where the user
-	// has no activities near the leg. Slower than TRAIL, as each leg is routed
-	// several times.
+	// Prefer the paths the user has run before: like TRAIL, but paths near the
+	// GPS tracks of the user's synced activities (their personal heatmap, see
+	// GeoService.GetPersonalHeatmap) cost half as much, so the route follows
+	// them where it reasonably can. Behaves like TRAIL where the user has no
+	// activities near the leg.
 	RoutingProfile_ROUTING_PROFILE_HEATMAP RoutingProfile = 4
 )
 
