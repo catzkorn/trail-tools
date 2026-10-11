@@ -2,15 +2,15 @@
 // @generated from file geo/v1/geo.proto (package geo.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file geo/v1/geo.proto.
  */
 export const file_geo_v1_geo: GenFile = /*@__PURE__*/
-  fileDesc("ChBnZW8vdjEvZ2VvLnByb3RvEgZnZW8udjEiIgoGTGF0TG5nEgsKA2xhdBgBIAEoARILCgNsbmcYAiABKAEqcwoHVGVycmFpbhIXChNURVJSQUlOX1VOU1BFQ0lGSUVEEAASEQoNVEVSUkFJTl9QQVZFRBABEhIKDlRFUlJBSU5fR1JBVkVMEAISEQoNVEVSUkFJTl9UUkFJTBADEhUKEVRFUlJBSU5fVEVDSE5JQ0FMEARCigEKCmNvbS5nZW8udjFCCEdlb1Byb3RvUAFaOWdpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL2dlby92MTtnZW92MaICA0dYWKoCBkdlby5WMcoCBkdlb1xWMeICEkdlb1xWMVxHUEJNZXRhZGF0YeoCB0dlbzo6VjFiBnByb3RvMw");
+  fileDesc("ChBnZW8vdjEvZ2VvLnByb3RvEgZnZW8udjEiIgoGTGF0TG5nEgsKA2xhdBgBIAEoARILCgNsbmcYAiABKAEiRwoLQm91bmRpbmdCb3gSDQoFc291dGgYASABKAESDAoEd2VzdBgCIAEoARINCgVub3J0aBgDIAEoARIMCgRlYXN0GAQgASgBIjMKE1NlYXJjaFBsYWNlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUifAoFUGxhY2USDAoEbmFtZRgBIAEoCRIgCghsb2NhdGlvbhgCIAEoCzIOLmdlby52MS5MYXRMbmcSEAoIY2F0ZWdvcnkYAyABKAkSDAoEdHlwZRgEIAEoCRIjCgZib3VuZHMYBSABKAsyEy5nZW8udjEuQm91bmRpbmdCb3giNQoUU2VhcmNoUGxhY2VzUmVzcG9uc2USHQoGcGxhY2VzGAEgAygLMg0uZ2VvLnYxLlBsYWNlInMKEUZpbmRUcmFpbHNSZXF1ZXN0Eh4KBmNlbnRlchgBIAEoCzIOLmdlby52MS5MYXRMbmcSFQoNcmFkaXVzX21ldGVycxgCIAEoARINCgVsaW1pdBgDIAEoBRIYChBpbmNsdWRlX2dlb21ldHJ5GAQgASgIIr0CCgVUcmFpbBIOCgZvc21faWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgdoaWdod2F5GAMgASgJEg8KB3N1cmZhY2UYBCABKAkSEQoJc2FjX3NjYWxlGAUgASgJEiAKB3RlcnJhaW4YBiABKA4yDy5nZW8udjEuVGVycmFpbhIVCg1sZW5ndGhfbWV0ZXJzGAcgASgBEh0KBXN0YXJ0GAggASgLMg4uZ2VvLnYxLkxhdExuZxIbCgNlbmQYCSABKAsyDi5nZW8udjEuTGF0TG5nEiUKDW5lYXJlc3RfcG9pbnQYCiABKAsyDi5nZW8udjEuTGF0TG5nEiMKG2Rpc3RhbmNlX2Zyb21fY2VudGVyX21ldGVycxgLIAEoARIgCghnZW9tZXRyeRgMIAMoCzIOLmdlby52MS5MYXRMbmciMwoSRmluZFRyYWlsc1Jlc3BvbnNlEh0KBnRyYWlscxgBIAMoCzINLmdlby52MS5UcmFpbCKPAQobRmluZFBvaW50c09mSW50ZXJlc3RSZXF1ZXN0Eh4KBmNlbnRlchgBIAEoCzIOLmdlby52MS5MYXRMbmcSFQoNcmFkaXVzX21ldGVycxgCIAEoARIqCgVraW5kcxgDIAMoDjIbLmdlby52MS5Qb2ludE9mSW50ZXJlc3RLaW5kEg0KBWxpbWl0GAQgASgFIrsBCg9Qb2ludE9mSW50ZXJlc3QSDgoGb3NtX2lkGAEgASgJEikKBGtpbmQYAiABKA4yGy5nZW8udjEuUG9pbnRPZkludGVyZXN0S2luZBIMCgRuYW1lGAMgASgJEiAKCGxvY2F0aW9uGAQgASgLMg4uZ2VvLnYxLkxhdExuZxIYChBlbGV2YXRpb25fbWV0ZXJzGAUgASgBEiMKG2Rpc3RhbmNlX2Zyb21fY2VudGVyX21ldGVycxgGIAEoASJHChxGaW5kUG9pbnRzT2ZJbnRlcmVzdFJlc3BvbnNlEicKBnBvaW50cxgBIAMoCzIXLmdlby52MS5Qb2ludE9mSW50ZXJlc3QiNQoTR2V0RWxldmF0aW9uUmVxdWVzdBIeCgZwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nIjEKFEdldEVsZXZhdGlvblJlc3BvbnNlEhkKEWVsZXZhdGlvbnNfbWV0ZXJzGAEgAygBIo8BChlHZXRQZXJzb25hbEhlYXRtYXBSZXF1ZXN0EiMKBmJvdW5kcxgBIAEoCzITLmdlby52MS5Cb3VuZGluZ0JveBIYChBjZWxsX3NpemVfbWV0ZXJzGAIgASgBEhIKCnN0YXJ0X2RhdGUYAyABKAkSEAoIZW5kX2RhdGUYBCABKAkSDQoFbGltaXQYBSABKAUiRQoLSGVhdG1hcENlbGwSHgoGY2VudGVyGAEgASgLMg4uZ2VvLnYxLkxhdExuZxIWCg5hY3Rpdml0eV9jb3VudBgCIAEoBSJyChpHZXRQZXJzb25hbEhlYXRtYXBSZXNwb25zZRIiCgVjZWxscxgBIAMoCzITLmdlby52MS5IZWF0bWFwQ2VsbBIYChBjZWxsX3NpemVfbWV0ZXJzGAIgASgBEhYKDmFjdGl2aXR5X2NvdW50GAMgASgFKnMKB1RlcnJhaW4SFwoTVEVSUkFJTl9VTlNQRUNJRklFRBAAEhEKDVRFUlJBSU5fUEFWRUQQARISCg5URVJSQUlOX0dSQVZFTBACEhEKDVRFUlJBSU5fVFJBSUwQAxIVChFURVJSQUlOX1RFQ0hOSUNBTBAEKtsCChNQb2ludE9mSW50ZXJlc3RLaW5kEiYKIlBPSU5UX09GX0lOVEVSRVNUX0tJTkRfVU5TUEVDSUZJRUQQABIfChtQT0lOVF9PRl9JTlRFUkVTVF9LSU5EX1BFQUsQARIgChxQT0lOVF9PRl9JTlRFUkVTVF9LSU5EX1dBVEVSEAISIgoeUE9JTlRfT0ZfSU5URVJFU1RfS0lORF9QQVJLSU5HEAMSJAogUE9JTlRfT0ZfSU5URVJFU1RfS0lORF9WSUVXUE9JTlQQBBIiCh5QT0lOVF9PRl9JTlRFUkVTVF9LSU5EX1NIRUxURVIQBRIiCh5QT0lOVF9PRl9JTlRFUkVTVF9LSU5EX1RPSUxFVFMQBhIhCh1QT0lOVF9PRl9JTlRFUkVTVF9LSU5EX1NBRERMRRAHEiQKIFBPSU5UX09GX0lOVEVSRVNUX0tJTkRfVFJBSUxIRUFEEAgypwMKCkdlb1NlcnZpY2USSQoMU2VhcmNoUGxhY2VzEhsuZ2VvLnYxLlNlYXJjaFBsYWNlc1JlcXVlc3QaHC5nZW8udjEuU2VhcmNoUGxhY2VzUmVzcG9uc2USQwoKRmluZFRyYWlscxIZLmdlby52MS5GaW5kVHJhaWxzUmVxdWVzdBoaLmdlby52MS5GaW5kVHJhaWxzUmVzcG9uc2USYQoURmluZFBvaW50c09mSW50ZXJlc3QSIy5nZW8udjEuRmluZFBvaW50c09mSW50ZXJlc3RSZXF1ZXN0GiQuZ2VvLnYxLkZpbmRQb2ludHNPZkludGVyZXN0UmVzcG9uc2USSQoMR2V0RWxldmF0aW9uEhsuZ2VvLnYxLkdldEVsZXZhdGlvblJlcXVlc3QaHC5nZW8udjEuR2V0RWxldmF0aW9uUmVzcG9uc2USWwoSR2V0UGVyc29uYWxIZWF0bWFwEiEuZ2VvLnYxLkdldFBlcnNvbmFsSGVhdG1hcFJlcXVlc3QaIi5nZW8udjEuR2V0UGVyc29uYWxIZWF0bWFwUmVzcG9uc2VCigEKCmNvbS5nZW8udjFCCEdlb1Byb3RvUAFaOWdpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL2dlby92MTtnZW92MaICA0dYWKoCBkdlby5WMcoCBkdlb1xWMeICEkdlb1xWMVxHUEJNZXRhZGF0YeoCB0dlbzo6VjFiBnByb3RvMw");
 
 /**
  * A WGS84 coordinate.
@@ -39,6 +39,564 @@ export type LatLng = Message<"geo.v1.LatLng"> & {
  */
 export const LatLngSchema: GenMessage<LatLng> = /*@__PURE__*/
   messageDesc(file_geo_v1_geo, 0);
+
+/**
+ * A rectangular area on the map.
+ *
+ * @generated from message geo.v1.BoundingBox
+ */
+export type BoundingBox = Message<"geo.v1.BoundingBox"> & {
+  /**
+   * Southern edge latitude in decimal degrees.
+   *
+   * @generated from field: double south = 1;
+   */
+  south: number;
+
+  /**
+   * Western edge longitude in decimal degrees.
+   *
+   * @generated from field: double west = 2;
+   */
+  west: number;
+
+  /**
+   * Northern edge latitude in decimal degrees.
+   *
+   * @generated from field: double north = 3;
+   */
+  north: number;
+
+  /**
+   * Eastern edge longitude in decimal degrees.
+   *
+   * @generated from field: double east = 4;
+   */
+  east: number;
+};
+
+/**
+ * Describes the message geo.v1.BoundingBox.
+ * Use `create(BoundingBoxSchema)` to create a new message.
+ */
+export const BoundingBoxSchema: GenMessage<BoundingBox> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 1);
+
+/**
+ * @generated from message geo.v1.SearchPlacesRequest
+ */
+export type SearchPlacesRequest = Message<"geo.v1.SearchPlacesRequest"> & {
+  /**
+   * Free text search query.
+   *
+   * @generated from field: string query = 1;
+   */
+  query: string;
+
+  /**
+   * Maximum number of results. Defaults to 5, maximum 20.
+   *
+   * @generated from field: int32 limit = 2;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message geo.v1.SearchPlacesRequest.
+ * Use `create(SearchPlacesRequestSchema)` to create a new message.
+ */
+export const SearchPlacesRequestSchema: GenMessage<SearchPlacesRequest> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 2);
+
+/**
+ * A place found by a search.
+ *
+ * @generated from message geo.v1.Place
+ */
+export type Place = Message<"geo.v1.Place"> & {
+  /**
+   * The full display name of the place.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * The location of the place.
+   *
+   * @generated from field: geo.v1.LatLng location = 2;
+   */
+  location?: LatLng | undefined;
+
+  /**
+   * The OpenStreetMap category of the place, e.g. "natural" or "highway".
+   *
+   * @generated from field: string category = 3;
+   */
+  category: string;
+
+  /**
+   * The OpenStreetMap type of the place, e.g. "peak" or "trailhead".
+   *
+   * @generated from field: string type = 4;
+   */
+  type: string;
+
+  /**
+   * The extent of the place, if known.
+   *
+   * @generated from field: geo.v1.BoundingBox bounds = 5;
+   */
+  bounds?: BoundingBox | undefined;
+};
+
+/**
+ * Describes the message geo.v1.Place.
+ * Use `create(PlaceSchema)` to create a new message.
+ */
+export const PlaceSchema: GenMessage<Place> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 3);
+
+/**
+ * @generated from message geo.v1.SearchPlacesResponse
+ */
+export type SearchPlacesResponse = Message<"geo.v1.SearchPlacesResponse"> & {
+  /**
+   * The places found, most relevant first.
+   *
+   * @generated from field: repeated geo.v1.Place places = 1;
+   */
+  places: Place[];
+};
+
+/**
+ * Describes the message geo.v1.SearchPlacesResponse.
+ * Use `create(SearchPlacesResponseSchema)` to create a new message.
+ */
+export const SearchPlacesResponseSchema: GenMessage<SearchPlacesResponse> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 4);
+
+/**
+ * @generated from message geo.v1.FindTrailsRequest
+ */
+export type FindTrailsRequest = Message<"geo.v1.FindTrailsRequest"> & {
+  /**
+   * The center of the search area.
+   *
+   * @generated from field: geo.v1.LatLng center = 1;
+   */
+  center?: LatLng | undefined;
+
+  /**
+   * The search radius in meters. Defaults to 3000, maximum 15000.
+   *
+   * @generated from field: double radius_meters = 2;
+   */
+  radiusMeters: number;
+
+  /**
+   * Maximum number of trails to return. Defaults to 50, maximum 500.
+   *
+   * @generated from field: int32 limit = 3;
+   */
+  limit: number;
+
+  /**
+   * Include the geometry of each trail. Increases the response size
+   * significantly; leave unset unless the coordinates are needed.
+   *
+   * @generated from field: bool include_geometry = 4;
+   */
+  includeGeometry: boolean;
+};
+
+/**
+ * Describes the message geo.v1.FindTrailsRequest.
+ * Use `create(FindTrailsRequestSchema)` to create a new message.
+ */
+export const FindTrailsRequestSchema: GenMessage<FindTrailsRequest> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 5);
+
+/**
+ * A trail is a single OpenStreetMap way, such as a path or track.
+ *
+ * @generated from message geo.v1.Trail
+ */
+export type Trail = Message<"geo.v1.Trail"> & {
+  /**
+   * The OpenStreetMap way ID.
+   *
+   * @generated from field: string osm_id = 1;
+   */
+  osmId: string;
+
+  /**
+   * The name of the trail, if it has one.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * The OpenStreetMap highway type: path, footway, track, bridleway, steps,
+   * cycleway, etc.
+   *
+   * @generated from field: string highway = 3;
+   */
+  highway: string;
+
+  /**
+   * The surface, e.g. dirt, gravel, asphalt, rock. Empty if unknown.
+   *
+   * @generated from field: string surface = 4;
+   */
+  surface: string;
+
+  /**
+   * The SAC hiking difficulty scale, e.g. hiking, mountain_hiking,
+   * demanding_mountain_hiking, alpine_hiking. Empty if unknown.
+   *
+   * @generated from field: string sac_scale = 5;
+   */
+  sacScale: string;
+
+  /**
+   * The classified terrain of the trail.
+   *
+   * @generated from field: geo.v1.Terrain terrain = 6;
+   */
+  terrain: Terrain;
+
+  /**
+   * Length of the trail inside the search area, in meters.
+   *
+   * @generated from field: double length_meters = 7;
+   */
+  lengthMeters: number;
+
+  /**
+   * The first point of the trail.
+   *
+   * @generated from field: geo.v1.LatLng start = 8;
+   */
+  start?: LatLng | undefined;
+
+  /**
+   * The last point of the trail.
+   *
+   * @generated from field: geo.v1.LatLng end = 9;
+   */
+  end?: LatLng | undefined;
+
+  /**
+   * The point of the trail closest to the search center.
+   *
+   * @generated from field: geo.v1.LatLng nearest_point = 10;
+   */
+  nearestPoint?: LatLng | undefined;
+
+  /**
+   * Distance from the search center to the nearest point, in meters.
+   *
+   * @generated from field: double distance_from_center_meters = 11;
+   */
+  distanceFromCenterMeters: number;
+
+  /**
+   * The trail geometry. Only set if include_geometry was set.
+   *
+   * @generated from field: repeated geo.v1.LatLng geometry = 12;
+   */
+  geometry: LatLng[];
+};
+
+/**
+ * Describes the message geo.v1.Trail.
+ * Use `create(TrailSchema)` to create a new message.
+ */
+export const TrailSchema: GenMessage<Trail> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 6);
+
+/**
+ * @generated from message geo.v1.FindTrailsResponse
+ */
+export type FindTrailsResponse = Message<"geo.v1.FindTrailsResponse"> & {
+  /**
+   * The trails found.
+   *
+   * @generated from field: repeated geo.v1.Trail trails = 1;
+   */
+  trails: Trail[];
+};
+
+/**
+ * Describes the message geo.v1.FindTrailsResponse.
+ * Use `create(FindTrailsResponseSchema)` to create a new message.
+ */
+export const FindTrailsResponseSchema: GenMessage<FindTrailsResponse> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 7);
+
+/**
+ * @generated from message geo.v1.FindPointsOfInterestRequest
+ */
+export type FindPointsOfInterestRequest = Message<"geo.v1.FindPointsOfInterestRequest"> & {
+  /**
+   * The center of the search area.
+   *
+   * @generated from field: geo.v1.LatLng center = 1;
+   */
+  center?: LatLng | undefined;
+
+  /**
+   * The search radius in meters. Defaults to 3000, maximum 15000.
+   *
+   * @generated from field: double radius_meters = 2;
+   */
+  radiusMeters: number;
+
+  /**
+   * The kinds of points to find. Defaults to all kinds.
+   *
+   * @generated from field: repeated geo.v1.PointOfInterestKind kinds = 3;
+   */
+  kinds: PointOfInterestKind[];
+
+  /**
+   * Maximum number of results. Defaults to 100, maximum 500.
+   *
+   * @generated from field: int32 limit = 4;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message geo.v1.FindPointsOfInterestRequest.
+ * Use `create(FindPointsOfInterestRequestSchema)` to create a new message.
+ */
+export const FindPointsOfInterestRequestSchema: GenMessage<FindPointsOfInterestRequest> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 8);
+
+/**
+ * A point of interest.
+ *
+ * @generated from message geo.v1.PointOfInterest
+ */
+export type PointOfInterest = Message<"geo.v1.PointOfInterest"> & {
+  /**
+   * The OpenStreetMap node ID.
+   *
+   * @generated from field: string osm_id = 1;
+   */
+  osmId: string;
+
+  /**
+   * The kind of point.
+   *
+   * @generated from field: geo.v1.PointOfInterestKind kind = 2;
+   */
+  kind: PointOfInterestKind;
+
+  /**
+   * The name of the point, if it has one.
+   *
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * The location of the point.
+   *
+   * @generated from field: geo.v1.LatLng location = 4;
+   */
+  location?: LatLng | undefined;
+
+  /**
+   * The elevation in meters, if known.
+   *
+   * @generated from field: double elevation_meters = 5;
+   */
+  elevationMeters: number;
+
+  /**
+   * Distance from the search center in meters.
+   *
+   * @generated from field: double distance_from_center_meters = 6;
+   */
+  distanceFromCenterMeters: number;
+};
+
+/**
+ * Describes the message geo.v1.PointOfInterest.
+ * Use `create(PointOfInterestSchema)` to create a new message.
+ */
+export const PointOfInterestSchema: GenMessage<PointOfInterest> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 9);
+
+/**
+ * @generated from message geo.v1.FindPointsOfInterestResponse
+ */
+export type FindPointsOfInterestResponse = Message<"geo.v1.FindPointsOfInterestResponse"> & {
+  /**
+   * The points found, nearest first.
+   *
+   * @generated from field: repeated geo.v1.PointOfInterest points = 1;
+   */
+  points: PointOfInterest[];
+};
+
+/**
+ * Describes the message geo.v1.FindPointsOfInterestResponse.
+ * Use `create(FindPointsOfInterestResponseSchema)` to create a new message.
+ */
+export const FindPointsOfInterestResponseSchema: GenMessage<FindPointsOfInterestResponse> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 10);
+
+/**
+ * @generated from message geo.v1.GetElevationRequest
+ */
+export type GetElevationRequest = Message<"geo.v1.GetElevationRequest"> & {
+  /**
+   * The points to look up. Maximum 100.
+   *
+   * @generated from field: repeated geo.v1.LatLng points = 1;
+   */
+  points: LatLng[];
+};
+
+/**
+ * Describes the message geo.v1.GetElevationRequest.
+ * Use `create(GetElevationRequestSchema)` to create a new message.
+ */
+export const GetElevationRequestSchema: GenMessage<GetElevationRequest> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 11);
+
+/**
+ * @generated from message geo.v1.GetElevationResponse
+ */
+export type GetElevationResponse = Message<"geo.v1.GetElevationResponse"> & {
+  /**
+   * The elevation of each point in meters, in the same order as the request.
+   *
+   * @generated from field: repeated double elevations_meters = 1;
+   */
+  elevationsMeters: number[];
+};
+
+/**
+ * Describes the message geo.v1.GetElevationResponse.
+ * Use `create(GetElevationResponseSchema)` to create a new message.
+ */
+export const GetElevationResponseSchema: GenMessage<GetElevationResponse> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 12);
+
+/**
+ * @generated from message geo.v1.GetPersonalHeatmapRequest
+ */
+export type GetPersonalHeatmapRequest = Message<"geo.v1.GetPersonalHeatmapRequest"> & {
+  /**
+   * The area to aggregate.
+   *
+   * @generated from field: geo.v1.BoundingBox bounds = 1;
+   */
+  bounds?: BoundingBox | undefined;
+
+  /**
+   * The size of each grid cell in meters. Defaults to 100, minimum 25.
+   *
+   * @generated from field: double cell_size_meters = 2;
+   */
+  cellSizeMeters: number;
+
+  /**
+   * Only include activities that started on or after this date (YYYY-MM-DD).
+   *
+   * @generated from field: string start_date = 3;
+   */
+  startDate: string;
+
+  /**
+   * Only include activities that started on or before this date (YYYY-MM-DD).
+   *
+   * @generated from field: string end_date = 4;
+   */
+  endDate: string;
+
+  /**
+   * Maximum number of cells to return, highest count first. Defaults to 2000,
+   * maximum 20000.
+   *
+   * @generated from field: int32 limit = 5;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message geo.v1.GetPersonalHeatmapRequest.
+ * Use `create(GetPersonalHeatmapRequestSchema)` to create a new message.
+ */
+export const GetPersonalHeatmapRequestSchema: GenMessage<GetPersonalHeatmapRequest> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 13);
+
+/**
+ * A grid cell in a heatmap.
+ *
+ * @generated from message geo.v1.HeatmapCell
+ */
+export type HeatmapCell = Message<"geo.v1.HeatmapCell"> & {
+  /**
+   * The center of the cell.
+   *
+   * @generated from field: geo.v1.LatLng center = 1;
+   */
+  center?: LatLng | undefined;
+
+  /**
+   * The number of distinct activities that passed through the cell.
+   *
+   * @generated from field: int32 activity_count = 2;
+   */
+  activityCount: number;
+};
+
+/**
+ * Describes the message geo.v1.HeatmapCell.
+ * Use `create(HeatmapCellSchema)` to create a new message.
+ */
+export const HeatmapCellSchema: GenMessage<HeatmapCell> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 14);
+
+/**
+ * @generated from message geo.v1.GetPersonalHeatmapResponse
+ */
+export type GetPersonalHeatmapResponse = Message<"geo.v1.GetPersonalHeatmapResponse"> & {
+  /**
+   * The cells with at least one activity, highest count first.
+   *
+   * @generated from field: repeated geo.v1.HeatmapCell cells = 1;
+   */
+  cells: HeatmapCell[];
+
+  /**
+   * The size of each cell in meters.
+   *
+   * @generated from field: double cell_size_meters = 2;
+   */
+  cellSizeMeters: number;
+
+  /**
+   * The number of activities that intersected the bounds.
+   *
+   * @generated from field: int32 activity_count = 3;
+   */
+  activityCount: number;
+};
+
+/**
+ * Describes the message geo.v1.GetPersonalHeatmapResponse.
+ * Use `create(GetPersonalHeatmapResponseSchema)` to create a new message.
+ */
+export const GetPersonalHeatmapResponseSchema: GenMessage<GetPersonalHeatmapResponse> = /*@__PURE__*/
+  messageDesc(file_geo_v1_geo, 15);
 
 /**
  * Terrain is a coarse classification of the surface underfoot.
@@ -85,4 +643,147 @@ export enum Terrain {
  */
 export const TerrainSchema: GenEnum<Terrain> = /*@__PURE__*/
   enumDesc(file_geo_v1_geo, 0);
+
+/**
+ * PointOfInterestKind is the kind of a point of interest.
+ *
+ * @generated from enum geo.v1.PointOfInterestKind
+ */
+export enum PointOfInterestKind {
+  /**
+   * @generated from enum value: POINT_OF_INTEREST_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * A summit or peak.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_PEAK = 1;
+   */
+  PEAK = 1,
+
+  /**
+   * Drinking water, a spring or a water tap.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_WATER = 2;
+   */
+  WATER = 2,
+
+  /**
+   * A car park.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_PARKING = 3;
+   */
+  PARKING = 3,
+
+  /**
+   * A viewpoint.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_VIEWPOINT = 4;
+   */
+  VIEWPOINT = 4,
+
+  /**
+   * A shelter, hut or alpine hut.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_SHELTER = 5;
+   */
+  SHELTER = 5,
+
+  /**
+   * Public toilets.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_TOILETS = 6;
+   */
+  TOILETS = 6,
+
+  /**
+   * A mountain pass or saddle.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_SADDLE = 7;
+   */
+  SADDLE = 7,
+
+  /**
+   * A marked trailhead.
+   *
+   * @generated from enum value: POINT_OF_INTEREST_KIND_TRAILHEAD = 8;
+   */
+  TRAILHEAD = 8,
+}
+
+/**
+ * Describes the enum geo.v1.PointOfInterestKind.
+ */
+export const PointOfInterestKindSchema: GenEnum<PointOfInterestKind> = /*@__PURE__*/
+  enumDesc(file_geo_v1_geo, 1);
+
+/**
+ * GeoService provides tools for exploring the area around a location. Map data
+ * comes from OpenStreetMap, elevation data from the Copernicus DEM (via
+ * Open-Meteo), and the heatmap from the user's own synced activities. Use these
+ * tools to find trails, peaks, water sources and the user's familiar areas
+ * before designing a route with the RouteService.
+ *
+ * @generated from service geo.v1.GeoService
+ */
+export const GeoService: GenService<{
+  /**
+   * Geocode a free text query (e.g. "Mount Tamalpais", "Chamonix" or
+   * "Marin Headlands trailhead") into candidate places with coordinates.
+   *
+   * @generated from rpc geo.v1.GeoService.SearchPlaces
+   */
+  searchPlaces: {
+    methodKind: "unary";
+    input: typeof SearchPlacesRequestSchema;
+    output: typeof SearchPlacesResponseSchema;
+  },
+  /**
+   * Find footpaths, tracks and trails within a radius of a point. Results are
+   * OpenStreetMap ways with their name, type, surface and difficulty, sorted by
+   * length, longest first.
+   *
+   * @generated from rpc geo.v1.GeoService.FindTrails
+   */
+  findTrails: {
+    methodKind: "unary";
+    input: typeof FindTrailsRequestSchema;
+    output: typeof FindTrailsResponseSchema;
+  },
+  /**
+   * Find points of interest useful for trail running, such as peaks, water
+   * sources, parking, viewpoints and shelters, within a radius of a point.
+   *
+   * @generated from rpc geo.v1.GeoService.FindPointsOfInterest
+   */
+  findPointsOfInterest: {
+    methodKind: "unary";
+    input: typeof FindPointsOfInterestRequestSchema;
+    output: typeof FindPointsOfInterestResponseSchema;
+  },
+  /**
+   * Look up the ground elevation of up to 100 points.
+   *
+   * @generated from rpc geo.v1.GeoService.GetElevation
+   */
+  getElevation: {
+    methodKind: "unary";
+    input: typeof GetElevationRequestSchema;
+    output: typeof GetElevationResponseSchema;
+  },
+  /**
+   * Aggregate the user's own GPS tracks from synced activities into a grid of
+   * cells inside a bounding box. Cells with a high count are places the user
+   * runs often. Useful for finding familiar trails and areas.
+   *
+   * @generated from rpc geo.v1.GeoService.GetPersonalHeatmap
+   */
+  getPersonalHeatmap: {
+    methodKind: "unary";
+    input: typeof GetPersonalHeatmapRequestSchema;
+    output: typeof GetPersonalHeatmapResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_geo_v1_geo, 0);
 

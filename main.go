@@ -23,6 +23,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
@@ -34,6 +35,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
@@ -266,6 +268,7 @@ func run(
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
+	geoService := geosvc.NewService(log, mapData, activityRepo)
 	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, filepath.Join(os.TempDir(), "trail-tools-dem")))
 	defer importRunner.Wait()
 	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
@@ -282,6 +285,7 @@ func run(
 		func() (string, http.Handler) { return activitiesv1connect.NewActivityServiceHandler(activityService) },
 		func() (string, http.Handler) { return stravav1connect.NewStravaServiceHandler(stravaService) },
 		func() (string, http.Handler) { return routesv1connect.NewRouteServiceHandler(routeService) },
+		func() (string, http.Handler) { return geov1connect.NewGeoServiceHandler(geoService) },
 		func() (string, http.Handler) { return routingv1connect.NewMapDataServiceHandler(mapDataService) },
 	} {
 		path, handler := register()
