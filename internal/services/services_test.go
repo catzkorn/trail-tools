@@ -5,10 +5,13 @@ package services_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -16,12 +19,17 @@ import (
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
+	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -37,6 +45,8 @@ type env struct {
 	userID     pgtype.UUID
 	token      string
 	srv        *httptest.Server
+	mapData    *fakeMapData
+	router     *fakeRouter
 	activities *activities.Repository
 	syncer     *stravasvc.Syncer
 	strava     *fakeStrava
@@ -44,6 +54,7 @@ type env struct {
 	users      usersv1connect.UserServiceClient
 	activity   activitiesv1connect.ActivityServiceClient
 	stravaAPI  stravav1connect.StravaServiceClient
+	routes     routesv1connect.RouteServiceClient
 	mapDataAPI routingv1connect.MapDataServiceClient
 	imports    *fakeImportRunner
 }
@@ -61,7 +72,11 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := &env{t: t, db: db, activities: activityRepo, strava: newFakeStrava()}
+	routeRepo, err := routes.NewRepository(log, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := &env{t: t, db: db, mapData: &fakeMapData{}, router: &fakeRouter{}, activities: activityRepo, strava: newFakeStrava()}
 	e.userID = storetest.NewUser(t, db)
 	_, e.token, err = userRepo.CreateAPIToken(ctx, e.userID, "test")
 	if err != nil {
@@ -82,12 +97,15 @@ func newEnv(t *testing.T) *env {
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil)
+	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 
 	mux := http.NewServeMux()
 	mux.Handle(usersv1connect.NewUserServiceHandler(userService))
 	mux.Handle(authv1connect.NewAuthServiceHandler(authService))
 	mux.Handle(activitiesv1connect.NewActivityServiceHandler(activityService))
 	mux.Handle(stravav1connect.NewStravaServiceHandler(stravaService))
+	mux.Handle(routesv1connect.NewRouteServiceHandler(routeService))
+	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
 	e.imports = &fakeImportRunner{}
 	mux.Handle(routingv1connect.NewMapDataServiceHandler(mapdatasvc.NewService(log, db, fakeExtracts{}, e.imports)))
 	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux)
@@ -102,6 +120,7 @@ func newEnv(t *testing.T) *env {
 	e.users = usersv1connect.NewUserServiceClient(client, e.srv.URL, opts)
 	e.activity = activitiesv1connect.NewActivityServiceClient(client, e.srv.URL, opts)
 	e.stravaAPI = stravav1connect.NewStravaServiceClient(client, e.srv.URL, opts)
+	e.routes = routesv1connect.NewRouteServiceClient(client, e.srv.URL, opts)
 	e.mapDataAPI = routingv1connect.NewMapDataServiceClient(client, e.srv.URL, opts)
 	return e
 }
@@ -125,4 +144,70 @@ func wantCode(t *testing.T, err error, code connect.Code) {
 	if connect.CodeOf(err) != code {
 		t.Fatalf("got error %v, want code %v", err, code)
 	}
+}
+
+// fakeRouter routes legs as straight lines with 11 points, where the
+// elevation is 1000 times the latitude and the terrain is trail. Points north
+// of 80 degrees can't be routed. It records the preferred paths of the last
+// request.
+type fakeRouter struct {
+	mu         sync.Mutex
+	routeCalls int
+	prefer     [][]geo.Point
+}
+
+// fakeRoutePath returns the points of a path that bows east by bow degrees
+// in the middle.
+func fakeRoutePath(from, to geo.Point, bow float64) []geo.Point {
+	var points []geo.Point
+	for i := range 11 {
+		f := float64(i) / 10
+		p := geo.Interpolate(from, to, f)
+		p.Lng += bow * math.Sin(math.Pi*f)
+		p.Ele = p.Lat * 1000
+		points = append(points, p)
+	}
+	return points
+}
+
+func (f *fakeRouter) Route(_ context.Context, req routing.Request) (*routing.Path, error) {
+	f.mu.Lock()
+	f.routeCalls++
+	f.prefer = req.Prefer
+	f.mu.Unlock()
+	if req.From.Lat > 80 {
+		return nil, fmt.Errorf("%w: there is no mapped path near the point", routing.ErrNotRoutable)
+	}
+	path := &routing.Path{Points: fakeRoutePath(req.From, req.To, 0)}
+	for range path.Points {
+		path.Terrains = append(path.Terrains, geo.TerrainTrail)
+	}
+	path.Terrains[10] = geo.TerrainUnknown
+	return path, nil
+}
+
+func (f *fakeRouter) routeCallCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.routeCalls
+}
+
+func (f *fakeRouter) lastPrefer() [][]geo.Point {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.prefer
+}
+
+// fakeMapData looks up elevations as 1000 times the latitude.
+type fakeMapData struct{}
+
+func (f *fakeMapData) FillElevations(_ context.Context, points []geo.Point, _ int) error {
+	for i := range points {
+		points[i].Ele = points[i].Lat * 1000
+	}
+	return nil
+}
+
+func approx(a, b, tolerance float64) bool {
+	return math.Abs(a-b) <= tolerance
 }

@@ -114,6 +114,59 @@ func (e PasskeyCeremony) Valid() bool {
 	return false
 }
 
+type RouteSource string
+
+const (
+	RouteSourceWaypoints RouteSource = "waypoints"
+	RouteSourceGpx       RouteSource = "gpx"
+	RouteSourceActivity  RouteSource = "activity"
+)
+
+func (e *RouteSource) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RouteSource(s)
+	case string:
+		*e = RouteSource(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RouteSource: %T", src)
+	}
+	return nil
+}
+
+type NullRouteSource struct {
+	RouteSource RouteSource
+	Valid       bool // Valid is true if RouteSource is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRouteSource) Scan(value interface{}) error {
+	if value == nil {
+		ns.RouteSource, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RouteSource.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRouteSource) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RouteSource), nil
+}
+
+func (e RouteSource) Valid() bool {
+	switch e {
+	case RouteSourceWaypoints,
+		RouteSourceGpx,
+		RouteSourceActivity:
+		return true
+	}
+	return false
+}
+
 type RoutingImportState string
 
 const (
@@ -164,6 +217,61 @@ func (e RoutingImportState) Valid() bool {
 		RoutingImportStateRunning,
 		RoutingImportStateDone,
 		RoutingImportStateFailed:
+		return true
+	}
+	return false
+}
+
+type RoutingProfile string
+
+const (
+	RoutingProfileTrail    RoutingProfile = "trail"
+	RoutingProfileShortest RoutingProfile = "shortest"
+	RoutingProfileStraight RoutingProfile = "straight"
+	RoutingProfileHeatmap  RoutingProfile = "heatmap"
+)
+
+func (e *RoutingProfile) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RoutingProfile(s)
+	case string:
+		*e = RoutingProfile(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RoutingProfile: %T", src)
+	}
+	return nil
+}
+
+type NullRoutingProfile struct {
+	RoutingProfile RoutingProfile
+	Valid          bool // Valid is true if RoutingProfile is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRoutingProfile) Scan(value interface{}) error {
+	if value == nil {
+		ns.RoutingProfile, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RoutingProfile.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRoutingProfile) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RoutingProfile), nil
+}
+
+func (e RoutingProfile) Valid() bool {
+	switch e {
+	case RoutingProfileTrail,
+		RoutingProfileShortest,
+		RoutingProfileStraight,
+		RoutingProfileHeatmap:
 		return true
 	}
 	return false
@@ -297,6 +405,20 @@ type PasskeyUser struct {
 	ID         pgtype.UUID
 	UserHandle []byte
 	Name       string
+}
+
+type Route struct {
+	ID          pgtype.UUID
+	UserID      pgtype.UUID
+	Name        string
+	Description string
+	Profile     RoutingProfile
+	Source      RouteSource
+	Waypoints   []byte
+	Legs        []byte
+	Stats       []byte
+	CreateTime  pgtype.Timestamptz
+	UpdateTime  pgtype.Timestamptz
 }
 
 type RoutingEdge struct {
