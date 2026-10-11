@@ -156,6 +156,8 @@ type RacePlan struct {
 	Sections []byte
 	// Empty if the plan is not shared.
 	ShareToken string
+	// The race day progress as an opaque JSON document, nil if there is none.
+	RaceDay    []byte
 	CreateTime time.Time
 	UpdateTime time.Time
 }
@@ -254,6 +256,20 @@ func (r *Repository) setShareToken(ctx context.Context, userID, planID pgtype.UU
 	return planFromDB(plan), nil
 }
 
+// SetRaceDay replaces the race day progress of a race plan. The caller must
+// check the plan may be updated, e.g. that it belongs to the user or the
+// share token matches.
+func (r *Repository) SetRaceDay(ctx context.Context, planID pgtype.UUID, raceDay []byte) (*RacePlan, error) {
+	plan, err := r.q.SetRacePlanRaceDay(ctx, &internal.SetRacePlanRaceDayParams{ID: planID, RaceDay: raceDay})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to set race day: %w", err)
+	}
+	return planFromDB(plan), nil
+}
+
 // DeleteRacePlan deletes one of the user's race plans.
 func (r *Repository) DeleteRacePlan(ctx context.Context, userID, planID pgtype.UUID) error {
 	n, err := r.q.DeleteRacePlan(ctx, &internal.DeleteRacePlanParams{ID: planID, UserID: userID})
@@ -303,6 +319,7 @@ func planFromDB(p *internal.RacePlan) *RacePlan {
 		RaceID:     p.RaceID,
 		Sections:   p.Sections,
 		ShareToken: p.ShareToken.String,
+		RaceDay:    p.RaceDay,
 		CreateTime: p.CreateTime.Time,
 		UpdateTime: p.UpdateTime.Time,
 	}

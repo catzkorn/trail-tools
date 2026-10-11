@@ -429,6 +429,7 @@ type RacePlan struct {
 	ShareToken pgtype.Text
 	CreateTime pgtype.Timestamptz
 	UpdateTime pgtype.Timestamptz
+	RaceDay    []byte
 }
 
 type Route struct {

@@ -28,6 +28,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
+	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -277,7 +278,7 @@ func run(
 	routeService := route.NewService(log, routeRepo, activityRepo, mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
-	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, baseURL)
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()

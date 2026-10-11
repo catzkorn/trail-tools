@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package races.v1;
 
+import "geo/v1/geo.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "races/v1/races.proto";
@@ -17,7 +18,11 @@ import "routes/v1/routes.proto";
 // and segment elevation from the race course, and checks the plan against a
 // list of rules. Work through the rules until they all pass.
 //
-// Plans can be shared with others, such as crew, via a share link.
+// Plans can be shared with others via a share link. On race day, crew can use
+// the share link to follow the runner: link the runner's Garmin LiveTrack
+// session and record arrival and departure times at checkpoints, and the
+// server re-estimates the arrival times at the remaining checkpoints from the
+// runner's pace relative to the plan.
 service RacePlanService {
   // Create a race plan for a race. The plan is seeded with the race's
   // details and empty entries for the core contingency scenarios.
@@ -40,6 +45,20 @@ service RacePlanService {
   // Get a shared race plan by its share token. Does not require
   // authentication.
   rpc GetSharedRacePlan(GetSharedRacePlanRequest) returns (GetSharedRacePlanResponse);
+  // Get the live race day status of a plan: the recorded checkpoint times,
+  // the runner's latest LiveTrack position and estimated arrival times at
+  // the remaining checkpoints. Identify the plan by its ID (authenticated) or
+  // its share token (unauthenticated).
+  rpc GetRaceDayStatus(GetRaceDayStatusRequest) returns (GetRaceDayStatusResponse);
+  // Update the race day data of a plan: the actual start time, the LiveTrack
+  // link and the checkpoint times. Anyone with the share link can update it,
+  // so crew can record times. Returns the updated status.
+  rpc UpdateRaceDay(UpdateRaceDayRequest) returns (UpdateRaceDayResponse);
+  // Set or clear the recorded times at a single checkpoint, leaving the
+  // other checkpoints unchanged. Use this rather than UpdateRaceDay to record
+  // times, so crew recording at different checkpoints at the same time don't
+  // overwrite each other. Returns the updated status.
+  rpc SetCheckpointSplit(SetCheckpointSplitRequest) returns (SetCheckpointSplitResponse);
 }
 
 // A race plan.
@@ -77,6 +96,9 @@ message RacePlan {
   MentalStrategy mental = 14;
   // Free text notes that don't fit anywhere else.
   string notes = 15;
+  // What happened on race day. Updated with UpdateRaceDay, not
+  // UpdateRacePlan.
+  RaceDay race_day = 16;
 }
 
 // Finish time goals, from most to least ambitious.
@@ -253,6 +275,154 @@ message MentalStrategy {
   // Notes, e.g. how to break the race down or what to think about on the
   // hardest climb.
   string notes = 2;
+}
+
+// What happened on race day, as recorded by the runner or crew.
+message RaceDay {
+  // The Garmin LiveTrack link of the runner's activity, e.g.
+  // https://livetrack.garmin.com/session/<id>/token/<token>. Empty if not
+  // linked.
+  string livetrack_url = 1;
+  // When the runner started. If unset, the start time of the LiveTrack
+  // session is used.
+  google.protobuf.Timestamp start_time = 2;
+  // The recorded checkpoint times.
+  repeated CheckpointSplit splits = 3;
+}
+
+// The recorded times at a checkpoint.
+message CheckpointSplit {
+  // The index of the checkpoint in the plan, starting at 0.
+  int32 checkpoint_index = 1;
+  // When the runner arrived at the checkpoint, if recorded.
+  google.protobuf.Timestamp arrival_time = 2;
+  // When the runner left the checkpoint, if recorded.
+  google.protobuf.Timestamp departure_time = 3;
+}
+
+// EstimateSource is what race day estimates are based on.
+enum EstimateSource {
+  ESTIMATE_SOURCE_UNSPECIFIED = 0;
+  // The race hasn't started or there is no progress yet: estimates follow
+  // the plan.
+  ESTIMATE_SOURCE_PLAN = 1;
+  // The most recent recorded checkpoint time.
+  ESTIMATE_SOURCE_CHECKPOINT = 2;
+  // The runner's latest LiveTrack position.
+  ESTIMATE_SOURCE_LIVETRACK = 3;
+}
+
+// CheckpointStatus is where the runner is relative to a checkpoint.
+enum CheckpointStatus {
+  CHECKPOINT_STATUS_UNSPECIFIED = 0;
+  // The runner hasn't reached the checkpoint yet.
+  CHECKPOINT_STATUS_UPCOMING = 1;
+  // The runner is at the checkpoint.
+  CHECKPOINT_STATUS_ARRIVED = 2;
+  // The runner has left the checkpoint.
+  CHECKPOINT_STATUS_DEPARTED = 3;
+}
+
+// The runner's latest position from Garmin LiveTrack.
+message LiveTrackPosition {
+  // When the position was recorded.
+  google.protobuf.Timestamp time = 1;
+  // The location.
+  geo.v1.LatLng location = 2;
+  // The elevation in meters, if known.
+  double elevation_meters = 4;
+  // The distance recorded by the watch in meters.
+  double distance_meters = 5;
+  // The position matched to the race course, as a distance from the start in
+  // meters. Equal to distance_meters if the race has no course.
+  double course_distance_meters = 6;
+  // The elapsed time of the activity in seconds.
+  int32 elapsed_seconds = 7;
+  // The current speed in meters per second.
+  double speed_mps = 8;
+  // Whether the activity has ended.
+  bool ended = 9;
+}
+
+// The estimated and recorded times at a checkpoint.
+message CheckpointEstimate {
+  // The index of the checkpoint in the plan.
+  int32 checkpoint_index = 1;
+  // The name of the checkpoint.
+  string name = 2;
+  // The distance of the checkpoint from the start in meters.
+  double distance_meters = 13;
+  // Where the runner is relative to the checkpoint.
+  CheckpointStatus status = 3;
+  // The arrival time: recorded if arrival_recorded is set, otherwise
+  // estimated.
+  google.protobuf.Timestamp arrival_time = 4;
+  // Whether the arrival time was recorded rather than estimated.
+  bool arrival_recorded = 5;
+  // The departure time: recorded if departure_recorded is set, otherwise
+  // estimated.
+  google.protobuf.Timestamp departure_time = 6;
+  // Whether the departure time was recorded rather than estimated.
+  bool departure_recorded = 7;
+  // The arrival time according to the plan, from the actual start time.
+  google.protobuf.Timestamp planned_arrival_time = 8;
+  // The difference between the arrival time and the planned arrival time in
+  // seconds. Positive if behind the plan.
+  int32 delay_seconds = 9;
+  // The cutoff time, if the checkpoint has a cutoff.
+  google.protobuf.Timestamp cutoff_time = 10;
+  // The time between the arrival time and the cutoff in seconds. Negative
+  // if the cutoff is missed.
+  int32 cutoff_buffer_seconds = 11;
+  // Whether the runner was expected at the checkpoint but hasn't been
+  // recorded there yet.
+  bool overdue = 12;
+}
+
+// StartTimeSource is where the start time used for estimates comes from.
+enum StartTimeSource {
+  START_TIME_SOURCE_UNSPECIFIED = 0;
+  // The start time was recorded in the race day data.
+  START_TIME_SOURCE_RECORDED = 1;
+  // The start time comes from the LiveTrack activity.
+  START_TIME_SOURCE_LIVETRACK = 2;
+}
+
+// The live status of a race.
+message RaceDayStatus {
+  // The recorded race day data.
+  RaceDay race_day = 1;
+  // The start time used for estimates: recorded, or from LiveTrack. Unset if
+  // unknown, in which case there are no estimates.
+  google.protobuf.Timestamp start_time = 2;
+  // Where the start time comes from. Unspecified if there is no start time.
+  StartTimeSource start_time_source = 11;
+  // The latest LiveTrack position, if a LiveTrack session is linked and has
+  // data.
+  LiveTrackPosition livetrack = 3;
+  // Why the LiveTrack position couldn't be fetched, if it failed.
+  string livetrack_error = 4;
+  // What the estimates are based on.
+  EstimateSource estimate_source = 5;
+  // The runner's moving pace relative to the plan, e.g. 1.1 means 10% slower
+  // than planned. 1 if there is no progress yet.
+  double pace_factor = 6;
+  // The distance covered at the latest known progress (a recorded checkpoint
+  // or LiveTrack position), in meters.
+  double distance_meters = 7;
+  // The estimated distance covered now, in meters, extrapolated from the
+  // latest known progress and the estimates.
+  double estimated_distance_meters = 12;
+  // The runner's estimated location now: the LiveTrack position if it is
+  // the latest known progress, otherwise the point on the course at
+  // estimated_distance_meters. Unset if unknown.
+  geo.v1.LatLng estimated_location = 13;
+  // The estimates for each checkpoint, in course order.
+  repeated CheckpointEstimate checkpoints = 8;
+  // The estimated finish time.
+  google.protobuf.Timestamp estimated_finish_time = 9;
+  // When the status was computed.
+  google.protobuf.Timestamp status_time = 10;
 }
 
 // The computed analysis of a checkpoint.
@@ -451,4 +621,57 @@ message GetSharedRacePlanResponse {
   // The race course path, if the race has a course route, downsampled for
   // display.
   repeated routes.v1.RoutePoint course = 4;
+}
+
+message GetRaceDayStatusRequest {
+  // The plan to get the status of. Exactly one must be set.
+  oneof plan {
+    // The ID of the plan. Requires authentication.
+    string plan_id = 1;
+    // The share token of the plan.
+    string share_token = 2;
+  }
+}
+
+message GetRaceDayStatusResponse {
+  // The race day status.
+  RaceDayStatus status = 1;
+}
+
+message UpdateRaceDayRequest {
+  // The plan to update. Exactly one must be set.
+  oneof plan {
+    // The ID of the plan. Requires authentication.
+    string plan_id = 1;
+    // The share token of the plan.
+    string share_token = 2;
+  }
+  // The race day data.
+  RaceDay race_day = 3;
+  // The fields to update: "livetrack_url", "start_time" or "splits". If
+  // empty, all fields are replaced.
+  google.protobuf.FieldMask update_mask = 4;
+}
+
+message UpdateRaceDayResponse {
+  // The updated race day status.
+  RaceDayStatus status = 1;
+}
+
+message SetCheckpointSplitRequest {
+  // The plan to update. Exactly one must be set.
+  oneof plan {
+    // The ID of the plan. Requires authentication.
+    string plan_id = 1;
+    // The share token of the plan.
+    string share_token = 2;
+  }
+  // The times at the checkpoint, identified by checkpoint_index. Unset times
+  // are cleared.
+  CheckpointSplit split = 3;
+}
+
+message SetCheckpointSplitResponse {
+  // The updated race day status.
+  RaceDayStatus status = 1;
 }

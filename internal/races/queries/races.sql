@@ -89,3 +89,9 @@ where id = $1 and user_id = $2;
 -- name: GetRaceByID :one
 select * from races
 where id = $1;
+
+-- name: SetRacePlanRaceDay :one
+update race_plans set
+  race_day = $2
+where id = $1
+returning *;
