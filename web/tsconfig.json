@@ -13,7 +13,14 @@
       "gen/*": ["./gen/*"],
       "helpers/*": ["./helpers/*"],
       "pages/*": ["./pages/*"]
-    }
+    },
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "allowUnreachableCode": false
   },
   "exclude": ["node_modules", "dist"]
 }
