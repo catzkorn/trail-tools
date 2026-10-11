@@ -54,3 +54,28 @@ To view available make targets, run:
 ```sh
 $ make help
 ```
+
+### Routing data
+
+Routes are routed in Postgres with [PostGIS](https://postgis.net) and
+[pgRouting](https://pgrouting.org), on the foot accessible ways of
+OpenStreetMap data imported into the database. `make db` builds a Postgres
+image with both extensions.
+
+Import the areas you run in from an OpenStreetMap extract, e.g. from
+[Geofabrik](https://download.geofabrik.de):
+
+```sh
+$ make import-osm REGION=liechtenstein PBF=https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf
+```
+
+Use `BOUNDS=south,west,north,east` to only import part of an extract.
+Importing a region again replaces it. Elevations come from the SRTM derived
+tiles of the [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/)
+dataset.
+
+Storage grows with the area and density of paths: all of Switzerland takes
+about 715 MB, a 100 by 100 km box of it about 230 MB and Liechtenstein about
+4.5 MB. Neon's free plan has 0.5 GB of storage. Memory grows with the area
+imported, as only the paths inside it are kept: a 100 km² area of the
+Switzerland extract peaks at under 400 MB.

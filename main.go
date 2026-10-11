@@ -115,6 +115,9 @@ var (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "import-osm" {
+		os.Exit(importOSM(os.Args[2:]))
+	}
 	flag.Parse()
 	var slogLevel slog.Level
 	if err := slogLevel.UnmarshalText([]byte(*logLevel)); err != nil {
