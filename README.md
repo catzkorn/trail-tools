@@ -5,6 +5,9 @@ for up to a year towards your goal races, design routes on a topo map, check
 the weather along a route and build an opinionated race day plan you can
 share with your crew.
 
+Everything is also exposed as an [MCP](https://modelcontextprotocol.io) server,
+so you can bring your own AI agent to do the planning.
+
 ## Features
 
 - **Training plans**: plans of up to a year with goal races, planned at the
@@ -76,6 +79,22 @@ a subscription to another server. Strava can't reach a local server, so leave
 it unset locally: new activities arrive with the periodic sync, or when you
 sync from Settings.
 
+### AI agents (MCP)
+
+The MCP server is at `http://localhost:8080/mcp` (streamable HTTP). Create an
+API token under Settings, then for example in Claude Code:
+
+```sh
+$ claude mcp add --transport http trail-tools http://localhost:8080/mcp --header "Authorization: Bearer <token>"
+```
+
+The MCP tools are generated from the Connect API at startup: every RPC is a
+tool with the same name, its input schema comes from the request message and
+its description from the proto comments. Methods annotated with
+`option (mcp.v1.method).exclude = true` (e.g. API token management) are not
+exposed. Service comments are sent to the agent as the server's instructions,
+so the proto comments are the agent's documentation; write them for an agent.
+
 ## Development
 
 To run the server with auto-rebuild of the backend, frontend and CSS, run:
@@ -95,6 +114,15 @@ To view available make targets, run:
 ```sh
 $ make help
 ```
+
+### Adding an RPC
+
+1. Add the RPC to the service in `api/<domain>/v1/*.proto`, with comments
+   describing it for both humans and agents.
+2. Run `make gen`. This generates the Go and TypeScript code and the embedded
+   descriptor set used for the MCP tool descriptions.
+3. Implement the method in `internal/services/<domain>`. It's automatically
+   exposed over MCP.
 
 ### Routing data
 

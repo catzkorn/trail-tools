@@ -31,6 +31,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/mcp"
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -156,6 +157,14 @@ func newEnv(t *testing.T) *env {
 	srv2 := connect.NewServer()
 	routingv1connect.RegisterMapDataServiceHandler(srv2, mapdatasvc.NewService(log, db, fakeExtracts{}, e.imports))
 	connecthttp.Mount(mux, srv2)
+	mcpServer, err := mcp.NewServer(log,
+		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
+		mcp.Service{Name: routesv1connect.RouteServiceName, Handler: routeService},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux.Handle("/mcp", authn.RequireUser(mcpServer.Handler()))
 	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux)
 	if err != nil {
 		t.Fatal(err)

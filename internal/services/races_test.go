@@ -2,8 +2,13 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"connectrpc.com/connect/v2"
 	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
@@ -378,4 +383,94 @@ func TestRacePlanSections(t *testing.T) {
 		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"notes"}},
 	}.Build())
 	wantCode(t, err, connect.CodeNotFound)
+}
+
+func TestMCP(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+
+	// Unauthenticated requests are rejected.
+	resp, err := e.srv.Client().Post(e.srv.URL+"/mcp", "application/json", strings.NewReader("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized || !strings.HasPrefix(resp.Header.Get("WWW-Authenticate"), "Bearer") {
+		t.Errorf("got status %d, want 401 with a challenge", resp.StatusCode)
+	}
+
+	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1.0.0"}, nil)
+	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{
+		Endpoint:   e.srv.URL + "/mcp",
+		HTTPClient: &http.Client{Transport: &bearerTransport{token: e.token}},
+	}, nil)
+	if err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	t.Cleanup(func() { session.Close() })
+	tools, err := session.ListTools(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, tool := range tools.Tools {
+		names = append(names, tool.Name)
+	}
+	for _, want := range []string{"CreateRace", "ListRaces", "PreviewRoute", "GetRouteForecast"} {
+		if !slices.Contains(names, want) {
+			t.Errorf("missing tool %s in %v", want, names)
+		}
+	}
+
+	res, err := session.CallTool(ctx, &mcp.CallToolParams{
+		Name: "CreateRace",
+		Arguments: map[string]any{
+			"race": map[string]any{"name": "Agent race", "date": "2027-01-01", "distanceMeters": 50000},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.IsError {
+		t.Fatalf("CreateRace failed: %v", res.Content[0].(*mcp.TextContent).Text)
+	}
+	// The race was created for the token's user.
+	races, err := e.races.ListRaces(ctx, racesv1.ListRacesRequest_builder{}.Build())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(races.GetRaces()) != 1 || races.GetRaces()[0].GetName() != "Agent race" {
+		t.Errorf("unexpected races %v", races.GetRaces())
+	}
+	var out struct {
+		Race struct {
+			ID string `json:"id"`
+		} `json:"race"`
+	}
+	if err := json.Unmarshal([]byte(res.Content[0].(*mcp.TextContent).Text), &out); err != nil || out.Race.ID == "" {
+		t.Errorf("unexpected tool output %v: %v", res.Content, err)
+	}
+
+	// Errors are returned to the agent so it can correct itself.
+	res, err = session.CallTool(ctx, &mcp.CallToolParams{
+		Name:      "CreateRace",
+		Arguments: map[string]any{"race": map[string]any{"name": "No date"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.IsError || !strings.Contains(res.Content[0].(*mcp.TextContent).Text, "invalid_argument") {
+		t.Errorf("expected an invalid argument tool error, got %v", res.Content)
+	}
+}
+
+type bearerTransport struct {
+	token string
+}
+
+func (b *bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("Authorization", "Bearer "+b.token)
+	return http.DefaultTransport.RoundTrip(req)
 }
