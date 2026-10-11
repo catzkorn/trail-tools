@@ -10,6 +10,9 @@ import (
 
 type User interface {
 	ID() pgtype.UUID
+	// IsAdmin returns whether the user is an administrator, who can invite
+	// new users.
+	IsAdmin() bool
 }
 
 // Repository allows storing and querying of users and related data.

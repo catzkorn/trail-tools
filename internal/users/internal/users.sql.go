@@ -12,12 +12,12 @@ import (
 )
 
 const getUser = `-- name: GetUser :one
-select id, create_time from users where id = $1
+select id, create_time, is_admin from users where id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (*User, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.CreateTime)
+	err := row.Scan(&i.ID, &i.CreateTime, &i.IsAdmin)
 	return &i, err
 }

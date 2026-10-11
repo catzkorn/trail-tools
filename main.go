@@ -22,15 +22,15 @@ import (
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
+	"github.com/catzkorn/trail-tools/internal/services/auth"
 	"github.com/catzkorn/trail-tools/internal/services/user"
-	"github.com/catzkorn/trail-tools/internal/services/webauthn"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
-	wauthn "github.com/go-webauthn/webauthn/webauthn"
 	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
 )
@@ -77,6 +77,12 @@ var (
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
 	)
+	adminBootstrapToken = flag.String(
+		"admin-bootstrap-token",
+		"",
+		"A secret that can be used as an invitation to create the first administrator,"+
+			" at /invite/<token>, while there are no administrators",
+	)
 )
 
 func main() {
@@ -102,6 +108,7 @@ func main() {
 		*tlsKeyPath,
 		*tlsCertPath,
 		*serveDir,
+		*adminBootstrapToken,
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -117,6 +124,7 @@ func run(
 	tlsKeyPath string,
 	tlsCertPath string,
 	serveDir string,
+	adminBootstrapToken string,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -155,10 +163,17 @@ func run(
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
 
+	userService := user.NewService(log)
+	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
+	if err != nil {
+		return fmt.Errorf("failed to create auth service: %w", err)
+	}
+
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
 	athletesv1connect.RegisterAthleteServiceHandler(server, athlete.NewService(log, athletes))
-	usersv1connect.RegisterUserServiceHandler(server, user.NewService(log))
+	usersv1connect.RegisterUserServiceHandler(server, userService)
+	authv1connect.RegisterAuthServiceHandler(server, authService)
 	apiMux := http.NewServeMux()
 	connecthttp.Mount(apiMux, server)
 
@@ -169,7 +184,7 @@ func run(
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
 
-	// Create the core mux. This contains both the Connect API, WebAuthn and HTML handlers.
+	// Create the core mux. This contains both the Connect API and HTML handlers.
 	// Only the Connect API endpoints (registered to apiMux) are authenticated.
 	mux := http.NewServeMux()
 	// Serve the Connect API handlers through the authn middleware
@@ -179,17 +194,6 @@ func run(
 
 	// Register the logout handler directly on the mux
 	authn.RegisterLogoutHandler(log, mux, users)
-
-	webAuthn, err := wauthn.New(&wauthn.Config{
-		RPDisplayName: "Trail tools",
-		RPID:          hostname,
-		RPOrigins:     []string{baseURL},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create webauthn: %w", err)
-	}
-	// Serve the WebAuthn handlers directly on the mux (unauthenticated)
-	webauthn.RegisterHandlers(mux, log, webAuthn, users)
 
 	// Create the FS used to serve the frontend.
 	webFs, _ := fs.Sub(web.Dist, "dist")

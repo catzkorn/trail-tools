@@ -5,6 +5,8 @@
 import { UserService } from "./users_pb";
 
 /**
+ * Get the signed in user.
+ *
  * @generated from rpc users.v1.UserService.GetCurrentUser
  */
 export const getCurrentUser = UserService.method.getCurrentUser;

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file users/v1/users.proto.
  */
 export const file_users_v1_users: GenFile = /*@__PURE__*/
-  fileDesc("ChR1c2Vycy92MS91c2Vycy5wcm90bxIIdXNlcnMudjEibAoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJEhIKCmdpdmVuX25hbWUYBCABKAkSEwoLZmFtaWx5X25hbWUYBSABKAkSEgoKYXZhdGFyX3VybBgGIAEoCSIXChVHZXRDdXJyZW50VXNlclJlcXVlc3QiNgoWR2V0Q3VycmVudFVzZXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlcjJiCgtVc2VyU2VydmljZRJTCg5HZXRDdXJyZW50VXNlchIfLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVxdWVzdBogLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVzcG9uc2VCmgEKDGNvbS51c2Vycy52MUIKVXNlcnNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi91c2Vycy92MTt1c2Vyc3YxogIDVVhYqgIIVXNlcnMuVjHKAghVc2Vyc1xWMeICFFVzZXJzXFYxXEdQQk1ldGFkYXRh6gIJVXNlcnM6OlYxYgZwcm90bzM");
+  fileDesc("ChR1c2Vycy92MS91c2Vycy5wcm90bxIIdXNlcnMudjEiewoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJEhIKCmdpdmVuX25hbWUYBCABKAkSEwoLZmFtaWx5X25hbWUYBSABKAkSEgoKYXZhdGFyX3VybBgGIAEoCRINCgVhZG1pbhgHIAEoCCIXChVHZXRDdXJyZW50VXNlclJlcXVlc3QiNgoWR2V0Q3VycmVudFVzZXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlcjJiCgtVc2VyU2VydmljZRJTCg5HZXRDdXJyZW50VXNlchIfLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVxdWVzdBogLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVzcG9uc2VCmgEKDGNvbS51c2Vycy52MUIKVXNlcnNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi91c2Vycy92MTt1c2Vyc3YxogIDVVhYqgIIVXNlcnMuVjHKAghVc2Vyc1xWMeICFFVzZXJzXFYxXEdQQk1ldGFkYXRh6gIJVXNlcnM6OlYxYgZwcm90bzM");
 
 /**
  * @generated from message users.v1.User
@@ -45,6 +45,13 @@ export type User = Message<"users.v1.User"> & {
    * @generated from field: string avatar_url = 6;
    */
   avatarUrl: string;
+
+  /**
+   * Whether the user is an administrator, who can invite new users.
+   *
+   * @generated from field: bool admin = 7;
+   */
+  admin: boolean;
 };
 
 /**
@@ -85,10 +92,14 @@ export const GetCurrentUserResponseSchema: GenMessage<GetCurrentUserResponse> = 
   messageDesc(file_users_v1_users, 2);
 
 /**
+ * UserService provides information about the signed in user.
+ *
  * @generated from service users.v1.UserService
  */
 export const UserService: GenService<{
   /**
+   * Get the signed in user.
+   *
    * @generated from rpc users.v1.UserService.GetCurrentUser
    */
   getCurrentUser: {

@@ -16,11 +16,12 @@ func (s *Service) GetCurrentUser(ctx context.Context, req *usersv1.GetCurrentUse
 		return nil, connect.NewError(connect.CodeUnauthenticated, "")
 	}
 	switch u := user.(type) {
-	case *users.WebAuthnUser:
+	case *users.PasskeyUser:
 		return usersv1.GetCurrentUserResponse_builder{
 			User: usersv1.User_builder{
-				Id:   store.UUIDToString(user.ID()),
-				Name: u.WebAuthnName(),
+				Id:    store.UUIDToString(user.ID()),
+				Name:  u.Name,
+				Admin: u.IsAdmin(),
 			}.Build(),
 		}.Build(), nil
 	default:

@@ -9,6 +9,7 @@ import (
 
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users"
+	"github.com/jackc/pgx/v5/pgtype"
 	"gitlab.com/greyxor/slogor"
 )
 
@@ -61,9 +62,19 @@ func GetUser(ctx context.Context) (users.User, bool) {
 	return user, ok
 }
 
-// SetSessionCookie is called by the auth method login handlers on successful login.
-func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time) {
-	http.SetCookie(w, &http.Cookie{
+// GetUserID gets the ID of the authenticated user, if there is one. It
+// returns false if the current request is unauthenticated.
+func GetUserID(ctx context.Context) (pgtype.UUID, bool) {
+	user, ok := GetUser(ctx)
+	if !ok {
+		return pgtype.UUID{}, false
+	}
+	return user.ID(), true
+}
+
+// SessionCookie returns the session cookie for a session.
+func SessionCookie(sessionID string, expiry time.Time) *http.Cookie {
+	return &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    sessionID,
 		MaxAge:   int(time.Until(expiry).Seconds()),
@@ -71,7 +82,7 @@ func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time)
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
-	})
+	}
 }
 
 // RegisterLogoutHandler registers a handler that logs out the user by

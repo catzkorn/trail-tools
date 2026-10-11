@@ -36,7 +36,11 @@ NODE_RUN := $(CONTAINER_BIN) run --rm \
 # Flags shared by the `run` and `watch` backend invocations.
 SERVER_FLAGS := \
 	-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
-	-log-level debug
+	-log-level debug \
+	-admin-bootstrap-token local-admin
+
+# The database tests run against. Each test creates its own database.
+TEST_DATABASE_URL := postgres://postgres:password@localhost:5432/postgres?sslmode=disable
 
 # Production asset builds, shared by the standalone targets and by `gen`.
 ESBUILD_PROD := go tool esbuild web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
@@ -86,6 +90,11 @@ buf-format:
 .PHONY: go-format
 go-format:
 	grep -L -R "^// Code generated .* DO NOT EDIT\.$$" --exclude-dir=.git --include="*.go" . | xargs go tool gofumpt -w
+
+.PHONY: test
+test: db ## Run all tests (starts db)
+	@$(WAIT_DB)
+	TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test -race ./...
 
 .PHONY: go-lint
 go-lint:

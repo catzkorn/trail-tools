@@ -40,6 +40,7 @@ var (
 
 // UserServiceClient is a client for the users.v1.UserService service.
 type UserServiceClient interface {
+	// Get the signed in user.
 	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
 }
 
@@ -51,6 +52,7 @@ func NewUserServiceClient(client *connect.Client) UserServiceClient {
 
 // UserServiceHandler is an implementation of the users.v1.UserService service.
 type UserServiceHandler interface {
+	// Get the signed in user.
 	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
 }
 
