@@ -1,9 +1,108 @@
 import { PointOfInterestKind, Terrain } from "gen/geo/v1/geo_pb";
+import { WorkoutType } from "gen/plans/v1/plans_pb";
 import { ContingencyScenario, RuleStatus } from "gen/races/v1/race_plans_pb";
 import { RacePriority } from "gen/races/v1/races_pb";
 import { RoutingProfile, RouteSource } from "gen/routes/v1/routes_pb";
 
 // Human readable labels and colors for API enums.
+
+export interface WorkoutStyle {
+  type: WorkoutType;
+  label: string;
+  // Tailwind classes for a workout card.
+  cardClass: string;
+  // Tailwind class for a small color swatch.
+  dotClass: string;
+}
+
+export const WORKOUT_STYLES: WorkoutStyle[] = [
+  {
+    cardClass: "bg-emerald-50 border-emerald-300 text-emerald-900",
+    dotClass: "bg-emerald-500",
+    label: "Easy",
+    type: WorkoutType.EASY,
+  },
+  {
+    cardClass: "bg-teal-50 border-teal-300 text-teal-900",
+    dotClass: "bg-teal-400",
+    label: "Recovery",
+    type: WorkoutType.RECOVERY,
+  },
+  {
+    cardClass: "bg-blue-50 border-blue-300 text-blue-900",
+    dotClass: "bg-blue-500",
+    label: "Long run",
+    type: WorkoutType.LONG_RUN,
+  },
+  {
+    cardClass: "bg-amber-50 border-amber-300 text-amber-900",
+    dotClass: "bg-amber-500",
+    label: "Tempo",
+    type: WorkoutType.TEMPO,
+  },
+  {
+    cardClass: "bg-red-50 border-red-300 text-red-900",
+    dotClass: "bg-red-500",
+    label: "Intervals",
+    type: WorkoutType.INTERVALS,
+  },
+  {
+    cardClass: "bg-orange-50 border-orange-300 text-orange-900",
+    dotClass: "bg-orange-500",
+    label: "Hill repeats",
+    type: WorkoutType.HILL_REPEATS,
+  },
+  {
+    cardClass: "bg-violet-50 border-violet-300 text-violet-900",
+    dotClass: "bg-violet-500",
+    label: "Vert",
+    type: WorkoutType.VERT,
+  },
+  {
+    cardClass: "bg-sky-50 border-sky-300 text-sky-900",
+    dotClass: "bg-sky-500",
+    label: "Cross training",
+    type: WorkoutType.CROSS_TRAINING,
+  },
+  {
+    cardClass: "bg-pink-50 border-pink-300 text-pink-900",
+    dotClass: "bg-pink-500",
+    label: "Strength",
+    type: WorkoutType.STRENGTH,
+  },
+  {
+    cardClass: "bg-yellow-50 border-yellow-400 text-yellow-900",
+    dotClass: "bg-yellow-500",
+    label: "Race",
+    type: WorkoutType.RACE,
+  },
+  {
+    cardClass: "bg-gray-50 border-gray-300 text-gray-600",
+    dotClass: "bg-gray-400",
+    label: "Rest",
+    type: WorkoutType.REST,
+  },
+  {
+    cardClass: "bg-slate-50 border-slate-300 text-slate-800",
+    dotClass: "bg-slate-500",
+    label: "Other",
+    type: WorkoutType.OTHER,
+  },
+];
+
+export const workoutStyle = (type: WorkoutType): WorkoutStyle => {
+  for (const style of WORKOUT_STYLES) {
+    if (style.type === type) {
+      return style;
+    }
+  }
+  return {
+    cardClass: "bg-slate-50 border-slate-300 text-slate-800",
+    dotClass: "bg-slate-400",
+    label: "Workout",
+    type,
+  };
+};
 
 export interface TerrainStyle {
   terrain: Terrain;

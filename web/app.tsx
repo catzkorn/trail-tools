@@ -11,6 +11,8 @@ import AthletesPage from "pages/athletes";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
 import MapDataPage from "pages/map-data";
+import PlanPage from "pages/plan";
+import PlansPage from "pages/plans";
 import RacePlanPage from "pages/race-plan";
 import RacesPage from "pages/races";
 import RoutePage from "pages/route";
@@ -101,6 +103,8 @@ const App: React.FC = () => {
         <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
           <Routes>
             <Route path="/" element={<AthletesPage user={user} />} />
+            <Route path="/plans" element={protectedPage(<PlansPage />)} />
+            <Route path="/plans/:id" element={protectedPage(<PlanPage />)} />
             <Route path="/routes" element={protectedPage(<RoutesPage />)} />
             <Route
               path="/routes/new"

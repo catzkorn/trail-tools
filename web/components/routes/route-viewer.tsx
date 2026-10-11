@@ -186,7 +186,7 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
               </Link>
               <ConfirmButton
                 title="Delete route?"
-                message={`This permanently deletes "${route.name}".`}
+                message={`This permanently deletes "${route.name}". Workouts and races using it lose their route.`}
                 disabled={remove.isPending}
                 onConfirm={() => {
                   remove.mutate({ id: route.id });
