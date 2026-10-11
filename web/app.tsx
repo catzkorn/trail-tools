@@ -8,6 +8,7 @@ import type { User } from "gen/users/v1/users_pb";
 import ActivitiesPage from "pages/activities";
 import ActivityPage from "pages/activity";
 import AthletesPage from "pages/athletes";
+import DashboardPage from "pages/dashboard";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
 import PlanPage from "pages/plan";
@@ -44,7 +45,7 @@ const NotFound: React.FC = () => (
   <div className="flex grow flex-col items-center gap-2 py-10">
     <h1 className="text-xl font-semibold">Page not found</h1>
     <Link to="/" className="text-emerald-700 hover:underline">
-      Back to the start page
+      Back to the dashboard
     </Link>
   </div>
 );
@@ -101,7 +102,7 @@ const App: React.FC = () => {
       <main className="flex grow justify-center bg-slate-50 print:bg-white">
         <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
           <Routes>
-            <Route path="/" element={<AthletesPage user={user} />} />
+            <Route path="/" element={<DashboardPage user={user} />} />
             <Route path="/plans" element={protectedPage(<PlansPage />)} />
             <Route path="/plans/:id" element={protectedPage(<PlanPage />)} />
             <Route path="/routes" element={protectedPage(<RoutesPage />)} />

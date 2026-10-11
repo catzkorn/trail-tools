@@ -1,6 +1,30 @@
 # Trail tools
 
-A website that is both an example of a full stack Go/React/TS/Postgres app and a bunch of useful trail running tools!
+A trail running planner: sync your activities from Strava, plan your training
+for up to a year towards your goal races, design routes on a topo map, check
+the weather along a route and build an opinionated race day plan you can
+share with your crew.
+
+## Features
+
+- **Training plans**: plans of up to a year with goal races, planned at the
+  month (phase and volume), week (focus and targets) and day (workouts) level,
+  compared with what you actually ran.
+- **Routes**: draw routes by placing waypoints that snap to trails
+  ([BRouter](https://brouter.de)), import GPX files or turn a past activity into
+  a route. Each route has an elevation profile, distance, gain, grades and a
+  terrain breakdown, and can be downloaded as GPX for your watch. Overlays show
+  your personal heatmap, OpenStreetMap trails and points of interest.
+- **Weather**: an hourly forecast for where you'll be along a route, given a
+  start time and pace, with warnings for thunderstorms, freezing levels, wind
+  and darkness ([Open-Meteo](https://open-meteo.com)). Works for saved routes
+  and uploaded GPX files.
+- **Race plans**: goals, checkpoints with cutoffs, pacing, fueling, gear, crew,
+  contingencies, race morning and mental strategy. The plan is checked against
+  a set of rules (e.g. cutoff buffers, carbohydrate per segment, a headlamp if
+  you'll be out in the dark) and can be shared read-only with a link.
+- **Activities**: your full Strava history including GPS, elevation and heart
+  rate streams, stored locally.
 
 ## Prerequisites
 
