@@ -7,7 +7,7 @@ import type { User } from "gen/users/v1/users_pb";
 import AthletesPage from "pages/athletes";
 import SettingsPage from "pages/settings";
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router";
 
 const App: React.FC = () => {
   const { isPending, isError, data, error } = useQuery(
@@ -35,11 +35,9 @@ const App: React.FC = () => {
   // User is null if the user is not logged in.
   let user: User | null = null;
   if (isError) {
-    if (error.code === Code.Unauthenticated) {
-      // No logged in user, OK!
-    } else {
+    if (error.code !== Code.Unauthenticated) {
       // Some other error, lets pretend the user is not logged in
-      console.log("Failed to get current user:", error);
+      console.error("Failed to get current user:", error);
     }
     user = null;
   } else if (data.user === undefined) {

@@ -1,4 +1,4 @@
-NPM_TAG := 25.1.0-alpine
+NPM_TAG := 26.11.1-alpine
 DEX_TAG := v2.41.1-distroless
 PG_TAG  := 18
 CONTAINER_BIN ?= $(shell if command -v docker >/dev/null 2>&1; then printf '%s' docker; elif command -v container >/dev/null 2>&1; then printf '%s' container; fi)
@@ -136,8 +136,11 @@ tsc:
 oxlint:
 	$(NODE_RUN) npx oxlint --type-aware
 
+# Type check and lint in a single container, which is faster than starting
+# one per tool.
 .PHONY: web-lint
-web-lint: tsc oxlint
+web-lint:
+	$(NODE_RUN) npm run --silent lint
 
 .PHONY: web-format
 web-format:
