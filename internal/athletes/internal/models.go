@@ -114,6 +114,61 @@ func (e PasskeyCeremony) Valid() bool {
 	return false
 }
 
+type RoutingImportState string
+
+const (
+	RoutingImportStateQueued  RoutingImportState = "queued"
+	RoutingImportStateRunning RoutingImportState = "running"
+	RoutingImportStateDone    RoutingImportState = "done"
+	RoutingImportStateFailed  RoutingImportState = "failed"
+)
+
+func (e *RoutingImportState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RoutingImportState(s)
+	case string:
+		*e = RoutingImportState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RoutingImportState: %T", src)
+	}
+	return nil
+}
+
+type NullRoutingImportState struct {
+	RoutingImportState RoutingImportState
+	Valid              bool // Valid is true if RoutingImportState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRoutingImportState) Scan(value interface{}) error {
+	if value == nil {
+		ns.RoutingImportState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RoutingImportState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRoutingImportState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RoutingImportState), nil
+}
+
+func (e RoutingImportState) Valid() bool {
+	switch e {
+	case RoutingImportStateQueued,
+		RoutingImportStateRunning,
+		RoutingImportStateDone,
+		RoutingImportStateFailed:
+		return true
+	}
+	return false
+}
+
 type StravaSyncState string
 
 const (
@@ -257,6 +312,24 @@ type RoutingEdge struct {
 	Highway       string
 	SacScale      string
 	Terrain       string
+}
+
+type RoutingImport struct {
+	ID           pgtype.UUID
+	Region       string
+	South        float64
+	West         float64
+	North        float64
+	East         float64
+	ExtractNames []string
+	ExtractUrls  []string
+	State        RoutingImportState
+	Message      string
+	EdgeCount    int32
+	CreatedBy    pgtype.UUID
+	CreateTime   pgtype.Timestamptz
+	StartTime    pgtype.Timestamptz
+	FinishTime   pgtype.Timestamptz
 }
 
 type RoutingRegion struct {

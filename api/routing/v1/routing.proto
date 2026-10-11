@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package routing.v1;
+
+import "geo/v1/geo.proto";
+import "google/protobuf/timestamp.proto";
+
+// MapDataService manages the OpenStreetMap data that routes are routed on.
+// Routing only works inside imported regions. Only administrators can use it.
+service MapDataService {
+  // Get the imported regions with the space they take, the recent imports and
+  // the size of the database.
+  rpc GetMapData(GetMapDataRequest) returns (GetMapDataResponse);
+  // Find the OpenStreetMap extracts that importing an area would read.
+  rpc FindExtracts(FindExtractsRequest) returns (FindExtractsResponse);
+  // Start importing an area into a region, replacing any earlier import of
+  // the region. Only one import runs at a time.
+  rpc StartImport(StartImportRequest) returns (StartImportResponse);
+  // Delete a region and its part of the routing graph, to free space.
+  rpc DeleteRegion(DeleteRegionRequest) returns (DeleteRegionResponse);
+}
+
+// A rectangular area, by its corners.
+message Area {
+  // The south west corner.
+  geo.v1.LatLng south_west = 1;
+  // The north east corner.
+  geo.v1.LatLng north_east = 2;
+}
+
+// An imported region of the routing graph.
+message Region {
+  // The name of the region.
+  string name = 1;
+  // The area the region covers.
+  Area area = 2;
+  // The number of edges in the routing graph.
+  int32 edge_count = 3;
+  // The space the region takes in the database, estimated from its share of
+  // the edges.
+  int64 size_bytes = 4;
+  // When the region was imported.
+  google.protobuf.Timestamp import_time = 5;
+}
+
+// ImportState is the state of an import.
+enum ImportState {
+  IMPORT_STATE_UNSPECIFIED = 0;
+  // Waiting to run.
+  IMPORT_STATE_QUEUED = 1;
+  // Downloading and importing the data.
+  IMPORT_STATE_RUNNING = 2;
+  // Imported.
+  IMPORT_STATE_DONE = 3;
+  // Failed, see the message.
+  IMPORT_STATE_FAILED = 4;
+}
+
+// An import of an area into a region.
+message Import {
+  // The ID of the import.
+  string id = 1;
+  // The region imported into.
+  string region = 2;
+  // The area imported.
+  Area area = 3;
+  // The names of the OpenStreetMap extracts read, e.g. "Switzerland" and
+  // "Liechtenstein" for an area across their border.
+  repeated string extract_names = 4;
+  // The state of the import.
+  ImportState state = 5;
+  // Why the import failed.
+  string message = 6;
+  // The number of edges imported.
+  int32 edge_count = 7;
+  // When the import was started.
+  google.protobuf.Timestamp create_time = 8;
+  // When the import finished, if it has.
+  google.protobuf.Timestamp finish_time = 9;
+}
+
+message GetMapDataRequest {}
+
+message GetMapDataResponse {
+  // The imported regions, by name.
+  repeated Region regions = 1;
+  // The most recent imports, newest first.
+  repeated Import imports = 2;
+  // The size of the whole database, in bytes.
+  int64 database_size_bytes = 3;
+}
+
+message FindExtractsRequest {
+  // The area to import.
+  Area area = 1;
+}
+
+message FindExtractsResponse {
+  // The names of the extracts covering the area, e.g. "Switzerland" and
+  // "Liechtenstein", the extract covering most of it first. Each part of
+  // the area is read from the smallest extract covering it.
+  repeated string extract_names = 1;
+}
+
+message StartImportRequest {
+  // The name of the region to import into, e.g. "central-switzerland".
+  string region = 1;
+  // The area to import.
+  Area area = 2;
+}
+
+message StartImportResponse {
+  // The import, queued to run.
+  Import import = 1;
+}
+
+message DeleteRegionRequest {
+  // The name of the region to delete.
+  string name = 1;
+}
+
+message DeleteRegionResponse {}

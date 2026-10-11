@@ -17,12 +17,15 @@ import (
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
+	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/store/storetest"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -31,6 +34,7 @@ import (
 // env is a running server for a test, with clients authenticated as a user.
 type env struct {
 	t          *testing.T
+	db         *store.DB
 	userID     pgtype.UUID
 	token      string
 	srv        *httptest.Server
@@ -38,9 +42,11 @@ type env struct {
 	syncer     *stravasvc.Syncer
 	strava     *fakeStrava
 
-	users     usersv1connect.UserServiceClient
-	activity  activitiesv1connect.ActivityServiceClient
-	stravaAPI stravav1connect.StravaServiceClient
+	users      usersv1connect.UserServiceClient
+	activity   activitiesv1connect.ActivityServiceClient
+	stravaAPI  stravav1connect.StravaServiceClient
+	mapDataAPI routingv1connect.MapDataServiceClient
+	imports    *fakeImportRunner
 }
 
 func newEnv(t *testing.T) *env {
@@ -56,7 +62,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := &env{t: t, activities: activityRepo, strava: newFakeStrava()}
+	e := &env{t: t, db: db, activities: activityRepo, strava: newFakeStrava()}
 	e.userID = storetest.NewUser(t, db)
 	_, e.token, err = userRepo.CreateAPIToken(ctx, e.userID, "test")
 	if err != nil {
@@ -86,6 +92,10 @@ func newEnv(t *testing.T) *env {
 	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
 	connecthttp.Mount(mux, server)
 
+	e.imports = &fakeImportRunner{}
+	srv2 := connect.NewServer()
+	routingv1connect.RegisterMapDataServiceHandler(srv2, mapdatasvc.NewService(log, db, fakeExtracts{}, e.imports))
+	connecthttp.Mount(mux, srv2)
 	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux)
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +108,7 @@ func newEnv(t *testing.T) *env {
 	e.users = usersv1connect.NewUserServiceClient(authed)
 	e.activity = activitiesv1connect.NewActivityServiceClient(authed)
 	e.stravaAPI = stravav1connect.NewStravaServiceClient(authed)
+	e.mapDataAPI = routingv1connect.NewMapDataServiceClient(authed)
 	return e
 }
 

@@ -32,6 +32,7 @@ func importOSM(args []string) int {
 		fs.PrintDefaults()
 	}
 	databaseURL := fs.String("database-url", "", "The URL of the postgres database")
+	importID := fs.String("import-id", "", "Run an import started on the map data page, by its ID. Replaces -region, -pbf and -bounds")
 	region := fs.String("region", "", "The name of the region, e.g. switzerland")
 	source := fs.String("pbf", "", "The OpenStreetMap PBF extract: a file path or URL, e.g. https://download.geofabrik.de/europe/switzerland-latest.osm.pbf. Separate neighboring extracts with commas to import them together")
 	bounds := fs.String("bounds", "", "Only import ways within south,west,north,east, e.g. 46.8,8.2,47.6,9.0. Defaults to the whole extract")
@@ -47,17 +48,19 @@ func importOSM(args []string) int {
 	log := slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp), slogor.SetLevel(level)))
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := runImportOSM(ctx, log, *databaseURL, *region, *source, *bounds, *demURL, *demCache); err != nil {
+	if err := runImportOSM(ctx, log, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache); err != nil {
 		log.ErrorContext(ctx, "Failed to import the OpenStreetMap extract", slogor.Err(err))
 		return 1
 	}
 	return 0
 }
 
-func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, region, source, rawBounds, demURL, demCache string) error {
+func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, region, source, rawBounds, demURL, demCache string) error {
 	switch {
 	case databaseURL == "":
 		return errors.New("database-url is required")
+	case importID != "":
+		// The import's region, extracts and bounds are recorded.
 	case region == "":
 		return errors.New("region is required")
 	case source == "":
@@ -77,11 +80,19 @@ func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, region, so
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 	defer db.Close()
+	dem := routing.NewDEM(demURL, demCache)
+	if importID != "" {
+		id, err := store.StringToUUID(importID)
+		if err != nil {
+			return fmt.Errorf("invalid import-id: %w", err)
+		}
+		return routing.RunImport(ctx, log, db, dem, id)
+	}
 	_, err = routing.Import(ctx, log, db, routing.ImportConfig{
 		Region:  region,
 		Sources: strings.Split(source, ","),
 		Bounds:  bounds,
-		DEM:     routing.NewDEM(demURL, demCache),
+		DEM:     dem,
 	})
 	return err
 }

@@ -25,12 +25,15 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -259,6 +262,9 @@ func run(
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, routing.DefaultDEMCache))
+	defer importRunner.Wait()
+	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
 
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
@@ -267,6 +273,7 @@ func run(
 	authv1connect.RegisterAuthServiceHandler(server, authService)
 	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)
 	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
+	routingv1connect.RegisterMapDataServiceHandler(server, mapDataService)
 	apiMux := http.NewServeMux()
 	connecthttp.Mount(apiMux, server)
 

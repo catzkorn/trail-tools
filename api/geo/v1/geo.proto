@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package geo.v1;
+
+// A WGS84 coordinate.
+message LatLng {
+  // Latitude in decimal degrees.
+  double lat = 1;
+  // Longitude in decimal degrees.
+  double lng = 2;
+}
