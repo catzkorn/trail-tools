@@ -214,9 +214,15 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   const [first] = points;
   const last = points.at(-1);
   if (points.length < 2 || first === undefined || last === undefined) {
+    /**
+     * The measured container is rendered without data too, so that its width
+     * is known when data arrives, e.g. while drawing a new route.
+     */
     return (
-      <div className="flex h-24 items-center justify-center text-sm text-gray-500">
-        No elevation data
+      <div ref={containerRef} className="relative w-full select-none">
+        <div className="flex h-24 items-center justify-center text-sm text-gray-500">
+          No elevation data
+        </div>
       </div>
     );
   }
