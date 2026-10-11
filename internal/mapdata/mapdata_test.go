@@ -39,6 +39,9 @@ func TestRoute(t *testing.T) {
 		if got := r.URL.Query().Get("lonlats"); got != "0.000000,0.000000|0.000000,0.003000" {
 			t.Errorf("unexpected lonlats %q", got)
 		}
+		if got := r.URL.Query().Get("alternativeidx"); got != "2" {
+			t.Errorf("unexpected alternativeidx %q", got)
+		}
 		if r.Header.Get("User-Agent") != mapdata.UserAgent {
 			t.Errorf("missing user agent")
 		}
@@ -46,7 +49,7 @@ func TestRoute(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 	client := mapdata.New(mapdata.Config{BRouterURL: srv.URL})
-	path, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 0.003}, mapdata.ProfileHikingMountain)
+	path, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 0.003}, mapdata.ProfileHikingMountain, 2)
 	if err != nil {
 		t.Fatalf("Route: %v", err)
 	}
@@ -68,7 +71,7 @@ func TestRouteError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 	client := mapdata.New(mapdata.Config{BRouterURL: srv.URL})
-	_, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 1}, mapdata.ProfileShortest)
+	_, err := client.Route(context.Background(), geo.Point{}, geo.Point{Lat: 1}, mapdata.ProfileShortest, 0)
 	if err == nil || !strings.Contains(err.Error(), "not mapped") {
 		t.Errorf("unexpected error %v", err)
 	}

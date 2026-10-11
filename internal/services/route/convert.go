@@ -1,6 +1,8 @@
 package route
 
 import (
+	"fmt"
+
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -18,9 +20,28 @@ func profileFromProto(p routesv1.RoutingProfile) routes.Profile {
 		return routes.ProfileShortest
 	case routesv1.RoutingProfile_ROUTING_PROFILE_STRAIGHT:
 		return routes.ProfileStraight
+	case routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP:
+		return routes.ProfileHeatmap
 	default:
 		return routes.ProfileTrail
 	}
+}
+
+// legProfilesFromProto returns the profile of each leg between n waypoints:
+// the leg's own profile if set, or the default profile.
+func legProfilesFromProto(defaultProfile routes.Profile, legProfiles []routesv1.RoutingProfile, n int) ([]routes.Profile, error) {
+	legs := max(n-1, 0)
+	if len(legProfiles) != 0 && len(legProfiles) != legs {
+		return nil, fmt.Errorf("%w: leg_profiles must be empty or have one entry per leg; got %d entries for %d waypoints (%d legs)", errInvalidRoute, len(legProfiles), n, legs)
+	}
+	profiles := make([]routes.Profile, legs)
+	for i := range profiles {
+		profiles[i] = defaultProfile
+		if i < len(legProfiles) && legProfiles[i] != routesv1.RoutingProfile_ROUTING_PROFILE_UNSPECIFIED {
+			profiles[i] = profileFromProto(legProfiles[i])
+		}
+	}
+	return profiles, nil
 }
 
 func profileToProto(p routes.Profile) routesv1.RoutingProfile {
@@ -31,6 +52,8 @@ func profileToProto(p routes.Profile) routesv1.RoutingProfile {
 		return routesv1.RoutingProfile_ROUTING_PROFILE_SHORTEST
 	case routes.ProfileStraight:
 		return routesv1.RoutingProfile_ROUTING_PROFILE_STRAIGHT
+	case routes.ProfileHeatmap:
+		return routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP
 	default:
 		return routesv1.RoutingProfile_ROUTING_PROFILE_UNSPECIFIED
 	}
@@ -137,12 +160,17 @@ func routeToProto(route *routes.Route, includePoints bool) *routesv1.Route {
 	for i, wp := range route.Waypoints {
 		waypoints[i] = geov1.LatLng_builder{Lat: wp.Lat, Lng: wp.Lng}.Build()
 	}
+	legProfiles := make([]routesv1.RoutingProfile, len(route.Legs))
+	for i, leg := range route.Legs {
+		legProfiles[i] = profileToProto(leg.Profile)
+	}
 	b := routesv1.Route_builder{
 		Id:          store.UUIDToString(route.ID),
 		Name:        route.Name,
 		Description: route.Description,
 		Profile:     profileToProto(route.Profile),
 		Waypoints:   waypoints,
+		LegProfiles: legProfiles,
 		Stats:       StatsToProto(route.Stats),
 		Source:      sourceToProto(route.Source),
 	}

@@ -58,7 +58,9 @@ const (
 type RouteServiceClient interface {
 	// Compute a route through the given waypoints without saving it. Returns the
 	// route statistics and, optionally, the full path. Use this to iterate on a
-	// route design before calling CreateRoute.
+	// route design before calling CreateRoute, or to try out changes to a saved
+	// route (set route_id to reuse its unchanged legs) before calling
+	// UpdateRoute.
 	PreviewRoute(context.Context, *connect.Request[v1.PreviewRouteRequest]) (*connect.Response[v1.PreviewRouteResponse], error)
 	// Create and save a new route from waypoints, a GPX file or an existing
 	// activity.
@@ -69,8 +71,8 @@ type RouteServiceClient interface {
 	// included.
 	ListRoutes(context.Context, *connect.Request[v1.ListRoutesRequest]) (*connect.Response[v1.ListRoutesResponse], error)
 	// Update a route's details or waypoints. When waypoints are provided, legs
-	// whose endpoints are unchanged keep their existing path, and only new or
-	// moved legs are recomputed.
+	// whose endpoints and routing profile are unchanged keep their existing
+	// path, and only new, moved or re-profiled legs are recomputed.
 	UpdateRoute(context.Context, *connect.Request[v1.UpdateRouteRequest]) (*connect.Response[v1.UpdateRouteResponse], error)
 	// Delete a route.
 	DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error)
@@ -191,7 +193,9 @@ func (c *routeServiceClient) GetRouteForecast(ctx context.Context, req *connect.
 type RouteServiceHandler interface {
 	// Compute a route through the given waypoints without saving it. Returns the
 	// route statistics and, optionally, the full path. Use this to iterate on a
-	// route design before calling CreateRoute.
+	// route design before calling CreateRoute, or to try out changes to a saved
+	// route (set route_id to reuse its unchanged legs) before calling
+	// UpdateRoute.
 	PreviewRoute(context.Context, *connect.Request[v1.PreviewRouteRequest]) (*connect.Response[v1.PreviewRouteResponse], error)
 	// Create and save a new route from waypoints, a GPX file or an existing
 	// activity.
@@ -202,8 +206,8 @@ type RouteServiceHandler interface {
 	// included.
 	ListRoutes(context.Context, *connect.Request[v1.ListRoutesRequest]) (*connect.Response[v1.ListRoutesResponse], error)
 	// Update a route's details or waypoints. When waypoints are provided, legs
-	// whose endpoints are unchanged keep their existing path, and only new or
-	// moved legs are recomputed.
+	// whose endpoints and routing profile are unchanged keep their existing
+	// path, and only new, moved or re-profiled legs are recomputed.
 	UpdateRoute(context.Context, *connect.Request[v1.UpdateRouteRequest]) (*connect.Response[v1.UpdateRouteResponse], error)
 	// Delete a route.
 	DeleteRoute(context.Context, *connect.Request[v1.DeleteRouteRequest]) (*connect.Response[v1.DeleteRouteResponse], error)

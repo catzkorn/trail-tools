@@ -23,19 +23,29 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// RoutingProfile controls how legs between waypoints are computed.
+// RoutingProfile controls how a leg between two waypoints is computed.
 type RoutingProfile int32
 
 const (
+	// In a request, use the default profile (the route's profile, or TRAIL). In
+	// a response, the leg was imported from a GPX file or an activity.
 	RoutingProfile_ROUTING_PROFILE_UNSPECIFIED RoutingProfile = 0
 	// Prefer trails and unpaved paths, including mountain trails. Best for trail
 	// running. This is the default.
 	RoutingProfile_ROUTING_PROFILE_TRAIL RoutingProfile = 1
 	// The shortest path on any foot accessible way, including roads.
 	RoutingProfile_ROUTING_PROFILE_SHORTEST RoutingProfile = 2
-	// Straight lines between waypoints, without snapping to the map. Use for
-	// off-trail sections or when routing fails.
+	// A straight line between the waypoints, without snapping to the map
+	// ("manual" mode). Use for off-trail sections, such as across a meadow or
+	// up a ridge without a path, or when routing fails.
 	RoutingProfile_ROUTING_PROFILE_STRAIGHT RoutingProfile = 3
+	// Prefer the paths the user has run before. Several alternative trail
+	// routes are computed and the one that overlaps most with the user's
+	// personal heatmap (the GPS tracks of their synced activities, see
+	// GeoService.GetPersonalHeatmap) is used. Behaves like TRAIL where the user
+	// has no activities near the leg. Slower than TRAIL, as each leg is routed
+	// several times.
+	RoutingProfile_ROUTING_PROFILE_HEATMAP RoutingProfile = 4
 )
 
 // Enum value maps for RoutingProfile.
@@ -45,12 +55,14 @@ var (
 		1: "ROUTING_PROFILE_TRAIL",
 		2: "ROUTING_PROFILE_SHORTEST",
 		3: "ROUTING_PROFILE_STRAIGHT",
+		4: "ROUTING_PROFILE_HEATMAP",
 	}
 	RoutingProfile_value = map[string]int32{
 		"ROUTING_PROFILE_UNSPECIFIED": 0,
 		"ROUTING_PROFILE_TRAIL":       1,
 		"ROUTING_PROFILE_SHORTEST":    2,
 		"ROUTING_PROFILE_STRAIGHT":    3,
+		"ROUTING_PROFILE_HEATMAP":     4,
 	}
 )
 
@@ -551,6 +563,7 @@ type Route struct {
 	xxx_hidden_Description string                 `protobuf:"bytes,3,opt,name=description,proto3"`
 	xxx_hidden_Profile     RoutingProfile         `protobuf:"varint,4,opt,name=profile,proto3,enum=routes.v1.RoutingProfile"`
 	xxx_hidden_Waypoints   *[]*v1.LatLng          `protobuf:"bytes,5,rep,name=waypoints,proto3"`
+	xxx_hidden_LegProfiles []RoutingProfile       `protobuf:"varint,11,rep,packed,name=leg_profiles,json=legProfiles,proto3,enum=routes.v1.RoutingProfile"`
 	xxx_hidden_Points      *[]*RoutePoint         `protobuf:"bytes,6,rep,name=points,proto3"`
 	xxx_hidden_Stats       *RouteStats            `protobuf:"bytes,7,opt,name=stats,proto3"`
 	xxx_hidden_Source      RouteSource            `protobuf:"varint,8,opt,name=source,proto3,enum=routes.v1.RouteSource"`
@@ -622,6 +635,13 @@ func (x *Route) GetWaypoints() []*v1.LatLng {
 	return nil
 }
 
+func (x *Route) GetLegProfiles() []RoutingProfile {
+	if x != nil {
+		return x.xxx_hidden_LegProfiles
+	}
+	return nil
+}
+
 func (x *Route) GetPoints() []*RoutePoint {
 	if x != nil {
 		if x.xxx_hidden_Points != nil {
@@ -677,6 +697,10 @@ func (x *Route) SetProfile(v RoutingProfile) {
 
 func (x *Route) SetWaypoints(v []*v1.LatLng) {
 	x.xxx_hidden_Waypoints = &v
+}
+
+func (x *Route) SetLegProfiles(v []RoutingProfile) {
+	x.xxx_hidden_LegProfiles = v
 }
 
 func (x *Route) SetPoints(v []*RoutePoint) {
@@ -742,11 +766,16 @@ type Route_builder struct {
 	// A free text description of the route, such as its purpose, highlights or
 	// notes on navigation.
 	Description string
-	// How legs between waypoints are computed.
+	// The default routing profile, used for legs without their own profile.
 	Profile RoutingProfile
 	// The ordered waypoints that define the route. The first waypoint is the
 	// start and the last is the finish.
 	Waypoints []*v1.LatLng
+	// The routing profile each leg was computed with: leg_profiles[i] is the
+	// profile of the leg from waypoints[i] to waypoints[i+1], so there is one
+	// fewer entry than waypoints. UNSPECIFIED for legs imported from a GPX file
+	// or an activity. Not set by ListRoutes.
+	LegProfiles []RoutingProfile
 	// The full path of the route. Only set when requested with include_points.
 	Points []*RoutePoint
 	// Statistics computed from the path.
@@ -768,6 +797,7 @@ func (b0 Route_builder) Build() *Route {
 	x.xxx_hidden_Description = b.Description
 	x.xxx_hidden_Profile = b.Profile
 	x.xxx_hidden_Waypoints = &b.Waypoints
+	x.xxx_hidden_LegProfiles = b.LegProfiles
 	x.xxx_hidden_Points = &b.Points
 	x.xxx_hidden_Stats = b.Stats
 	x.xxx_hidden_Source = b.Source
@@ -781,6 +811,8 @@ type PreviewRouteRequest struct {
 	xxx_hidden_Waypoints     *[]*v1.LatLng          `protobuf:"bytes,1,rep,name=waypoints,proto3"`
 	xxx_hidden_Profile       RoutingProfile         `protobuf:"varint,2,opt,name=profile,proto3,enum=routes.v1.RoutingProfile"`
 	xxx_hidden_IncludePoints bool                   `protobuf:"varint,3,opt,name=include_points,json=includePoints,proto3"`
+	xxx_hidden_LegProfiles   []RoutingProfile       `protobuf:"varint,4,rep,packed,name=leg_profiles,json=legProfiles,proto3,enum=routes.v1.RoutingProfile"`
+	xxx_hidden_RouteId       string                 `protobuf:"bytes,5,opt,name=route_id,json=routeId,proto3"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -833,6 +865,20 @@ func (x *PreviewRouteRequest) GetIncludePoints() bool {
 	return false
 }
 
+func (x *PreviewRouteRequest) GetLegProfiles() []RoutingProfile {
+	if x != nil {
+		return x.xxx_hidden_LegProfiles
+	}
+	return nil
+}
+
+func (x *PreviewRouteRequest) GetRouteId() string {
+	if x != nil {
+		return x.xxx_hidden_RouteId
+	}
+	return ""
+}
+
 func (x *PreviewRouteRequest) SetWaypoints(v []*v1.LatLng) {
 	x.xxx_hidden_Waypoints = &v
 }
@@ -845,15 +891,35 @@ func (x *PreviewRouteRequest) SetIncludePoints(v bool) {
 	x.xxx_hidden_IncludePoints = v
 }
 
+func (x *PreviewRouteRequest) SetLegProfiles(v []RoutingProfile) {
+	x.xxx_hidden_LegProfiles = v
+}
+
+func (x *PreviewRouteRequest) SetRouteId(v string) {
+	x.xxx_hidden_RouteId = v
+}
+
 type PreviewRouteRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The ordered waypoints. At least 2 are required.
 	Waypoints []*v1.LatLng
-	// How to compute legs between waypoints. Defaults to TRAIL.
+	// The default routing profile, used for legs without their own profile in
+	// leg_profiles. Defaults to TRAIL.
 	Profile RoutingProfile
 	// Include the full path in the response.
 	IncludePoints bool
+	// Optional routing profiles per leg, to mix profiles within a route, e.g.
+	// TRAIL for most of the route with a STRAIGHT leg across an unmapped
+	// section. leg_profiles[i] is the profile of the leg from waypoints[i] to
+	// waypoints[i+1]. Either empty, to use profile for every leg, or exactly
+	// one entry per leg (one fewer than waypoints). UNSPECIFIED entries use
+	// profile.
+	LegProfiles []RoutingProfile
+	// The ID of a saved route being edited, if any. Legs of the saved route
+	// with the same endpoints and profile are reused instead of being routed
+	// again, as in UpdateRoute. The saved route is not changed.
+	RouteId string
 }
 
 func (b0 PreviewRouteRequest_builder) Build() *PreviewRouteRequest {
@@ -863,6 +929,8 @@ func (b0 PreviewRouteRequest_builder) Build() *PreviewRouteRequest {
 	x.xxx_hidden_Waypoints = &b.Waypoints
 	x.xxx_hidden_Profile = b.Profile
 	x.xxx_hidden_IncludePoints = b.IncludePoints
+	x.xxx_hidden_LegProfiles = b.LegProfiles
+	x.xxx_hidden_RouteId = b.RouteId
 	return m0
 }
 
@@ -937,11 +1005,12 @@ func (b0 PreviewRouteResponse_builder) Build() *PreviewRouteResponse {
 
 // Waypoints to route between.
 type Waypoints struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Waypoints *[]*v1.LatLng          `protobuf:"bytes,1,rep,name=waypoints,proto3"`
-	xxx_hidden_Profile   RoutingProfile         `protobuf:"varint,2,opt,name=profile,proto3,enum=routes.v1.RoutingProfile"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Waypoints   *[]*v1.LatLng          `protobuf:"bytes,1,rep,name=waypoints,proto3"`
+	xxx_hidden_Profile     RoutingProfile         `protobuf:"varint,2,opt,name=profile,proto3,enum=routes.v1.RoutingProfile"`
+	xxx_hidden_LegProfiles []RoutingProfile       `protobuf:"varint,3,rep,packed,name=leg_profiles,json=legProfiles,proto3,enum=routes.v1.RoutingProfile"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Waypoints) Reset() {
@@ -985,6 +1054,13 @@ func (x *Waypoints) GetProfile() RoutingProfile {
 	return RoutingProfile_ROUTING_PROFILE_UNSPECIFIED
 }
 
+func (x *Waypoints) GetLegProfiles() []RoutingProfile {
+	if x != nil {
+		return x.xxx_hidden_LegProfiles
+	}
+	return nil
+}
+
 func (x *Waypoints) SetWaypoints(v []*v1.LatLng) {
 	x.xxx_hidden_Waypoints = &v
 }
@@ -993,13 +1069,25 @@ func (x *Waypoints) SetProfile(v RoutingProfile) {
 	x.xxx_hidden_Profile = v
 }
 
+func (x *Waypoints) SetLegProfiles(v []RoutingProfile) {
+	x.xxx_hidden_LegProfiles = v
+}
+
 type Waypoints_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The ordered waypoints. At least 2 are required.
 	Waypoints []*v1.LatLng
-	// How to compute legs between waypoints. Defaults to TRAIL.
+	// The default routing profile, used for legs without their own profile in
+	// leg_profiles. Defaults to TRAIL.
 	Profile RoutingProfile
+	// Optional routing profiles per leg, to mix profiles within a route, e.g.
+	// TRAIL for most of the route with a STRAIGHT leg across an unmapped
+	// section. leg_profiles[i] is the profile of the leg from waypoints[i] to
+	// waypoints[i+1]. Either empty, to use profile for every leg, or exactly
+	// one entry per leg (one fewer than waypoints). UNSPECIFIED entries use
+	// profile.
+	LegProfiles []RoutingProfile
 }
 
 func (b0 Waypoints_builder) Build() *Waypoints {
@@ -1008,6 +1096,7 @@ func (b0 Waypoints_builder) Build() *Waypoints {
 	_, _ = b, x
 	x.xxx_hidden_Waypoints = &b.Waypoints
 	x.xxx_hidden_Profile = b.Profile
+	x.xxx_hidden_LegProfiles = b.LegProfiles
 	return m0
 }
 
@@ -1731,7 +1820,8 @@ type UpdateRouteRequest_builder struct {
 	Name *string
 	// The new description, if set.
 	Description *string
-	// New waypoints, if set. The path is recomputed for any changed legs.
+	// New waypoints and routing profiles, if set. Legs whose endpoints and
+	// profile are unchanged keep their path; other legs are routed again.
 	Waypoints *Waypoints
 	// Include the full path in the response.
 	IncludePoints bool
@@ -2817,13 +2907,14 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x14max_elevation_meters\x18\x05 \x01(\x01R\x12maxElevationMeters\x125\n" +
 	"\x17max_climb_grade_percent\x18\x06 \x01(\x01R\x14maxClimbGradePercent\x129\n" +
 	"\x19max_descent_grade_percent\x18\a \x01(\x01R\x16maxDescentGradePercent\x121\n" +
-	"\aterrain\x18\b \x03(\v2\x17.routes.v1.TerrainShareR\aterrain\"\xe6\x03\n" +
+	"\aterrain\x18\b \x03(\v2\x17.routes.v1.TerrainShareR\aterrain\"\xac\x04\n" +
 	"\x05Route\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x123\n" +
 	"\aprofile\x18\x04 \x01(\x0e2\x19.routes.v1.RoutingProfileR\aprofile\x12,\n" +
-	"\twaypoints\x18\x05 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x125\n" +
+	"\twaypoints\x18\x05 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x12D\n" +
+	"\fleg_profiles\x18\v \x03(\x0e2\x19.routes.v1.RoutingProfileB\x06\xaa\x9f\x19\x02\b\x01R\vlegProfiles\x125\n" +
 	"\x06points\x18\x06 \x03(\v2\x15.routes.v1.RoutePointB\x06\xaa\x9f\x19\x02\b\x01R\x06points\x123\n" +
 	"\x05stats\x18\a \x01(\v2\x15.routes.v1.RouteStatsB\x06\xaa\x9f\x19\x02\b\x01R\x05stats\x126\n" +
 	"\x06source\x18\b \x01(\x0e2\x16.routes.v1.RouteSourceB\x06\xaa\x9f\x19\x02\b\x01R\x06source\x12C\n" +
@@ -2831,16 +2922,19 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"createTime\x12C\n" +
 	"\vupdate_time\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
-	"updateTime\"\x9f\x01\n" +
+	"updateTime\"\xf8\x01\n" +
 	"\x13PreviewRouteRequest\x12,\n" +
 	"\twaypoints\x18\x01 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x123\n" +
 	"\aprofile\x18\x02 \x01(\x0e2\x19.routes.v1.RoutingProfileR\aprofile\x12%\n" +
-	"\x0einclude_points\x18\x03 \x01(\bR\rincludePoints\">\n" +
+	"\x0einclude_points\x18\x03 \x01(\bR\rincludePoints\x12<\n" +
+	"\fleg_profiles\x18\x04 \x03(\x0e2\x19.routes.v1.RoutingProfileR\vlegProfiles\x12\x19\n" +
+	"\broute_id\x18\x05 \x01(\tR\arouteId\">\n" +
 	"\x14PreviewRouteResponse\x12&\n" +
-	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\"n\n" +
+	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\"\xac\x01\n" +
 	"\tWaypoints\x12,\n" +
 	"\twaypoints\x18\x01 \x03(\v2\x0e.geo.v1.LatLngR\twaypoints\x123\n" +
-	"\aprofile\x18\x02 \x01(\x0e2\x19.routes.v1.RoutingProfileR\aprofile\"\xe8\x01\n" +
+	"\aprofile\x18\x02 \x01(\x0e2\x19.routes.v1.RoutingProfileR\aprofile\x12<\n" +
+	"\fleg_profiles\x18\x03 \x03(\x0e2\x19.routes.v1.RoutingProfileR\vlegProfiles\"\xe8\x01\n" +
 	"\x12CreateRouteRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x124\n" +
@@ -2915,12 +3009,13 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x0fdistance_meters\x18\x04 \x01(\x01R\x0edistanceMeters\x122\n" +
 	"\x15elevation_gain_meters\x18\x05 \x01(\x01R\x13elevationGainMeters\x12\x1a\n" +
 	"\bwarnings\x18\x06 \x03(\tR\bwarnings\x12)\n" +
-	"\x04path\x18\a \x03(\v2\x15.routes.v1.RoutePointR\x04path*\x88\x01\n" +
+	"\x04path\x18\a \x03(\v2\x15.routes.v1.RoutePointR\x04path*\xa5\x01\n" +
 	"\x0eRoutingProfile\x12\x1f\n" +
 	"\x1bROUTING_PROFILE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15ROUTING_PROFILE_TRAIL\x10\x01\x12\x1c\n" +
 	"\x18ROUTING_PROFILE_SHORTEST\x10\x02\x12\x1c\n" +
-	"\x18ROUTING_PROFILE_STRAIGHT\x10\x03*x\n" +
+	"\x18ROUTING_PROFILE_STRAIGHT\x10\x03\x12\x1b\n" +
+	"\x17ROUTING_PROFILE_HEATMAP\x10\x04*x\n" +
 	"\vRouteSource\x12\x1c\n" +
 	"\x18ROUTE_SOURCE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16ROUTE_SOURCE_WAYPOINTS\x10\x01\x12\x14\n" +
@@ -2980,50 +3075,53 @@ var file_routes_v1_routes_proto_depIdxs = []int32{
 	4,  // 1: routes.v1.RouteStats.terrain:type_name -> routes.v1.TerrainShare
 	0,  // 2: routes.v1.Route.profile:type_name -> routes.v1.RoutingProfile
 	25, // 3: routes.v1.Route.waypoints:type_name -> geo.v1.LatLng
-	3,  // 4: routes.v1.Route.points:type_name -> routes.v1.RoutePoint
-	5,  // 5: routes.v1.Route.stats:type_name -> routes.v1.RouteStats
-	1,  // 6: routes.v1.Route.source:type_name -> routes.v1.RouteSource
-	26, // 7: routes.v1.Route.create_time:type_name -> google.protobuf.Timestamp
-	26, // 8: routes.v1.Route.update_time:type_name -> google.protobuf.Timestamp
-	25, // 9: routes.v1.PreviewRouteRequest.waypoints:type_name -> geo.v1.LatLng
-	0,  // 10: routes.v1.PreviewRouteRequest.profile:type_name -> routes.v1.RoutingProfile
-	6,  // 11: routes.v1.PreviewRouteResponse.route:type_name -> routes.v1.Route
-	25, // 12: routes.v1.Waypoints.waypoints:type_name -> geo.v1.LatLng
-	0,  // 13: routes.v1.Waypoints.profile:type_name -> routes.v1.RoutingProfile
-	9,  // 14: routes.v1.CreateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
-	6,  // 15: routes.v1.CreateRouteResponse.route:type_name -> routes.v1.Route
-	6,  // 16: routes.v1.GetRouteResponse.route:type_name -> routes.v1.Route
-	6,  // 17: routes.v1.ListRoutesResponse.routes:type_name -> routes.v1.Route
-	9,  // 18: routes.v1.UpdateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
-	6,  // 19: routes.v1.UpdateRouteResponse.route:type_name -> routes.v1.Route
-	21, // 20: routes.v1.GetRouteForecastRequest.path:type_name -> routes.v1.Path
-	26, // 21: routes.v1.GetRouteForecastRequest.start_time:type_name -> google.protobuf.Timestamp
-	25, // 22: routes.v1.Path.points:type_name -> geo.v1.LatLng
-	2,  // 23: routes.v1.ForecastPoint.kind:type_name -> routes.v1.ForecastPointKind
-	26, // 24: routes.v1.ForecastPoint.time:type_name -> google.protobuf.Timestamp
-	25, // 25: routes.v1.ForecastPoint.location:type_name -> geo.v1.LatLng
-	22, // 26: routes.v1.GetRouteForecastResponse.points:type_name -> routes.v1.ForecastPoint
-	26, // 27: routes.v1.GetRouteForecastResponse.finish_time:type_name -> google.protobuf.Timestamp
-	3,  // 28: routes.v1.GetRouteForecastResponse.path:type_name -> routes.v1.RoutePoint
-	7,  // 29: routes.v1.RouteService.PreviewRoute:input_type -> routes.v1.PreviewRouteRequest
-	10, // 30: routes.v1.RouteService.CreateRoute:input_type -> routes.v1.CreateRouteRequest
-	12, // 31: routes.v1.RouteService.GetRoute:input_type -> routes.v1.GetRouteRequest
-	14, // 32: routes.v1.RouteService.ListRoutes:input_type -> routes.v1.ListRoutesRequest
-	16, // 33: routes.v1.RouteService.UpdateRoute:input_type -> routes.v1.UpdateRouteRequest
-	18, // 34: routes.v1.RouteService.DeleteRoute:input_type -> routes.v1.DeleteRouteRequest
-	20, // 35: routes.v1.RouteService.GetRouteForecast:input_type -> routes.v1.GetRouteForecastRequest
-	8,  // 36: routes.v1.RouteService.PreviewRoute:output_type -> routes.v1.PreviewRouteResponse
-	11, // 37: routes.v1.RouteService.CreateRoute:output_type -> routes.v1.CreateRouteResponse
-	13, // 38: routes.v1.RouteService.GetRoute:output_type -> routes.v1.GetRouteResponse
-	15, // 39: routes.v1.RouteService.ListRoutes:output_type -> routes.v1.ListRoutesResponse
-	17, // 40: routes.v1.RouteService.UpdateRoute:output_type -> routes.v1.UpdateRouteResponse
-	19, // 41: routes.v1.RouteService.DeleteRoute:output_type -> routes.v1.DeleteRouteResponse
-	23, // 42: routes.v1.RouteService.GetRouteForecast:output_type -> routes.v1.GetRouteForecastResponse
-	36, // [36:43] is the sub-list for method output_type
-	29, // [29:36] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	0,  // 4: routes.v1.Route.leg_profiles:type_name -> routes.v1.RoutingProfile
+	3,  // 5: routes.v1.Route.points:type_name -> routes.v1.RoutePoint
+	5,  // 6: routes.v1.Route.stats:type_name -> routes.v1.RouteStats
+	1,  // 7: routes.v1.Route.source:type_name -> routes.v1.RouteSource
+	26, // 8: routes.v1.Route.create_time:type_name -> google.protobuf.Timestamp
+	26, // 9: routes.v1.Route.update_time:type_name -> google.protobuf.Timestamp
+	25, // 10: routes.v1.PreviewRouteRequest.waypoints:type_name -> geo.v1.LatLng
+	0,  // 11: routes.v1.PreviewRouteRequest.profile:type_name -> routes.v1.RoutingProfile
+	0,  // 12: routes.v1.PreviewRouteRequest.leg_profiles:type_name -> routes.v1.RoutingProfile
+	6,  // 13: routes.v1.PreviewRouteResponse.route:type_name -> routes.v1.Route
+	25, // 14: routes.v1.Waypoints.waypoints:type_name -> geo.v1.LatLng
+	0,  // 15: routes.v1.Waypoints.profile:type_name -> routes.v1.RoutingProfile
+	0,  // 16: routes.v1.Waypoints.leg_profiles:type_name -> routes.v1.RoutingProfile
+	9,  // 17: routes.v1.CreateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
+	6,  // 18: routes.v1.CreateRouteResponse.route:type_name -> routes.v1.Route
+	6,  // 19: routes.v1.GetRouteResponse.route:type_name -> routes.v1.Route
+	6,  // 20: routes.v1.ListRoutesResponse.routes:type_name -> routes.v1.Route
+	9,  // 21: routes.v1.UpdateRouteRequest.waypoints:type_name -> routes.v1.Waypoints
+	6,  // 22: routes.v1.UpdateRouteResponse.route:type_name -> routes.v1.Route
+	21, // 23: routes.v1.GetRouteForecastRequest.path:type_name -> routes.v1.Path
+	26, // 24: routes.v1.GetRouteForecastRequest.start_time:type_name -> google.protobuf.Timestamp
+	25, // 25: routes.v1.Path.points:type_name -> geo.v1.LatLng
+	2,  // 26: routes.v1.ForecastPoint.kind:type_name -> routes.v1.ForecastPointKind
+	26, // 27: routes.v1.ForecastPoint.time:type_name -> google.protobuf.Timestamp
+	25, // 28: routes.v1.ForecastPoint.location:type_name -> geo.v1.LatLng
+	22, // 29: routes.v1.GetRouteForecastResponse.points:type_name -> routes.v1.ForecastPoint
+	26, // 30: routes.v1.GetRouteForecastResponse.finish_time:type_name -> google.protobuf.Timestamp
+	3,  // 31: routes.v1.GetRouteForecastResponse.path:type_name -> routes.v1.RoutePoint
+	7,  // 32: routes.v1.RouteService.PreviewRoute:input_type -> routes.v1.PreviewRouteRequest
+	10, // 33: routes.v1.RouteService.CreateRoute:input_type -> routes.v1.CreateRouteRequest
+	12, // 34: routes.v1.RouteService.GetRoute:input_type -> routes.v1.GetRouteRequest
+	14, // 35: routes.v1.RouteService.ListRoutes:input_type -> routes.v1.ListRoutesRequest
+	16, // 36: routes.v1.RouteService.UpdateRoute:input_type -> routes.v1.UpdateRouteRequest
+	18, // 37: routes.v1.RouteService.DeleteRoute:input_type -> routes.v1.DeleteRouteRequest
+	20, // 38: routes.v1.RouteService.GetRouteForecast:input_type -> routes.v1.GetRouteForecastRequest
+	8,  // 39: routes.v1.RouteService.PreviewRoute:output_type -> routes.v1.PreviewRouteResponse
+	11, // 40: routes.v1.RouteService.CreateRoute:output_type -> routes.v1.CreateRouteResponse
+	13, // 41: routes.v1.RouteService.GetRoute:output_type -> routes.v1.GetRouteResponse
+	15, // 42: routes.v1.RouteService.ListRoutes:output_type -> routes.v1.ListRoutesResponse
+	17, // 43: routes.v1.RouteService.UpdateRoute:output_type -> routes.v1.UpdateRouteResponse
+	19, // 44: routes.v1.RouteService.DeleteRoute:output_type -> routes.v1.DeleteRouteResponse
+	23, // 45: routes.v1.RouteService.GetRouteForecast:output_type -> routes.v1.GetRouteForecastResponse
+	39, // [39:46] is the sub-list for method output_type
+	32, // [32:39] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_routes_v1_routes_proto_init() }

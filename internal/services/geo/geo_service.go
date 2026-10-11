@@ -16,7 +16,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -24,7 +23,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"google.golang.org/protobuf/proto"
 )
 
 var _ geov1connect.GeoServiceHandler = (*Service)(nil)
@@ -271,7 +269,6 @@ const (
 	defaultCellSizeMeters = 100
 	minCellSizeMeters     = 25
 	maxHeatmapCells       = 4_000_000
-	metersPerDegreeLat    = 111320.0
 )
 
 func (s *Service) GetPersonalHeatmap(ctx context.Context, req *connect.Request[geov1.GetPersonalHeatmapRequest]) (*connect.Response[geov1.GetPersonalHeatmapResponse], error) {
@@ -305,8 +302,8 @@ func (s *Service) GetPersonalHeatmap(ctx context.Context, req *connect.Request[g
 		}
 	}
 
-	grid := newGrid(bounds, cellSize)
-	if grid.rows*grid.cols > maxHeatmapCells {
+	grid := geo.NewGrid(bounds, cellSize)
+	if grid.Rows*grid.Cols > maxHeatmapCells {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the area is too large for the cell size; use a smaller area or larger cells"))
 	}
 	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, startDate, endDate)
@@ -315,18 +312,18 @@ func (s *Service) GetPersonalHeatmap(ctx context.Context, req *connect.Request[g
 	}
 	counts := map[int]int32{}
 	for _, track := range tracks {
-		points, err := trackPoints(track)
+		points, err := route.TrackPoints(track)
 		if err != nil {
 			s.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(track.ActivityID)))
 			continue
 		}
-		for cell := range grid.cells(points) {
+		for cell := range grid.Cells(points) {
 			counts[cell]++
 		}
 	}
 	cells := make([]*geov1.HeatmapCell, 0, len(counts))
 	for cell, count := range counts {
-		lat, lng := grid.center(cell)
+		lat, lng := grid.Center(cell)
 		cells = append(cells, geov1.HeatmapCell_builder{
 			Center:        latLng(lat, lng),
 			ActivityCount: count,
@@ -346,81 +343,6 @@ func (s *Service) GetPersonalHeatmap(ctx context.Context, req *connect.Request[g
 		CellSizeMeters: cellSize,
 		ActivityCount:  int32(len(tracks)),
 	}.Build()), nil
-}
-
-// grid divides bounds into roughly square cells.
-type grid struct {
-	bounds           geo.Bounds
-	cellLat, cellLng float64
-	cellSize         float64
-	rows, cols       int
-}
-
-func newGrid(bounds geo.Bounds, cellSize float64) *grid {
-	midLat := (bounds.MinLat + bounds.MaxLat) / 2
-	g := &grid{
-		bounds:   bounds,
-		cellSize: cellSize,
-		cellLat:  cellSize / metersPerDegreeLat,
-		cellLng:  cellSize / (metersPerDegreeLat * math.Max(0.01, math.Cos(midLat*math.Pi/180))),
-	}
-	g.rows = int(math.Ceil((bounds.MaxLat - bounds.MinLat) / g.cellLat))
-	g.cols = int(math.Ceil((bounds.MaxLng - bounds.MinLng) / g.cellLng))
-	return g
-}
-
-// cells returns the set of cells a track passes through.
-func (g *grid) cells(points []geo.Point) map[int]bool {
-	cells := map[int]bool{}
-	add := func(p geo.Point) {
-		if p.Lat < g.bounds.MinLat || p.Lat >= g.bounds.MaxLat || p.Lng < g.bounds.MinLng || p.Lng >= g.bounds.MaxLng {
-			return
-		}
-		row := int((p.Lat - g.bounds.MinLat) / g.cellLat)
-		col := int((p.Lng - g.bounds.MinLng) / g.cellLng)
-		cells[row*g.cols+col] = true
-	}
-	for i, p := range points {
-		if i == 0 {
-			add(p)
-			continue
-		}
-		// Fill in gaps between distant points, such as in low resolution
-		// polylines.
-		prev := points[i-1]
-		if geo.Distance(prev, p) > g.cellSize/2 {
-			for _, q := range geo.Densify(prev, p, g.cellSize/2)[1:] {
-				add(q)
-			}
-			continue
-		}
-		add(p)
-	}
-	return cells
-}
-
-func (g *grid) center(cell int) (lat, lng float64) {
-	row, col := cell/g.cols, cell%g.cols
-	return g.bounds.MinLat + (float64(row)+0.5)*g.cellLat, g.bounds.MinLng + (float64(col)+0.5)*g.cellLng
-}
-
-// trackPoints returns the points of a track, from its streams if available.
-func trackPoints(track activities.Track) ([]geo.Point, error) {
-	if track.Streams != nil {
-		var streams activitiesv1.ActivityStreams
-		if err := proto.Unmarshal(track.Streams, &streams); err != nil {
-			return nil, err
-		}
-		lats, lngs := streams.GetLat(), streams.GetLng()
-		points := make([]geo.Point, min(len(lats), len(lngs)))
-		for i := range points {
-			points[i] = geo.Point{Lat: lats[i], Lng: lngs[i]}
-		}
-		if len(points) > 0 {
-			return points, nil
-		}
-	}
-	return geo.DecodePolyline(track.SummaryPolyline)
 }
 
 func searchArea(center *geov1.LatLng, radius float64) (geo.Point, float64, error) {

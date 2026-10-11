@@ -25,6 +25,8 @@ const (
 	ProfileTrail    Profile = "trail"
 	ProfileShortest Profile = "shortest"
 	ProfileStraight Profile = "straight"
+	// ProfileHeatmap prefers paths in the user's personal heatmap.
+	ProfileHeatmap Profile = "heatmap"
 )
 
 // Source describes how a route was created.
@@ -90,9 +92,10 @@ type Route struct {
 	UserID      pgtype.UUID
 	Name        string
 	Description string
-	Profile     Profile
-	Source      Source
-	Waypoints   []LatLng
+	// The default profile. Each leg stores the profile it was routed with.
+	Profile   Profile
+	Source    Source
+	Waypoints []LatLng
 	// The legs between waypoints. Not set when listing routes.
 	Legs       []Leg
 	Stats      geo.TrackStats

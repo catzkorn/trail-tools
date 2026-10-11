@@ -214,26 +214,41 @@ func wantCode(t *testing.T, err error, code connect.Code) {
 	}
 }
 
-// fakeMapData routes legs as straight lines with 11 points, where the
-// elevation is 1000 times the latitude and the terrain is trail.
+// fakeMapData routes legs with 11 points, where the elevation is 1000 times
+// the latitude and the terrain is trail. The best route (alternative 0) is a
+// straight line, and alternatives 1 and 2 bow east by 0.0015 degrees per
+// alternative index in the middle (see fakeRoutePath). Alternative 3 fails.
 type fakeMapData struct {
 	mu         sync.Mutex
 	routeCalls int
 	forecasts  []mapdata.ForecastQuery
 }
 
-func (f *fakeMapData) Route(_ context.Context, from, to geo.Point, profile string) (*mapdata.RoutedPath, error) {
+// fakeRoutePath returns the points of an alternative route.
+func fakeRoutePath(from, to geo.Point, alternative int) []geo.Point {
+	var points []geo.Point
+	for i := range 11 {
+		f := float64(i) / 10
+		p := geo.Interpolate(from, to, f)
+		p.Lng += float64(alternative) * 0.0015 * math.Sin(math.Pi*f)
+		p.Ele = p.Lat * 1000
+		points = append(points, p)
+	}
+	return points
+}
+
+func (f *fakeMapData) Route(_ context.Context, from, to geo.Point, profile string, alternative int) (*mapdata.RoutedPath, error) {
 	f.mu.Lock()
 	f.routeCalls++
 	f.mu.Unlock()
 	if from.Lat > 80 {
 		return nil, fmt.Errorf("from-position not mapped")
 	}
-	path := &mapdata.RoutedPath{}
-	for i := range 11 {
-		p := geo.Interpolate(from, to, float64(i)/10)
-		p.Ele = p.Lat * 1000
-		path.Points = append(path.Points, p)
+	if alternative >= 3 {
+		return nil, fmt.Errorf("no alternative")
+	}
+	path := &mapdata.RoutedPath{Points: fakeRoutePath(from, to, alternative)}
+	for range path.Points {
 		path.Terrains = append(path.Terrains, geo.TerrainTrail)
 	}
 	path.Terrains[10] = geo.TerrainUnknown

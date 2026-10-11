@@ -77,12 +77,20 @@ func TestInputSchemaOneof(t *testing.T) {
 	if profile.Type != "string" {
 		t.Errorf("profile type = %q, want string", profile.Type)
 	}
-	wantEnum := []any{"ROUTING_PROFILE_TRAIL", "ROUTING_PROFILE_SHORTEST", "ROUTING_PROFILE_STRAIGHT"}
+	wantEnum := []any{"ROUTING_PROFILE_TRAIL", "ROUTING_PROFILE_SHORTEST", "ROUTING_PROFILE_STRAIGHT", "ROUTING_PROFILE_HEATMAP"}
 	if !slices.Equal(profile.Enum, wantEnum) {
 		t.Errorf("profile enum = %v, want %v", profile.Enum, wantEnum)
 	}
-	if !strings.Contains(profile.Description, "- ROUTING_PROFILE_STRAIGHT: Straight lines between waypoints") {
+	if !strings.Contains(profile.Description, "- ROUTING_PROFILE_STRAIGHT: A straight line between the waypoints") {
 		t.Errorf("profile description %q does not describe enum values", profile.Description)
+	}
+
+	legProfiles := waypoints.Properties["legProfiles"]
+	if legProfiles == nil || legProfiles.Type != "array" || legProfiles.Items.Type != "string" {
+		t.Fatalf("waypoints.legProfiles = %+v, want array of strings", legProfiles)
+	}
+	if !slices.Contains(legProfiles.Items.Enum, any("ROUTING_PROFILE_HEATMAP")) {
+		t.Errorf("legProfiles enum = %v, want the routing profiles", legProfiles.Items.Enum)
 	}
 }
 

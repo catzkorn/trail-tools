@@ -7,7 +7,9 @@ import { RouteService } from "./routes_pb";
 /**
  * Compute a route through the given waypoints without saving it. Returns the
  * route statistics and, optionally, the full path. Use this to iterate on a
- * route design before calling CreateRoute.
+ * route design before calling CreateRoute, or to try out changes to a saved
+ * route (set route_id to reuse its unchanged legs) before calling
+ * UpdateRoute.
  *
  * @generated from rpc routes.v1.RouteService.PreviewRoute
  */
@@ -38,8 +40,8 @@ export const listRoutes = RouteService.method.listRoutes;
 
 /**
  * Update a route's details or waypoints. When waypoints are provided, legs
- * whose endpoints are unchanged keep their existing path, and only new or
- * moved legs are recomputed.
+ * whose endpoints and routing profile are unchanged keep their existing
+ * path, and only new, moved or re-profiled legs are recomputed.
  *
  * @generated from rpc routes.v1.RouteService.UpdateRoute
  */

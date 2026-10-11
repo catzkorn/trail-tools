@@ -39,12 +39,21 @@ type brouterResponse struct {
 	} `json:"features"`
 }
 
-// Route computes a path between two points using BRouter.
-func (c *Client) Route(ctx context.Context, from, to geo.Point, profile string) (*RoutedPath, error) {
+// MaxAlternatives is the number of alternative routes BRouter can compute
+// between two points, with alternative indexes 0 to MaxAlternatives-1.
+const MaxAlternatives = 4
+
+// Route computes a path between two points using BRouter. Alternative 0 is
+// the best route for the profile, and alternatives 1 to MaxAlternatives-1
+// are progressively different routes between the same points.
+func (c *Client) Route(ctx context.Context, from, to geo.Point, profile string, alternative int) (*RoutedPath, error) {
+	if alternative < 0 || alternative >= MaxAlternatives {
+		return nil, fmt.Errorf("alternative must be between 0 and %d", MaxAlternatives-1)
+	}
 	q := url.Values{}
 	q.Set("lonlats", fmt.Sprintf("%f,%f|%f,%f", from.Lng, from.Lat, to.Lng, to.Lat))
 	q.Set("profile", profile)
-	q.Set("alternativeidx", "0")
+	q.Set("alternativeidx", strconv.Itoa(alternative))
 	q.Set("format", "geojson")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.conf.BRouterURL+"?"+q.Encode(), nil)
 	if err != nil {

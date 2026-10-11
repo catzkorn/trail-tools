@@ -140,7 +140,7 @@ func TestComment(t *testing.T) {
 		{
 			name: "enum value",
 			desc: routesv1.RoutingProfile_ROUTING_PROFILE_STRAIGHT.Descriptor().Values().ByNumber(3),
-			want: "Straight lines between waypoints, without snapping to the map. Use for off-trail sections or when routing fails.",
+			want: "A straight line between the waypoints, without snapping to the map (\"manual\" mode). Use for off-trail sections, such as across a meadow or up a ridge without a path, or when routing fails.",
 		},
 		{
 			name: "no comment",

@@ -3,9 +3,11 @@ package route
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
+	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -23,6 +25,7 @@ type RouteRepository interface {
 type ActivityRepository interface {
 	GetActivity(ctx context.Context, userID, activityID pgtype.UUID) (*activities.Activity, error)
 	GetActivityStreams(ctx context.Context, userID, activityID pgtype.UUID) ([]byte, error)
+	ListTracksInBounds(ctx context.Context, userID pgtype.UUID, bounds geo.Bounds, startDate, endDate time.Time) ([]activities.Track, error)
 }
 
 // Service implements API handlers for the route service.
@@ -31,6 +34,7 @@ type Service struct {
 	routes     RouteRepository
 	activities ActivityRepository
 	mapData    MapData
+	legs       *legCache
 }
 
 // NewService creates a new Service.
@@ -40,5 +44,6 @@ func NewService(log *slog.Logger, routes RouteRepository, activities ActivityRep
 		routes:     routes,
 		activities: activities,
 		mapData:    mapData,
+		legs:       newLegCache(),
 	}
 }

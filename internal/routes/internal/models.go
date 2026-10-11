@@ -276,6 +276,7 @@ const (
 	RoutingProfileTrail    RoutingProfile = "trail"
 	RoutingProfileShortest RoutingProfile = "shortest"
 	RoutingProfileStraight RoutingProfile = "straight"
+	RoutingProfileHeatmap  RoutingProfile = "heatmap"
 )
 
 func (e *RoutingProfile) Scan(src interface{}) error {
@@ -317,7 +318,8 @@ func (e RoutingProfile) Valid() bool {
 	switch e {
 	case RoutingProfileTrail,
 		RoutingProfileShortest,
-		RoutingProfileStraight:
+		RoutingProfileStraight,
+		RoutingProfileHeatmap:
 		return true
 	}
 	return false

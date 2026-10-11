@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/catzkorn/trail-tools/internal/activities"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
+	"github.com/catzkorn/trail-tools/internal/geo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -231,4 +233,208 @@ func TestRouteForecast(t *testing.T) {
 		SpeedKmh:  10,
 	}.Build()))
 	wantCode(t, err, connect.CodeInvalidArgument)
+}
+
+func profiles(p ...routesv1.RoutingProfile) []routesv1.RoutingProfile {
+	return p
+}
+
+func wantLegProfiles(t *testing.T, route *routesv1.Route, want ...routesv1.RoutingProfile) {
+	t.Helper()
+	got := route.GetLegProfiles()
+	if len(got) != len(want) {
+		t.Fatalf("got leg profiles %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got leg profiles %v, want %v", got, want)
+		}
+	}
+}
+
+func TestRouteLegProfiles(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	const (
+		trail    = routesv1.RoutingProfile_ROUTING_PROFILE_TRAIL
+		shortest = routesv1.RoutingProfile_ROUTING_PROFILE_SHORTEST
+		straight = routesv1.RoutingProfile_ROUTING_PROFILE_STRAIGHT
+		heatmap  = routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP
+		unset    = routesv1.RoutingProfile_ROUTING_PROFILE_UNSPECIFIED
+	)
+
+	// A trail leg followed by a straight leg: only the trail leg is routed.
+	preview, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints:   latLngs(0, 0, 0.01, 0, 0.02, 0),
+		LegProfiles: profiles(trail, straight),
+	}.Build()))
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount(); calls != 1 {
+		t.Errorf("got %d routing calls, want 1", calls)
+	}
+	wantLegProfiles(t, preview.Msg.GetRoute(), trail, straight)
+	terrain := preview.Msg.GetRoute().GetStats().GetTerrain()
+	if len(terrain) != 2 || terrain[0].GetTerrain() != geov1.Terrain_TERRAIN_TRAIL || !approx(terrain[0].GetFraction(), 0.5, 0.01) ||
+		terrain[1].GetTerrain() != geov1.Terrain_TERRAIN_UNSPECIFIED {
+		t.Errorf("unexpected terrain %v", terrain)
+	}
+
+	// There must be one profile per leg.
+	_, err = e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints:   latLngs(0, 0, 0.01, 0, 0.02, 0),
+		LegProfiles: profiles(trail),
+	}.Build()))
+	wantCode(t, err, connect.CodeInvalidArgument)
+	if !strings.Contains(err.Error(), "one entry per leg") {
+		t.Errorf("error should explain leg_profiles: %v", err)
+	}
+
+	// Unset leg profiles use the route's profile. Legs routed for the preview
+	// are reused.
+	created, err := e.routes.CreateRoute(ctx, connect.NewRequest(routesv1.CreateRouteRequest_builder{
+		Name: "Mixed",
+		Waypoints: routesv1.Waypoints_builder{
+			Waypoints:   latLngs(0, 0, 0.01, 0, 0.02, 0),
+			Profile:     straight,
+			LegProfiles: profiles(trail, unset),
+		}.Build(),
+	}.Build()))
+	if err != nil {
+		t.Fatalf("CreateRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount(); calls != 1 {
+		t.Errorf("got %d routing calls, want 1", calls)
+	}
+	wantLegProfiles(t, created.Msg.GetRoute(), trail, straight)
+	if created.Msg.GetRoute().GetProfile() != straight {
+		t.Errorf("got profile %v, want STRAIGHT", created.Msg.GetRoute().GetProfile())
+	}
+	routeID := created.Msg.GetRoute().GetId()
+
+	// Extending the route with a heatmap leg only routes the new leg. The user
+	// has no activities, so it is routed like a trail leg.
+	updated, err := e.routes.UpdateRoute(ctx, connect.NewRequest(routesv1.UpdateRouteRequest_builder{
+		Id: routeID,
+		Waypoints: routesv1.Waypoints_builder{
+			Waypoints:   latLngs(0, 0, 0.01, 0, 0.02, 0, 0.03, 0),
+			LegProfiles: profiles(trail, straight, heatmap),
+		}.Build(),
+	}.Build()))
+	if err != nil {
+		t.Fatalf("UpdateRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount(); calls != 2 {
+		t.Errorf("got %d routing calls, want 2", calls)
+	}
+	wantLegProfiles(t, updated.Msg.GetRoute(), trail, straight, heatmap)
+	if !approx(updated.Msg.GetRoute().GetStats().GetDistanceMeters(), 3336, 5) {
+		t.Errorf("unexpected distance %v", updated.Msg.GetRoute().GetStats().GetDistanceMeters())
+	}
+
+	// Previewing changes to the saved route reuses its legs and only routes
+	// the changed leg, without saving.
+	preview, err = e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints:   latLngs(0, 0, 0.01, 0, 0.02, 0, 0.03, 0),
+		LegProfiles: profiles(trail, shortest, heatmap),
+		RouteId:     routeID,
+	}.Build()))
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount(); calls != 3 {
+		t.Errorf("got %d routing calls, want 3", calls)
+	}
+	wantLegProfiles(t, preview.Msg.GetRoute(), trail, shortest, heatmap)
+	got, err := e.routes.GetRoute(ctx, connect.NewRequest(routesv1.GetRouteRequest_builder{Id: routeID}.Build()))
+	if err != nil {
+		t.Fatalf("GetRoute: %v", err)
+	}
+	wantLegProfiles(t, got.Msg.GetRoute(), trail, straight, heatmap)
+
+	// Previewing another user's route is not allowed.
+	_, err = e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints: latLngs(0, 0, 0.01, 0),
+		RouteId:   "00000000-0000-0000-0000-000000000000",
+	}.Build()))
+	wantCode(t, err, connect.CodeNotFound)
+}
+
+func TestHeatmapRouting(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+
+	// The user has run the second alternative route between two points.
+	from, to := geo.Point{Lat: 0, Lng: 0}, geo.Point{Lat: 0.01, Lng: 0}
+	if _, err := e.activities.UpsertActivity(ctx, e.userID, &activities.ActivitySummary{
+		StravaID:        1,
+		Name:            "Usual loop",
+		SportType:       "TrailRun",
+		StartTime:       time.Date(2026, 9, 1, 8, 0, 0, 0, time.UTC),
+		StartDateLocal:  time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		Timezone:        "(GMT+00:00) Europe/London",
+		SummaryPolyline: geo.EncodePolyline(fakeRoutePath(from, to, 2)),
+		RawJSON:         []byte("{}"),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// The heatmap profile picks the alternative the user has run before. All
+	// alternatives are tried.
+	preview, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints:     latLngs(from.Lat, from.Lng, to.Lat, to.Lng),
+		Profile:       routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP,
+		IncludePoints: true,
+	}.Build()))
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount(); calls != 4 {
+		t.Errorf("got %d routing calls, want 4", calls)
+	}
+	var maxLng float64
+	for _, p := range preview.Msg.GetRoute().GetPoints() {
+		maxLng = max(maxLng, p.GetLng())
+	}
+	if !approx(maxLng, 0.003, 0.0001) {
+		t.Errorf("got max longitude %v, want the second alternative at 0.003", maxLng)
+	}
+	wantLegProfiles(t, preview.Msg.GetRoute(), routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP)
+
+	// The trail profile ignores the heatmap.
+	trail, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints:     latLngs(from.Lat, from.Lng, to.Lat, to.Lng),
+		IncludePoints: true,
+	}.Build()))
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	for _, p := range trail.Msg.GetRoute().GetPoints() {
+		if p.GetLng() != 0 {
+			t.Fatalf("trail route should be straight, got point %v", p)
+		}
+	}
+
+	// Away from the user's activities, the heatmap profile routes like the
+	// trail profile, without trying alternatives.
+	before := e.mapData.routeCallCount()
+	far, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints:     latLngs(10, 10, 10.01, 10),
+		Profile:       routesv1.RoutingProfile_ROUTING_PROFILE_HEATMAP,
+		IncludePoints: true,
+	}.Build()))
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount() - before; calls != 1 {
+		t.Errorf("got %d routing calls, want 1", calls)
+	}
+	for _, p := range far.Msg.GetRoute().GetPoints() {
+		if p.GetLng() != 10 {
+			t.Fatalf("route away from the heatmap should be straight, got point %v", p)
+		}
+	}
 }

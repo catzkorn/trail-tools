@@ -21,7 +21,8 @@ import (
 )
 
 func (s *Service) PreviewRoute(ctx context.Context, req *connect.Request[routesv1.PreviewRouteRequest]) (*connect.Response[routesv1.PreviewRouteResponse], error) {
-	if _, ok := authn.GetUserID(ctx); !ok {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, nil)
 	}
 	route := &routes.Route{
@@ -29,7 +30,19 @@ func (s *Service) PreviewRoute(ctx context.Context, req *connect.Request[routesv
 		Source:    routes.SourceWaypoints,
 		Waypoints: waypointsFromProto(req.Msg.GetWaypoints()),
 	}
-	legs, err := buildLegs(ctx, s.mapData, route.Waypoints, route.Profile, nil)
+	profiles, err := legProfilesFromProto(route.Profile, req.Msg.GetLegProfiles(), len(route.Waypoints))
+	if err != nil {
+		return nil, s.toConnectError(err, "failed to compute route")
+	}
+	var existing []routes.Leg
+	if req.Msg.GetRouteId() != "" {
+		saved, err := s.getRoute(ctx, req.Msg.GetRouteId())
+		if err != nil {
+			return nil, err
+		}
+		existing = saved.Legs
+	}
+	legs, err := s.buildLegs(ctx, userID, route.Waypoints, profiles, existing)
 	if err != nil {
 		return nil, s.toConnectError(err, "failed to compute route")
 	}
@@ -56,7 +69,11 @@ func (s *Service) CreateRoute(ctx context.Context, req *connect.Request[routesv1
 		route.Source = routes.SourceWaypoints
 		route.Profile = profileFromProto(req.Msg.GetWaypoints().GetProfile())
 		route.Waypoints = waypointsFromProto(req.Msg.GetWaypoints().GetWaypoints())
-		legs, err := buildLegs(ctx, s.mapData, route.Waypoints, route.Profile, nil)
+		profiles, err := legProfilesFromProto(route.Profile, req.Msg.GetWaypoints().GetLegProfiles(), len(route.Waypoints))
+		if err != nil {
+			return nil, s.toConnectError(err, "failed to compute route")
+		}
+		legs, err := s.buildLegs(ctx, userID, route.Waypoints, profiles, nil)
 		if err != nil {
 			return nil, s.toConnectError(err, "failed to compute route")
 		}
@@ -149,7 +166,11 @@ func (s *Service) UpdateRoute(ctx context.Context, req *connect.Request[routesv1
 	if req.Msg.HasWaypoints() {
 		waypoints := waypointsFromProto(req.Msg.GetWaypoints().GetWaypoints())
 		profile := profileFromProto(req.Msg.GetWaypoints().GetProfile())
-		legs, err := buildLegs(ctx, s.mapData, waypoints, profile, route.Legs)
+		profiles, err := legProfilesFromProto(profile, req.Msg.GetWaypoints().GetLegProfiles(), len(waypoints))
+		if err != nil {
+			return nil, s.toConnectError(err, "failed to compute route")
+		}
+		legs, err := s.buildLegs(ctx, route.UserID, waypoints, profiles, route.Legs)
 		if err != nil {
 			return nil, s.toConnectError(err, "failed to compute route")
 		}

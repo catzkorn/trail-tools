@@ -97,7 +97,7 @@ func TestNewServer(t *testing.T) {
 			title:       "Preview Route",
 			readOnly:    true,
 			idempotent:  true,
-			description: "Compute a route through the given waypoints without saving it. Returns the route statistics and, optionally, the full path. Use this to iterate on a route design before calling CreateRoute.",
+			description: "Compute a route through the given waypoints without saving it. Returns the route statistics and, optionally, the full path. Use this to iterate on a route design before calling CreateRoute, or to try out changes to a saved route (set route_id to reuse its unchanged legs) before calling UpdateRoute.",
 		},
 		{
 			name:        "DeleteRoute",

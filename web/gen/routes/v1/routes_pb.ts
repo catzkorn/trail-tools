@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file routes/v1/routes.proto.
  */
 export const file_routes_v1_routes: GenFile = /*@__PURE__*/
-  fileDesc("ChZyb3V0ZXMvdjEvcm91dGVzLnByb3RvEglyb3V0ZXMudjEiWQoKUm91dGVQb2ludBILCgNsYXQYASABKAESCwoDbG5nGAIgASgBEhgKEGVsZXZhdGlvbl9tZXRlcnMYAyABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBIlsKDFRlcnJhaW5TaGFyZRIgCgd0ZXJyYWluGAEgASgOMg8uZ2VvLnYxLlRlcnJhaW4SFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEhAKCGZyYWN0aW9uGAMgASgBIo0CCgpSb3V0ZVN0YXRzEhcKD2Rpc3RhbmNlX21ldGVycxgBIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAMgASgBEhwKFG1pbl9lbGV2YXRpb25fbWV0ZXJzGAQgASgBEhwKFG1heF9lbGV2YXRpb25fbWV0ZXJzGAUgASgBEh8KF21heF9jbGltYl9ncmFkZV9wZXJjZW50GAYgASgBEiEKGW1heF9kZXNjZW50X2dyYWRlX3BlcmNlbnQYByABKAESKAoHdGVycmFpbhgIIAMoCzIXLnJvdXRlcy52MS5UZXJyYWluU2hhcmUijAMKBVJvdXRlEhIKAmlkGAEgASgJQgaqnxkCCAESDAoEbmFtZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIqCgdwcm9maWxlGAQgASgOMhkucm91dGVzLnYxLlJvdXRpbmdQcm9maWxlEiEKCXdheXBvaW50cxgFIAMoCzIOLmdlby52MS5MYXRMbmcSLQoGcG9pbnRzGAYgAygLMhUucm91dGVzLnYxLlJvdXRlUG9pbnRCBqqfGQIIARIsCgVzdGF0cxgHIAEoCzIVLnJvdXRlcy52MS5Sb3V0ZVN0YXRzQgaqnxkCCAESLgoGc291cmNlGAggASgOMhYucm91dGVzLnYxLlJvdXRlU291cmNlQgaqnxkCCAESNwoLY3JlYXRlX3RpbWUYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLdXBkYXRlX3RpbWUYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEifAoTUHJldmlld1JvdXRlUmVxdWVzdBIhCgl3YXlwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nEioKB3Byb2ZpbGUYAiABKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSFgoOaW5jbHVkZV9wb2ludHMYAyABKAgiNwoUUHJldmlld1JvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiWgoJV2F5cG9pbnRzEiEKCXdheXBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmcSKgoHcHJvZmlsZRgCIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZSKqAQoSQ3JlYXRlUm91dGVSZXF1ZXN0EgwKBG5hbWUYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkSKQoJd2F5cG9pbnRzGAMgASgLMhQucm91dGVzLnYxLldheXBvaW50c0gAEg0KA2dweBgEIAEoCUgAEhUKC2FjdGl2aXR5X2lkGAUgASgJSAASFgoOaW5jbHVkZV9wb2ludHMYBiABKAhCCAoGc291cmNlIjYKE0NyZWF0ZVJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiNQoPR2V0Um91dGVSZXF1ZXN0EgoKAmlkGAEgASgJEhYKDmluY2x1ZGVfcG9pbnRzGAIgASgIIjMKEEdldFJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiEwoRTGlzdFJvdXRlc1JlcXVlc3QiNgoSTGlzdFJvdXRlc1Jlc3BvbnNlEiAKBnJvdXRlcxgBIAMoCzIQLnJvdXRlcy52MS5Sb3V0ZSKnAQoSVXBkYXRlUm91dGVSZXF1ZXN0EgoKAmlkGAEgASgJEhEKBG5hbWUYAiABKAlIAIgBARIYCgtkZXNjcmlwdGlvbhgDIAEoCUgBiAEBEicKCXdheXBvaW50cxgEIAEoCzIULnJvdXRlcy52MS5XYXlwb2ludHMSFgoOaW5jbHVkZV9wb2ludHMYBSABKAhCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uIjYKE1VwZGF0ZVJvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiIAoSRGVsZXRlUm91dGVSZXF1ZXN0EgoKAmlkGAEgASgJIhUKE0RlbGV0ZVJvdXRlUmVzcG9uc2Ui4wEKF0dldFJvdXRlRm9yZWNhc3RSZXF1ZXN0EhIKCHJvdXRlX2lkGAEgASgJSAASDQoDZ3B4GAIgASgJSAASHwoEcGF0aBgDIAEoCzIPLnJvdXRlcy52MS5QYXRoSAASLgoKc3RhcnRfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEQoJc3BlZWRfa21oGAUgASgBEh0KFWNsaW1iX21ldGVyc19wZXJfaG91chgGIAEoARIYChBpbnRlcnZhbF9taW51dGVzGAcgASgFQggKBnNvdXJjZSImCgRQYXRoEh4KBnBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmciuAQKDUZvcmVjYXN0UG9pbnQSKgoEa2luZBgBIAEoDjIcLnJvdXRlcy52MS5Gb3JlY2FzdFBvaW50S2luZBIoCgR0aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIXCg9kaXN0YW5jZV9tZXRlcnMYAyABKAESIAoIbG9jYXRpb24YBCABKAsyDi5nZW8udjEuTGF0TG5nEhgKEGVsZXZhdGlvbl9tZXRlcnMYBSABKAESGwoTdGVtcGVyYXR1cmVfY2Vsc2l1cxgGIAEoARIkChxhcHBhcmVudF90ZW1wZXJhdHVyZV9jZWxzaXVzGAcgASgBEikKIXByZWNpcGl0YXRpb25fcHJvYmFiaWxpdHlfcGVyY2VudBgIIAEoBRIYChBwcmVjaXBpdGF0aW9uX21tGAkgASgBEhMKC3Nub3dmYWxsX2NtGAogASgBEhYKDndpbmRfc3BlZWRfa21oGAsgASgBEhYKDndpbmRfZ3VzdHNfa21oGAwgASgBEh4KFndpbmRfZGlyZWN0aW9uX2RlZ3JlZXMYDSABKAUSGwoTY2xvdWRfY292ZXJfcGVyY2VudBgOIAEoBRIdChVmcmVlemluZ19sZXZlbF9tZXRlcnMYDyABKAESEAoIdXZfaW5kZXgYECABKAESDgoGaXNfZGF5GBEgASgIEhQKDHdlYXRoZXJfY29kZRgSIAEoBRIbChN3ZWF0aGVyX2Rlc2NyaXB0aW9uGBMgASgJIv4BChhHZXRSb3V0ZUZvcmVjYXN0UmVzcG9uc2USKAoGcG9pbnRzGAEgAygLMhgucm91dGVzLnYxLkZvcmVjYXN0UG9pbnQSLwoLZmluaXNoX3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhgKEGR1cmF0aW9uX3NlY29uZHMYAyABKAUSFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgFIAEoARIQCgh3YXJuaW5ncxgGIAMoCRIjCgRwYXRoGAcgAygLMhUucm91dGVzLnYxLlJvdXRlUG9pbnQqiAEKDlJvdXRpbmdQcm9maWxlEh8KG1JPVVRJTkdfUFJPRklMRV9VTlNQRUNJRklFRBAAEhkKFVJPVVRJTkdfUFJPRklMRV9UUkFJTBABEhwKGFJPVVRJTkdfUFJPRklMRV9TSE9SVEVTVBACEhwKGFJPVVRJTkdfUFJPRklMRV9TVFJBSUdIVBADKngKC1JvdXRlU291cmNlEhwKGFJPVVRFX1NPVVJDRV9VTlNQRUNJRklFRBAAEhoKFlJPVVRFX1NPVVJDRV9XQVlQT0lOVFMQARIUChBST1VURV9TT1VSQ0VfR1BYEAISGQoVUk9VVEVfU09VUkNFX0FDVElWSVRZEAMqvQEKEUZvcmVjYXN0UG9pbnRLaW5kEiMKH0ZPUkVDQVNUX1BPSU5UX0tJTkRfVU5TUEVDSUZJRUQQABIdChlGT1JFQ0FTVF9QT0lOVF9LSU5EX1NUQVJUEAESIAocRk9SRUNBU1RfUE9JTlRfS0lORF9JTlRFUlZBTBACEiIKHkZPUkVDQVNUX1BPSU5UX0tJTkRfSElHSF9QT0lOVBADEh4KGkZPUkVDQVNUX1BPSU5UX0tJTkRfRklOSVNIEAQytgQKDFJvdXRlU2VydmljZRJPCgxQcmV2aWV3Um91dGUSHi5yb3V0ZXMudjEuUHJldmlld1JvdXRlUmVxdWVzdBofLnJvdXRlcy52MS5QcmV2aWV3Um91dGVSZXNwb25zZRJMCgtDcmVhdGVSb3V0ZRIdLnJvdXRlcy52MS5DcmVhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuQ3JlYXRlUm91dGVSZXNwb25zZRJDCghHZXRSb3V0ZRIaLnJvdXRlcy52MS5HZXRSb3V0ZVJlcXVlc3QaGy5yb3V0ZXMudjEuR2V0Um91dGVSZXNwb25zZRJJCgpMaXN0Um91dGVzEhwucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXF1ZXN0Gh0ucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXNwb25zZRJMCgtVcGRhdGVSb3V0ZRIdLnJvdXRlcy52MS5VcGRhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuVXBkYXRlUm91dGVSZXNwb25zZRJMCgtEZWxldGVSb3V0ZRIdLnJvdXRlcy52MS5EZWxldGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuRGVsZXRlUm91dGVSZXNwb25zZRJbChBHZXRSb3V0ZUZvcmVjYXN0EiIucm91dGVzLnYxLkdldFJvdXRlRm9yZWNhc3RSZXF1ZXN0GiMucm91dGVzLnYxLkdldFJvdXRlRm9yZWNhc3RSZXNwb25zZUKiAQoNY29tLnJvdXRlcy52MUILUm91dGVzUHJvdG9QAVo/Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcm91dGVzL3YxO3JvdXRlc3YxogIDUlhYqgIJUm91dGVzLlYxygIJUm91dGVzXFYx4gIVUm91dGVzXFYxXEdQQk1ldGFkYXRh6gIKUm91dGVzOjpWMWIGcHJvdG8z", [file_geo_v1_geo, file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChZyb3V0ZXMvdjEvcm91dGVzLnByb3RvEglyb3V0ZXMudjEiWQoKUm91dGVQb2ludBILCgNsYXQYASABKAESCwoDbG5nGAIgASgBEhgKEGVsZXZhdGlvbl9tZXRlcnMYAyABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBIlsKDFRlcnJhaW5TaGFyZRIgCgd0ZXJyYWluGAEgASgOMg8uZ2VvLnYxLlRlcnJhaW4SFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEhAKCGZyYWN0aW9uGAMgASgBIo0CCgpSb3V0ZVN0YXRzEhcKD2Rpc3RhbmNlX21ldGVycxgBIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAMgASgBEhwKFG1pbl9lbGV2YXRpb25fbWV0ZXJzGAQgASgBEhwKFG1heF9lbGV2YXRpb25fbWV0ZXJzGAUgASgBEh8KF21heF9jbGltYl9ncmFkZV9wZXJjZW50GAYgASgBEiEKGW1heF9kZXNjZW50X2dyYWRlX3BlcmNlbnQYByABKAESKAoHdGVycmFpbhgIIAMoCzIXLnJvdXRlcy52MS5UZXJyYWluU2hhcmUixQMKBVJvdXRlEhIKAmlkGAEgASgJQgaqnxkCCAESDAoEbmFtZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIqCgdwcm9maWxlGAQgASgOMhkucm91dGVzLnYxLlJvdXRpbmdQcm9maWxlEiEKCXdheXBvaW50cxgFIAMoCzIOLmdlby52MS5MYXRMbmcSNwoMbGVnX3Byb2ZpbGVzGAsgAygOMhkucm91dGVzLnYxLlJvdXRpbmdQcm9maWxlQgaqnxkCCAESLQoGcG9pbnRzGAYgAygLMhUucm91dGVzLnYxLlJvdXRlUG9pbnRCBqqfGQIIARIsCgVzdGF0cxgHIAEoCzIVLnJvdXRlcy52MS5Sb3V0ZVN0YXRzQgaqnxkCCAESLgoGc291cmNlGAggASgOMhYucm91dGVzLnYxLlJvdXRlU291cmNlQgaqnxkCCAESNwoLY3JlYXRlX3RpbWUYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLdXBkYXRlX3RpbWUYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEivwEKE1ByZXZpZXdSb3V0ZVJlcXVlc3QSIQoJd2F5cG9pbnRzGAEgAygLMg4uZ2VvLnYxLkxhdExuZxIqCgdwcm9maWxlGAIgASgOMhkucm91dGVzLnYxLlJvdXRpbmdQcm9maWxlEhYKDmluY2x1ZGVfcG9pbnRzGAMgASgIEi8KDGxlZ19wcm9maWxlcxgEIAMoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIQCghyb3V0ZV9pZBgFIAEoCSI3ChRQcmV2aWV3Um91dGVSZXNwb25zZRIfCgVyb3V0ZRgBIAEoCzIQLnJvdXRlcy52MS5Sb3V0ZSKLAQoJV2F5cG9pbnRzEiEKCXdheXBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmcSKgoHcHJvZmlsZRgCIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIvCgxsZWdfcHJvZmlsZXMYAyADKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUiqgEKEkNyZWF0ZVJvdXRlUmVxdWVzdBIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEikKCXdheXBvaW50cxgDIAEoCzIULnJvdXRlcy52MS5XYXlwb2ludHNIABINCgNncHgYBCABKAlIABIVCgthY3Rpdml0eV9pZBgFIAEoCUgAEhYKDmluY2x1ZGVfcG9pbnRzGAYgASgIQggKBnNvdXJjZSI2ChNDcmVhdGVSb3V0ZVJlc3BvbnNlEh8KBXJvdXRlGAEgASgLMhAucm91dGVzLnYxLlJvdXRlIjUKD0dldFJvdXRlUmVxdWVzdBIKCgJpZBgBIAEoCRIWCg5pbmNsdWRlX3BvaW50cxgCIAEoCCIzChBHZXRSb3V0ZVJlc3BvbnNlEh8KBXJvdXRlGAEgASgLMhAucm91dGVzLnYxLlJvdXRlIhMKEUxpc3RSb3V0ZXNSZXF1ZXN0IjYKEkxpc3RSb3V0ZXNSZXNwb25zZRIgCgZyb3V0ZXMYASADKAsyEC5yb3V0ZXMudjEuUm91dGUipwEKElVwZGF0ZVJvdXRlUmVxdWVzdBIKCgJpZBgBIAEoCRIRCgRuYW1lGAIgASgJSACIAQESGAoLZGVzY3JpcHRpb24YAyABKAlIAYgBARInCgl3YXlwb2ludHMYBCABKAsyFC5yb3V0ZXMudjEuV2F5cG9pbnRzEhYKDmluY2x1ZGVfcG9pbnRzGAUgASgIQgcKBV9uYW1lQg4KDF9kZXNjcmlwdGlvbiI2ChNVcGRhdGVSb3V0ZVJlc3BvbnNlEh8KBXJvdXRlGAEgASgLMhAucm91dGVzLnYxLlJvdXRlIiAKEkRlbGV0ZVJvdXRlUmVxdWVzdBIKCgJpZBgBIAEoCSIVChNEZWxldGVSb3V0ZVJlc3BvbnNlIuMBChdHZXRSb3V0ZUZvcmVjYXN0UmVxdWVzdBISCghyb3V0ZV9pZBgBIAEoCUgAEg0KA2dweBgCIAEoCUgAEh8KBHBhdGgYAyABKAsyDy5yb3V0ZXMudjEuUGF0aEgAEi4KCnN0YXJ0X3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCXNwZWVkX2ttaBgFIAEoARIdChVjbGltYl9tZXRlcnNfcGVyX2hvdXIYBiABKAESGAoQaW50ZXJ2YWxfbWludXRlcxgHIAEoBUIICgZzb3VyY2UiJgoEUGF0aBIeCgZwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nIrgECg1Gb3JlY2FzdFBvaW50EioKBGtpbmQYASABKA4yHC5yb3V0ZXMudjEuRm9yZWNhc3RQb2ludEtpbmQSKAoEdGltZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFwoPZGlzdGFuY2VfbWV0ZXJzGAMgASgBEiAKCGxvY2F0aW9uGAQgASgLMg4uZ2VvLnYxLkxhdExuZxIYChBlbGV2YXRpb25fbWV0ZXJzGAUgASgBEhsKE3RlbXBlcmF0dXJlX2NlbHNpdXMYBiABKAESJAocYXBwYXJlbnRfdGVtcGVyYXR1cmVfY2Vsc2l1cxgHIAEoARIpCiFwcmVjaXBpdGF0aW9uX3Byb2JhYmlsaXR5X3BlcmNlbnQYCCABKAUSGAoQcHJlY2lwaXRhdGlvbl9tbRgJIAEoARITCgtzbm93ZmFsbF9jbRgKIAEoARIWCg53aW5kX3NwZWVkX2ttaBgLIAEoARIWCg53aW5kX2d1c3RzX2ttaBgMIAEoARIeChZ3aW5kX2RpcmVjdGlvbl9kZWdyZWVzGA0gASgFEhsKE2Nsb3VkX2NvdmVyX3BlcmNlbnQYDiABKAUSHQoVZnJlZXppbmdfbGV2ZWxfbWV0ZXJzGA8gASgBEhAKCHV2X2luZGV4GBAgASgBEg4KBmlzX2RheRgRIAEoCBIUCgx3ZWF0aGVyX2NvZGUYEiABKAUSGwoTd2VhdGhlcl9kZXNjcmlwdGlvbhgTIAEoCSL+AQoYR2V0Um91dGVGb3JlY2FzdFJlc3BvbnNlEigKBnBvaW50cxgBIAMoCzIYLnJvdXRlcy52MS5Gb3JlY2FzdFBvaW50Ei8KC2ZpbmlzaF90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIYChBkdXJhdGlvbl9zZWNvbmRzGAMgASgFEhcKD2Rpc3RhbmNlX21ldGVycxgEIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYBSABKAESEAoId2FybmluZ3MYBiADKAkSIwoEcGF0aBgHIAMoCzIVLnJvdXRlcy52MS5Sb3V0ZVBvaW50KqUBCg5Sb3V0aW5nUHJvZmlsZRIfChtST1VUSU5HX1BST0ZJTEVfVU5TUEVDSUZJRUQQABIZChVST1VUSU5HX1BST0ZJTEVfVFJBSUwQARIcChhST1VUSU5HX1BST0ZJTEVfU0hPUlRFU1QQAhIcChhST1VUSU5HX1BST0ZJTEVfU1RSQUlHSFQQAxIbChdST1VUSU5HX1BST0ZJTEVfSEVBVE1BUBAEKngKC1JvdXRlU291cmNlEhwKGFJPVVRFX1NPVVJDRV9VTlNQRUNJRklFRBAAEhoKFlJPVVRFX1NPVVJDRV9XQVlQT0lOVFMQARIUChBST1VURV9TT1VSQ0VfR1BYEAISGQoVUk9VVEVfU09VUkNFX0FDVElWSVRZEAMqvQEKEUZvcmVjYXN0UG9pbnRLaW5kEiMKH0ZPUkVDQVNUX1BPSU5UX0tJTkRfVU5TUEVDSUZJRUQQABIdChlGT1JFQ0FTVF9QT0lOVF9LSU5EX1NUQVJUEAESIAocRk9SRUNBU1RfUE9JTlRfS0lORF9JTlRFUlZBTBACEiIKHkZPUkVDQVNUX1BPSU5UX0tJTkRfSElHSF9QT0lOVBADEh4KGkZPUkVDQVNUX1BPSU5UX0tJTkRfRklOSVNIEAQytgQKDFJvdXRlU2VydmljZRJPCgxQcmV2aWV3Um91dGUSHi5yb3V0ZXMudjEuUHJldmlld1JvdXRlUmVxdWVzdBofLnJvdXRlcy52MS5QcmV2aWV3Um91dGVSZXNwb25zZRJMCgtDcmVhdGVSb3V0ZRIdLnJvdXRlcy52MS5DcmVhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuQ3JlYXRlUm91dGVSZXNwb25zZRJDCghHZXRSb3V0ZRIaLnJvdXRlcy52MS5HZXRSb3V0ZVJlcXVlc3QaGy5yb3V0ZXMudjEuR2V0Um91dGVSZXNwb25zZRJJCgpMaXN0Um91dGVzEhwucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXF1ZXN0Gh0ucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXNwb25zZRJMCgtVcGRhdGVSb3V0ZRIdLnJvdXRlcy52MS5VcGRhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuVXBkYXRlUm91dGVSZXNwb25zZRJMCgtEZWxldGVSb3V0ZRIdLnJvdXRlcy52MS5EZWxldGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuRGVsZXRlUm91dGVSZXNwb25zZRJbChBHZXRSb3V0ZUZvcmVjYXN0EiIucm91dGVzLnYxLkdldFJvdXRlRm9yZWNhc3RSZXF1ZXN0GiMucm91dGVzLnYxLkdldFJvdXRlRm9yZWNhc3RSZXNwb25zZUKiAQoNY29tLnJvdXRlcy52MUILUm91dGVzUHJvdG9QAVo/Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcm91dGVzL3YxO3JvdXRlc3YxogIDUlhYqgIJUm91dGVzLlYxygIJUm91dGVzXFYx4gIVUm91dGVzXFYxXEdQQk1ldGFkYXRh6gIKUm91dGVzOjpWMWIGcHJvdG8z", [file_geo_v1_geo, file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * A point along a route path.
@@ -195,7 +195,7 @@ export type Route = Message<"routes.v1.Route"> & {
   description: string;
 
   /**
-   * How legs between waypoints are computed.
+   * The default routing profile, used for legs without their own profile.
    *
    * @generated from field: routes.v1.RoutingProfile profile = 4;
    */
@@ -208,6 +208,16 @@ export type Route = Message<"routes.v1.Route"> & {
    * @generated from field: repeated geo.v1.LatLng waypoints = 5;
    */
   waypoints: LatLng[];
+
+  /**
+   * The routing profile each leg was computed with: leg_profiles[i] is the
+   * profile of the leg from waypoints[i] to waypoints[i+1], so there is one
+   * fewer entry than waypoints. UNSPECIFIED for legs imported from a GPX file
+   * or an activity. Not set by ListRoutes.
+   *
+   * @generated from field: repeated routes.v1.RoutingProfile leg_profiles = 11;
+   */
+  legProfiles: RoutingProfile[];
 
   /**
    * The full path of the route. Only set when requested with include_points.
@@ -264,7 +274,8 @@ export type PreviewRouteRequest = Message<"routes.v1.PreviewRouteRequest"> & {
   waypoints: LatLng[];
 
   /**
-   * How to compute legs between waypoints. Defaults to TRAIL.
+   * The default routing profile, used for legs without their own profile in
+   * leg_profiles. Defaults to TRAIL.
    *
    * @generated from field: routes.v1.RoutingProfile profile = 2;
    */
@@ -276,6 +287,27 @@ export type PreviewRouteRequest = Message<"routes.v1.PreviewRouteRequest"> & {
    * @generated from field: bool include_points = 3;
    */
   includePoints: boolean;
+
+  /**
+   * Optional routing profiles per leg, to mix profiles within a route, e.g.
+   * TRAIL for most of the route with a STRAIGHT leg across an unmapped
+   * section. leg_profiles[i] is the profile of the leg from waypoints[i] to
+   * waypoints[i+1]. Either empty, to use profile for every leg, or exactly
+   * one entry per leg (one fewer than waypoints). UNSPECIFIED entries use
+   * profile.
+   *
+   * @generated from field: repeated routes.v1.RoutingProfile leg_profiles = 4;
+   */
+  legProfiles: RoutingProfile[];
+
+  /**
+   * The ID of a saved route being edited, if any. Legs of the saved route
+   * with the same endpoints and profile are reused instead of being routed
+   * again, as in UpdateRoute. The saved route is not changed.
+   *
+   * @generated from field: string route_id = 5;
+   */
+  routeId: string;
 };
 
 /**
@@ -318,11 +350,24 @@ export type Waypoints = Message<"routes.v1.Waypoints"> & {
   waypoints: LatLng[];
 
   /**
-   * How to compute legs between waypoints. Defaults to TRAIL.
+   * The default routing profile, used for legs without their own profile in
+   * leg_profiles. Defaults to TRAIL.
    *
    * @generated from field: routes.v1.RoutingProfile profile = 2;
    */
   profile: RoutingProfile;
+
+  /**
+   * Optional routing profiles per leg, to mix profiles within a route, e.g.
+   * TRAIL for most of the route with a STRAIGHT leg across an unmapped
+   * section. leg_profiles[i] is the profile of the leg from waypoints[i] to
+   * waypoints[i+1]. Either empty, to use profile for every leg, or exactly
+   * one entry per leg (one fewer than waypoints). UNSPECIFIED entries use
+   * profile.
+   *
+   * @generated from field: repeated routes.v1.RoutingProfile leg_profiles = 3;
+   */
+  legProfiles: RoutingProfile[];
 };
 
 /**
@@ -519,7 +564,8 @@ export type UpdateRouteRequest = Message<"routes.v1.UpdateRouteRequest"> & {
   description?: string | undefined;
 
   /**
-   * New waypoints, if set. The path is recomputed for any changed legs.
+   * New waypoints and routing profiles, if set. Legs whose endpoints and
+   * profile are unchanged keep their path; other legs are routed again.
    *
    * @generated from field: routes.v1.Waypoints waypoints = 4;
    */
@@ -899,12 +945,15 @@ export const GetRouteForecastResponseSchema: GenMessage<GetRouteForecastResponse
   messageDesc(file_routes_v1_routes, 20);
 
 /**
- * RoutingProfile controls how legs between waypoints are computed.
+ * RoutingProfile controls how a leg between two waypoints is computed.
  *
  * @generated from enum routes.v1.RoutingProfile
  */
 export enum RoutingProfile {
   /**
+   * In a request, use the default profile (the route's profile, or TRAIL). In
+   * a response, the leg was imported from a GPX file or an activity.
+   *
    * @generated from enum value: ROUTING_PROFILE_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
@@ -925,12 +974,25 @@ export enum RoutingProfile {
   SHORTEST = 2,
 
   /**
-   * Straight lines between waypoints, without snapping to the map. Use for
-   * off-trail sections or when routing fails.
+   * A straight line between the waypoints, without snapping to the map
+   * ("manual" mode). Use for off-trail sections, such as across a meadow or
+   * up a ridge without a path, or when routing fails.
    *
    * @generated from enum value: ROUTING_PROFILE_STRAIGHT = 3;
    */
   STRAIGHT = 3,
+
+  /**
+   * Prefer the paths the user has run before. Several alternative trail
+   * routes are computed and the one that overlaps most with the user's
+   * personal heatmap (the GPS tracks of their synced activities, see
+   * GeoService.GetPersonalHeatmap) is used. Behaves like TRAIL where the user
+   * has no activities near the leg. Slower than TRAIL, as each leg is routed
+   * several times.
+   *
+   * @generated from enum value: ROUTING_PROFILE_HEATMAP = 4;
+   */
+  HEATMAP = 4,
 }
 
 /**
@@ -1027,9 +1089,11 @@ export const ForecastPointKindSchema: GenEnum<ForecastPointKind> = /*@__PURE__*/
 /**
  * RouteService creates and edits running routes. A route is defined by an
  * ordered list of waypoints. The path between consecutive waypoints (a leg) is
- * computed by snapping to OpenStreetMap trails and roads using the route's
- * routing profile, and the elevation profile, distance and terrain breakdown
- * are computed from the result. Routes can also be imported from GPX or created
+ * computed by snapping to OpenStreetMap trails and roads, preferring the
+ * user's own previously run paths, or as a straight line, depending on the
+ * leg's routing profile. Each leg can use a different profile, so a route can
+ * mix trail sections with straight off-trail sections. The elevation profile,
+ * distance and terrain breakdown are computed from the result. Routes can also be imported from GPX or created
  * from a previously recorded activity. Use PreviewRoute to try out waypoints
  * before saving, and the GeoService to find trails and points of interest.
  * A route can be downloaded as GPX at /routes/{id}.gpx.
@@ -1040,7 +1104,9 @@ export const RouteService: GenService<{
   /**
    * Compute a route through the given waypoints without saving it. Returns the
    * route statistics and, optionally, the full path. Use this to iterate on a
-   * route design before calling CreateRoute.
+   * route design before calling CreateRoute, or to try out changes to a saved
+   * route (set route_id to reuse its unchanged legs) before calling
+   * UpdateRoute.
    *
    * @generated from rpc routes.v1.RouteService.PreviewRoute
    */
@@ -1083,8 +1149,8 @@ export const RouteService: GenService<{
   },
   /**
    * Update a route's details or waypoints. When waypoints are provided, legs
-   * whose endpoints are unchanged keep their existing path, and only new or
-   * moved legs are recomputed.
+   * whose endpoints and routing profile are unchanged keep their existing
+   * path, and only new, moved or re-profiled legs are recomputed.
    *
    * @generated from rpc routes.v1.RouteService.UpdateRoute
    */

@@ -9,6 +9,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,7 +34,7 @@ const (
 
 // MapData provides routing, elevation and weather data.
 type MapData interface {
-	Route(ctx context.Context, from, to geo.Point, profile string) (*mapdata.RoutedPath, error)
+	Route(ctx context.Context, from, to geo.Point, profile string, alternative int) (*mapdata.RoutedPath, error)
 	FillElevations(ctx context.Context, points []geo.Point, maxLookups int) error
 	Forecast(ctx context.Context, queries []mapdata.ForecastQuery) ([]mapdata.Weather, error)
 }
@@ -42,15 +43,20 @@ type MapData interface {
 // waypoints that can't be routed.
 var errInvalidRoute = errors.New("invalid route")
 
-// buildLegs computes the legs between consecutive waypoints. Existing legs
-// with the same endpoints are reused, unless they were routed with a
-// different profile.
-func buildLegs(ctx context.Context, md MapData, waypoints []routes.LatLng, profile routes.Profile, existing []routes.Leg) ([]routes.Leg, error) {
+// buildLegs computes the legs between consecutive waypoints, where
+// profiles[i] is the profile of the leg from waypoints[i] to
+// waypoints[i+1]. Existing legs with the same endpoints are reused, unless
+// they were routed with a different profile, and so are legs recently
+// routed for the user.
+func (s *Service) buildLegs(ctx context.Context, userID pgtype.UUID, waypoints []routes.LatLng, profiles []routes.Profile, existing []routes.Leg) ([]routes.Leg, error) {
 	if len(waypoints) < 2 {
 		return nil, fmt.Errorf("%w: at least 2 waypoints are required", errInvalidRoute)
 	}
 	if len(waypoints) > maxWaypoints {
 		return nil, fmt.Errorf("%w: at most %d waypoints are allowed", errInvalidRoute, maxWaypoints)
+	}
+	if len(profiles) != len(waypoints)-1 {
+		return nil, fmt.Errorf("%w: got %d leg profiles for %d legs", errInvalidRoute, len(profiles), len(waypoints)-1)
 	}
 	for i, wp := range waypoints {
 		if math.IsNaN(wp.Lat) || math.IsNaN(wp.Lng) || wp.Lat < -90 || wp.Lat > 90 || wp.Lng < -180 || wp.Lng > 180 {
@@ -58,19 +64,43 @@ func buildLegs(ctx context.Context, md MapData, waypoints []routes.LatLng, profi
 		}
 	}
 	legs := make([]routes.Leg, len(waypoints)-1)
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(maxConcurrentLegs)
+	// The legs that need routing, and the endpoints of those that prefer the
+	// user's heatmap.
+	var toRoute []int
+	var heatmapEnds []geo.Point
 	for i := range legs {
-		from, to := waypoints[i], waypoints[i+1]
+		from, to, profile := waypoints[i], waypoints[i+1], profiles[i]
 		if leg, ok := findLeg(existing, from, to, profile); ok {
 			legs[i] = leg
 			continue
 		}
+		if leg, ok := s.legs.get(userID, from, to, profile); ok {
+			legs[i] = leg
+			continue
+		}
+		toRoute = append(toRoute, i)
+		if profile == routes.ProfileHeatmap {
+			heatmapEnds = append(heatmapEnds, geo.Point{Lat: from.Lat, Lng: from.Lng}, geo.Point{Lat: to.Lat, Lng: to.Lng})
+		}
+	}
+	var heat *heatmap
+	if len(heatmapEnds) > 0 {
+		var err error
+		heat, err = s.loadHeatmap(ctx, userID, heatmapEnds)
+		if err != nil {
+			return nil, err
+		}
+	}
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(maxConcurrentLegs)
+	for _, i := range toRoute {
+		from, to, profile := waypoints[i], waypoints[i+1], profiles[i]
 		g.Go(func() error {
-			leg, err := routeLeg(ctx, md, from, to, profile)
+			leg, err := s.routeLeg(ctx, heat, from, to, profile)
 			if err != nil {
 				return fmt.Errorf("could not compute the leg from waypoint %d to %d: %w", i+1, i+2, err)
 			}
+			s.legs.put(userID, leg)
 			legs[i] = leg
 			return nil
 		})
@@ -92,37 +122,41 @@ func findLeg(existing []routes.Leg, from, to routes.LatLng, profile routes.Profi
 	return routes.Leg{}, false
 }
 
-func routeLeg(ctx context.Context, md MapData, from, to routes.LatLng, profile routes.Profile) (routes.Leg, error) {
+// routeLeg computes a leg with a profile. heat is the user's heatmap, used
+// by the heatmap profile.
+func (s *Service) routeLeg(ctx context.Context, heat *heatmap, from, to routes.LatLng, profile routes.Profile) (routes.Leg, error) {
 	fromPoint := geo.Point{Lat: from.Lat, Lng: from.Lng}
 	toPoint := geo.Point{Lat: to.Lat, Lng: to.Lng}
+	var path *mapdata.RoutedPath
+	var err error
 	switch profile {
 	case routes.ProfileStraight:
 		points := geo.Densify(fromPoint, toPoint, straightSpacingMeters)
-		if err := md.FillElevations(ctx, points, maxElevationLookups); err != nil {
+		if err := s.mapData.FillElevations(ctx, points, maxElevationLookups); err != nil {
 			return routes.Leg{}, err
 		}
 		return routes.NewLeg(from, to, profile, points, nil), nil
-	case routes.ProfileTrail, routes.ProfileShortest:
-		brouterProfile := mapdata.ProfileHikingMountain
-		if profile == routes.ProfileShortest {
-			brouterProfile = mapdata.ProfileShortest
-		}
-		path, err := md.Route(ctx, fromPoint, toPoint, brouterProfile)
-		if err != nil {
-			return routes.Leg{}, fmt.Errorf("%w: %w; try moving the waypoints closer to a trail or road, or use the STRAIGHT profile", errInvalidRoute, err)
-		}
-		// Make the leg start and end exactly at the waypoints, so the route
-		// is continuous even if routing snapped them to the nearest way.
-		points := append([]geo.Point{{Lat: from.Lat, Lng: from.Lng, Ele: path.Points[0].Ele}}, path.Points...)
-		points = append(points, geo.Point{Lat: to.Lat, Lng: to.Lng, Ele: path.Points[len(path.Points)-1].Ele})
-		terrains := append([]geo.Terrain{geo.TerrainUnknown}, path.Terrains...)
-		terrains[len(terrains)-1] = geo.TerrainUnknown
-		terrains = append(terrains, geo.TerrainUnknown)
-		points, terrains = dedupe(points, terrains)
-		return routes.NewLeg(from, to, profile, points, terrains), nil
+	case routes.ProfileTrail:
+		path, err = s.mapData.Route(ctx, fromPoint, toPoint, mapdata.ProfileHikingMountain, 0)
+	case routes.ProfileShortest:
+		path, err = s.mapData.Route(ctx, fromPoint, toPoint, mapdata.ProfileShortest, 0)
+	case routes.ProfileHeatmap:
+		path, err = s.routeOnHeatmap(ctx, heat, fromPoint, toPoint)
 	default:
 		return routes.Leg{}, fmt.Errorf("%w: unknown profile %q", errInvalidRoute, profile)
 	}
+	if err != nil {
+		return routes.Leg{}, fmt.Errorf("%w: %w; try moving the waypoints closer to a trail or road, or use the STRAIGHT profile", errInvalidRoute, err)
+	}
+	// Make the leg start and end exactly at the waypoints, so the route is
+	// continuous even if routing snapped them to the nearest way.
+	points := append([]geo.Point{{Lat: from.Lat, Lng: from.Lng, Ele: path.Points[0].Ele}}, path.Points...)
+	points = append(points, geo.Point{Lat: to.Lat, Lng: to.Lng, Ele: path.Points[len(path.Points)-1].Ele})
+	terrains := append([]geo.Terrain{geo.TerrainUnknown}, path.Terrains...)
+	terrains[len(terrains)-1] = geo.TerrainUnknown
+	terrains = append(terrains, geo.TerrainUnknown)
+	points, terrains = dedupe(points, terrains)
+	return routes.NewLeg(from, to, profile, points, terrains), nil
 }
 
 // dedupe removes consecutive duplicate points, keeping the terrain of the
