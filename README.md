@@ -119,3 +119,75 @@ personal use. Their URLs can be changed with flags, e.g. to self host BRouter:
 
 Public Overpass instances are often overloaded; trail and point of interest
 lookups return an error asking to retry when they all fail.
+
+## Deploying
+
+Trail Tools runs on [Cloud Run](https://cloud.google.com/run) with a
+[Neon](https://neon.com) serverless Postgres database, sized to stay within
+the free tiers for personal use: Cloud Run scales to zero, runs at most one
+instance and only uses CPU during requests, and Neon suspends the database
+when it's idle.
+
+The Google Cloud configuration is managed with Terraform in
+[`infra/`](infra), with its state in a Cloud Storage bucket. To apply changes
+locally:
+
+```sh
+$ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
+$ terraform -chdir=infra init
+$ terraform -chdir=infra apply
+```
+
+### Secrets
+
+Secrets are created by Terraform, but their values are added by hand so they
+aren't stored in the Terraform state:
+
+- `database-url`: the direct (not pooled) Neon connection string, as
+  migrations need session advisory locks.
+
+  ```sh
+  $ pbpaste | gcloud secrets versions add database-url --data-file=- --project trail-tools-444904
+  ```
+
+- `admin-bootstrap-token`: works as an invitation to create the first
+  administrator at `/invite/<token>`, until there is one.
+
+  ```sh
+  $ openssl rand -hex 24 | gcloud secrets versions add admin-bootstrap-token --data-file=- --project trail-tools-444904
+  $ gcloud secrets versions access latest --secret admin-bootstrap-token --project trail-tools-444904
+  ```
+
+  Passkeys are bound to the domain, so create the administrator on the
+  domain you'll use.
+
+- `strava-client-secret`: the Strava API application's client secret. Also
+  set `strava_client_id` in [`terraform.tfvars`](infra/terraform.tfvars),
+  which enables Strava and an hourly Cloud Scheduler job that syncs
+  activities, and set the Strava app's callback domain.
+
+### Custom domain
+
+The app is served on `trailrunn.ing`, set as `domain` in
+[`terraform.tfvars`](infra/terraform.tfvars). To set up a domain:
+
+1. Verify the domain with `gcloud domains verify <domain>`.
+2. Set `domain_enabled = true` in [`terraform.tfvars`](infra/terraform.tfvars)
+   and apply it locally with `terraform -chdir=infra apply`. Only a verified
+   owner of the domain can map it, so the first apply runs with your own
+   credentials.
+3. Create the DNS records from `terraform -chdir=infra output domain_records`.
+   Cloud Run provisions and renews the TLS certificate, which takes up to
+   about 15 minutes after the records resolve.
+
+### Bootstrapping a new project
+
+The state bucket and the billing permission are created by hand once:
+
+```sh
+$ gcloud storage buckets create gs://<project>-tfstate --location us-west1 --uniform-bucket-level-access --public-access-prevention
+$ gcloud storage buckets update gs://<project>-tfstate --versioning
+```
+
+Then update the bucket in [`versions.tf`](infra/versions.tf) and the
+variables in [`terraform.tfvars`](infra/terraform.tfvars), and apply locally.

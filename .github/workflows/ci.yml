@@ -6,6 +6,11 @@ on:
       - main
   pull_request:
 
+env:
+  # Keep in sync with the version used locally, as Terraform refuses to read
+  # state written by a newer version.
+  TERRAFORM_VERSION: "1.14.8"
+
 jobs:
   format:
     name: Check diff after formatting code
@@ -120,3 +125,19 @@ jobs:
           make web-deps
           go mod tidy
           git diff --exit-code --name-only
+
+  terraform:
+    name: Check Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - name: Check formatting and validate
+        run: |
+          terraform -chdir=infra fmt -check -recursive
+          terraform -chdir=infra init -backend=false -input=false
+          terraform -chdir=infra validate
