@@ -63,6 +63,41 @@
   background: #dc2626;
 }
 
+.waypoint-selected {
+  outline: 3px solid #facc15;
+  outline-offset: 1px;
+}
+
+/* The handle shown when hovering a route path, to insert a waypoint. */
+.route-handle {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 3px solid #047857;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  cursor: grab;
+}
+
+/* Kilometer labels along a route, distinct from the round waypoints. */
+.distance-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  width: max-content;
+  transform: translateX(-50%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
 /* Point of interest markers. */
 .poi-marker {
   position: relative;

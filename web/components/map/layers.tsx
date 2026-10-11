@@ -107,6 +107,50 @@ export const PointMarker: React.FC<PointMarkerProps> = ({
   return null;
 };
 
+export interface LabelMarker {
+  label: string;
+  position: LatLngTuple;
+}
+
+interface LabelMarkersProps {
+  markers: LabelMarker[];
+}
+
+/**
+ * DistanceMarkers draws small labels along a route, such as the distance in
+ * kilometers.
+ */
+export const DistanceMarkers: React.FC<LabelMarkersProps> = ({ markers }) => {
+  const map = useMap();
+  useEffect(() => {
+    const group = leaflet.layerGroup();
+    for (const marker of markers) {
+      const label = document.createElement("div");
+      label.className = "distance-marker";
+      label.textContent = marker.label;
+      group.addLayer(
+        leaflet.marker(marker.position, {
+          icon: leaflet.divIcon({
+            className: "",
+            html: label,
+            // The label centers itself on the point, whatever its width.
+            iconAnchor: [0, 7],
+            iconSize: [0, 14],
+          }),
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -2000,
+        })
+      );
+    }
+    group.addTo(map);
+    return () => {
+      group.remove();
+    };
+  }, [map, markers]);
+  return null;
+};
+
 interface HoverMarkerProps {
   position: LatLngTuple | null;
 }

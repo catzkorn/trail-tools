@@ -1,46 +1,73 @@
 import ElevationProfile from "@components/charts/elevation-profile";
 import ExploreControls from "@components/map/explore-controls";
+import type { LabelMarker } from "@components/map/layers";
 import {
+  DistanceMarkers,
   FitBounds,
   HoverMarker,
   MapClick,
-  PolylineLayer,
 } from "@components/map/layers";
 import MapView from "@components/map/map-view";
+import RoutePath from "@components/map/route-path";
 import WaypointMarkers from "@components/map/waypoint-markers";
 import Card from "@components/ui/card";
 import { TextAreaField, TextField } from "@components/ui/fields";
 import { ErrorText } from "@components/ui/query-error";
 import {
-  ghostButton,
   iconButton,
   primaryButton,
   secondaryButton,
 } from "@components/ui/styles";
 import { ConnectError, createClient } from "@connectrpc/connect";
 import { useTransport } from "@connectrpc/connect-query";
-import {
-  ArrowUturnLeftIcon,
-  ArrowsRightLeftIcon,
-  TrashIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import type { Route, RoutePoint } from "gen/routes/v1/routes_pb";
 import { RouteService, RoutingProfile } from "gen/routes/v1/routes_pb";
 import { PROFILE_OPTIONS } from "helpers/labels";
 import type { LatLng, LatLngTuple } from "leaflet";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+import { EditorToolbar, LiveStats } from "./editor-toolbar";
+import type { EditHistory, RouteShape } from "./route-edits";
+import {
+  appendWaypoint,
+  insertWaypoint,
+  isLoop,
+  moveWaypoint,
+  newHistory,
+  newShape,
+  outAndBack,
+  push,
+  redo,
+  removeWaypoint,
+  returnToStart,
+  reverseRoute,
+  undo,
+} from "./route-edits";
 import type { LatLngValue } from "./route-geometry";
-import { insertIndex, toTuples } from "./route-geometry";
+import {
+  distanceMarkers,
+  distanceStepKm,
+  toTuples,
+  waypointPathIndexes,
+} from "./route-geometry";
 import { RouteStatsPanel } from "./route-stats";
 
 export interface RouteDraft {
   name: string;
   description: string;
   waypoints: LatLngValue[];
+  // The routing profile of each leg, one fewer than waypoints.
+  legProfiles: RoutingProfile[];
+  // The routing mode last used, saved as the route's default profile.
   profile: RoutingProfile;
-  // Whether the waypoints or profile changed from the initial values.
+  // Whether the waypoints or leg profiles changed from the initial values.
   geometryChanged: boolean;
 }
 
@@ -68,20 +95,83 @@ const toWaypoint = (position: LatLng): LatLngValue => ({
   lng: roundCoordinate(position.lng),
 });
 
-const reversed = (points: LatLngValue[]): LatLngValue[] => {
-  const result: LatLngValue[] = [];
-  for (const point of points) {
-    result.unshift(point);
+const sameWaypoints = (
+  first: LatLngValue[],
+  second: LatLngValue[]
+): boolean => {
+  if (first.length !== second.length) {
+    return false;
   }
-  return result;
+  for (const [index, point] of first.entries()) {
+    const other = second[index];
+    if (other?.lat !== point.lat || other.lng !== point.lng) {
+      return false;
+    }
+  }
+  return true;
 };
 
-const EMPTY_WAYPOINTS: LatLngValue[] = [];
+// IsTyping reports whether a keyboard event is aimed at a text field.
+const isTyping = (event: KeyboardEvent): boolean => {
+  const { target } = event;
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  return (
+    target.isContentEditable ||
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT"
+  );
+};
+
+const profileLabel = (profile: RoutingProfile | undefined): string => {
+  for (const option of PROFILE_OPTIONS) {
+    if (option.value === profile) {
+      return option.label;
+    }
+  }
+  return "Imported";
+};
+
+const waypointLabel = (index: number, count: number): string => {
+  if (index === 0) {
+    return "Start";
+  }
+  if (index === count - 1) {
+    return "Finish";
+  }
+  return `Waypoint ${index + 1}`;
+};
+
+/**
+ * UniqueKeys returns a React key for each waypoint. Waypoints repeat in loops
+ * and out and back routes, so repeats are numbered.
+ */
+const uniqueKeys = (waypoints: LatLngValue[]): string[] => {
+  const seen = new Map<string, number>();
+  return waypoints.map((waypoint) => {
+    const key = `${waypoint.lat},${waypoint.lng}`;
+    const count = seen.get(key) ?? 0;
+    seen.set(key, count + 1);
+    return `${key}#${count}`;
+  });
+};
+
 const EMPTY_POINTS: RoutePoint[] = [];
+
+// PreviewResult is the outcome of the latest preview of a shape.
+interface PreviewResult {
+  shape: RouteShape;
+  route: Route | undefined;
+  error: string;
+}
 
 /**
  * RouteEditor edits a route's waypoints on a map, with a live preview of the
- * routed path, its statistics and elevation profile.
+ * routed path, its statistics and elevation profile. Each leg is routed with
+ * the mode that was selected when it was drawn, so trail, road, manual and
+ * heatmap sections can be mixed.
  */
 const RouteEditor: React.FC<RouteEditorProps> = ({
   route,
@@ -97,188 +187,304 @@ const RouteEditor: React.FC<RouteEditorProps> = ({
     () => createClient(RouteService, transport),
     [transport]
   );
-  const initialWaypoints = useMemo(
-    () =>
-      route === undefined
-        ? EMPTY_WAYPOINTS
-        : route.waypoints.map((point) => ({ lat: point.lat, lng: point.lng })),
-    [route]
-  );
   const initialProfile =
     route === undefined || route.profile === RoutingProfile.UNSPECIFIED
       ? RoutingProfile.TRAIL
       : route.profile;
+  const [initialShape] = useState<RouteShape>(() =>
+    route === undefined
+      ? newShape([], [], initialProfile)
+      : newShape(
+          route.waypoints.map((point) => ({ lat: point.lat, lng: point.lng })),
+          route.legProfiles,
+          initialProfile
+        )
+  );
 
   const [name, setName] = useState(route?.name ?? defaultName);
   const [description, setDescription] = useState(route?.description ?? "");
-  const [waypoints, setWaypoints] = useState<LatLngValue[]>(initialWaypoints);
-  const [history, setHistory] = useState<LatLngValue[][]>([]);
-  const [profile, setProfile] = useState<RoutingProfile>(initialProfile);
-  const [preview, setPreview] = useState<Route | undefined>(route);
-  const [previewError, setPreviewError] = useState("");
-  const [previewing, setPreviewing] = useState(false);
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [history, setHistory] = useState<EditHistory>(() =>
+    newHistory(initialShape)
+  );
+  const [mode, setMode] = useState<RoutingProfile>(initialProfile);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [result, setResult] = useState<PreviewResult>(() => ({
+    error: "",
+    route,
+    shape: initialShape,
+  }));
+  // The path point hovered on the elevation profile, and on the map.
+  const [profileHover, setProfileHover] = useState<number | null>(null);
+  const [mapHover, setMapHover] = useState<number | null>(null);
   const [validation, setValidation] = useState("");
   const requestRef = useRef(0);
+  const shape = history.present;
 
-  // Recompute the preview when the waypoints or profile change, debounced.
-  // Responses to outdated requests are ignored.
+  /**
+   * Recompute the preview when the shape changes, debounced. Responses to
+   * outdated requests are ignored. Unchanged legs are reused by the server.
+   */
   useEffect(() => {
     if (!geometryEditable) {
       return undefined;
     }
-    if (waypoints === initialWaypoints && profile === initialProfile) {
-      return undefined;
-    }
     requestRef.current += 1;
     const requestId = requestRef.current;
-    if (waypoints.length < 2) {
+    if (shape === initialShape || shape.waypoints.length < 2) {
       return undefined;
     }
     const timer = globalThis.setTimeout(() => {
-      setPreviewing(true);
       client
-        .previewRoute({ includePoints: true, profile, waypoints })
+        .previewRoute({
+          includePoints: true,
+          legProfiles: shape.legProfiles,
+          routeId: route?.id ?? "",
+          waypoints: shape.waypoints,
+        })
         .then((response) => {
-          if (requestRef.current !== requestId) {
-            return;
+          if (requestRef.current === requestId) {
+            setResult({ error: "", route: response.route, shape });
           }
-          setPreview(response.route);
-          setPreviewError("");
-          setPreviewing(false);
         })
         .catch((error_: unknown) => {
-          if (requestRef.current !== requestId) {
-            return;
+          if (requestRef.current === requestId) {
+            const message = ConnectError.from(error_).rawMessage;
+            setResult((previous) => ({
+              error: message,
+              route: previous.route,
+              shape,
+            }));
           }
-          setPreviewError(ConnectError.from(error_).rawMessage);
-          setPreviewing(false);
         });
-    }, 300);
+    }, 200);
     return () => {
       globalThis.clearTimeout(timer);
     };
-  }, [
-    client,
-    waypoints,
-    profile,
-    geometryEditable,
-    initialWaypoints,
-    initialProfile,
-  ]);
+  }, [client, shape, geometryEditable, initialShape, route?.id]);
 
-  const changeWaypoints = (next: LatLngValue[]) => {
-    setHistory([...history.slice(-49), waypoints]);
-    setWaypoints(next);
+  const edit = (change: (current: RouteShape) => RouteShape) => {
+    setHistory((current) => push(current, change(current.present)));
+  };
+  const undoEdit = () => {
+    setHistory(undo);
+    setSelected(null);
+  };
+  const redoEdit = () => {
+    setHistory(redo);
+    setSelected(null);
+  };
+  const removeAt = (index: number) => {
+    edit((current) => removeWaypoint(current, index, mode));
+    setSelected(null);
   };
 
-  const undo = () => {
-    const previous = history.at(-1);
-    if (previous === undefined) {
+  const handleKey = useEffectEvent((event: KeyboardEvent) => {
+    if (isTyping(event)) {
       return;
     }
-    setHistory(history.slice(0, -1));
-    setWaypoints(previous);
-  };
-
-  const removeWaypoint = (index: number) => {
-    changeWaypoints(waypoints.filter((_point, position) => position !== index));
-  };
+    const key = event.key.toLowerCase();
+    const modifier = event.metaKey || event.ctrlKey;
+    if (modifier && key === "z") {
+      event.preventDefault();
+      if (event.shiftKey) {
+        redoEdit();
+      } else {
+        undoEdit();
+      }
+      return;
+    }
+    if (event.ctrlKey && key === "y") {
+      event.preventDefault();
+      redoEdit();
+      return;
+    }
+    if ((key === "delete" || key === "backspace") && selected !== null) {
+      event.preventDefault();
+      removeAt(selected);
+      return;
+    }
+    if (key === "escape") {
+      setSelected(null);
+    }
+  });
+  useEffect(() => {
+    if (!geometryEditable) {
+      return undefined;
+    }
+    const listener = (event: KeyboardEvent) => {
+      handleKey(event);
+    };
+    globalThis.addEventListener("keydown", listener);
+    return () => {
+      globalThis.removeEventListener("keydown", listener);
+    };
+  }, [geometryEditable]);
 
   // Without two waypoints there is no route, whatever the last preview was.
-  const hasRoute = !geometryEditable || waypoints.length >= 2;
+  const hasRoute = !geometryEditable || shape.waypoints.length >= 2;
+  const preview = shape === initialShape ? route : result.route;
   const shownPreview = hasRoute ? preview : undefined;
+  const previewing =
+    hasRoute && shape !== initialShape && result.shape !== shape;
+  const previewError = result.shape === shape ? result.error : "";
   const points = shownPreview?.points ?? EMPTY_POINTS;
+  const previewWaypoints = shownPreview?.waypoints;
+  const waypointIndexes = useMemo(
+    () =>
+      previewWaypoints === undefined
+        ? []
+        : waypointPathIndexes(points, previewWaypoints),
+    [points, previewWaypoints]
+  );
+  // The path can only be edited when it matches the current waypoints.
+  const previewCurrent =
+    previewWaypoints !== undefined &&
+    sameWaypoints(previewWaypoints, shape.waypoints);
+  const kmMarkers = useMemo(() => {
+    const total = points.at(-1)?.distanceMeters ?? 0;
+    return distanceMarkers(points, distanceStepKm(total)).map(
+      (marker): LabelMarker => ({
+        label: `${marker.km} km`,
+        position: marker.position,
+      })
+    );
+  }, [points]);
+  const waypointKeys = useMemo(
+    () => uniqueKeys(shape.waypoints),
+    [shape.waypoints]
+  );
+  const waypointTuples = useMemo(
+    () => toTuples(shape.waypoints),
+    [shape.waypoints]
+  );
   const pathTuples = useMemo(() => toTuples(points), [points]);
-  const waypointTuples = useMemo(() => toTuples(waypoints), [waypoints]);
   const fitTuples = pathTuples.length > 0 ? pathTuples : waypointTuples;
   let hoverPosition: LatLngTuple | null = null;
-  const hoverPoint = hoverIndex === null ? undefined : points.at(hoverIndex);
+  const hoverPoint =
+    profileHover === null ? undefined : points.at(profileHover);
   if (hoverPoint !== undefined) {
     hoverPosition = [hoverPoint.lat, hoverPoint.lng];
   }
+  const mapHoverPoint = mapHover === null ? undefined : points.at(mapHover);
 
   const save = () => {
     if (name.trim() === "") {
       setValidation("Give the route a name.");
       return;
     }
-    if (geometryEditable && waypoints.length < 2) {
+    if (geometryEditable && shape.waypoints.length < 2) {
       setValidation("Add at least two waypoints by clicking on the map.");
       return;
     }
     setValidation("");
     onSave({
       description,
-      geometryChanged:
-        waypoints !== initialWaypoints || profile !== initialProfile,
+      geometryChanged: shape !== initialShape,
+      legProfiles: shape.legProfiles,
       name: name.trim(),
-      profile,
-      waypoints,
+      profile: mode,
+      waypoints: shape.waypoints,
     });
   };
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-3">
-        {geometryEditable && (
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-gray-600">Routing:</span>
-            <div className="inline-flex overflow-hidden rounded-md ring-1 ring-gray-300">
-              {PROFILE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`px-3 py-1 text-sm ${profile === option.value ? "bg-emerald-700 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-                  onClick={() => {
-                    setProfile(option.value);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">
-              Click the map to add a waypoint, drag to move, click a waypoint to
-              remove it, click the path to insert one.
-            </span>
-          </div>
-        )}
         <div className="overflow-hidden rounded-lg border border-gray-200">
-          <MapView className="h-[55vh] min-h-80" rememberView>
-            <ExploreControls />
-            {pathTuples.length > 1 && (
-              <PolylineLayer
-                positions={pathTuples}
-                color="#047857"
-                weight={5}
-                onClick={
-                  geometryEditable
-                    ? (position) => {
-                        const index = insertIndex(points, waypoints, position);
-                        const next = [...waypoints];
-                        next.splice(index, 0, toWaypoint(position));
-                        changeWaypoints(next);
+          <MapView className="h-[60vh] min-h-96" rememberView>
+            <ExploreControls
+              showHeatmap={geometryEditable && mode === RoutingProfile.HEATMAP}
+            />
+            {geometryEditable && (
+              <div className="pointer-events-none absolute top-12 right-14 left-12 z-[1000] flex flex-col items-start gap-1">
+                <div className="pointer-events-auto">
+                  <EditorToolbar
+                    mode={mode}
+                    onModeChange={setMode}
+                    canUndo={history.past.length > 0}
+                    canRedo={history.future.length > 0}
+                    waypointCount={shape.waypoints.length}
+                    isLoop={isLoop(shape)}
+                    selected={selected}
+                    onUndo={undoEdit}
+                    onRedo={redoEdit}
+                    onReturnToStart={() => {
+                      edit((current) => returnToStart(current, mode));
+                    }}
+                    onOutAndBack={() => {
+                      edit(outAndBack);
+                    }}
+                    onReverse={() => {
+                      edit(reverseRoute);
+                      setSelected(null);
+                    }}
+                    onClear={() => {
+                      edit(() => newShape([], [], mode));
+                      setSelected(null);
+                    }}
+                    onRemoveSelected={() => {
+                      if (selected !== null) {
+                        removeAt(selected);
+                      }
+                    }}
+                  />
+                </div>
+                {hasRoute && previewError !== "" && (
+                  <p className="pointer-events-auto max-w-md rounded-md bg-red-50 px-2 py-1 text-xs text-red-800 shadow ring-1 ring-red-200">
+                    {previewError}
+                  </p>
+                )}
+              </div>
+            )}
+            {geometryEditable && (
+              <div className="absolute right-2 bottom-6 z-[1000]">
+                <LiveStats stats={shownPreview?.stats} updating={previewing} />
+              </div>
+            )}
+            {points.length > 1 && (
+              <RoutePath
+                points={points}
+                waypointIndexes={waypointIndexes}
+                legProfiles={shownPreview?.legProfiles ?? []}
+                waypoints={shape.waypoints}
+                onInsert={
+                  geometryEditable && previewCurrent
+                    ? (index, position) => {
+                        edit((current) =>
+                          insertWaypoint(
+                            current,
+                            index,
+                            toWaypoint(position),
+                            mode
+                          )
+                        );
+                        setSelected(null);
                       }
                     : undefined
                 }
+                onHover={setMapHover}
               />
             )}
+            <DistanceMarkers markers={kmMarkers} />
             {geometryEditable && (
               <>
                 <MapClick
                   onClick={(position) => {
-                    changeWaypoints([...waypoints, toWaypoint(position)]);
+                    edit((current) =>
+                      appendWaypoint(current, toWaypoint(position), mode)
+                    );
+                    setSelected(null);
                   }}
                 />
                 <WaypointMarkers
-                  waypoints={waypoints}
+                  waypoints={shape.waypoints}
+                  selected={selected}
                   onMove={(index, position) => {
-                    const next = [...waypoints];
-                    next[index] = toWaypoint(position);
-                    changeWaypoints(next);
+                    edit((current) =>
+                      moveWaypoint(current, index, toWaypoint(position), mode)
+                    );
                   }}
-                  onRemove={removeWaypoint}
+                  onSelect={setSelected}
                 />
               </>
             )}
@@ -288,16 +494,20 @@ const RouteEditor: React.FC<RouteEditorProps> = ({
             )}
           </MapView>
         </div>
+        {geometryEditable && (
+          <p className="text-xs text-gray-500">
+            Click the map to add a waypoint using the selected mode. Drag the
+            route to reshape it, drag a waypoint to move it, or click a waypoint
+            to select it and press Delete to remove it. Manual sections are
+            dashed.
+          </p>
+        )}
         <Card title="Elevation profile">
-          {hasRoute && previewing && (
-            <p className="mb-1 text-xs text-gray-500">Updating route…</p>
-          )}
-          {hasRoute && previewError !== "" && (
-            <p className="mb-2 rounded bg-red-50 p-2 text-sm text-red-800">
-              {previewError}
-            </p>
-          )}
-          <ElevationProfile points={points} onHover={setHoverIndex} />
+          <ElevationProfile
+            points={points}
+            onHover={setProfileHover}
+            positionMeters={mapHoverPoint?.distanceMeters}
+          />
         </Card>
       </div>
       <div className="flex flex-col gap-4">
@@ -344,75 +554,40 @@ const RouteEditor: React.FC<RouteEditorProps> = ({
           <RouteStatsPanel stats={shownPreview?.stats} />
         </Card>
         {geometryEditable && (
-          <Card
-            title={`Waypoints (${waypoints.length})`}
-            actions={
-              <>
-                <button
-                  type="button"
-                  className={ghostButton}
-                  disabled={history.length === 0}
-                  onClick={undo}
-                  title="Undo"
-                >
-                  <ArrowUturnLeftIcon className="size-4" />
-                  Undo
-                </button>
-                <button
-                  type="button"
-                  className={ghostButton}
-                  disabled={waypoints.length < 2}
-                  title="Reverse the route"
-                  onClick={() => {
-                    changeWaypoints(reversed(waypoints));
-                  }}
-                >
-                  <ArrowsRightLeftIcon className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  className={ghostButton}
-                  disabled={waypoints.length === 0}
-                  title="Remove all waypoints"
-                  onClick={() => {
-                    changeWaypoints([]);
-                  }}
-                >
-                  <TrashIcon className="size-4" />
-                </button>
-              </>
-            }
-          >
-            {waypoints.length === 0 ? (
+          <Card title={`Waypoints (${shape.waypoints.length})`}>
+            {shape.waypoints.length === 0 ? (
               <p className="text-sm text-gray-500">
                 Click on the map to place the start.
               </p>
             ) : (
               <ol className="flex max-h-72 flex-col gap-1 overflow-y-auto text-sm">
-                {waypoints.map((waypoint, index) => {
-                  let label = `Waypoint ${index + 1}`;
-                  if (index === 0) {
-                    label = "Start";
-                  } else if (index === waypoints.length - 1) {
-                    label = "Finish";
-                  }
+                {shape.waypoints.map((_waypoint, index) => {
+                  const label = waypointLabel(index, shape.waypoints.length);
                   return (
                     <li
-                      key={`${waypoint.lat},${waypoint.lng}`}
-                      className="flex items-center justify-between gap-2 rounded px-1 hover:bg-gray-50"
+                      key={waypointKeys[index]}
+                      className={`flex items-center justify-between gap-2 rounded px-1 ${index === selected ? "bg-amber-50 ring-1 ring-amber-300" : "hover:bg-gray-50"}`}
                     >
-                      <span>
+                      <button
+                        type="button"
+                        className="min-w-0 grow text-left"
+                        onClick={() => {
+                          setSelected(index);
+                        }}
+                      >
                         <span className="font-medium">{label}</span>{" "}
-                        <span className="text-xs text-gray-500 tabular-nums">
-                          {waypoint.lat.toFixed(4)}, {waypoint.lng.toFixed(4)}
-                        </span>
-                      </span>
+                        {index > 0 && (
+                          <span className="text-xs text-gray-500">
+                            via {profileLabel(shape.legProfiles[index - 1])}
+                          </span>
+                        )}
+                      </button>
                       <button
                         type="button"
                         className={iconButton}
                         aria-label={`Remove ${label}`}
                         onClick={() => {
-                          removeWaypoint(index);
+                          removeAt(index);
                         }}
                       >
                         <XMarkIcon className="size-4" />

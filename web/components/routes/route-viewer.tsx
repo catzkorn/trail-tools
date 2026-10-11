@@ -1,12 +1,14 @@
 import ElevationProfile from "@components/charts/elevation-profile";
 import ExploreControls from "@components/map/explore-controls";
+import type { LabelMarker } from "@components/map/layers";
 import {
+  DistanceMarkers,
   FitBounds,
   HoverMarker,
   PointMarker,
-  PolylineLayer,
 } from "@components/map/layers";
 import MapView from "@components/map/map-view";
+import RoutePath from "@components/map/route-path";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
 import { ErrorText } from "@components/ui/query-error";
@@ -28,7 +30,12 @@ import type { LatLngTuple } from "leaflet";
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-import { toTuples } from "./route-geometry";
+import {
+  distanceMarkers,
+  distanceStepKm,
+  toTuples,
+  waypointPathIndexes,
+} from "./route-geometry";
 import { RouteStatsPanel } from "./route-stats";
 
 interface RouteViewerProps {
@@ -40,7 +47,9 @@ interface RouteViewerProps {
 const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // The path point hovered on the elevation profile, and on the map.
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [mapHover, setMapHover] = useState<number | null>(null);
   const remove = useMutation(deleteRoute, {
     onSuccess: async () => {
       await invalidateServices(queryClient, [RouteService]);
@@ -48,8 +57,22 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
     },
   });
 
-  const { points } = route;
+  const { points, waypoints } = route;
   const tuples = useMemo(() => toTuples(points), [points]);
+  const waypointIndexes = useMemo(
+    () => waypointPathIndexes(points, waypoints),
+    [points, waypoints]
+  );
+  const kmMarkers = useMemo(() => {
+    const total = points.at(-1)?.distanceMeters ?? 0;
+    return distanceMarkers(points, distanceStepKm(total)).map(
+      (marker): LabelMarker => ({
+        label: `${marker.km} km`,
+        position: marker.position,
+      })
+    );
+  }, [points]);
+  const mapHoverPoint = mapHover === null ? undefined : points.at(mapHover);
   const [start] = tuples;
   const finish = tuples.at(-1);
   let hoverPosition: LatLngTuple | null = null;
@@ -64,9 +87,16 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
         <div className="overflow-hidden rounded-lg border border-gray-200">
           <MapView className="h-[55vh] min-h-80" rememberView>
             <ExploreControls />
-            {tuples.length > 1 && (
-              <PolylineLayer positions={tuples} color="#047857" weight={5} />
+            {points.length > 1 && (
+              <RoutePath
+                points={points}
+                waypointIndexes={waypointIndexes}
+                legProfiles={route.legProfiles}
+                waypoints={waypoints}
+                onHover={setMapHover}
+              />
             )}
+            <DistanceMarkers markers={kmMarkers} />
             {start !== undefined && (
               <PointMarker position={start} color="#16a34a" tooltip="Start" />
             )}
@@ -78,7 +108,11 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
           </MapView>
         </div>
         <Card title="Elevation profile">
-          <ElevationProfile points={points} onHover={setHoverIndex} />
+          <ElevationProfile
+            points={points}
+            onHover={setHoverIndex}
+            positionMeters={mapHoverPoint?.distanceMeters}
+          />
         </Card>
       </div>
       <div className="flex flex-col gap-4">

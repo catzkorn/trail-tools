@@ -176,12 +176,32 @@ export const priorityClass = (priority: RacePriority): string => {
 export interface ProfileOption {
   value: RoutingProfile;
   label: string;
+  description: string;
 }
 
+// PROFILE_OPTIONS are the route editor's routing modes.
 export const PROFILE_OPTIONS: ProfileOption[] = [
-  { label: "Trail", value: RoutingProfile.TRAIL },
-  { label: "Shortest", value: RoutingProfile.SHORTEST },
-  { label: "Straight", value: RoutingProfile.STRAIGHT },
+  {
+    description: "Snap to trails and paths, preferring unpaved ones",
+    label: "Trail",
+    value: RoutingProfile.TRAIL,
+  },
+  {
+    description: "Snap to the shortest path on any way, including roads",
+    label: "Road",
+    value: RoutingProfile.SHORTEST,
+  },
+  {
+    description: "Draw straight lines, for off-trail sections",
+    label: "Manual",
+    value: RoutingProfile.STRAIGHT,
+  },
+  {
+    description:
+      "Snap to trails, preferring the paths you have run before (your heatmap)",
+    label: "My routes",
+    value: RoutingProfile.HEATMAP,
+  },
 ];
 
 export const routeSourceLabel = (source: RouteSource): string => {

@@ -13,11 +13,15 @@ so you can bring your own AI agent to do the planning.
 - **Training plans**: plans of up to a year with goal races, planned at the
   month (phase and volume), week (focus and targets) and day (workouts) level,
   compared with what you actually ran.
-- **Routes**: draw routes by placing waypoints that snap to trails
-  ([BRouter](https://brouter.de)), import GPX files or turn a past activity into
-  a route. Each route has an elevation profile, distance, gain, grades and a
-  terrain breakdown, and can be downloaded as GPX for your watch. Overlays show
-  your personal heatmap, OpenStreetMap trails and points of interest.
+- **Routes**: a Strava style route editor where waypoints snap to trails or
+  roads ([BRouter](https://brouter.de)), prefer the paths you've run before
+  (your heatmap), or are joined by straight lines for off-trail sections, mixed
+  within one route. Drag the route to reshape it, undo and redo, close the loop
+  or turn it into an out and back. You can also import GPX files or turn a past
+  activity into a route. Each route has an elevation profile, distance, gain,
+  grades and a terrain breakdown, and can be downloaded as GPX for your watch.
+  Overlays show your personal heatmap, OpenStreetMap trails and points of
+  interest.
 - **Weather**: an hourly forecast for where you'll be along a route, given a
   start time and pace, with warnings for thunderstorms, freezing levels, wind
   and darkness ([Open-Meteo](https://open-meteo.com)). Works for saved routes

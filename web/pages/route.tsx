@@ -324,7 +324,11 @@ const NewRoute: React.FC = () => {
               name: draft.name,
               source: {
                 case: "waypoints",
-                value: { profile: draft.profile, waypoints: draft.waypoints },
+                value: {
+                  legProfiles: draft.legProfiles,
+                  profile: draft.profile,
+                  waypoints: draft.waypoints,
+                },
               },
             });
           }}
@@ -419,7 +423,11 @@ const ExistingRoute: React.FC = () => {
             name: draft.name,
             waypoints:
               geometryEditable && draft.geometryChanged
-                ? { profile: draft.profile, waypoints: draft.waypoints }
+                ? {
+                    legProfiles: draft.legProfiles,
+                    profile: draft.profile,
+                    waypoints: draft.waypoints,
+                  }
                 : undefined,
           });
         }}

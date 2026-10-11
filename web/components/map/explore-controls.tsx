@@ -141,13 +141,32 @@ const PlaceSearch: React.FC = () => {
   );
 };
 
+interface ExploreControlsProps {
+  /**
+   * Show the heatmap overlay, e.g. while routing prefers the heatmap. It
+   * is turned on whenever this becomes true, and can still be turned off.
+   */
+  showHeatmap?: boolean;
+}
+
 /**
  * ExploreControls adds a place search and toggles for the heatmap, trail and
  * point of interest overlays. It must be rendered inside a MapView.
  */
-const ExploreControls: React.FC = () => {
+const ExploreControls: React.FC<ExploreControlsProps> = ({
+  showHeatmap = false,
+}) => {
   const viewport = useViewport();
-  const [heatmap, setHeatmap] = useState(() => readStorageFlag(HEATMAP_KEY));
+  const [heatmap, setHeatmap] = useState(
+    () => showHeatmap || readStorageFlag(HEATMAP_KEY)
+  );
+  const [wasShowingHeatmap, setWasShowingHeatmap] = useState(showHeatmap);
+  if (showHeatmap !== wasShowingHeatmap) {
+    setWasShowingHeatmap(showHeatmap);
+    if (showHeatmap) {
+      setHeatmap(true);
+    }
+  }
   const [trails, setTrails] = useState(() => readStorageFlag(TRAILS_KEY));
   const [poi, setPoi] = useState(() => readStorageFlag(POI_KEY));
 
