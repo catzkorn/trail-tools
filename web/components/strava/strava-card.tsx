@@ -12,6 +12,7 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import { ActivityService } from "gen/activities/v1/activities_pb";
+import { GeoService } from "gen/geo/v1/geo_pb";
 import {
   disconnectStrava,
   getStravaConnection,
@@ -99,7 +100,7 @@ const StravaCard: React.FC<StravaCardProps> = ({ showDisconnect = false }) => {
   const previousState = useRef(syncState);
   useEffect(() => {
     if (isSyncing(previousState.current) && !isSyncing(syncState)) {
-      void invalidateServices(queryClient, [ActivityService]);
+      void invalidateServices(queryClient, [ActivityService, GeoService]);
     }
     previousState.current = syncState;
   }, [syncState, queryClient]);

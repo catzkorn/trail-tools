@@ -12,17 +12,27 @@ import {
   PolylineLayer,
 } from "@components/map/layers";
 import MapView from "@components/map/map-view";
+import {
+  CoverageConfirm,
+  useCoverageCheck,
+} from "@components/routes/coverage-warning";
 import Card from "@components/ui/card";
 import { Badge, Stat } from "@components/ui/misc";
-import QueryError from "@components/ui/query-error";
-import { secondaryButton } from "@components/ui/styles";
-import { useQuery } from "@connectrpc/connect-query";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import QueryError, { ErrorText } from "@components/ui/query-error";
+import { primaryButton, secondaryButton } from "@components/ui/styles";
+import { useMutation, useQuery } from "@connectrpc/connect-query";
+import {
+  ArrowTopRightOnSquareIcon,
+  MapIcon,
+} from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
 import { getActivity } from "gen/activities/v1/activities-ActivityService_connectquery";
 import type {
   Activity,
   ActivityStreams,
 } from "gen/activities/v1/activities_pb";
+import { createRoute } from "gen/routes/v1/routes-RouteService_connectquery";
+import { RouteService, TrackConversion } from "gen/routes/v1/routes_pb";
 import {
   formatDate,
   formatHoursMinutes,
@@ -33,9 +43,10 @@ import {
 } from "helpers/format";
 import { sportLabel } from "helpers/labels";
 import { decodePolyline } from "helpers/polyline";
+import { invalidateServices } from "helpers/query";
 import type { LatLngTuple } from "leaflet";
 import React, { useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 
 interface Track {
   positions: LatLngTuple[];
@@ -80,11 +91,22 @@ const buildTrack = (
 
 const ActivityPage: React.FC = () => {
   const { id = "" } = useParams();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const { isPending, isError, data, error, refetch } = useQuery(getActivity, {
     id,
     includeStreams: true,
     maxStreamPoints: 2000,
+  });
+  const trackCoverageCheck = useCoverageCheck();
+  const makeRoute = useMutation(createRoute, {
+    onSuccess: async (response) => {
+      await invalidateServices(queryClient, [RouteService]);
+      if (response.route !== undefined) {
+        void navigate(`/routes/${response.route.id}`);
+      }
+    },
   });
   const track = useMemo(
     () =>
@@ -155,8 +177,37 @@ const ActivityPage: React.FC = () => {
               View on Strava
             </a>
           )}
+          {track.positions.length > 1 && (
+            <button
+              type="button"
+              className={primaryButton}
+              disabled={makeRoute.isPending || trackCoverageCheck.isPending}
+              onClick={() => {
+                const source = {
+                  case: "activityId",
+                  value: activity.id,
+                } as const;
+                trackCoverageCheck.checkAndSnap(source, () => {
+                  makeRoute.mutate({
+                    conversion: TrackConversion.SNAP,
+                    name: activity.name,
+                    source,
+                  });
+                });
+              }}
+            >
+              <MapIcon className="size-4" />
+              {makeRoute.isPending
+                ? "Snapping to trails…"
+                : "Create route from this activity"}
+            </button>
+          )}
         </div>
       </div>
+      {track.positions.length > 1 && (
+        <CoverageConfirm check={trackCoverageCheck} />
+      )}
+      <ErrorText error={makeRoute.error} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-4">
           {track.positions.length > 1 ? (
