@@ -195,6 +195,59 @@ type Session struct {
 	Expiry pgtype.Timestamptz
 }
 
+type StravaActivity struct {
+	ID                  pgtype.UUID
+	UserID              pgtype.UUID
+	StravaID            int64
+	Name                string
+	Description         string
+	SportType           string
+	StartTime           pgtype.Timestamptz
+	StartDateLocal      pgtype.Date
+	Timezone            string
+	DistanceMeters      float64
+	MovingTimeSeconds   int32
+	ElapsedTimeSeconds  int32
+	ElevationGainMeters float64
+	AverageSpeedMps     float64
+	MaxSpeedMps         float64
+	AverageHeartrateBpm float64
+	MaxHeartrateBpm     float64
+	AverageCadenceSpm   float64
+	SummaryPolyline     string
+	DeviceName          string
+	RelativeEffort      int32
+	PhotoCount          int32
+	SummaryJson         []byte
+	DetailJson          []byte
+	MinLat              pgtype.Float8
+	MinLng              pgtype.Float8
+	MaxLat              pgtype.Float8
+	MaxLng              pgtype.Float8
+	StreamsSynced       bool
+	CreateTime          pgtype.Timestamptz
+	UpdateTime          pgtype.Timestamptz
+}
+
+type StravaActivityPhoto struct {
+	ActivityID pgtype.UUID
+	StravaID   string
+	Position   int32
+	Caption    string
+	Url        string
+	Width      int32
+	Height     int32
+	Lat        pgtype.Float8
+	Lng        pgtype.Float8
+	TakenTime  pgtype.Timestamptz
+	PhotoJson  []byte
+}
+
+type StravaActivityStream struct {
+	ActivityID pgtype.UUID
+	Streams    []byte
+}
+
 type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
