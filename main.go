@@ -25,6 +25,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
@@ -36,6 +37,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
@@ -284,6 +286,7 @@ func run(
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
+	geoService := geosvc.NewService(log, mapData, activityRepo)
 	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, routing.DefaultDEMCache))
 	defer importRunner.Wait()
 	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
@@ -296,6 +299,7 @@ func run(
 	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)
 	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
 	routesv1connect.RegisterRouteServiceHandler(server, routeService)
+	geov1connect.RegisterGeoServiceHandler(server, geoService)
 	routingv1connect.RegisterMapDataServiceHandler(server, mapDataService)
 	apiMux := http.NewServeMux()
 	// GPX files imported as routes can be several megabytes.

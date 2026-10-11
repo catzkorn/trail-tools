@@ -20,15 +20,18 @@ import (
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
@@ -56,6 +59,7 @@ type env struct {
 	activity   activitiesv1connect.ActivityServiceClient
 	stravaAPI  stravav1connect.StravaServiceClient
 	routes     routesv1connect.RouteServiceClient
+	geo        geov1connect.GeoServiceClient
 	mapDataAPI routingv1connect.MapDataServiceClient
 	imports    *fakeImportRunner
 }
@@ -99,6 +103,7 @@ func newEnv(t *testing.T) *env {
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil)
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
+	geoService := geosvc.NewService(log, e.mapData, activityRepo)
 
 	mux := http.NewServeMux()
 	server := connect.NewServer()
@@ -107,6 +112,7 @@ func newEnv(t *testing.T) *env {
 	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)
 	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
 	routesv1connect.RegisterRouteServiceHandler(server, routeService)
+	geov1connect.RegisterGeoServiceHandler(server, geoService)
 	connecthttp.Mount(mux, server)
 
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
@@ -127,6 +133,7 @@ func newEnv(t *testing.T) *env {
 	e.activity = activitiesv1connect.NewActivityServiceClient(authed)
 	e.stravaAPI = stravav1connect.NewStravaServiceClient(authed)
 	e.routes = routesv1connect.NewRouteServiceClient(authed)
+	e.geo = geov1connect.NewGeoServiceClient(authed)
 	e.mapDataAPI = routingv1connect.NewMapDataServiceClient(authed)
 	return e
 }
@@ -220,6 +227,36 @@ func (f *fakeMapData) FillElevations(_ context.Context, points []geo.Point, _ in
 		points[i].Ele = points[i].Lat * 1000
 	}
 	return nil
+}
+
+func (f *fakeMapData) Elevations(_ context.Context, points []geo.Point) ([]float64, error) {
+	elevations := make([]float64, len(points))
+	for i, p := range points {
+		elevations[i] = p.Lat * 1000
+	}
+	return elevations, nil
+}
+
+func (f *fakeMapData) Search(_ context.Context, query string, limit int) ([]mapdata.Place, error) {
+	return []mapdata.Place{{Name: query, Lat: 1, Lng: 2, Category: "natural", Type: "peak", BoundingBox: []float64{0.9, 1.1, 1.9, 2.1}}}, nil
+}
+
+func (f *fakeMapData) FindTrails(_ context.Context, center geo.Point, radius float64) ([]mapdata.Element, error) {
+	way := mapdata.Element{Type: "way", ID: 42, Tags: map[string]string{"highway": "path", "name": "Ridge Trail", "surface": "dirt"}}
+	for i := range 5 {
+		way.Geometry = append(way.Geometry, struct {
+			Lat float64 `json:"lat"`
+			Lng float64 `json:"lon"`
+		}{Lat: center.Lat + float64(i)*0.001, Lng: center.Lng})
+	}
+	return []mapdata.Element{way}, nil
+}
+
+func (f *fakeMapData) FindFeatures(_ context.Context, center geo.Point, radius float64, filters []string) ([]mapdata.Element, error) {
+	return []mapdata.Element{
+		{Type: "node", ID: 1, Lat: center.Lat + 0.01, Lng: center.Lng, Tags: map[string]string{"natural": "peak", "name": "Far Peak", "ele": "1234"}},
+		{Type: "node", ID: 2, Lat: center.Lat + 0.001, Lng: center.Lng, Tags: map[string]string{"amenity": "drinking_water"}},
+	}, nil
 }
 
 func approx(a, b, tolerance float64) bool {
