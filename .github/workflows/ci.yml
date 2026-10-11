@@ -80,7 +80,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:18
+        # PostGIS and pgRouting, matching the versions on Neon.
+        image: pgrouting/pgrouting:18-3.6-3.8
         env:
           POSTGRES_PASSWORD: password
         ports:

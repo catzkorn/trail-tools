@@ -70,11 +70,15 @@ help: ## Show this help
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: db
-db: ## Start the postgres container
+db: ## Start the postgres container, with PostGIS and pgRouting
 	@if $(CONTAINER_RUNNING) | grep -qx postgres; then \
 		echo "postgres already running"; \
+		$(WAIT_DB); \
+		$(CONTAINER_BIN) exec postgres psql -U postgres -tAc "select 1 from pg_available_extensions where name = 'pgrouting'" | grep -q 1 || \
+			{ echo "the running postgres container has no pgRouting; restart it with make clean db" >&2; exit 1; }; \
 	else \
-		$(CONTAINER_BIN) run --rm --name postgres -p 5432:5432 -d -e POSTGRES_PASSWORD=password postgres:$(PG_TAG); \
+		$(CONTAINER_BIN) build -t trail-tools-postgres:$(PG_TAG) --build-arg PG_TAG=$(PG_TAG) --build-arg PG_MAJOR=$(PG_TAG) test/postgres && \
+		$(CONTAINER_BIN) run --rm --name postgres -p 5432:5432 -d --memory 4g -e POSTGRES_PASSWORD=password trail-tools-postgres:$(PG_TAG); \
 	fi
 
 .PHONY: sqlc
@@ -109,7 +113,14 @@ go-lint:
 .PHONY: run
 run: db ## Run the backend (starts db)
 	@$(WAIT_DB)
-	go run main.go $(SERVER_FLAGS)
+	go run . $(SERVER_FLAGS)
+
+.PHONY: import-osm
+import-osm: db ## Import OpenStreetMap data for routing, e.g. make import-osm REGION=liechtenstein PBF=<url or file>
+	@$(WAIT_DB)
+	go run . import-osm \
+		-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
+		-region "$(REGION)" -pbf "$(PBF)" $(if $(BOUNDS),-bounds "$(BOUNDS)")
 
 .PHONY: web-deps
 web-deps: ## Install web dependencies
@@ -153,7 +164,7 @@ watch: db ## Run backend + assets with live reload
 			--target=es6 \
 			--watch=forever 2> /dev/null & \
 		$(NODE_RUN) npx -s @tailwindcss/cli -i base.css -o dist/index.css --watch & \
-		go tool github.com/mitranim/gow -s run main.go $(SERVER_FLAGS) -serve-dir $(CURDIR)/web/dist \
+		go tool github.com/mitranim/gow -s run . $(SERVER_FLAGS) -serve-dir $(CURDIR)/web/dist \
 	"
 
 .PHONY: gen
