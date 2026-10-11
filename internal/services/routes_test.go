@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -368,5 +369,161 @@ func TestHeatmapRouting(t *testing.T) {
 	}
 	if prefer := e.router.lastPrefer(); len(prefer) != 0 {
 		t.Errorf("got %d preferred paths away from the activities", len(prefer))
+	}
+}
+
+func TestCheckTrackCoverage(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	coverage := func(req *routesv1.CheckTrackCoverageRequest) float64 {
+		t.Helper()
+		resp, err := e.routes.CheckTrackCoverage(ctx, req)
+		if err != nil {
+			t.Fatalf("CheckTrackCoverage: %v", err)
+		}
+		return resp.GetCoveredFraction()
+	}
+
+	// The fake router has map data up to latitude 80.
+	if got := coverage(routesv1.CheckTrackCoverageRequest_builder{Gpx: new(cornerGPX(0, 0))}.Build()); got != 1 {
+		t.Errorf("got coverage %v inside the map data, want 1", got)
+	}
+	if got := coverage(routesv1.CheckTrackCoverageRequest_builder{Gpx: new(cornerGPX(85, 0))}.Build()); got != 0 {
+		t.Errorf("got coverage %v outside the map data, want 0", got)
+	}
+	if got := coverage(routesv1.CheckTrackCoverageRequest_builder{Gpx: new(cornerGPX(79.995, 0))}.Build()); got <= 0 || got >= 1 {
+		t.Errorf("got coverage %v across the edge of the map data, want between 0 and 1", got)
+	}
+
+	// A track that doesn't move is covered if its points are.
+	stillGPX := func(lat, lng float64) *string {
+		return new(fmt.Sprintf(`<?xml version="1.0"?><gpx version="1.1" creator="test"><trk><trkseg>`+
+			`<trkpt lat="%[1]f" lon="%[2]f"></trkpt><trkpt lat="%[1]f" lon="%[2]f"></trkpt></trkseg></trk></gpx>`, lat, lng))
+	}
+	if got := coverage(routesv1.CheckTrackCoverageRequest_builder{Gpx: stillGPX(0, 0)}.Build()); got != 1 {
+		t.Errorf("got coverage %v for a track standing still inside the map data, want 1", got)
+	}
+	if got := coverage(routesv1.CheckTrackCoverageRequest_builder{Gpx: stillGPX(85, 0)}.Build()); got != 0 {
+		t.Errorf("got coverage %v for a track standing still outside the map data, want 0", got)
+	}
+
+	// Saved routes can be checked, e.g. before making an exact route
+	// editable.
+	created, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		Gpx: new(cornerGPX(85, 0)),
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute: %v", err)
+	}
+	if got := coverage(routesv1.CheckTrackCoverageRequest_builder{RouteId: new(created.GetRoute().GetId())}.Build()); got != 0 {
+		t.Errorf("got coverage %v for a route outside the map data, want 0", got)
+	}
+
+	_, err = e.routes.CheckTrackCoverage(ctx, routesv1.CheckTrackCoverageRequest_builder{}.Build())
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("got %v without a track, want InvalidArgument", err)
+	}
+}
+
+// cornerGPX returns a GPX track from (lat, lng) north for about 1.1km and
+// then east for about 1.1km, with points every 10m that wobble 5m from side
+// to side like a GPS recording.
+func cornerGPX(lat, lng float64) string {
+	var b strings.Builder
+	b.WriteString(`<?xml version="1.0"?><gpx version="1.1" creator="test"><trk><name>Corner</name><trkseg>`)
+	for i := 0; i <= 200; i++ {
+		wobble := 0.000045 * float64(i%2*2-1)
+		p := geo.Point{Lat: lat + 0.01*float64(min(i, 100))/100, Lng: lng + wobble}
+		if i > 100 {
+			p = geo.Point{Lat: lat + 0.01 + wobble, Lng: lng + 0.01*float64(i-100)/100}
+		}
+		fmt.Fprintf(&b, `<trkpt lat="%f" lon="%f"><ele>%f</ele></trkpt>`, p.Lat, p.Lng, p.Lat*1000)
+	}
+	b.WriteString(`</trkseg></trk></gpx>`)
+	return b.String()
+}
+
+func TestSnapTrack(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	const (
+		trail    = routesv1.RoutingProfile_ROUTING_PROFILE_TRAIL
+		straight = routesv1.RoutingProfile_ROUTING_PROFILE_STRAIGHT
+		unset    = routesv1.RoutingProfile_ROUTING_PROFILE_UNSPECIFIED
+		snap     = routesv1.TrackConversion_TRACK_CONVERSION_SNAP
+	)
+
+	// A recorded track along mapped ways becomes a route with a waypoint
+	// at each end and one at the corner.
+	snapped, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		Gpx:        new(cornerGPX(0, 0)),
+		Conversion: snap,
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute: %v", err)
+	}
+	route := snapped.GetRoute()
+	wantLegProfiles(t, route, trail, trail)
+	corner := route.GetWaypoints()[1]
+	if !approx(corner.GetLat(), 0.01, 0.0003) || !approx(corner.GetLng(), 0, 0.0003) {
+		t.Errorf("got corner waypoint %v, want near 0.01, 0", corner)
+	}
+	if !approx(route.GetStats().GetDistanceMeters(), 2224, 30) || route.GetSource() != routesv1.RouteSource_ROUTE_SOURCE_GPX || route.GetName() != "Corner" {
+		t.Errorf("unexpected snapped route %v", route)
+	}
+
+	// The snapped route is edited like any other: moving the corner only
+	// routes the two legs next to it.
+	before := e.router.routeCallCount()
+	waypoints := route.GetWaypoints()
+	_, err = e.routes.UpdateRoute(ctx, routesv1.UpdateRouteRequest_builder{
+		Id: route.GetId(),
+		Waypoints: routesv1.Waypoints_builder{
+			Waypoints:   []*geov1.LatLng{waypoints[0], latLngs(0.02, 0)[0], waypoints[2]},
+			LegProfiles: route.GetLegProfiles(),
+		}.Build(),
+	}.Build())
+	if err != nil {
+		t.Fatalf("UpdateRoute: %v", err)
+	}
+	if calls := e.router.routeCallCount() - before; calls != 2 {
+		t.Errorf("got %d routing calls, want 2", calls)
+	}
+
+	// Where nothing can be routed, the track is followed with straight legs.
+	offTrail, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		Gpx:        new(cornerGPX(85, 0)),
+		Conversion: snap,
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute: %v", err)
+	}
+	wantLegProfiles(t, offTrail.GetRoute(), straight, straight)
+
+	// By default the track is kept exactly, and the result can be snapped
+	// later.
+	exact, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		Gpx: new(cornerGPX(0, 0)),
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute: %v", err)
+	}
+	for _, profile := range exact.GetRoute().GetLegProfiles() {
+		if profile != unset {
+			t.Fatalf("exact import has leg profiles %v", exact.GetRoute().GetLegProfiles())
+		}
+	}
+	copied, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		RouteId:    new(exact.GetRoute().GetId()),
+		Conversion: snap,
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute from route: %v", err)
+	}
+	wantLegProfiles(t, copied.GetRoute(), trail, trail)
+	if copied.GetRoute().GetName() != "Corner" || copied.GetRoute().GetId() == exact.GetRoute().GetId() {
+		t.Errorf("unexpected copy %v", copied.GetRoute())
 	}
 }

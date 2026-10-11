@@ -84,13 +84,15 @@ func (s *Service) CreateRoute(ctx context.Context, req *routesv1.CreateRouteRequ
 			return nil, err
 		}
 		if track == nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument, "one of waypoints, gpx or activity_id must be set")
+			return nil, connect.NewError(connect.CodeInvalidArgument, "one of waypoints, gpx, activity_id or route_id must be set")
 		}
 		if err := s.fillMissingElevations(ctx, track.points); err != nil {
 			return nil, connect.NewError(connect.CodeUnavailable, err.Error()).WithCause(err)
 		}
 		route.Source = track.source
-		route.Waypoints, route.Legs = legsFromTrack(track.points)
+		if err := s.routeFromTrack(ctx, route, track.points, req.GetConversion()); err != nil {
+			return nil, err
+		}
 		if route.Name == "" {
 			route.Name = track.name
 		}
@@ -188,24 +190,47 @@ func (s *Service) DeleteRoute(ctx context.Context, req *routesv1.DeleteRouteRequ
 	return routesv1.DeleteRouteResponse_builder{}.Build(), nil
 }
 
+func (s *Service) CheckTrackCoverage(ctx context.Context, req *routesv1.CheckTrackCoverageRequest) (*routesv1.CheckTrackCoverageResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	track, err := s.recordedTrack(ctx, userID, req)
+	if err != nil {
+		return nil, err
+	}
+	if track == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "one of gpx, activity_id or route_id must be set")
+	}
+	regions, err := s.router.Regions(ctx)
+	if err != nil {
+		return nil, s.toConnectError(err, "failed to check the track's coverage")
+	}
+	return routesv1.CheckTrackCoverageResponse_builder{
+		CoveredFraction: trackCoverage(track.points, regions),
+	}.Build(), nil
+}
+
 // trackSource is a request that names a recorded track.
 type trackSource interface {
 	HasGpx() bool
 	GetGpx() string
 	HasActivityId() bool
 	GetActivityId() string
+	HasRouteId() bool
+	GetRouteId() string
 }
 
 // recording is a recorded track a route can be made from.
 type recording struct {
 	points []geo.Point
-	// The name of the GPX track or activity.
+	// The name of the GPX track, activity or route.
 	name   string
 	source routes.Source
 }
 
-// recordedTrack returns the recorded track a request names: a GPX file or
-// an activity. It returns nil if the request names none.
+// recordedTrack returns the recorded track a request names: a GPX file, an
+// activity or a saved route. It returns nil if the request names none.
 func (s *Service) recordedTrack(ctx context.Context, userID pgtype.UUID, req trackSource) (*recording, error) {
 	switch {
 	case req.HasGpx():
@@ -224,9 +249,34 @@ func (s *Service) recordedTrack(ctx context.Context, userID pgtype.UUID, req tra
 			return nil, err
 		}
 		return &recording{points: points, name: activity.Name, source: routes.SourceActivity}, nil
+	case req.HasRouteId():
+		saved, err := s.getRoute(ctx, req.GetRouteId())
+		if err != nil {
+			return nil, err
+		}
+		points, _ := saved.Path()
+		if len(points) < 2 {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, "the route has no path")
+		}
+		return &recording{points: points, name: saved.Name, source: saved.Source}, nil
 	default:
 		return nil, nil
 	}
+}
+
+// routeFromTrack sets a route's waypoints and legs from a recorded track,
+// keeping the track exactly or snapping it to the map.
+func (s *Service) routeFromTrack(ctx context.Context, route *routes.Route, track []geo.Point, conversion routesv1.TrackConversion) error {
+	if conversion != routesv1.TrackConversion_TRACK_CONVERSION_SNAP {
+		route.Waypoints, route.Legs = legsFromTrack(track)
+		return nil
+	}
+	waypoints, legs, err := s.snapTrack(ctx, track)
+	if err != nil {
+		return s.toConnectError(err, "failed to snap the track to the map")
+	}
+	route.Waypoints, route.Legs = waypoints, legs
+	return nil
 }
 
 // getRoute gets one of the authenticated user's routes by ID.

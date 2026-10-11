@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file routes/v1/routes.proto.
  */
 export const file_routes_v1_routes: GenFile = /*@__PURE__*/
-  fileDesc("ChZyb3V0ZXMvdjEvcm91dGVzLnByb3RvEglyb3V0ZXMudjEiWQoKUm91dGVQb2ludBILCgNsYXQYASABKAESCwoDbG5nGAIgASgBEhgKEGVsZXZhdGlvbl9tZXRlcnMYAyABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBIlsKDFRlcnJhaW5TaGFyZRIgCgd0ZXJyYWluGAEgASgOMg8uZ2VvLnYxLlRlcnJhaW4SFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEhAKCGZyYWN0aW9uGAMgASgBIo0CCgpSb3V0ZVN0YXRzEhcKD2Rpc3RhbmNlX21ldGVycxgBIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAMgASgBEhwKFG1pbl9lbGV2YXRpb25fbWV0ZXJzGAQgASgBEhwKFG1heF9lbGV2YXRpb25fbWV0ZXJzGAUgASgBEh8KF21heF9jbGltYl9ncmFkZV9wZXJjZW50GAYgASgBEiEKGW1heF9kZXNjZW50X2dyYWRlX3BlcmNlbnQYByABKAESKAoHdGVycmFpbhgIIAMoCzIXLnJvdXRlcy52MS5UZXJyYWluU2hhcmUijQMKBVJvdXRlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKgoHcHJvZmlsZRgEIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIhCgl3YXlwb2ludHMYBSADKAsyDi5nZW8udjEuTGF0TG5nEi8KDGxlZ19wcm9maWxlcxgLIAMoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIlCgZwb2ludHMYBiADKAsyFS5yb3V0ZXMudjEuUm91dGVQb2ludBIkCgVzdGF0cxgHIAEoCzIVLnJvdXRlcy52MS5Sb3V0ZVN0YXRzEiYKBnNvdXJjZRgIIAEoDjIWLnJvdXRlcy52MS5Sb3V0ZVNvdXJjZRIvCgtjcmVhdGVfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIr8BChNQcmV2aWV3Um91dGVSZXF1ZXN0EiEKCXdheXBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmcSKgoHcHJvZmlsZRgCIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIWCg5pbmNsdWRlX3BvaW50cxgDIAEoCBIvCgxsZWdfcHJvZmlsZXMYBCADKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSEAoIcm91dGVfaWQYBSABKAkiNwoUUHJldmlld1JvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiiwEKCVdheXBvaW50cxIhCgl3YXlwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nEioKB3Byb2ZpbGUYAiABKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSLwoMbGVnX3Byb2ZpbGVzGAMgAygOMhkucm91dGVzLnYxLlJvdXRpbmdQcm9maWxlIqoBChJDcmVhdGVSb3V0ZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIpCgl3YXlwb2ludHMYAyABKAsyFC5yb3V0ZXMudjEuV2F5cG9pbnRzSAASDQoDZ3B4GAQgASgJSAASFQoLYWN0aXZpdHlfaWQYBSABKAlIABIWCg5pbmNsdWRlX3BvaW50cxgGIAEoCEIICgZzb3VyY2UiNgoTQ3JlYXRlUm91dGVSZXNwb25zZRIfCgVyb3V0ZRgBIAEoCzIQLnJvdXRlcy52MS5Sb3V0ZSI1Cg9HZXRSb3V0ZVJlcXVlc3QSCgoCaWQYASABKAkSFgoOaW5jbHVkZV9wb2ludHMYAiABKAgiMwoQR2V0Um91dGVSZXNwb25zZRIfCgVyb3V0ZRgBIAEoCzIQLnJvdXRlcy52MS5Sb3V0ZSITChFMaXN0Um91dGVzUmVxdWVzdCI2ChJMaXN0Um91dGVzUmVzcG9uc2USIAoGcm91dGVzGAEgAygLMhAucm91dGVzLnYxLlJvdXRlIqcBChJVcGRhdGVSb3V0ZVJlcXVlc3QSCgoCaWQYASABKAkSEQoEbmFtZRgCIAEoCUgAiAEBEhgKC2Rlc2NyaXB0aW9uGAMgASgJSAGIAQESJwoJd2F5cG9pbnRzGAQgASgLMhQucm91dGVzLnYxLldheXBvaW50cxIWCg5pbmNsdWRlX3BvaW50cxgFIAEoCEIHCgVfbmFtZUIOCgxfZGVzY3JpcHRpb24iNgoTVXBkYXRlUm91dGVSZXNwb25zZRIfCgVyb3V0ZRgBIAEoCzIQLnJvdXRlcy52MS5Sb3V0ZSIgChJEZWxldGVSb3V0ZVJlcXVlc3QSCgoCaWQYASABKAkiFQoTRGVsZXRlUm91dGVSZXNwb25zZSqlAQoOUm91dGluZ1Byb2ZpbGUSHwobUk9VVElOR19QUk9GSUxFX1VOU1BFQ0lGSUVEEAASGQoVUk9VVElOR19QUk9GSUxFX1RSQUlMEAESHAoYUk9VVElOR19QUk9GSUxFX1NIT1JURVNUEAISHAoYUk9VVElOR19QUk9GSUxFX1NUUkFJR0hUEAMSGwoXUk9VVElOR19QUk9GSUxFX0hFQVRNQVAQBCp4CgtSb3V0ZVNvdXJjZRIcChhST1VURV9TT1VSQ0VfVU5TUEVDSUZJRUQQABIaChZST1VURV9TT1VSQ0VfV0FZUE9JTlRTEAESFAoQUk9VVEVfU09VUkNFX0dQWBACEhkKFVJPVVRFX1NPVVJDRV9BQ1RJVklUWRADMtkDCgxSb3V0ZVNlcnZpY2USTwoMUHJldmlld1JvdXRlEh4ucm91dGVzLnYxLlByZXZpZXdSb3V0ZVJlcXVlc3QaHy5yb3V0ZXMudjEuUHJldmlld1JvdXRlUmVzcG9uc2USTAoLQ3JlYXRlUm91dGUSHS5yb3V0ZXMudjEuQ3JlYXRlUm91dGVSZXF1ZXN0Gh4ucm91dGVzLnYxLkNyZWF0ZVJvdXRlUmVzcG9uc2USQwoIR2V0Um91dGUSGi5yb3V0ZXMudjEuR2V0Um91dGVSZXF1ZXN0Ghsucm91dGVzLnYxLkdldFJvdXRlUmVzcG9uc2USSQoKTGlzdFJvdXRlcxIcLnJvdXRlcy52MS5MaXN0Um91dGVzUmVxdWVzdBodLnJvdXRlcy52MS5MaXN0Um91dGVzUmVzcG9uc2USTAoLVXBkYXRlUm91dGUSHS5yb3V0ZXMudjEuVXBkYXRlUm91dGVSZXF1ZXN0Gh4ucm91dGVzLnYxLlVwZGF0ZVJvdXRlUmVzcG9uc2USTAoLRGVsZXRlUm91dGUSHS5yb3V0ZXMudjEuRGVsZXRlUm91dGVSZXF1ZXN0Gh4ucm91dGVzLnYxLkRlbGV0ZVJvdXRlUmVzcG9uc2VCogEKDWNvbS5yb3V0ZXMudjFCC1JvdXRlc1Byb3RvUAFaP2dpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL3JvdXRlcy92MTtyb3V0ZXN2MaICA1JYWKoCCVJvdXRlcy5WMcoCCVJvdXRlc1xWMeICFVJvdXRlc1xWMVxHUEJNZXRhZGF0YeoCClJvdXRlczo6VjFiBnByb3RvMw", [file_geo_v1_geo, file_google_protobuf_timestamp]);
+  fileDesc("ChZyb3V0ZXMvdjEvcm91dGVzLnByb3RvEglyb3V0ZXMudjEiWQoKUm91dGVQb2ludBILCgNsYXQYASABKAESCwoDbG5nGAIgASgBEhgKEGVsZXZhdGlvbl9tZXRlcnMYAyABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBIlsKDFRlcnJhaW5TaGFyZRIgCgd0ZXJyYWluGAEgASgOMg8uZ2VvLnYxLlRlcnJhaW4SFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEhAKCGZyYWN0aW9uGAMgASgBIo0CCgpSb3V0ZVN0YXRzEhcKD2Rpc3RhbmNlX21ldGVycxgBIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAMgASgBEhwKFG1pbl9lbGV2YXRpb25fbWV0ZXJzGAQgASgBEhwKFG1heF9lbGV2YXRpb25fbWV0ZXJzGAUgASgBEh8KF21heF9jbGltYl9ncmFkZV9wZXJjZW50GAYgASgBEiEKGW1heF9kZXNjZW50X2dyYWRlX3BlcmNlbnQYByABKAESKAoHdGVycmFpbhgIIAMoCzIXLnJvdXRlcy52MS5UZXJyYWluU2hhcmUijQMKBVJvdXRlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKgoHcHJvZmlsZRgEIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIhCgl3YXlwb2ludHMYBSADKAsyDi5nZW8udjEuTGF0TG5nEi8KDGxlZ19wcm9maWxlcxgLIAMoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIlCgZwb2ludHMYBiADKAsyFS5yb3V0ZXMudjEuUm91dGVQb2ludBIkCgVzdGF0cxgHIAEoCzIVLnJvdXRlcy52MS5Sb3V0ZVN0YXRzEiYKBnNvdXJjZRgIIAEoDjIWLnJvdXRlcy52MS5Sb3V0ZVNvdXJjZRIvCgtjcmVhdGVfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIr8BChNQcmV2aWV3Um91dGVSZXF1ZXN0EiEKCXdheXBvaW50cxgBIAMoCzIOLmdlby52MS5MYXRMbmcSKgoHcHJvZmlsZRgCIAEoDjIZLnJvdXRlcy52MS5Sb3V0aW5nUHJvZmlsZRIWCg5pbmNsdWRlX3BvaW50cxgDIAEoCBIvCgxsZWdfcHJvZmlsZXMYBCADKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSEAoIcm91dGVfaWQYBSABKAkiNwoUUHJldmlld1JvdXRlUmVzcG9uc2USHwoFcm91dGUYASABKAsyEC5yb3V0ZXMudjEuUm91dGUiiwEKCVdheXBvaW50cxIhCgl3YXlwb2ludHMYASADKAsyDi5nZW8udjEuTGF0TG5nEioKB3Byb2ZpbGUYAiABKA4yGS5yb3V0ZXMudjEuUm91dGluZ1Byb2ZpbGUSLwoMbGVnX3Byb2ZpbGVzGAMgAygOMhkucm91dGVzLnYxLlJvdXRpbmdQcm9maWxlIu4BChJDcmVhdGVSb3V0ZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIpCgl3YXlwb2ludHMYAyABKAsyFC5yb3V0ZXMudjEuV2F5cG9pbnRzSAASDQoDZ3B4GAQgASgJSAASFQoLYWN0aXZpdHlfaWQYBSABKAlIABISCghyb3V0ZV9pZBgIIAEoCUgAEhYKDmluY2x1ZGVfcG9pbnRzGAYgASgIEi4KCmNvbnZlcnNpb24YByABKA4yGi5yb3V0ZXMudjEuVHJhY2tDb252ZXJzaW9uQggKBnNvdXJjZSI2ChNDcmVhdGVSb3V0ZVJlc3BvbnNlEh8KBXJvdXRlGAEgASgLMhAucm91dGVzLnYxLlJvdXRlIjUKD0dldFJvdXRlUmVxdWVzdBIKCgJpZBgBIAEoCRIWCg5pbmNsdWRlX3BvaW50cxgCIAEoCCIzChBHZXRSb3V0ZVJlc3BvbnNlEh8KBXJvdXRlGAEgASgLMhAucm91dGVzLnYxLlJvdXRlIhMKEUxpc3RSb3V0ZXNSZXF1ZXN0IjYKEkxpc3RSb3V0ZXNSZXNwb25zZRIgCgZyb3V0ZXMYASADKAsyEC5yb3V0ZXMudjEuUm91dGUipwEKElVwZGF0ZVJvdXRlUmVxdWVzdBIKCgJpZBgBIAEoCRIRCgRuYW1lGAIgASgJSACIAQESGAoLZGVzY3JpcHRpb24YAyABKAlIAYgBARInCgl3YXlwb2ludHMYBCABKAsyFC5yb3V0ZXMudjEuV2F5cG9pbnRzEhYKDmluY2x1ZGVfcG9pbnRzGAUgASgIQgcKBV9uYW1lQg4KDF9kZXNjcmlwdGlvbiI2ChNVcGRhdGVSb3V0ZVJlc3BvbnNlEh8KBXJvdXRlGAEgASgLMhAucm91dGVzLnYxLlJvdXRlIiAKEkRlbGV0ZVJvdXRlUmVxdWVzdBIKCgJpZBgBIAEoCSIVChNEZWxldGVSb3V0ZVJlc3BvbnNlIl8KGUNoZWNrVHJhY2tDb3ZlcmFnZVJlcXVlc3QSDQoDZ3B4GAEgASgJSAASFQoLYWN0aXZpdHlfaWQYAiABKAlIABISCghyb3V0ZV9pZBgDIAEoCUgAQggKBnNvdXJjZSI2ChpDaGVja1RyYWNrQ292ZXJhZ2VSZXNwb25zZRIYChBjb3ZlcmVkX2ZyYWN0aW9uGAEgASgBKqUBCg5Sb3V0aW5nUHJvZmlsZRIfChtST1VUSU5HX1BST0ZJTEVfVU5TUEVDSUZJRUQQABIZChVST1VUSU5HX1BST0ZJTEVfVFJBSUwQARIcChhST1VUSU5HX1BST0ZJTEVfU0hPUlRFU1QQAhIcChhST1VUSU5HX1BST0ZJTEVfU1RSQUlHSFQQAxIbChdST1VUSU5HX1BST0ZJTEVfSEVBVE1BUBAEKmoKD1RyYWNrQ29udmVyc2lvbhIgChxUUkFDS19DT05WRVJTSU9OX1VOU1BFQ0lGSUVEEAASGgoWVFJBQ0tfQ09OVkVSU0lPTl9FWEFDVBABEhkKFVRSQUNLX0NPTlZFUlNJT05fU05BUBACKngKC1JvdXRlU291cmNlEhwKGFJPVVRFX1NPVVJDRV9VTlNQRUNJRklFRBAAEhoKFlJPVVRFX1NPVVJDRV9XQVlQT0lOVFMQARIUChBST1VURV9TT1VSQ0VfR1BYEAISGQoVUk9VVEVfU09VUkNFX0FDVElWSVRZEAMywQQKDFJvdXRlU2VydmljZRJPCgxQcmV2aWV3Um91dGUSHi5yb3V0ZXMudjEuUHJldmlld1JvdXRlUmVxdWVzdBofLnJvdXRlcy52MS5QcmV2aWV3Um91dGVSZXNwb25zZRJMCgtDcmVhdGVSb3V0ZRIdLnJvdXRlcy52MS5DcmVhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuQ3JlYXRlUm91dGVSZXNwb25zZRJDCghHZXRSb3V0ZRIaLnJvdXRlcy52MS5HZXRSb3V0ZVJlcXVlc3QaGy5yb3V0ZXMudjEuR2V0Um91dGVSZXNwb25zZRJJCgpMaXN0Um91dGVzEhwucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXF1ZXN0Gh0ucm91dGVzLnYxLkxpc3RSb3V0ZXNSZXNwb25zZRJMCgtVcGRhdGVSb3V0ZRIdLnJvdXRlcy52MS5VcGRhdGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuVXBkYXRlUm91dGVSZXNwb25zZRJMCgtEZWxldGVSb3V0ZRIdLnJvdXRlcy52MS5EZWxldGVSb3V0ZVJlcXVlc3QaHi5yb3V0ZXMudjEuRGVsZXRlUm91dGVSZXNwb25zZRJmChJDaGVja1RyYWNrQ292ZXJhZ2USJC5yb3V0ZXMudjEuQ2hlY2tUcmFja0NvdmVyYWdlUmVxdWVzdBolLnJvdXRlcy52MS5DaGVja1RyYWNrQ292ZXJhZ2VSZXNwb25zZSIDkAIBQqIBCg1jb20ucm91dGVzLnYxQgtSb3V0ZXNQcm90b1ABWj9naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9yb3V0ZXMvdjE7cm91dGVzdjGiAgNSWFiqAglSb3V0ZXMuVjHKAglSb3V0ZXNcVjHiAhVSb3V0ZXNcVjFcR1BCTWV0YWRhdGHqAgpSb3V0ZXM6OlYxYgZwcm90bzM", [file_geo_v1_geo, file_google_protobuf_timestamp]);
 
 /**
  * A point along a route path.
@@ -423,6 +423,16 @@ export type CreateRouteRequest = Message<"routes.v1.CreateRouteRequest"> & {
      */
     value: string;
     case: "activityId";
+  } | {
+    /**
+     * The ID of a saved route whose path becomes the new route, e.g. to make
+     * an editable copy of an imported route with conversion SNAP. The saved
+     * route is not changed.
+     *
+     * @generated from field: string route_id = 8;
+     */
+    value: string;
+    case: "routeId";
   } | { case: undefined; value?: undefined };
 
   /**
@@ -431,6 +441,14 @@ export type CreateRouteRequest = Message<"routes.v1.CreateRouteRequest"> & {
    * @generated from field: bool include_points = 6;
    */
   includePoints: boolean;
+
+  /**
+   * How a GPX file, activity or route becomes the new route. Ignored for
+   * waypoints. Defaults to EXACT.
+   *
+   * @generated from field: routes.v1.TrackConversion conversion = 7;
+   */
+  conversion: TrackConversion;
 };
 
 /**
@@ -637,6 +655,69 @@ export const DeleteRouteResponseSchema: GenMessage<DeleteRouteResponse> = /*@__P
   messageDesc(file_routes_v1_routes, 16);
 
 /**
+ * @generated from message routes.v1.CheckTrackCoverageRequest
+ */
+export type CheckTrackCoverageRequest = Message<"routes.v1.CheckTrackCoverageRequest"> & {
+  /**
+   * The track to check. Exactly one must be set.
+   *
+   * @generated from oneof routes.v1.CheckTrackCoverageRequest.source
+   */
+  source: {
+    /**
+     * The contents of a GPX file. The first track (or route) is checked.
+     *
+     * @generated from field: string gpx = 1;
+     */
+    value: string;
+    case: "gpx";
+  } | {
+    /**
+     * The ID of a synced activity.
+     *
+     * @generated from field: string activity_id = 2;
+     */
+    value: string;
+    case: "activityId";
+  } | {
+    /**
+     * The ID of a saved route.
+     *
+     * @generated from field: string route_id = 3;
+     */
+    value: string;
+    case: "routeId";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message routes.v1.CheckTrackCoverageRequest.
+ * Use `create(CheckTrackCoverageRequestSchema)` to create a new message.
+ */
+export const CheckTrackCoverageRequestSchema: GenMessage<CheckTrackCoverageRequest> = /*@__PURE__*/
+  messageDesc(file_routes_v1_routes, 17);
+
+/**
+ * @generated from message routes.v1.CheckTrackCoverageResponse
+ */
+export type CheckTrackCoverageResponse = Message<"routes.v1.CheckTrackCoverageResponse"> & {
+  /**
+   * The fraction of the track's length, from 0 to 1, within the areas map
+   * data has been imported for.
+   *
+   * @generated from field: double covered_fraction = 1;
+   */
+  coveredFraction: number;
+};
+
+/**
+ * Describes the message routes.v1.CheckTrackCoverageResponse.
+ * Use `create(CheckTrackCoverageResponseSchema)` to create a new message.
+ */
+export const CheckTrackCoverageResponseSchema: GenMessage<CheckTrackCoverageResponse> = /*@__PURE__*/
+  messageDesc(file_routes_v1_routes, 18);
+
+/**
  * RoutingProfile controls how a leg between two waypoints is computed.
  *
  * @generated from enum routes.v1.RoutingProfile
@@ -693,6 +774,50 @@ export const RoutingProfileSchema: GenEnum<RoutingProfile> = /*@__PURE__*/
   enumDesc(file_routes_v1_routes, 0);
 
 /**
+ * TrackConversion controls how a recorded track, from a GPX file, an
+ * activity or another route, becomes a route.
+ *
+ * @generated from enum routes.v1.TrackConversion
+ */
+export enum TrackConversion {
+  /**
+   * Defaults to EXACT.
+   *
+   * @generated from enum value: TRACK_CONVERSION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Keep the recorded track exactly. Waypoints are placed about every
+   * kilometer, but the path between them is the recording, so the route can't
+   * be meaningfully redesigned by moving waypoints. Best for official race
+   * courses and routes that must match a recording.
+   *
+   * @generated from enum value: TRACK_CONVERSION_EXACT = 1;
+   */
+  EXACT = 1,
+
+  /**
+   * Fit an editable route to the track, with as few waypoints as possible.
+   * Legs are snapped to trails (or roads) that follow the track within about
+   * 40 meters, and sections without a matching mapped path become STRAIGHT
+   * legs. The result is a normal waypoint route that can be reshaped by
+   * moving one of its few waypoints, but its path may differ slightly from
+   * the recording. Slower than EXACT, as many candidate legs are routed. Best
+   * for using a previous run as the starting point of a new route.
+   *
+   * @generated from enum value: TRACK_CONVERSION_SNAP = 2;
+   */
+  SNAP = 2,
+}
+
+/**
+ * Describes the enum routes.v1.TrackConversion.
+ */
+export const TrackConversionSchema: GenEnum<TrackConversion> = /*@__PURE__*/
+  enumDesc(file_routes_v1_routes, 1);
+
+/**
  * RouteSource describes how a route was created.
  *
  * @generated from enum routes.v1.RouteSource
@@ -729,7 +854,7 @@ export enum RouteSource {
  * Describes the enum routes.v1.RouteSource.
  */
 export const RouteSourceSchema: GenEnum<RouteSource> = /*@__PURE__*/
-  enumDesc(file_routes_v1_routes, 1);
+  enumDesc(file_routes_v1_routes, 2);
 
 /**
  * RouteService creates and edits running routes. A route is defined by an
@@ -762,8 +887,10 @@ export const RouteService: GenService<{
     output: typeof PreviewRouteResponseSchema;
   },
   /**
-   * Create and save a new route from waypoints, a GPX file or an existing
-   * activity.
+   * Create and save a new route from waypoints, a GPX file, an existing
+   * activity or another route. A recorded track can be kept exactly, or
+   * turned into an editable route that follows it with as few waypoints as
+   * possible (see the conversion field).
    *
    * @generated from rpc routes.v1.RouteService.CreateRoute
    */
@@ -814,6 +941,20 @@ export const RouteService: GenService<{
     methodKind: "unary";
     input: typeof DeleteRouteRequestSchema;
     output: typeof DeleteRouteResponseSchema;
+  },
+  /**
+   * Check how much of a recorded track lies within the map data that tracks
+   * are snapped to. Snapping only follows mapped paths where map data has
+   * been imported; elsewhere the route becomes STRAIGHT legs. Call this
+   * before creating a route with conversion SNAP, and keep the track EXACT
+   * if much of it isn't covered.
+   *
+   * @generated from rpc routes.v1.RouteService.CheckTrackCoverage
+   */
+  checkTrackCoverage: {
+    methodKind: "unary";
+    input: typeof CheckTrackCoverageRequestSchema;
+    output: typeof CheckTrackCoverageResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_routes_v1_routes, 0);

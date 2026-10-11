@@ -36,6 +36,9 @@ const (
 	RouteServiceUpdateRouteProcedure = "/routes.v1.RouteService/UpdateRoute"
 	// RouteServiceDeleteRouteProcedure is the procedure name of the RouteService's DeleteRoute RPC.
 	RouteServiceDeleteRouteProcedure = "/routes.v1.RouteService/DeleteRoute"
+	// RouteServiceCheckTrackCoverageProcedure is the procedure name of the RouteService's
+	// CheckTrackCoverage RPC.
+	RouteServiceCheckTrackCoverageProcedure = "/routes.v1.RouteService/CheckTrackCoverage"
 )
 
 var (
@@ -81,6 +84,14 @@ var (
 			Procedure:  RouteServiceDeleteRouteProcedure,
 		}
 	})
+	routeServiceCheckTrackCoverageSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1.File_routes_v1_routes_proto.Services().ByName("RouteService").Methods().ByName("CheckTrackCoverage"),
+			Procedure:        RouteServiceCheckTrackCoverageProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // RouteServiceClient is a client for the routes.v1.RouteService service.
@@ -91,8 +102,10 @@ type RouteServiceClient interface {
 	// route (set route_id to reuse its unchanged legs) before calling
 	// UpdateRoute.
 	PreviewRoute(context.Context, *v1.PreviewRouteRequest) (*v1.PreviewRouteResponse, error)
-	// Create and save a new route from waypoints, a GPX file or an existing
-	// activity.
+	// Create and save a new route from waypoints, a GPX file, an existing
+	// activity or another route. A recorded track can be kept exactly, or
+	// turned into an editable route that follows it with as few waypoints as
+	// possible (see the conversion field).
 	CreateRoute(context.Context, *v1.CreateRouteRequest) (*v1.CreateRouteResponse, error)
 	// Get a route by ID.
 	GetRoute(context.Context, *v1.GetRouteRequest) (*v1.GetRouteResponse, error)
@@ -105,6 +118,12 @@ type RouteServiceClient interface {
 	UpdateRoute(context.Context, *v1.UpdateRouteRequest) (*v1.UpdateRouteResponse, error)
 	// Delete a route.
 	DeleteRoute(context.Context, *v1.DeleteRouteRequest) (*v1.DeleteRouteResponse, error)
+	// Check how much of a recorded track lies within the map data that tracks
+	// are snapped to. Snapping only follows mapped paths where map data has
+	// been imported; elsewhere the route becomes STRAIGHT legs. Call this
+	// before creating a route with conversion SNAP, and keep the track EXACT
+	// if much of it isn't covered.
+	CheckTrackCoverage(context.Context, *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error)
 }
 
 // NewRouteServiceClient constructs a client for the routes.v1.RouteService service. Multiple
@@ -121,8 +140,10 @@ type RouteServiceHandler interface {
 	// route (set route_id to reuse its unchanged legs) before calling
 	// UpdateRoute.
 	PreviewRoute(context.Context, *v1.PreviewRouteRequest) (*v1.PreviewRouteResponse, error)
-	// Create and save a new route from waypoints, a GPX file or an existing
-	// activity.
+	// Create and save a new route from waypoints, a GPX file, an existing
+	// activity or another route. A recorded track can be kept exactly, or
+	// turned into an editable route that follows it with as few waypoints as
+	// possible (see the conversion field).
 	CreateRoute(context.Context, *v1.CreateRouteRequest) (*v1.CreateRouteResponse, error)
 	// Get a route by ID.
 	GetRoute(context.Context, *v1.GetRouteRequest) (*v1.GetRouteResponse, error)
@@ -135,6 +156,12 @@ type RouteServiceHandler interface {
 	UpdateRoute(context.Context, *v1.UpdateRouteRequest) (*v1.UpdateRouteResponse, error)
 	// Delete a route.
 	DeleteRoute(context.Context, *v1.DeleteRouteRequest) (*v1.DeleteRouteResponse, error)
+	// Check how much of a recorded track lies within the map data that tracks
+	// are snapped to. Snapping only follows mapped paths where map data has
+	// been imported; elsewhere the route becomes STRAIGHT legs. Call this
+	// before creating a route with conversion SNAP, and keep the track EXACT
+	// if much of it isn't covered.
+	CheckTrackCoverage(context.Context, *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error)
 }
 
 // RegisterRouteServiceHandler registers svc as the routes.v1.RouteService implementation on server.
@@ -147,6 +174,7 @@ func RegisterRouteServiceHandler(server *connect.Server, svc RouteServiceHandler
 		connect.Method{Spec: routeServiceListRoutesSpec(), Handler: adapter.listRoutes},
 		connect.Method{Spec: routeServiceUpdateRouteSpec(), Handler: adapter.updateRoute},
 		connect.Method{Spec: routeServiceDeleteRouteSpec(), Handler: adapter.deleteRoute},
+		connect.Method{Spec: routeServiceCheckTrackCoverageSpec(), Handler: adapter.checkTrackCoverage},
 	)
 }
 
@@ -175,6 +203,10 @@ func (UnimplementedRouteServiceHandler) UpdateRoute(context.Context, *v1.UpdateR
 
 func (UnimplementedRouteServiceHandler) DeleteRoute(context.Context, *v1.DeleteRouteRequest) (*v1.DeleteRouteResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "routes.v1.RouteService.DeleteRoute is not implemented")
+}
+
+func (UnimplementedRouteServiceHandler) CheckTrackCoverage(context.Context, *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "routes.v1.RouteService.CheckTrackCoverage is not implemented")
 }
 
 type routeServiceClient struct {
@@ -224,6 +256,14 @@ func (c *routeServiceClient) UpdateRoute(ctx context.Context, req *v1.UpdateRout
 func (c *routeServiceClient) DeleteRoute(ctx context.Context, req *v1.DeleteRouteRequest) (*v1.DeleteRouteResponse, error) {
 	var res v1.DeleteRouteResponse
 	if err := c.client.CallUnary(ctx, routeServiceDeleteRouteSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *routeServiceClient) CheckTrackCoverage(ctx context.Context, req *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error) {
+	var res v1.CheckTrackCoverageResponse
+	if err := c.client.CallUnary(ctx, routeServiceCheckTrackCoverageSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -297,6 +337,18 @@ func (h routeServiceHandler) deleteRoute(ctx context.Context, _ connect.Spec, st
 		return err
 	}
 	res, err := h.svc.DeleteRoute(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h routeServiceHandler) checkTrackCoverage(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CheckTrackCoverageRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CheckTrackCoverage(ctx, &req)
 	if err != nil {
 		return err
 	}

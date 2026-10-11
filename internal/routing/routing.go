@@ -114,6 +114,24 @@ func NewRouter(db *store.DB) *Router {
 	return &Router{db: db}
 }
 
+// Regions returns the bounds of the imported regions, the areas paths can be
+// routed in.
+func (r *Router) Regions(ctx context.Context) ([]geo.Bounds, error) {
+	rows, err := r.db.Query(ctx, `select ST_YMin(bounds), ST_XMin(bounds), ST_YMax(bounds), ST_XMax(bounds) from routing_regions`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list the imported regions: %w", err)
+	}
+	regions, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (geo.Bounds, error) {
+		var b geo.Bounds
+		err := row.Scan(&b.MinLat, &b.MinLng, &b.MaxLat, &b.MaxLng)
+		return b, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list the imported regions: %w", err)
+	}
+	return regions, nil
+}
+
 // edge is an edge of the routing graph with its geometry.
 type edge struct {
 	id, source, target int64

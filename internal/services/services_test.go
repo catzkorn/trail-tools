@@ -194,6 +194,12 @@ func (f *fakeRouter) Route(_ context.Context, req routing.Request) (*routing.Pat
 	return path, nil
 }
 
+// Regions covers everything up to latitude 80, matching where Route finds
+// paths.
+func (f *fakeRouter) Regions(context.Context) ([]geo.Bounds, error) {
+	return []geo.Bounds{{MinLat: -90, MinLng: -180, MaxLat: 80, MaxLng: 180}}, nil
+}
+
 func (f *fakeRouter) routeCallCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
