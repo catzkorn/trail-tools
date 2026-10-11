@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
+	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
@@ -261,6 +262,23 @@ func TestStravaSyncAndActivities(t *testing.T) {
 	if weeks[0].GetLongestDistanceMeters() != 11000 || weeks[0].GetElevationGainMeters() != 1000 {
 		t.Errorf("unexpected first week %v", weeks[0])
 	}
+
+	// An activity can become a route.
+	route, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		ActivityId: new(run0.GetId()),
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute from activity: %v", err)
+	}
+	if route.GetRoute().GetName() != "Run 0" || route.GetRoute().GetSource() != routesv1.RouteSource_ROUTE_SOURCE_ACTIVITY ||
+		!approx(route.GetRoute().GetStats().GetDistanceMeters(), 10007, 5) || !approx(route.GetRoute().GetStats().GetElevationGainMeters(), 500, 1) {
+		t.Errorf("unexpected route %v", route.GetRoute())
+	}
+	// A manual activity has no track.
+	_, err = e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		ActivityId: new(page1.GetActivities()[0].GetId()),
+	}.Build())
+	wantCode(t, err, connect.CodeFailedPrecondition)
 }
 
 func TestScheduledStravaSync(t *testing.T) {

@@ -25,15 +25,19 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
+	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -48,6 +52,9 @@ const (
 	defaultHostname = "localhost"
 	defaultPort     = "8080"
 )
+
+// maxRequestBytes limits the size of API requests.
+const maxRequestBytes = 32 << 20
 
 var (
 	logLevel = flag.String(
@@ -125,6 +132,11 @@ var (
 		"A secret that can be used as an invitation to create the first administrator,"+
 			" at /invite/<token>, while there are no administrators",
 	)
+	overpassURLs = flag.String(
+		"overpass-urls",
+		strings.Join(mapdata.DefaultOverpassURLs, ","),
+		"Comma separated Overpass API URLs used to query OpenStreetMap, tried in order",
+	)
 )
 
 func main() {
@@ -160,6 +172,9 @@ func main() {
 		*stravaWebhookVerifyToken,
 		*schedulerServiceAccount,
 		*schedulerAudience,
+		mapdata.Config{
+			OverpassURLs: strings.Split(*overpassURLs, ","),
+		},
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -182,6 +197,7 @@ func run(
 	stravaWebhookVerifyToken string,
 	schedulerServiceAccount string,
 	schedulerAudience string,
+	mapConfig mapdata.Config,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -229,6 +245,11 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create activity repository: %w", err)
 	}
+	routeRepo, err := routes.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create route repository: %w", err)
+	}
+	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
 	var stravaSyncer *stravasvc.Syncer
@@ -262,6 +283,7 @@ func run(
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, routing.DefaultDEMCache))
 	defer importRunner.Wait()
 	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
@@ -273,9 +295,11 @@ func run(
 	authv1connect.RegisterAuthServiceHandler(server, authService)
 	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)
 	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
+	routesv1connect.RegisterRouteServiceHandler(server, routeService)
 	routingv1connect.RegisterMapDataServiceHandler(server, mapDataService)
 	apiMux := http.NewServeMux()
-	connecthttp.Mount(apiMux, server)
+	// GPX files imported as routes can be several megabytes.
+	connecthttp.Mount(apiMux, server, connecthttp.WithReadMaxBytes(maxRequestBytes))
 
 	// Wrap the API mux in the authn middleware. Each service checks
 	// authentication itself.
@@ -332,7 +356,14 @@ func run(
 	mux.Handle("/favicon.svg", fileServer)
 	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
-	mux.Handle("/", html.ServeIndexHTML(serveDir != ""))
+	indexHandler := html.ServeIndexHTML(serveDir != "")
+	mux.Handle("/", indexHandler)
+	// Serve routes as GPX files, falling back to the frontend for other
+	// /routes/ pages.
+	mux.Handle("/routes/", authenticate(routeService.GPXHandler(indexHandler)))
+	// Registering /routes/ makes the mux redirect /routes to /routes/, so
+	// serve the frontend for /routes explicitly.
+	mux.Handle("/routes", indexHandler)
 
 	// Add auto-reloading middleware if serving from a directory
 	var srvHandler http.Handler = mux

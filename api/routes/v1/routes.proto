@@ -1,0 +1,259 @@
+syntax = "proto3";
+
+package routes.v1;
+
+import "geo/v1/geo.proto";
+import "google/protobuf/timestamp.proto";
+
+// RouteService creates and edits running routes. A route is defined by an
+// ordered list of waypoints. The path between consecutive waypoints (a leg) is
+// computed by routing on OpenStreetMap trails and roads, preferring the
+// user's own previously run paths, or as a straight line, depending on the
+// leg's routing profile. Routing only works in the regions whose map data has
+// been imported; elsewhere, or off the mapped paths, use STRAIGHT legs. Each leg can use a different profile, so a route can
+// mix trail sections with straight off-trail sections. The elevation profile,
+// distance and terrain breakdown are computed from the result. Routes can also be imported from GPX or created
+// from a previously recorded activity. Use PreviewRoute to try out waypoints
+// before saving, and the GeoService to find trails and points of interest.
+// A route can be downloaded as GPX at /routes/{id}.gpx.
+service RouteService {
+  // Compute a route through the given waypoints without saving it. Returns the
+  // route statistics and, optionally, the full path. Use this to iterate on a
+  // route design before calling CreateRoute, or to try out changes to a saved
+  // route (set route_id to reuse its unchanged legs) before calling
+  // UpdateRoute.
+  rpc PreviewRoute(PreviewRouteRequest) returns (PreviewRouteResponse);
+  // Create and save a new route from waypoints, a GPX file or an existing
+  // activity.
+  rpc CreateRoute(CreateRouteRequest) returns (CreateRouteResponse);
+  // Get a route by ID.
+  rpc GetRoute(GetRouteRequest) returns (GetRouteResponse);
+  // List the user's routes, most recently updated first. Paths are not
+  // included.
+  rpc ListRoutes(ListRoutesRequest) returns (ListRoutesResponse);
+  // Update a route's details or waypoints. When waypoints are provided, legs
+  // whose endpoints and routing profile are unchanged keep their existing
+  // path, and only new, moved or re-profiled legs are recomputed.
+  rpc UpdateRoute(UpdateRouteRequest) returns (UpdateRouteResponse);
+  // Delete a route.
+  rpc DeleteRoute(DeleteRouteRequest) returns (DeleteRouteResponse);
+}
+
+// RoutingProfile controls how a leg between two waypoints is computed.
+enum RoutingProfile {
+  // In a request, use the default profile (the route's profile, or TRAIL). In
+  // a response, the leg was imported from a GPX file or an activity.
+  ROUTING_PROFILE_UNSPECIFIED = 0;
+  // Prefer trails and unpaved paths, including mountain trails. Best for trail
+  // running. This is the default.
+  ROUTING_PROFILE_TRAIL = 1;
+  // The shortest path on any foot accessible way, including roads.
+  ROUTING_PROFILE_SHORTEST = 2;
+  // A straight line between the waypoints, without snapping to the map
+  // ("manual" mode). Use for off-trail sections, such as across a meadow or
+  // up a ridge without a path, or when routing fails.
+  ROUTING_PROFILE_STRAIGHT = 3;
+  // Prefer the paths the user has run before: like TRAIL, but paths near the
+  // GPS tracks of the user's synced activities (their personal heatmap, see
+  // GeoService.GetPersonalHeatmap) cost half as much, so the route follows
+  // them where it reasonably can. Behaves like TRAIL where the user has no
+  // activities near the leg.
+  ROUTING_PROFILE_HEATMAP = 4;
+}
+
+// RouteSource describes how a route was created.
+enum RouteSource {
+  ROUTE_SOURCE_UNSPECIFIED = 0;
+  // Routed between waypoints.
+  ROUTE_SOURCE_WAYPOINTS = 1;
+  // Imported from a GPX file.
+  ROUTE_SOURCE_GPX = 2;
+  // Created from a recorded activity.
+  ROUTE_SOURCE_ACTIVITY = 3;
+}
+
+// A point along a route path.
+message RoutePoint {
+  // Latitude in decimal degrees.
+  double lat = 1;
+  // Longitude in decimal degrees.
+  double lng = 2;
+  // Elevation in meters.
+  double elevation_meters = 3;
+  // Cumulative distance from the start of the route in meters.
+  double distance_meters = 4;
+}
+
+// The distance covered on a single terrain type.
+message TerrainShare {
+  // The terrain type.
+  geo.v1.Terrain terrain = 1;
+  // The distance in meters.
+  double distance_meters = 2;
+  // The fraction of the total route distance, between 0 and 1.
+  double fraction = 3;
+}
+
+// Statistics computed from a route's path.
+message RouteStats {
+  // Total distance in meters.
+  double distance_meters = 1;
+  // Total elevation gain in meters, smoothed to remove noise.
+  double elevation_gain_meters = 2;
+  // Total elevation loss in meters, smoothed to remove noise.
+  double elevation_loss_meters = 3;
+  // Lowest elevation in meters.
+  double min_elevation_meters = 4;
+  // Highest elevation in meters.
+  double max_elevation_meters = 5;
+  // Steepest sustained (over 200m) uphill grade in percent.
+  double max_climb_grade_percent = 6;
+  // Steepest sustained (over 200m) downhill grade in percent, as a positive
+  // number.
+  double max_descent_grade_percent = 7;
+  // Distance by terrain type. Terrain is unknown for straight legs, GPX imports
+  // and activity routes.
+  repeated TerrainShare terrain = 8;
+}
+
+// A route between waypoints.
+message Route {
+  // The ID of the route.
+  string id = 1;
+  // The name of the route.
+  string name = 2;
+  // A free text description of the route, such as its purpose, highlights or
+  // notes on navigation.
+  string description = 3;
+  // The default routing profile, used for legs without their own profile.
+  RoutingProfile profile = 4;
+  // The ordered waypoints that define the route. The first waypoint is the
+  // start and the last is the finish.
+  repeated geo.v1.LatLng waypoints = 5;
+  // The routing profile each leg was computed with: leg_profiles[i] is the
+  // profile of the leg from waypoints[i] to waypoints[i+1], so there is one
+  // fewer entry than waypoints. UNSPECIFIED for legs imported from a GPX file
+  // or an activity. Not set by ListRoutes.
+  repeated RoutingProfile leg_profiles = 11;
+  // The full path of the route. Only set when requested with include_points.
+  repeated RoutePoint points = 6;
+  // Statistics computed from the path.
+  RouteStats stats = 7;
+  // How the route was created.
+  RouteSource source = 8;
+  // When the route was created.
+  google.protobuf.Timestamp create_time = 9;
+  // When the route was last updated.
+  google.protobuf.Timestamp update_time = 10;
+}
+
+message PreviewRouteRequest {
+  // The ordered waypoints. At least 2 are required.
+  repeated geo.v1.LatLng waypoints = 1;
+  // The default routing profile, used for legs without their own profile in
+  // leg_profiles. Defaults to TRAIL.
+  RoutingProfile profile = 2;
+  // Include the full path in the response.
+  bool include_points = 3;
+  // Optional routing profiles per leg, to mix profiles within a route, e.g.
+  // TRAIL for most of the route with a STRAIGHT leg across an unmapped
+  // section. leg_profiles[i] is the profile of the leg from waypoints[i] to
+  // waypoints[i+1]. Either empty, to use profile for every leg, or exactly
+  // one entry per leg (one fewer than waypoints). UNSPECIFIED entries use
+  // profile.
+  repeated RoutingProfile leg_profiles = 4;
+  // The ID of a saved route being edited, if any. Legs of the saved route
+  // with the same endpoints and profile are reused instead of being routed
+  // again, as in UpdateRoute. The saved route is not changed.
+  string route_id = 5;
+}
+
+message PreviewRouteResponse {
+  // The computed route. It has no ID as it has not been saved.
+  Route route = 1;
+}
+
+// Waypoints to route between.
+message Waypoints {
+  // The ordered waypoints. At least 2 are required.
+  repeated geo.v1.LatLng waypoints = 1;
+  // The default routing profile, used for legs without their own profile in
+  // leg_profiles. Defaults to TRAIL.
+  RoutingProfile profile = 2;
+  // Optional routing profiles per leg, to mix profiles within a route, e.g.
+  // TRAIL for most of the route with a STRAIGHT leg across an unmapped
+  // section. leg_profiles[i] is the profile of the leg from waypoints[i] to
+  // waypoints[i+1]. Either empty, to use profile for every leg, or exactly
+  // one entry per leg (one fewer than waypoints). UNSPECIFIED entries use
+  // profile.
+  repeated RoutingProfile leg_profiles = 3;
+}
+
+message CreateRouteRequest {
+  // The name of the route.
+  string name = 1;
+  // A free text description of the route.
+  string description = 2;
+  // Where to create the route from. Exactly one must be set.
+  oneof source {
+    // Route between these waypoints.
+    Waypoints waypoints = 3;
+    // The contents of a GPX file. The first track (or route) is imported.
+    string gpx = 4;
+    // The ID of a synced activity whose GPS track becomes the route.
+    string activity_id = 5;
+  }
+  // Include the full path in the response.
+  bool include_points = 6;
+}
+
+message CreateRouteResponse {
+  // The created route.
+  Route route = 1;
+}
+
+message GetRouteRequest {
+  // The ID of the route.
+  string id = 1;
+  // Include the full path in the response. The path can be thousands of points;
+  // prefer the statistics unless the coordinates are needed.
+  bool include_points = 2;
+}
+
+message GetRouteResponse {
+  // The route.
+  Route route = 1;
+}
+
+message ListRoutesRequest {}
+
+message ListRoutesResponse {
+  // The user's routes, without paths.
+  repeated Route routes = 1;
+}
+
+message UpdateRouteRequest {
+  // The ID of the route to update.
+  string id = 1;
+  // The new name, if set.
+  optional string name = 2;
+  // The new description, if set.
+  optional string description = 3;
+  // New waypoints and routing profiles, if set. Legs whose endpoints and
+  // profile are unchanged keep their path; other legs are routed again.
+  Waypoints waypoints = 4;
+  // Include the full path in the response.
+  bool include_points = 5;
+}
+
+message UpdateRouteResponse {
+  // The updated route.
+  Route route = 1;
+}
+
+message DeleteRouteRequest {
+  // The ID of the route to delete.
+  string id = 1;
+}
+
+message DeleteRouteResponse {}

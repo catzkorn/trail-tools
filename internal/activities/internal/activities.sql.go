@@ -321,6 +321,63 @@ func (q *Queries) ListActivityTotals(ctx context.Context, arg *ListActivityTotal
 	return items, nil
 }
 
+const listActivityTracksInBounds = `-- name: ListActivityTracksInBounds :many
+select a.id, a.summary_polyline, s.streams
+from strava_activities a
+left join strava_activity_streams s on s.activity_id = a.id
+where a.user_id = $1
+  and a.min_lat <= $2::double precision
+  and a.max_lat >= $3::double precision
+  and a.min_lng <= $4::double precision
+  and a.max_lng >= $5::double precision
+  and ($6::date is null or a.start_date_local >= $6::date)
+  and ($7::date is null or a.start_date_local <= $7::date)
+`
+
+type ListActivityTracksInBoundsParams struct {
+	UserID    pgtype.UUID
+	North     float64
+	South     float64
+	East      float64
+	West      float64
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+}
+
+type ListActivityTracksInBoundsRow struct {
+	ID              pgtype.UUID
+	SummaryPolyline string
+	Streams         []byte
+}
+
+func (q *Queries) ListActivityTracksInBounds(ctx context.Context, arg *ListActivityTracksInBoundsParams) ([]*ListActivityTracksInBoundsRow, error) {
+	rows, err := q.db.Query(ctx, listActivityTracksInBounds,
+		arg.UserID,
+		arg.North,
+		arg.South,
+		arg.East,
+		arg.West,
+		arg.StartDate,
+		arg.EndDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*ListActivityTracksInBoundsRow
+	for rows.Next() {
+		var i ListActivityTracksInBoundsRow
+		if err := rows.Scan(&i.ID, &i.SummaryPolyline, &i.Streams); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markActivityStreamsSynced = `-- name: MarkActivityStreamsSynced :exec
 update strava_activities set
   streams_synced = true,

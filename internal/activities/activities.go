@@ -298,6 +298,36 @@ func (r *Repository) ListActivityTotals(ctx context.Context, userID pgtype.UUID,
 	return totals, nil
 }
 
+// Track is the GPS track of an activity. Streams is nil if the streams have
+// not been synced, in which case the summary polyline should be used.
+type Track struct {
+	ActivityID      pgtype.UUID
+	SummaryPolyline string
+	Streams         []byte
+}
+
+// ListTracksInBounds lists the tracks of activities whose bounding box
+// intersects the bounds, optionally within an inclusive date range.
+func (r *Repository) ListTracksInBounds(ctx context.Context, userID pgtype.UUID, bounds geo.Bounds, startDate, endDate time.Time) ([]Track, error) {
+	rows, err := r.q.ListActivityTracksInBounds(ctx, &internal.ListActivityTracksInBoundsParams{
+		UserID:    userID,
+		North:     bounds.MaxLat,
+		South:     bounds.MinLat,
+		East:      bounds.MaxLng,
+		West:      bounds.MinLng,
+		StartDate: store.DateToPG(startDate),
+		EndDate:   store.DateToPG(endDate),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list tracks: %w", err)
+	}
+	tracks := make([]Track, len(rows))
+	for i, row := range rows {
+		tracks[i] = Track{ActivityID: row.ID, SummaryPolyline: row.SummaryPolyline, Streams: row.Streams}
+	}
+	return tracks, nil
+}
+
 // activityRow has the same fields as the rows returned by the activity
 // queries, so they can be converted to it.
 type activityRow struct {

@@ -138,3 +138,15 @@ where user_id = $1
   and start_date_local <= sqlc.arg(end_date)::date
   and (cardinality(sqlc.arg(sport_types)::text[]) = 0 or sport_type = any(sqlc.arg(sport_types)::text[]))
 order by start_date_local;
+
+-- name: ListActivityTracksInBounds :many
+select a.id, a.summary_polyline, s.streams
+from strava_activities a
+left join strava_activity_streams s on s.activity_id = a.id
+where a.user_id = $1
+  and a.min_lat <= sqlc.arg(north)::double precision
+  and a.max_lat >= sqlc.arg(south)::double precision
+  and a.min_lng <= sqlc.arg(east)::double precision
+  and a.max_lng >= sqlc.arg(west)::double precision
+  and (sqlc.narg(start_date)::date is null or a.start_date_local >= sqlc.narg(start_date)::date)
+  and (sqlc.narg(end_date)::date is null or a.start_date_local <= sqlc.narg(end_date)::date);

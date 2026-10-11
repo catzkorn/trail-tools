@@ -20,6 +20,61 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Terrain is a coarse classification of the surface underfoot.
+type Terrain int32
+
+const (
+	Terrain_TERRAIN_UNSPECIFIED Terrain = 0
+	// Asphalt, concrete or paving stones.
+	Terrain_TERRAIN_PAVED Terrain = 1
+	// Gravel or compacted fire roads and tracks.
+	Terrain_TERRAIN_GRAVEL Terrain = 2
+	// Dirt, grass or forest singletrack.
+	Terrain_TERRAIN_TRAIL Terrain = 3
+	// Rocky, scree or demanding mountain trails (SAC scale T3 or above).
+	Terrain_TERRAIN_TECHNICAL Terrain = 4
+)
+
+// Enum value maps for Terrain.
+var (
+	Terrain_name = map[int32]string{
+		0: "TERRAIN_UNSPECIFIED",
+		1: "TERRAIN_PAVED",
+		2: "TERRAIN_GRAVEL",
+		3: "TERRAIN_TRAIL",
+		4: "TERRAIN_TECHNICAL",
+	}
+	Terrain_value = map[string]int32{
+		"TERRAIN_UNSPECIFIED": 0,
+		"TERRAIN_PAVED":       1,
+		"TERRAIN_GRAVEL":      2,
+		"TERRAIN_TRAIL":       3,
+		"TERRAIN_TECHNICAL":   4,
+	}
+)
+
+func (x Terrain) Enum() *Terrain {
+	p := new(Terrain)
+	*p = x
+	return p
+}
+
+func (x Terrain) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Terrain) Descriptor() protoreflect.EnumDescriptor {
+	return file_geo_v1_geo_proto_enumTypes[0].Descriptor()
+}
+
+func (Terrain) Type() protoreflect.EnumType {
+	return &file_geo_v1_geo_proto_enumTypes[0]
+}
+
+func (x Terrain) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // A WGS84 coordinate.
 type LatLng struct {
 	state          protoimpl.MessageState `protogen:"opaque.v1"`
@@ -101,13 +156,21 @@ const file_geo_v1_geo_proto_rawDesc = "" +
 	"\x10geo/v1/geo.proto\x12\x06geo.v1\",\n" +
 	"\x06LatLng\x12\x10\n" +
 	"\x03lat\x18\x01 \x01(\x01R\x03lat\x12\x10\n" +
-	"\x03lng\x18\x02 \x01(\x01R\x03lngB\x8a\x01\n" +
+	"\x03lng\x18\x02 \x01(\x01R\x03lng*s\n" +
+	"\aTerrain\x12\x17\n" +
+	"\x13TERRAIN_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rTERRAIN_PAVED\x10\x01\x12\x12\n" +
+	"\x0eTERRAIN_GRAVEL\x10\x02\x12\x11\n" +
+	"\rTERRAIN_TRAIL\x10\x03\x12\x15\n" +
+	"\x11TERRAIN_TECHNICAL\x10\x04B\x8a\x01\n" +
 	"\n" +
 	"com.geo.v1B\bGeoProtoP\x01Z9github.com/catzkorn/trail-tools/internal/gen/geo/v1;geov1\xa2\x02\x03GXX\xaa\x02\x06Geo.V1\xca\x02\x06Geo\\V1\xe2\x02\x12Geo\\V1\\GPBMetadata\xea\x02\aGeo::V1b\x06proto3"
 
+var file_geo_v1_geo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_geo_v1_geo_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_geo_v1_geo_proto_goTypes = []any{
-	(*LatLng)(nil), // 0: geo.v1.LatLng
+	(Terrain)(0),   // 0: geo.v1.Terrain
+	(*LatLng)(nil), // 1: geo.v1.LatLng
 }
 var file_geo_v1_geo_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -127,13 +190,14 @@ func file_geo_v1_geo_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_geo_v1_geo_proto_rawDesc), len(file_geo_v1_geo_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_geo_v1_geo_proto_goTypes,
 		DependencyIndexes: file_geo_v1_geo_proto_depIdxs,
+		EnumInfos:         file_geo_v1_geo_proto_enumTypes,
 		MessageInfos:      file_geo_v1_geo_proto_msgTypes,
 	}.Build()
 	File_geo_v1_geo_proto = out.File
