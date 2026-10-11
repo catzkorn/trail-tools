@@ -8,8 +8,14 @@ import type { SelectOption } from "@components/ui/fields";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import { primaryButton } from "@components/ui/styles";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
-import { useQueryClient } from "@tanstack/react-query";
+import { skipToken, useQueryClient } from "@tanstack/react-query";
 import { listActivities } from "gen/activities/v1/activities-ActivityService_connectquery";
+import {
+  getWorkout,
+  updateWorkout,
+} from "gen/plans/v1/plans-TrainingPlanService_connectquery";
+import type { Workout } from "gen/plans/v1/plans_pb";
+import { TrainingPlanService } from "gen/plans/v1/plans_pb";
 import {
   createRoute,
   getRoute,
@@ -17,29 +23,72 @@ import {
 } from "gen/routes/v1/routes-RouteService_connectquery";
 import type { Route } from "gen/routes/v1/routes_pb";
 import { RouteService, RouteSource } from "gen/routes/v1/routes_pb";
-import { formatDate, formatKm } from "helpers/format";
+import { formatDate, formatHoursMinutes, formatKm } from "helpers/format";
+import { workoutStyle } from "helpers/labels";
 import { invalidateServices } from "helpers/query";
 import React, { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+
+// SafeReturnPath only allows navigating back to paths within the app.
+const safeReturnPath = (value: string | null): string | null => {
+  if (value === null || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+  return value;
+};
 
 /**
- * UseRouteCreated returns a function to call after creating a route, which
- * opens the new route.
+ * UseRouteCreated returns a function to call after creating a route. When the
+ * route was designed for a workout (/routes/new?workout=<id>), the workout is
+ * linked to the route and the user is sent back to the workout's plan, or to
+ * the path in the optional return parameter.
  */
 const useRouteCreated = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const workoutId = searchParams.get("workout") ?? "";
+  const workoutQuery = useQuery(
+    getWorkout,
+    workoutId === "" ? skipToken : { id: workoutId }
+  );
+  const { workout } = workoutQuery.data ?? {};
+  let returnPath = safeReturnPath(searchParams.get("return"));
+  if (returnPath === null && workout !== undefined) {
+    returnPath = `/plans/${workout.planId}?month=${workout.date.slice(0, 7)}`;
+  }
+  const linkWorkout = useMutation(updateWorkout);
+
   const onCreated = async (route: Route | undefined) => {
     await invalidateServices(queryClient, [RouteService]);
-    if (route !== undefined) {
-      void navigate(`/routes/${route.id}`);
+    if (route === undefined) {
+      return;
     }
+    if (workoutId !== "") {
+      await linkWorkout.mutateAsync({
+        updateMask: { paths: ["route_id"] },
+        workout: { id: workoutId, routeId: route.id },
+      });
+      await invalidateServices(queryClient, [TrainingPlanService]);
+      if (returnPath === null) {
+        void navigate(-1);
+      } else {
+        void navigate(returnPath);
+      }
+      return;
+    }
+    void navigate(`/routes/${route.id}`);
   };
-  return { onCreated };
+  return {
+    linkError: linkWorkout.error ?? workoutQuery.error,
+    onCreated,
+    workout,
+    workoutId,
+  };
 };
 
 const ImportGpx: React.FC = () => {
-  const { onCreated } = useRouteCreated();
+  const { onCreated, linkError } = useRouteCreated();
   const [name, setName] = useState("");
   const [gpx, setGpx] = useState("");
   const [fileName, setFileName] = useState("");
@@ -84,7 +133,7 @@ const ImportGpx: React.FC = () => {
         onChange={setName}
         placeholder={fileName === "" ? "Route name" : fileName}
       />
-      <ErrorText error={create.error} />
+      <ErrorText error={create.error ?? linkError} />
       <div>
         <button
           type="submit"
@@ -99,7 +148,7 @@ const ImportGpx: React.FC = () => {
 };
 
 const FromActivity: React.FC = () => {
-  const { onCreated } = useRouteCreated();
+  const { onCreated, linkError } = useRouteCreated();
   const activities = useQuery(listActivities, { pageSize: 50 });
   const [activityId, setActivityId] = useState("");
   const [name, setName] = useState("");
@@ -162,7 +211,7 @@ const FromActivity: React.FC = () => {
         onChange={setName}
         placeholder={selected === undefined ? "Route name" : selected.name}
       />
-      <ErrorText error={create.error} />
+      <ErrorText error={create.error ?? linkError} />
       <div>
         <button
           type="submit"
@@ -178,10 +227,39 @@ const FromActivity: React.FC = () => {
 
 type NewMode = "draw" | "gpx" | "activity";
 
+interface WorkoutContextProps {
+  workout: Workout;
+}
+
+// WorkoutContext describes the workout a route is being designed for.
+const WorkoutContext: React.FC<WorkoutContextProps> = ({ workout }) => {
+  const targets: string[] = [];
+  if (workout.targetDistanceMeters > 0) {
+    targets.push(formatKm(workout.targetDistanceMeters));
+  }
+  if (workout.targetElevationGainMeters > 0) {
+    targets.push(`${Math.round(workout.targetElevationGainMeters)} m`);
+  }
+  if (workout.targetDurationSeconds > 0) {
+    targets.push(formatHoursMinutes(workout.targetDurationSeconds));
+  }
+  const { label } = workoutStyle(workout.type);
+  return (
+    <span>
+      Designing route for:{" "}
+      <span className="font-semibold">
+        {workout.title === "" ? label : `${workout.title} · ${label}`}
+      </span>{" "}
+      on {formatDate(workout.date)}
+      {targets.length > 0 && ` · target ${targets.join(" / ")}`}.
+    </span>
+  );
+};
+
 const NewRoute: React.FC = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<NewMode>("draw");
-  const { onCreated } = useRouteCreated();
+  const { onCreated, linkError, workout, workoutId } = useRouteCreated();
   const create = useMutation(createRoute, {
     onSuccess: async (response) => {
       await onCreated(response.route);
@@ -202,6 +280,18 @@ const NewRoute: React.FC = () => {
             Routes
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">New route</h1>
+          {workoutId !== "" && (
+            <div className="mt-1 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900 ring-1 ring-emerald-200">
+              {workout === undefined ? (
+                "Designing a route for a workout."
+              ) : (
+                <WorkoutContext workout={workout} />
+              )}{" "}
+              <span className="text-emerald-700">
+                The route is assigned to the workout when saved.
+              </span>
+            </div>
+          )}
         </div>
         <div className="inline-flex overflow-hidden rounded-md ring-1 ring-gray-300">
           {tabs.map((tab) => (
@@ -221,10 +311,10 @@ const NewRoute: React.FC = () => {
       {mode === "draw" && (
         <RouteEditor
           route={undefined}
-          defaultName=""
+          defaultName={workout?.title ?? ""}
           geometryEditable
           saving={create.isPending}
-          error={create.error}
+          error={create.error ?? linkError}
           onCancel={() => {
             void navigate(-1);
           }}
