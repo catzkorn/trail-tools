@@ -12,6 +12,7 @@ import DashboardPage from "pages/dashboard";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
 import MapDataPage from "pages/map-data";
+import OAuthConsentPage from "pages/oauth-consent";
 import PlanPage from "pages/plan";
 import PlansPage from "pages/plans";
 import RacePlanPage from "pages/race-plan";
@@ -140,6 +141,10 @@ const App: React.FC = () => {
             />
             <Route path="/map-data" element={protectedPage(<MapDataPage />)} />
             <Route path="/invite/:token" element={<InvitePage />} />
+            <Route
+              path="/oauth/authorize"
+              element={protectedPage(<OAuthConsentPage />)}
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
