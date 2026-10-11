@@ -52,6 +52,9 @@ const (
 	// RouteServiceCheckTrackCoverageProcedure is the fully-qualified name of the RouteService's
 	// CheckTrackCoverage RPC.
 	RouteServiceCheckTrackCoverageProcedure = "/routes.v1.RouteService/CheckTrackCoverage"
+	// RouteServiceGetRouteForecastProcedure is the fully-qualified name of the RouteService's
+	// GetRouteForecast RPC.
+	RouteServiceGetRouteForecastProcedure = "/routes.v1.RouteService/GetRouteForecast"
 )
 
 // RouteServiceClient is a client for the routes.v1.RouteService service.
@@ -84,6 +87,15 @@ type RouteServiceClient interface {
 	// before creating a route with conversion SNAP, and keep the track EXACT
 	// if much of it isn't covered.
 	CheckTrackCoverage(context.Context, *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error)
+	// Get an hourly weather forecast along a route for a planned start time and
+	// speed. The route can be a saved route, a GPX file or a list of
+	// coordinates. The server estimates where the runner will be at each hour
+	// and returns the forecast for that place and time, adjusted to the
+	// elevation of the point. It also returns the forecast at the highest point
+	// and the finish, and warnings about hazards such as thunderstorms, freezing
+	// levels below the route, strong gusts and darkness. Forecasts are available
+	// up to 15 days ahead.
+	GetRouteForecast(context.Context, *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error)
 }
 
 // NewRouteServiceClient constructs a client for the routes.v1.RouteService service. By default, it
@@ -140,6 +152,12 @@ func NewRouteServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		getRouteForecast: connect.NewClient[v1.GetRouteForecastRequest, v1.GetRouteForecastResponse](
+			httpClient,
+			baseURL+RouteServiceGetRouteForecastProcedure,
+			connect.WithSchema(routeServiceMethods.ByName("GetRouteForecast")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -152,6 +170,7 @@ type routeServiceClient struct {
 	updateRoute        *connect.Client[v1.UpdateRouteRequest, v1.UpdateRouteResponse]
 	deleteRoute        *connect.Client[v1.DeleteRouteRequest, v1.DeleteRouteResponse]
 	checkTrackCoverage *connect.Client[v1.CheckTrackCoverageRequest, v1.CheckTrackCoverageResponse]
+	getRouteForecast   *connect.Client[v1.GetRouteForecastRequest, v1.GetRouteForecastResponse]
 }
 
 // PreviewRoute calls routes.v1.RouteService.PreviewRoute.
@@ -189,6 +208,11 @@ func (c *routeServiceClient) CheckTrackCoverage(ctx context.Context, req *connec
 	return c.checkTrackCoverage.CallUnary(ctx, req)
 }
 
+// GetRouteForecast calls routes.v1.RouteService.GetRouteForecast.
+func (c *routeServiceClient) GetRouteForecast(ctx context.Context, req *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error) {
+	return c.getRouteForecast.CallUnary(ctx, req)
+}
+
 // RouteServiceHandler is an implementation of the routes.v1.RouteService service.
 type RouteServiceHandler interface {
 	// Compute a route through the given waypoints without saving it. Returns the
@@ -219,6 +243,15 @@ type RouteServiceHandler interface {
 	// before creating a route with conversion SNAP, and keep the track EXACT
 	// if much of it isn't covered.
 	CheckTrackCoverage(context.Context, *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error)
+	// Get an hourly weather forecast along a route for a planned start time and
+	// speed. The route can be a saved route, a GPX file or a list of
+	// coordinates. The server estimates where the runner will be at each hour
+	// and returns the forecast for that place and time, adjusted to the
+	// elevation of the point. It also returns the forecast at the highest point
+	// and the finish, and warnings about hazards such as thunderstorms, freezing
+	// levels below the route, strong gusts and darkness. Forecasts are available
+	// up to 15 days ahead.
+	GetRouteForecast(context.Context, *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error)
 }
 
 // NewRouteServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -271,6 +304,12 @@ func NewRouteServiceHandler(svc RouteServiceHandler, opts ...connect.HandlerOpti
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	routeServiceGetRouteForecastHandler := connect.NewUnaryHandler(
+		RouteServiceGetRouteForecastProcedure,
+		svc.GetRouteForecast,
+		connect.WithSchema(routeServiceMethods.ByName("GetRouteForecast")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/routes.v1.RouteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RouteServicePreviewRouteProcedure:
@@ -287,6 +326,8 @@ func NewRouteServiceHandler(svc RouteServiceHandler, opts ...connect.HandlerOpti
 			routeServiceDeleteRouteHandler.ServeHTTP(w, r)
 		case RouteServiceCheckTrackCoverageProcedure:
 			routeServiceCheckTrackCoverageHandler.ServeHTTP(w, r)
+		case RouteServiceGetRouteForecastProcedure:
+			routeServiceGetRouteForecastHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -322,4 +363,8 @@ func (UnimplementedRouteServiceHandler) DeleteRoute(context.Context, *connect.Re
 
 func (UnimplementedRouteServiceHandler) CheckTrackCoverage(context.Context, *connect.Request[v1.CheckTrackCoverageRequest]) (*connect.Response[v1.CheckTrackCoverageResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("routes.v1.RouteService.CheckTrackCoverage is not implemented"))
+}
+
+func (UnimplementedRouteServiceHandler) GetRouteForecast(context.Context, *connect.Request[v1.GetRouteForecastRequest]) (*connect.Response[v1.GetRouteForecastResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("routes.v1.RouteService.GetRouteForecast is not implemented"))
 }

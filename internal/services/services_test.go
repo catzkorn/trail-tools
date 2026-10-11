@@ -13,6 +13,7 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/catzkorn/trail-tools/internal/activities"
@@ -212,7 +213,10 @@ func (f *fakeRouter) lastPrefer() [][]geo.Point {
 }
 
 // fakeMapData looks up elevations as 1000 times the latitude.
-type fakeMapData struct{}
+type fakeMapData struct {
+	mu        sync.Mutex
+	forecasts []mapdata.ForecastQuery
+}
 
 func (f *fakeMapData) FillElevations(_ context.Context, points []geo.Point, _ int) error {
 	for i := range points {
@@ -227,6 +231,30 @@ func (f *fakeMapData) Elevations(_ context.Context, points []geo.Point) ([]float
 		elevations[i] = p.Lat * 1000
 	}
 	return elevations, nil
+}
+
+// Forecast returns clear, mild weather, with a thunderstorm in the second
+// hour and darkness from 18:00 UTC.
+func (f *fakeMapData) Forecast(_ context.Context, queries []mapdata.ForecastQuery) ([]mapdata.Weather, error) {
+	f.mu.Lock()
+	f.forecasts = append(f.forecasts, queries...)
+	f.mu.Unlock()
+	weather := make([]mapdata.Weather, len(queries))
+	for i, q := range queries {
+		hour := q.Time.UTC().Truncate(time.Hour)
+		weather[i] = mapdata.Weather{
+			Time:                hour,
+			TemperatureCelsius:  10,
+			ApparentTemperature: 8,
+			WeatherCode:         1,
+			FreezingLevelMeters: 3000,
+			IsDay:               hour.Hour() < 18,
+		}
+		if hour.Equal(queries[0].Time.UTC().Truncate(time.Hour).Add(time.Hour)) {
+			weather[i].WeatherCode = 95
+		}
+	}
+	return weather, nil
 }
 
 func (f *fakeMapData) Search(_ context.Context, query string, limit int) ([]mapdata.Place, error) {

@@ -86,3 +86,15 @@ about 715 MB, a 100 by 100 km box of it about 230 MB and Liechtenstein about
 4.5 MB. Neon's free plan has 0.5 GB of storage. Memory grows with the area
 imported, as only the paths inside it are kept: a 100 km² area of the
 Switzerland extract peaks at under 400 MB.
+
+### Map data services
+
+Trails, points of interest, place search, elevations of straight legs and
+weather come from public services that are fine for personal use:
+
+| Flag             | Default                         | Used for                        |
+| ---------------- | ------------------------------- | ------------------------------- |
+| `-overpass-urls` | Public Overpass API instances   | Trails and points of interest   |
+
+Public Overpass instances are often overloaded; trail and point of interest
+lookups return an error asking to retry when they all fail.
