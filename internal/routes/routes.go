@@ -67,6 +67,25 @@ func (l *Leg) GeoPoints() []geo.Point {
 	return points
 }
 
+// Reversed returns the leg in the opposite direction.
+func (l Leg) Reversed() Leg {
+	n := len(l.Points)
+	reversed := Leg{From: l.To, To: l.From, Profile: l.Profile, Points: make([][3]float64, n)}
+	for i, p := range l.Points {
+		reversed.Points[n-1-i] = p
+	}
+	if l.Terrains != nil {
+		// Terrains[i] is the terrain after Points[i], and the last entry is
+		// unused.
+		reversed.Terrains = make([]geo.Terrain, len(l.Terrains))
+		for i := 0; i+1 < len(l.Terrains); i++ {
+			reversed.Terrains[len(l.Terrains)-2-i] = l.Terrains[i]
+		}
+		reversed.Terrains[len(l.Terrains)-1] = geo.TerrainUnknown
+	}
+	return reversed
+}
+
 // NewLeg creates a leg from a path. Unknown elevations are stored as 0.
 func NewLeg(from, to LatLng, profile Profile, points []geo.Point, terrains []geo.Terrain) Leg {
 	leg := Leg{From: from, To: to, Profile: profile, Points: make([][3]float64, len(points))}

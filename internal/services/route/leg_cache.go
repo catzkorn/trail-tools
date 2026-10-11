@@ -45,7 +45,19 @@ func newLegCache() *legCache {
 	return &legCache{entries: map[legKey]*list.Element{}, order: list.New()}
 }
 
+// get returns a cached leg, or the reversed leg if it was routed in the
+// opposite direction.
 func (c *legCache) get(userID pgtype.UUID, from, to routes.LatLng, profile routes.Profile) (routes.Leg, bool) {
+	if leg, ok := c.getExact(userID, from, to, profile); ok {
+		return leg, true
+	}
+	if leg, ok := c.getExact(userID, to, from, profile); ok {
+		return leg.Reversed(), true
+	}
+	return routes.Leg{}, false
+}
+
+func (c *legCache) getExact(userID pgtype.UUID, from, to routes.LatLng, profile routes.Profile) (routes.Leg, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	key := legKey{userID: userID, from: from, to: to, profile: profile}

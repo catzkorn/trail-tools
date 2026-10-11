@@ -276,7 +276,8 @@ func TestRouteLegProfiles(t *testing.T) {
 		t.Errorf("got %d routing calls, want 1", calls)
 	}
 	wantLegProfiles(t, preview.Msg.GetRoute(), trail, straight)
-	terrain := preview.Msg.GetRoute().GetStats().GetTerrain()
+	stats := preview.Msg.GetRoute().GetStats()
+	terrain := stats.GetTerrain()
 	if len(terrain) != 2 || terrain[0].GetTerrain() != geov1.Terrain_TERRAIN_TRAIL || !approx(terrain[0].GetFraction(), 0.5, 0.01) ||
 		terrain[1].GetTerrain() != geov1.Terrain_TERRAIN_UNSPECIFIED {
 		t.Errorf("unexpected terrain %v", terrain)
@@ -353,6 +354,25 @@ func TestRouteLegProfiles(t *testing.T) {
 		t.Fatalf("GetRoute: %v", err)
 	}
 	wantLegProfiles(t, got.Msg.GetRoute(), trail, straight, heatmap)
+
+	// The way back of an out and back route reuses the outbound legs.
+	before := e.mapData.routeCallCount()
+	outAndBack, err := e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{
+		Waypoints: latLngs(1, 0, 1.01, 0, 1.02, 0, 1.01, 0, 1, 0),
+	}.Build()))
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if calls := e.mapData.routeCallCount() - before; calls != 2 {
+		t.Errorf("got %d routing calls, want 2", calls)
+	}
+	stats = outAndBack.Msg.GetRoute().GetStats()
+	if !approx(stats.GetDistanceMeters(), 4448, 5) || !approx(stats.GetElevationGainMeters(), 20, 0.5) || !approx(stats.GetElevationLossMeters(), 20, 0.5) {
+		t.Errorf("unexpected out and back stats %v", stats)
+	}
+	if terrain := stats.GetTerrain(); len(terrain) != 1 || terrain[0].GetTerrain() != geov1.Terrain_TERRAIN_TRAIL {
+		t.Errorf("unexpected out and back terrain %v", terrain)
+	}
 
 	// Previewing another user's route is not allowed.
 	_, err = e.routes.PreviewRoute(ctx, connect.NewRequest(routesv1.PreviewRouteRequest_builder{

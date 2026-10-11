@@ -47,7 +47,8 @@ var errInvalidRoute = errors.New("invalid route")
 // profiles[i] is the profile of the leg from waypoints[i] to
 // waypoints[i+1]. Existing legs with the same endpoints are reused, unless
 // they were routed with a different profile, and so are legs recently
-// routed for the user.
+// routed for the user. Legs are also reused in the opposite direction, e.g.
+// for the way back of an out and back route.
 func (s *Service) buildLegs(ctx context.Context, userID pgtype.UUID, waypoints []routes.LatLng, profiles []routes.Profile, existing []routes.Leg) ([]routes.Leg, error) {
 	if len(waypoints) < 2 {
 		return nil, fmt.Errorf("%w: at least 2 waypoints are required", errInvalidRoute)
@@ -64,9 +65,11 @@ func (s *Service) buildLegs(ctx context.Context, userID pgtype.UUID, waypoints [
 		}
 	}
 	legs := make([]routes.Leg, len(waypoints)-1)
-	// The legs that need routing, and the endpoints of those that prefer the
-	// user's heatmap.
+	// The legs that need routing, legs that repeat one of them (in either
+	// direction) and the endpoints of the legs that prefer the user's
+	// heatmap.
 	var toRoute []int
+	repeats := map[int]int{}
 	var heatmapEnds []geo.Point
 	for i := range legs {
 		from, to, profile := waypoints[i], waypoints[i+1], profiles[i]
@@ -76,6 +79,10 @@ func (s *Service) buildLegs(ctx context.Context, userID pgtype.UUID, waypoints [
 		}
 		if leg, ok := s.legs.get(userID, from, to, profile); ok {
 			legs[i] = leg
+			continue
+		}
+		if j, ok := findRepeat(toRoute, waypoints, profiles, i); ok {
+			repeats[i] = j
 			continue
 		}
 		toRoute = append(toRoute, i)
@@ -108,15 +115,43 @@ func (s *Service) buildLegs(ctx context.Context, userID pgtype.UUID, waypoints [
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	for i, j := range repeats {
+		legs[i] = legs[j]
+		if legs[j].From != waypoints[i] {
+			legs[i] = legs[j].Reversed()
+		}
+	}
 	return legs, nil
+}
+
+// findRepeat returns the leg in toRoute with the same endpoints and profile
+// as leg i, in either direction.
+func findRepeat(toRoute []int, waypoints []routes.LatLng, profiles []routes.Profile, i int) (int, bool) {
+	for _, j := range toRoute {
+		if profiles[j] != profiles[i] {
+			continue
+		}
+		same := waypoints[j] == waypoints[i] && waypoints[j+1] == waypoints[i+1]
+		reversed := waypoints[j] == waypoints[i+1] && waypoints[j+1] == waypoints[i]
+		if same || reversed {
+			return j, true
+		}
+	}
+	return 0, false
 }
 
 func findLeg(existing []routes.Leg, from, to routes.LatLng, profile routes.Profile) (routes.Leg, bool) {
 	for _, leg := range existing {
 		// Imported legs have no profile and are kept until their endpoints
 		// move.
-		if leg.From == from && leg.To == to && (leg.Profile == "" || leg.Profile == profile) {
+		if leg.Profile != "" && leg.Profile != profile {
+			continue
+		}
+		if leg.From == from && leg.To == to {
 			return leg, true
+		}
+		if leg.From == to && leg.To == from {
+			return leg.Reversed(), true
 		}
 	}
 	return routes.Leg{}, false
