@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -21,12 +22,30 @@ const (
 type SessionRepository interface {
 	GetSession(ctx context.Context, sessionID string) (users.User, error)
 	DeleteSession(ctx context.Context, sessionID string) error
+	GetAPITokenUser(ctx context.Context, secret string) (users.User, error)
 }
 
 type authCtx struct{}
 
 func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepository, next http.Handler) (http.Handler, error) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// API clients authenticate with a bearer token instead of a cookie.
+		if secret, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer "); ok {
+			user, err := repo.GetAPITokenUser(r.Context(), secret)
+			if err != nil {
+				if errors.Is(err, store.ErrNotFound) {
+					log.DebugContext(r.Context(), "Invalid API token", slog.String("path", r.URL.Path))
+					w.Header().Set("WWW-Authenticate", `Bearer error="invalid_token"`)
+					http.Error(w, "invalid API token", http.StatusUnauthorized)
+					return
+				}
+				log.ErrorContext(r.Context(), "Failed to get API token user", slogor.Err(err))
+				http.Error(w, "failed to authenticate", http.StatusInternalServerError)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), authCtx{}, user)))
+			return
+		}
 		sessionCookie, err := r.Cookie(sessionCookieName)
 		if errors.Is(err, http.ErrNoCookie) {
 			log.DebugContext(r.Context(), "User had no session cookie, continue unauthenticated", slog.String("path", r.URL.Path))

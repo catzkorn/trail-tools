@@ -159,7 +159,7 @@ func run(
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
 
-	userService := user.NewService(log)
+	userService := user.NewService(log, users)
 	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)

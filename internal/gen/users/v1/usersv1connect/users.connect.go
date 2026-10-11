@@ -36,12 +36,28 @@ const (
 	// UserServiceGetCurrentUserProcedure is the fully-qualified name of the UserService's
 	// GetCurrentUser RPC.
 	UserServiceGetCurrentUserProcedure = "/users.v1.UserService/GetCurrentUser"
+	// UserServiceCreateAPITokenProcedure is the fully-qualified name of the UserService's
+	// CreateAPIToken RPC.
+	UserServiceCreateAPITokenProcedure = "/users.v1.UserService/CreateAPIToken"
+	// UserServiceListAPITokensProcedure is the fully-qualified name of the UserService's ListAPITokens
+	// RPC.
+	UserServiceListAPITokensProcedure = "/users.v1.UserService/ListAPITokens"
+	// UserServiceDeleteAPITokenProcedure is the fully-qualified name of the UserService's
+	// DeleteAPIToken RPC.
+	UserServiceDeleteAPITokenProcedure = "/users.v1.UserService/DeleteAPIToken"
 )
 
 // UserServiceClient is a client for the users.v1.UserService service.
 type UserServiceClient interface {
 	// Get the signed in user.
 	GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error)
+	// Create an API token. API tokens authenticate MCP clients and other API
+	// clients with an "Authorization: Bearer <token>" header.
+	CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error)
+	// List the user's API tokens.
+	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
+	// Delete an API token.
+	DeleteAPIToken(context.Context, *connect.Request[v1.DeleteAPITokenRequest]) (*connect.Response[v1.DeleteAPITokenResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the users.v1.UserService service. By default, it
@@ -61,12 +77,33 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceMethods.ByName("GetCurrentUser")),
 			connect.WithClientOptions(opts...),
 		),
+		createAPIToken: connect.NewClient[v1.CreateAPITokenRequest, v1.CreateAPITokenResponse](
+			httpClient,
+			baseURL+UserServiceCreateAPITokenProcedure,
+			connect.WithSchema(userServiceMethods.ByName("CreateAPIToken")),
+			connect.WithClientOptions(opts...),
+		),
+		listAPITokens: connect.NewClient[v1.ListAPITokensRequest, v1.ListAPITokensResponse](
+			httpClient,
+			baseURL+UserServiceListAPITokensProcedure,
+			connect.WithSchema(userServiceMethods.ByName("ListAPITokens")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteAPIToken: connect.NewClient[v1.DeleteAPITokenRequest, v1.DeleteAPITokenResponse](
+			httpClient,
+			baseURL+UserServiceDeleteAPITokenProcedure,
+			connect.WithSchema(userServiceMethods.ByName("DeleteAPIToken")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
 	getCurrentUser *connect.Client[v1.GetCurrentUserRequest, v1.GetCurrentUserResponse]
+	createAPIToken *connect.Client[v1.CreateAPITokenRequest, v1.CreateAPITokenResponse]
+	listAPITokens  *connect.Client[v1.ListAPITokensRequest, v1.ListAPITokensResponse]
+	deleteAPIToken *connect.Client[v1.DeleteAPITokenRequest, v1.DeleteAPITokenResponse]
 }
 
 // GetCurrentUser calls users.v1.UserService.GetCurrentUser.
@@ -74,10 +111,32 @@ func (c *userServiceClient) GetCurrentUser(ctx context.Context, req *connect.Req
 	return c.getCurrentUser.CallUnary(ctx, req)
 }
 
+// CreateAPIToken calls users.v1.UserService.CreateAPIToken.
+func (c *userServiceClient) CreateAPIToken(ctx context.Context, req *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error) {
+	return c.createAPIToken.CallUnary(ctx, req)
+}
+
+// ListAPITokens calls users.v1.UserService.ListAPITokens.
+func (c *userServiceClient) ListAPITokens(ctx context.Context, req *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error) {
+	return c.listAPITokens.CallUnary(ctx, req)
+}
+
+// DeleteAPIToken calls users.v1.UserService.DeleteAPIToken.
+func (c *userServiceClient) DeleteAPIToken(ctx context.Context, req *connect.Request[v1.DeleteAPITokenRequest]) (*connect.Response[v1.DeleteAPITokenResponse], error) {
+	return c.deleteAPIToken.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the users.v1.UserService service.
 type UserServiceHandler interface {
 	// Get the signed in user.
 	GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error)
+	// Create an API token. API tokens authenticate MCP clients and other API
+	// clients with an "Authorization: Bearer <token>" header.
+	CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error)
+	// List the user's API tokens.
+	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
+	// Delete an API token.
+	DeleteAPIToken(context.Context, *connect.Request[v1.DeleteAPITokenRequest]) (*connect.Response[v1.DeleteAPITokenResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -93,10 +152,34 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceMethods.ByName("GetCurrentUser")),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceCreateAPITokenHandler := connect.NewUnaryHandler(
+		UserServiceCreateAPITokenProcedure,
+		svc.CreateAPIToken,
+		connect.WithSchema(userServiceMethods.ByName("CreateAPIToken")),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceListAPITokensHandler := connect.NewUnaryHandler(
+		UserServiceListAPITokensProcedure,
+		svc.ListAPITokens,
+		connect.WithSchema(userServiceMethods.ByName("ListAPITokens")),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceDeleteAPITokenHandler := connect.NewUnaryHandler(
+		UserServiceDeleteAPITokenProcedure,
+		svc.DeleteAPIToken,
+		connect.WithSchema(userServiceMethods.ByName("DeleteAPIToken")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/users.v1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceGetCurrentUserProcedure:
 			userServiceGetCurrentUserHandler.ServeHTTP(w, r)
+		case UserServiceCreateAPITokenProcedure:
+			userServiceCreateAPITokenHandler.ServeHTTP(w, r)
+		case UserServiceListAPITokensProcedure:
+			userServiceListAPITokensHandler.ServeHTTP(w, r)
+		case UserServiceDeleteAPITokenProcedure:
+			userServiceDeleteAPITokenHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -108,4 +191,16 @@ type UnimplementedUserServiceHandler struct{}
 
 func (UnimplementedUserServiceHandler) GetCurrentUser(context.Context, *connect.Request[v1.GetCurrentUserRequest]) (*connect.Response[v1.GetCurrentUserResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("users.v1.UserService.GetCurrentUser is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("users.v1.UserService.CreateAPIToken is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("users.v1.UserService.ListAPITokens is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) DeleteAPIToken(context.Context, *connect.Request[v1.DeleteAPITokenRequest]) (*connect.Response[v1.DeleteAPITokenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("users.v1.UserService.DeleteAPIToken is not implemented"))
 }

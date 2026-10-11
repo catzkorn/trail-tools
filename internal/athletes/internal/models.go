@@ -121,6 +121,15 @@ type Activity struct {
 	Name       string
 }
 
+type ApiToken struct {
+	ID           pgtype.UUID
+	UserID       pgtype.UUID
+	Name         string
+	SecretSha256 []byte
+	CreateTime   pgtype.Timestamptz
+	LastUsedTime pgtype.Timestamptz
+}
+
 type Athlete struct {
 	ID         pgtype.UUID
 	UserID     pgtype.UUID

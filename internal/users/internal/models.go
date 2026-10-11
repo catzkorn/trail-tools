@@ -113,6 +113,15 @@ func (e PasskeyCeremony) Valid() bool {
 	return false
 }
 
+type APIToken struct {
+	ID           pgtype.UUID
+	UserID       pgtype.UUID
+	Name         string
+	SecretSHA256 []byte
+	CreateTime   pgtype.Timestamptz
+	LastUsedTime pgtype.Timestamptz
+}
+
 type Activity struct {
 	ID         pgtype.UUID
 	AthleteID  pgtype.UUID

@@ -40,4 +40,5 @@ sql:
           - usb
           - nfc
           - ble
+          - api
           - sha256
