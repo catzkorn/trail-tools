@@ -143,11 +143,6 @@ type BloodLactateMeasure struct {
 	HeartRateBpm int32
 }
 
-type OIDCUser struct {
-	ID      pgtype.UUID
-	Subject string
-}
-
 type Session struct {
 	ID     pgtype.UUID
 	UserID pgtype.UUID

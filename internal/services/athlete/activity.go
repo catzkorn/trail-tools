@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
+	"github.com/catzkorn/trail-tools/internal/authn"
 	athletesv1 "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
-	"github.com/catzkorn/trail-tools/internal/oidc"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Service) CreateActivity(ctx context.Context, req *connect.Request[athletesv1.CreateActivityRequest]) (*connect.Response[athletesv1.CreateActivityResponse], error) {
-	_, ok := oidc.GetUserInfo(ctx)
+	_, ok := authn.GetUser(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
 	}

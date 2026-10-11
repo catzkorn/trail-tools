@@ -20,7 +20,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
-	"github.com/catzkorn/trail-tools/internal/oidc"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/services/webauthn"
@@ -68,21 +67,6 @@ var (
 		"",
 		"The path to the certificate used for serving the application over HTTPS",
 	)
-	oidcClientID = flag.String(
-		"oidc-client-id",
-		"",
-		"The client ID to use when authenticating with the OIDC issuer",
-	)
-	oidcClientSecret = flag.String(
-		"oidc-client-secret",
-		"",
-		"The client secret to use when authenticating with the OIDC issuer",
-	)
-	oidcIssuerURL = flag.String(
-		"oidc-issuer-url",
-		"https://accounts.google.com",
-		"The URL of the OIDC issuer to use for authentication",
-	)
 	serveDir = flag.String(
 		"serve-dir",
 		"",
@@ -113,9 +97,6 @@ func main() {
 		*port,
 		*tlsKeyPath,
 		*tlsCertPath,
-		*oidcClientID,
-		*oidcClientSecret,
-		*oidcIssuerURL,
 		*serveDir,
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
@@ -131,9 +112,6 @@ func run(
 	port string,
 	tlsKeyPath string,
 	tlsCertPath string,
-	oidcClientID string,
-	oidcClientSecret string,
-	oidcIssuerURL string,
 	serveDir string,
 ) error {
 	switch {
@@ -143,12 +121,6 @@ func run(
 		return errors.New("address is required")
 	case port == "":
 		return errors.New("port is required")
-	case oidcClientID == "":
-		return errors.New("oidc-client-id is required")
-	case oidcClientSecret == "":
-		return errors.New("oidc-client-secret is required")
-	case oidcIssuerURL == "":
-		return errors.New("oidc-issuer-url is required")
 	case tlsKeyPath != "" && tlsCertPath == "" || tlsKeyPath == "" && tlsCertPath != "":
 		return errors.New("tls-cert and tls-key must be set together")
 	}
@@ -186,32 +158,22 @@ func run(
 	apiMux.Handle(athletePath, athleteHandler)
 	apiMux.Handle(usersPath, usersHandler)
 
-	// Wrap the API mux in the OIDC authn middleware
-	// All API calls will require authentication.
-	oidcHandler, err := oidc.NewOIDCMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiMux)
-	if err != nil {
-		return fmt.Errorf("failed to create OIDC middleware: %w", err)
-	}
-	authHandler, err := authn.NewAuthnMiddleware(ctx, log, users, oidcHandler)
+	// Wrap the API mux in the authn middleware. Each service checks
+	// authentication itself.
+	authHandler, err := authn.NewAuthnMiddleware(ctx, log, users, apiMux)
 	if err != nil {
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
 
-	// Create the core mux. This contains both the Connect API, OIDC, WebAuthn and HTML handlers.
+	// Create the core mux. This contains both the Connect API, WebAuthn and HTML handlers.
 	// Only the Connect API endpoints (registered to apiMux) are authenticated.
 	mux := http.NewServeMux()
 	// Serve the Connect API handlers through the authn middleware
 	mux.Handle(athletePath, authHandler)
 	mux.Handle(usersPath, authHandler)
 
-	// Serve OIDC handlers directly on the mux (unauthenticated)
-	oidcLogout, err := oidc.RegisterHandlers(ctx, log, baseURL, oidcClientID, oidcClientSecret, oidcIssuerURL, users, mux)
-	if err != nil {
-		return fmt.Errorf("failed to register OIDC handlers: %w", err)
-	}
-
-	// Register authn and oidc logout handler directly on the mux
-	authn.RegisterLogoutHandler(log, mux, users, oidcLogout)
+	// Register the logout handler directly on the mux
+	authn.RegisterLogoutHandler(log, mux, users)
 
 	webAuthn, err := wauthn.New(&wauthn.Config{
 		RPDisplayName: "Trail tools",

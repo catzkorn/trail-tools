@@ -35,7 +35,6 @@ sql:
         emit_result_struct_pointers: true
         emit_enum_valid_method: true
         initialisms:
-          - oidc
           - id
           - json
           - usb

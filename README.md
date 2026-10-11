@@ -9,7 +9,7 @@ A website that is both an example of a full stack Go/React/TS/Postgres app and a
 
 ## Running
 
-To start Postgres, Dex and run the server locally, use:
+To start Postgres and run the server locally, use:
 
 ```sh
 $ make run

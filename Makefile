@@ -1,5 +1,4 @@
 NPM_TAG := 26.11.1-alpine
-DEX_TAG := v2.41.1-distroless
 PG_TAG  := 18
 CONTAINER_BIN ?= $(shell if command -v docker >/dev/null 2>&1; then printf '%s' docker; elif command -v container >/dev/null 2>&1; then printf '%s' container; fi)
 CPUS ?= $(shell (nproc --all || sysctl -n hw.ncpu) 2>/dev/null || echo 1)
@@ -37,24 +36,11 @@ NODE_RUN := $(CONTAINER_BIN) run --rm \
 # Flags shared by the `run` and `watch` backend invocations.
 SERVER_FLAGS := \
 	-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
-	-log-level debug \
-	-oidc-client-id trail-tools-test \
-	-oidc-client-secret abracadabra \
-	-oidc-issuer-url http://0.0.0.0:5556/dex
+	-log-level debug
 
 # Production asset builds, shared by the standalone targets and by `gen`.
 ESBUILD_PROD := go tool esbuild web/index.tsx --minify --bundle --outdir=web/dist --sourcemap --target=es6
 TAILWIND_PROD := $(NODE_RUN) npx @tailwindcss/cli --minify -i base.css -o dist/index.css
-
-# Block until dex is accepting TCP connections on its port.
-# bash's /dev/tcp needs no extra tooling; fail after ~30s.
-define WAIT_DEX
-echo "waiting for dex on :5556..."; n=0; \
-until bash -c 'exec 3<>/dev/tcp/localhost/5556' 2>/dev/null; do \
-	n=$$((n+1)); [ $$n -ge 150 ] && { echo "dex not ready after 30s" >&2; exit 1; }; \
-	sleep 0.2; \
-done; echo "dex ready"
-endef
 
 # Block until postgres accepts TCP queries. pg_isready runs inside the container.
 # -h localhost forces a TCP check: the entrypoint's bootstrap server listens only
@@ -105,22 +91,8 @@ go-format:
 go-lint:
 	go tool honnef.co/go/tools/cmd/staticcheck ./...
 
-.PHONY: dex
-dex: ## Start the dex OIDC container
-	@if $(CONTAINER_RUNNING) | grep -qx dex; then \
-		echo "dex already running"; \
-	else \
-		$(CONTAINER_BIN) run \
-			--rm \
-			--name dex \
-			-d \
-			-v $(CURDIR)/test/dex/dex-config.yaml:/etc/dex/config.docker.yaml \
-			-p 5556:5556 dexidp/dex:$(DEX_TAG); \
-	fi
-
 .PHONY: run
-run: dex db ## Run the backend (starts db + dex)
-	@$(WAIT_DEX)
+run: db ## Run the backend (starts db)
 	@$(WAIT_DB)
 	go run main.go $(SERVER_FLAGS)
 
@@ -155,8 +127,7 @@ tailwindcss:
 	$(TAILWIND_PROD)
 
 .PHONY: watch
-watch: dex db ## Run backend + assets with live reload
-	@$(WAIT_DEX)
+watch: db ## Run backend + assets with live reload
 	@$(WAIT_DB)
 	-/usr/bin/env bash -c "\
 		trap 'kill %1 %2' EXIT;\
@@ -186,8 +157,8 @@ lint: web-lint buf-lint go-lint ## Run all linters
 format: go-format web-format buf-format ## Run all formatters
 
 .PHONY: clean
-clean: ## Stop the db and dex containers
-	@for c in postgres dex; do \
+clean: ## Stop the db container
+	@for c in postgres; do \
 		if $(CONTAINER_RUNNING) | grep -qx $$c; then \
 			echo "stopping $$c"; $(CONTAINER_BIN) stop $$c >/dev/null; \
 		else \
