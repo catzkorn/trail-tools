@@ -47,6 +47,11 @@ returning *;
 delete from races
 where id = $1 and user_id = $2;
 
+-- name: RemoveGoalRace :exec
+update training_plans set
+  goal_race_ids = array_remove(goal_race_ids, sqlc.arg(race_id)::uuid)
+where user_id = $1;
+
 -- name: CreateRacePlan :one
 insert into race_plans (
   user_id,

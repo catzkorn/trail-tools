@@ -1002,6 +1002,22 @@ func (q *Queries) LockRacePlan(ctx context.Context, id pgtype.UUID) (pgtype.UUID
 	return id_2, err
 }
 
+const removeGoalRace = `-- name: RemoveGoalRace :exec
+update training_plans set
+  goal_race_ids = array_remove(goal_race_ids, $2::uuid)
+where user_id = $1
+`
+
+type RemoveGoalRaceParams struct {
+	UserID pgtype.UUID
+	RaceID pgtype.UUID
+}
+
+func (q *Queries) RemoveGoalRace(ctx context.Context, arg *RemoveGoalRaceParams) error {
+	_, err := q.db.Exec(ctx, removeGoalRace, arg.UserID, arg.RaceID)
+	return err
+}
+
 const setRaceDayLivetrackURL = `-- name: SetRaceDayLivetrackURL :exec
 update race_plans set
   race_day_livetrack_url = $2

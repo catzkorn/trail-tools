@@ -26,6 +26,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
@@ -34,6 +35,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
@@ -42,6 +44,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
@@ -260,6 +263,10 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create race repository: %w", err)
 	}
+	planRepo, err := plans.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create plan repository: %w", err)
+	}
 	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
@@ -299,6 +306,7 @@ func run(
 	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, routing.DefaultDEMCache))
 	defer importRunner.Wait()
 	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
+	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
 
@@ -312,6 +320,7 @@ func run(
 	routesv1connect.RegisterRouteServiceHandler(server, routeService)
 	geov1connect.RegisterGeoServiceHandler(server, geoService)
 	routingv1connect.RegisterMapDataServiceHandler(server, mapDataService)
+	plansv1connect.RegisterTrainingPlanServiceHandler(server, planService)
 	racesv1connect.RegisterRaceServiceHandler(server, raceService)
 	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
 	apiMux := http.NewServeMux()
