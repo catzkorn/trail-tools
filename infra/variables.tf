@@ -23,6 +23,11 @@ variable "budget_currency" {
   type        = string
 }
 
+variable "github_repository" {
+  description = "The GitHub repository allowed to apply this configuration from its main branch, as owner/name."
+  type        = string
+}
+
 variable "image" {
   description = "The container image to run. CI sets this to the image it built. If empty, the currently deployed image is kept."
   type        = string
