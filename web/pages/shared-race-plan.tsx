@@ -1,4 +1,5 @@
 import Loading from "@components/loading";
+import RaceDayPanel from "@components/race-day/race-day-panel";
 import PlanDocument, { RaceHeader } from "@components/race-plan/plan-document";
 import QueryError from "@components/ui/query-error";
 import { secondaryButton } from "@components/ui/styles";
@@ -74,6 +75,13 @@ const SharedRacePlanPage: React.FC = () => {
           Print
         </button>
       </div>
+      <RaceDayPanel
+        planRef={{ planId: "", shareToken: token }}
+        plan={plan}
+        race={race}
+        course={course}
+        shared
+      />
       {analysis !== undefined && analysis.plannedFinishSeconds > 0 && (
         <div className="rounded-lg bg-gray-800 px-4 py-3 text-white print:bg-white print:text-gray-900 print:ring-1 print:ring-gray-300">
           <span className="text-xs tracking-wide text-gray-300 uppercase print:text-gray-500">

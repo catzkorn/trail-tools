@@ -1,5 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import Loading from "@components/loading";
+import RaceDayPanel from "@components/race-day/race-day-panel";
 import PlanDocument, {
   RaceHeader,
   RulesPanel,
@@ -186,6 +187,13 @@ const RacePlanPage: React.FC = () => {
           Races
         </Link>
       </RaceHeader>
+      <RaceDayPanel
+        planRef={{ planId: plan.id, shareToken: "" }}
+        plan={plan}
+        race={race}
+        course={course.data?.route?.points ?? NO_POINTS}
+        shared={false}
+      />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="order-2 min-w-0 lg:order-1">
           {course.isError && (
