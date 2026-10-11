@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
@@ -21,12 +22,15 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -242,6 +246,9 @@ func run(
 	}
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	importRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, filepath.Join(os.TempDir(), "trail-tools-dem")))
+	defer importRunner.Wait()
+	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -254,6 +261,7 @@ func run(
 		func() (string, http.Handler) { return authv1connect.NewAuthServiceHandler(authService) },
 		func() (string, http.Handler) { return activitiesv1connect.NewActivityServiceHandler(activityService) },
 		func() (string, http.Handler) { return stravav1connect.NewStravaServiceHandler(stravaService) },
+		func() (string, http.Handler) { return routingv1connect.NewMapDataServiceHandler(mapDataService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)

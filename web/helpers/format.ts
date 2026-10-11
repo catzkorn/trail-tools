@@ -131,3 +131,14 @@ export const formatPercent = (fraction: number): string =>
 
 export const formatGrade = (percent: number): string =>
   `${percent.toFixed(1)}%`;
+
+// FormatBytes formats a size in bytes, e.g. "234 MB".
+export const formatBytes = (bytes: number): string => {
+  if (bytes < 1_000_000) {
+    return `${Math.round(bytes / 1000)} KB`;
+  }
+  if (bytes < 1_000_000_000) {
+    return `${Math.round(bytes / 1_000_000)} MB`;
+  }
+  return `${(bytes / 1_000_000_000).toFixed(2)} GB`;
+};

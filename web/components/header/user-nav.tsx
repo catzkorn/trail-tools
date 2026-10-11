@@ -49,6 +49,16 @@ const UserNav: React.FC<UserNavProps> = ({ user }) => (
             Settings
           </Link>
         </MenuItem>
+        {user.admin && (
+          <MenuItem key="map-data">
+            <Link
+              to="/map-data"
+              className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-hidden"
+            >
+              Map data
+            </Link>
+          </MenuItem>
+        )}
         <MenuItem key="logout">
           <a
             href="/logout"

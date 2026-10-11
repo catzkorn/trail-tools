@@ -62,17 +62,24 @@ Routes are routed in Postgres with [PostGIS](https://postgis.net) and
 OpenStreetMap data imported into the database. `make db` builds a Postgres
 image with both extensions.
 
-Import the areas you run in from an OpenStreetMap extract, e.g. from
-[Geofabrik](https://download.geofabrik.de):
+Administrators manage the imported areas on the map data page, at
+`/map-data` or under the user menu. It shows each area with the space it
+takes and the size of the database, deletes areas to free space, and imports
+the area shown in the middle of the map. The server picks the smallest
+[Geofabrik](https://download.geofabrik.de) extract covering the area, reads
+only the paths inside it, and looks up elevations from the SRTM derived tiles
+of the [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/)
+dataset. Imports run in the server.
+
+Imports can also be run from the command line, e.g. to import a whole
+extract:
 
 ```sh
 $ make import-osm REGION=liechtenstein PBF=https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf
 ```
 
 Use `BOUNDS=south,west,north,east` to only import part of an extract.
-Importing a region again replaces it. Elevations come from the SRTM derived
-tiles of the [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/)
-dataset.
+Importing a region again replaces it.
 
 Storage grows with the area and density of paths: all of Switzerland takes
 about 715 MB, a 100 by 100 km box of it about 230 MB and Liechtenstein about

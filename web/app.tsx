@@ -9,6 +9,7 @@ import ActivitiesPage from "pages/activities";
 import ActivityPage from "pages/activity";
 import AthletesPage from "pages/athletes";
 import InvitePage from "pages/invite";
+import MapDataPage from "pages/map-data";
 import SettingsPage from "pages/settings";
 import type { ReactNode } from "react";
 import React from "react";
@@ -107,6 +108,7 @@ const App: React.FC = () => {
               path="/settings"
               element={protectedPage(<SettingsPage user={user} />)}
             />
+            <Route path="/map-data" element={protectedPage(<MapDataPage />)} />
             <Route path="/invite/:token" element={<InvitePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
