@@ -170,10 +170,14 @@ $ make import-osm REGION=liechtenstein PBF=https://download.geofabrik.de/europe/
 Elevations come from the SRTM derived tiles of the
 [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) dataset,
 cached in the system temporary directory. Use `BOUNDS=south,west,north,east`
-to only import part of an extract. Importing a region again replaces it. A
-small country like Liechtenstein takes seconds and about 10 MB; larger
-extracts take more memory to import and more storage, roughly in proportion
-to their area and density of paths.
+to only import part of an extract. Importing a region again replaces it.
+
+Storage grows with the area and density of paths: all of Switzerland takes
+about 715 MB, a 100 by 100 km box of it about 230 MB and Liechtenstein about
+4.5 MB. The importer holds the extract's foot ways in memory, whatever the
+bounds, so importing all of Switzerland peaks at about 1.5 GB with
+`GOMEMLIMIT=1GiB` (2.2 GB without). To import a small area with less memory,
+clip the extract first, e.g. with `osmium extract -b west,south,east,north`.
 
 ### Map data services
 

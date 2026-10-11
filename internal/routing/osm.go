@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"math"
 	"runtime"
 	"slices"
@@ -23,9 +24,19 @@ var footHighways = map[string]bool{
 	"primary": true, "primary_link": true,
 }
 
-// isFootWay reports whether a way can be run on, from its tags.
+// isFootWay reports whether a way can be run on, from its tags. Sidewalks,
+// crossings, driveways and parking aisles are left out to keep the graph
+// small, as the roads they belong to can be run on.
 func isFootWay(tags map[string]string) bool {
 	if !footHighways[tags["highway"]] || tags["area"] == "yes" {
+		return false
+	}
+	switch tags["footway"] {
+	case "sidewalk", "crossing", "traffic_island":
+		return false
+	}
+	switch tags["service"] {
+	case "driveway", "parking_aisle", "drive-through", "emergency_access":
 		return false
 	}
 	foot := tags["foot"]
@@ -47,8 +58,8 @@ type Way struct {
 	ID    int64
 	Nodes []int64
 	// The tags that affect routing.
-	Highway, Surface, SacScale string
-	Terrain                    geo.Terrain
+	Highway, SacScale string
+	Terrain           geo.Terrain
 }
 
 func wayFromOSM(w *osmpbf.Way) Way {
@@ -56,7 +67,6 @@ func wayFromOSM(w *osmpbf.Way) Way {
 		ID:       w.ID,
 		Nodes:    w.NodeIDs,
 		Highway:  w.Tags["highway"],
-		Surface:  w.Tags["surface"],
 		SacScale: w.Tags["sac_scale"],
 		Terrain:  geo.ClassifyTerrain(w.Tags),
 	}
@@ -140,20 +150,29 @@ func scanPBF(ctx context.Context, open func() (io.ReadCloser, error), handle fun
 
 // Edge is a section of a way between two junctions or ends.
 type Edge struct {
-	WayID          int64
 	Source, Target int64
 	Points         []geo.Point
 	Highway        string
-	Surface        string
 	SacScale       string
 	Terrain        geo.Terrain
 }
 
-// BuildEdges splits ways into edges at the nodes where they meet or end.
-// Ways without any node inside bounds are left out, and so are nodes
-// missing from the extract. Points get their elevation from elevations,
-// which has one entry per node, NaN if unknown.
-func BuildEdges(ways []Way, nodes *Nodes, elevations []float64, bounds geo.Bounds) []Edge {
+// simplifyMeters is the tolerance edge geometries are simplified with, to
+// save storage.
+const simplifyMeters = 1
+
+// BuildEdges splits ways into edges at the nodes where they meet or end, and
+// yields them one at a time to limit memory use. Ways without any node
+// inside bounds are left out, and so are nodes missing from the extract.
+// Points get their elevation from elevations, which has one entry per node,
+// NaN if unknown.
+func BuildEdges(ways []Way, nodes *Nodes, elevations []float64, bounds geo.Bounds) iter.Seq[Edge] {
+	return func(yield func(Edge) bool) {
+		buildEdges(ways, nodes, elevations, bounds, yield)
+	}
+}
+
+func buildEdges(ways []Way, nodes *Nodes, elevations []float64, bounds geo.Bounds, yield func(Edge) bool) {
 	// Junctions are nodes used more than once, by different ways or twice by
 	// the same way, as in a loop.
 	uses := make([]uint8, len(nodes.IDs))
@@ -164,7 +183,6 @@ func BuildEdges(ways []Way, nodes *Nodes, elevations []float64, bounds geo.Bound
 			}
 		}
 	}
-	var edges []Edge
 	for _, w := range ways {
 		// The indexes of the way's nodes that have coordinates.
 		var idxs []int
@@ -189,20 +207,54 @@ func BuildEdges(ways []Way, nodes *Nodes, elevations []float64, bounds geo.Bound
 				continue
 			}
 			edge := Edge{
-				WayID:    w.ID,
 				Source:   nodes.IDs[idxs[start]],
 				Target:   nodes.IDs[idxs[k]],
 				Highway:  w.Highway,
-				Surface:  w.Surface,
 				SacScale: w.SacScale,
 				Terrain:  w.Terrain,
 			}
 			for _, i := range idxs[start : k+1] {
 				edge.Points = append(edge.Points, geo.Point{Lat: nodes.Lats[i], Lng: nodes.Lngs[i], Ele: elevations[i]})
 			}
-			edges = append(edges, edge)
+			edge.Points = simplify(edge.Points, simplifyMeters)
+			if !yield(edge) {
+				return
+			}
 			start = k
 		}
 	}
-	return edges
+}
+
+// simplify removes points within tolerance meters of the line through their
+// neighbors (the Douglas-Peucker algorithm), keeping the ends.
+func simplify(points []geo.Point, tolerance float64) []geo.Point {
+	if len(points) < 3 {
+		return points
+	}
+	worst, worstIndex := 0.0, 0
+	last := len(points) - 1
+	for i := 1; i < last; i++ {
+		if d := segmentDistance(points[i], points[0], points[last]); d > worst {
+			worst, worstIndex = d, i
+		}
+	}
+	if worst <= tolerance {
+		return []geo.Point{points[0], points[last]}
+	}
+	first := simplify(points[:worstIndex+1], tolerance)
+	return append(first[:len(first)-1], simplify(points[worstIndex:], tolerance)...)
+}
+
+// segmentDistance returns the distance in meters from p to the segment from
+// a to b, in a flat projection around p.
+func segmentDistance(p, a, b geo.Point) float64 {
+	scale := math.Cos(p.Lat * math.Pi / 180)
+	ax, ay := (a.Lng-p.Lng)*scale*metersPerDegreeLat, (a.Lat-p.Lat)*metersPerDegreeLat
+	bx, by := (b.Lng-p.Lng)*scale*metersPerDegreeLat, (b.Lat-p.Lat)*metersPerDegreeLat
+	dx, dy := bx-ax, by-ay
+	f := 0.0
+	if length := dx*dx + dy*dy; length > 0 {
+		f = math.Max(0, math.Min(1, -(ax*dx+ay*dy)/length))
+	}
+	return math.Hypot(ax+f*dx, ay+f*dy)
 }

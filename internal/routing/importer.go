@@ -62,14 +62,14 @@ func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConf
 			}
 		}
 	}
-	edges := BuildEdges(ways, nodes, elevations, bounds)
-	if len(edges) == 0 {
-		return fmt.Errorf("the extract has no foot accessible ways within the bounds")
-	}
-	if err := SaveRegion(ctx, db, conf.Region, bounds, edges); err != nil {
+	count, err := SaveRegion(ctx, db, conf.Region, bounds, BuildEdges(ways, nodes, elevations, bounds))
+	if err != nil {
 		return err
 	}
-	log.InfoContext(ctx, "Imported the region", slog.String("region", conf.Region), slog.Int("edges", len(edges)), slog.Duration("duration", time.Since(start)))
+	if count == 0 {
+		return fmt.Errorf("the extract has no foot accessible ways within the bounds")
+	}
+	log.InfoContext(ctx, "Imported the region", slog.String("region", conf.Region), slog.Int("edges", count), slog.Duration("duration", time.Since(start)))
 	return nil
 }
 

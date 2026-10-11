@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -41,15 +42,15 @@ func TestBuildEdges(t *testing.T) {
 	t.Parallel()
 	ways, nodes, bounds := testGraph()
 	elevations := make([]float64, len(nodes.IDs))
-	edges := routing.BuildEdges(ways, nodes, elevations, bounds)
+	edges := slices.Collect(routing.BuildEdges(ways, nodes, elevations, bounds))
 	// The road is split at the spur, and the far way is left out.
 	if len(edges) != 5 {
 		t.Fatalf("got %d edges, want 5", len(edges))
 	}
-	if e := edges[0]; e.WayID != 10 || e.Source != 1 || e.Target != 5 || len(e.Points) != 2 {
+	if e := edges[0]; e.Highway != "primary" || e.Source != 1 || e.Target != 5 || len(e.Points) != 2 {
 		t.Errorf("unexpected first edge %+v", e)
 	}
-	if e := edges[2]; e.WayID != 11 || e.Source != 1 || e.Target != 2 || len(e.Points) != 3 {
+	if e := edges[2]; e.Highway != "path" || e.Source != 1 || e.Target != 2 || len(e.Points) != 3 {
 		t.Errorf("unexpected path edge %+v", e)
 	}
 }
@@ -61,12 +62,12 @@ func newRouter(t *testing.T) *routing.Router {
 	elevations := make([]float64, len(nodes.IDs))
 	edges := routing.BuildEdges(ways, nodes, elevations, bounds)
 	ctx := context.Background()
-	if err := routing.SaveRegion(ctx, db, "test", bounds, edges); err != nil {
+	if _, err := routing.SaveRegion(ctx, db, "test", bounds, edges); err != nil {
 		t.Fatalf("SaveRegion: %v", err)
 	}
 	// Importing again replaces the region.
-	if err := routing.SaveRegion(ctx, db, "test", bounds, edges); err != nil {
-		t.Fatalf("SaveRegion: %v", err)
+	if count, err := routing.SaveRegion(ctx, db, "test", bounds, edges); err != nil || count != 5 {
+		t.Fatalf("SaveRegion: %d edges, %v", count, err)
 	}
 	return routing.NewRouter(db)
 }
