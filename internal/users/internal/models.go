@@ -113,6 +113,61 @@ func (e PasskeyCeremony) Valid() bool {
 	return false
 }
 
+type StravaSyncState string
+
+const (
+	StravaSyncStateIdle        StravaSyncState = "idle"
+	StravaSyncStateRunning     StravaSyncState = "running"
+	StravaSyncStateRateLimited StravaSyncState = "rate_limited"
+	StravaSyncStateFailed      StravaSyncState = "failed"
+)
+
+func (e *StravaSyncState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = StravaSyncState(s)
+	case string:
+		*e = StravaSyncState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for StravaSyncState: %T", src)
+	}
+	return nil
+}
+
+type NullStravaSyncState struct {
+	StravaSyncState StravaSyncState
+	Valid           bool // Valid is true if StravaSyncState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullStravaSyncState) Scan(value interface{}) error {
+	if value == nil {
+		ns.StravaSyncState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.StravaSyncState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullStravaSyncState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.StravaSyncState), nil
+}
+
+func (e StravaSyncState) Valid() bool {
+	switch e {
+	case StravaSyncStateIdle,
+		StravaSyncStateRunning,
+		StravaSyncStateRateLimited,
+		StravaSyncStateFailed:
+		return true
+	}
+	return false
+}
+
 type APIToken struct {
 	ID           pgtype.UUID
 	UserID       pgtype.UUID
@@ -245,6 +300,20 @@ type StravaActivityPhoto struct {
 type StravaActivityStream struct {
 	ActivityID pgtype.UUID
 	Streams    []byte
+}
+
+type StravaConnection struct {
+	UserID       pgtype.UUID
+	AthleteID    int64
+	AthleteName  string
+	AccessToken  string
+	RefreshToken string
+	Expiry       pgtype.Timestamptz
+	SyncState    StravaSyncState
+	SyncMessage  string
+	LastSyncTime pgtype.Timestamptz
+	ResumeTime   pgtype.Timestamptz
+	CreateTime   pgtype.Timestamptz
 }
 
 type User struct {

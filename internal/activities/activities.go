@@ -1,4 +1,5 @@
-// Package activities stores activities synced from Strava.
+// Package activities stores activities synced from Strava and the Strava
+// connection used to sync them.
 package activities
 
 import (
@@ -15,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// Repository stores activities.
+// Repository stores activities and Strava connections.
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB

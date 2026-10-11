@@ -25,13 +25,16 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
 	"github.com/johanbrandhorst/reload"
@@ -80,6 +83,39 @@ var (
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
 	)
+	stravaClientID = flag.String(
+		"strava-client-id",
+		"",
+		"The client ID of the Strava API application. If unset, Strava sync is disabled",
+	)
+	stravaClientSecret = flag.String(
+		"strava-client-secret",
+		"",
+		"The client secret of the Strava API application",
+	)
+	stravaSyncMode = flag.String(
+		"strava-sync-mode",
+		"background",
+		"How Strava syncs run: \"background\" runs them in the server, \"scheduled\" runs them when"+
+			" a scheduler calls "+stravasvc.SyncPath+", for servers that don't run between requests, like Cloud Run",
+	)
+	stravaWebhookVerifyToken = flag.String(
+		"strava-webhook-verify-token",
+		"",
+		"A secret Strava sends back when validating the webhook. If set, the server subscribes to Strava's webhook events"+
+			" at "+stravasvc.WebhookPath+" on startup, to sync new activities right away. Requires a public URL",
+	)
+	schedulerServiceAccount = flag.String(
+		"scheduler-service-account",
+		"",
+		"The email of the service account allowed to call "+stravasvc.SyncPath+" with a Google signed ID token,"+
+			" e.g. from Cloud Scheduler. Required with -strava-sync-mode=scheduled",
+	)
+	schedulerAudience = flag.String(
+		"scheduler-audience",
+		"trail-tools-scheduler",
+		"The audience of the scheduler's ID tokens",
+	)
 	adminBootstrapToken = flag.String(
 		"admin-bootstrap-token",
 		"",
@@ -111,7 +147,13 @@ func main() {
 		*tlsKeyPath,
 		*tlsCertPath,
 		*serveDir,
+		*stravaClientID,
+		*stravaClientSecret,
 		*adminBootstrapToken,
+		*stravaSyncMode,
+		*stravaWebhookVerifyToken,
+		*schedulerServiceAccount,
+		*schedulerAudience,
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -127,7 +169,13 @@ func run(
 	tlsKeyPath string,
 	tlsCertPath string,
 	serveDir string,
+	stravaClientID string,
+	stravaClientSecret string,
 	adminBootstrapToken string,
+	stravaSyncMode string,
+	stravaWebhookVerifyToken string,
+	schedulerServiceAccount string,
+	schedulerAudience string,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -138,6 +186,12 @@ func run(
 		return errors.New("port is required")
 	case tlsKeyPath != "" && tlsCertPath == "" || tlsKeyPath == "" && tlsCertPath != "":
 		return errors.New("tls-cert and tls-key must be set together")
+	case stravaClientID != "" && stravaClientSecret == "":
+		return errors.New("strava-client-secret is required when strava-client-id is set")
+	case stravaSyncMode != "background" && stravaSyncMode != "scheduled":
+		return errors.New(`strava-sync-mode must be "background" or "scheduled"`)
+	case stravaSyncMode == "scheduled" && schedulerServiceAccount == "":
+		return errors.New("scheduler-service-account is required with -strava-sync-mode=scheduled")
 	}
 	dbUrl, err := url.Parse(databaseUrl)
 	if err != nil {
@@ -170,12 +224,38 @@ func run(
 		return fmt.Errorf("failed to create activity repository: %w", err)
 	}
 
+	// Strava is optional, as it requires API credentials.
+	var stravaSyncer *stravasvc.Syncer
+	var stravaOAuth *stravasvc.OAuth
+	var stravaWebhook *stravasvc.Webhook
+	if stravaClientID != "" {
+		stravaClient := strava.New(strava.Config{
+			ClientID:     stravaClientID,
+			ClientSecret: stravaClientSecret,
+			RedirectURL:  baseURL + stravasvc.CallbackPath,
+		})
+		background := stravaSyncMode == "background"
+		stravaSyncer = stravasvc.NewSyncer(ctx, log, activityRepo, stravaClient, background)
+		stravaOAuth = stravasvc.NewOAuth(log, stravaClient, activityRepo, stravaSyncer, []byte(stravaClientSecret))
+		if stravaWebhookVerifyToken != "" {
+			stravaWebhook = stravasvc.NewWebhook(log, activityRepo, stravaSyncer, stravaClient,
+				baseURL+stravasvc.WebhookPath, stravaWebhookVerifyToken)
+		}
+		if background {
+			go stravaSyncer.RunBackground(ctx)
+			defer stravaSyncer.Wait()
+		}
+	} else {
+		log.InfoContext(ctx, "Strava sync disabled, set -strava-client-id and -strava-client-secret to enable it")
+	}
+
 	userService := user.NewService(log, users)
 	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
 	}
 	activityService := activity.NewService(log, activityRepo)
+	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
 
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
@@ -183,6 +263,7 @@ func run(
 	usersv1connect.RegisterUserServiceHandler(server, userService)
 	authv1connect.RegisterAuthServiceHandler(server, authService)
 	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)
+	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
 	apiMux := http.NewServeMux()
 	connecthttp.Mount(apiMux, server)
 
@@ -192,6 +273,11 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
+	authenticate := func(next http.Handler) http.Handler {
+		// NewAuthnMiddleware never returns an error.
+		h, _ := authn.NewAuthnMiddleware(ctx, log, users, next)
+		return h
+	}
 
 	// Create the core mux. This contains both the Connect API and HTML handlers.
 	// Only the Connect API endpoints (registered to apiMux) are authenticated.
@@ -199,6 +285,24 @@ func run(
 	// Serve the Connect API handlers through the authn middleware
 	for _, path := range servicePaths(server) {
 		mux.Handle(path, authHandler)
+	}
+
+	// Serve Strava OAuth handlers
+	if stravaOAuth != nil {
+		stravaOAuth.RegisterHandlers(mux, authenticate)
+	}
+	// Serve Strava's webhook events, which aren't authenticated
+	if stravaWebhook != nil {
+		mux.Handle(stravasvc.WebhookPath, stravaWebhook)
+	}
+	// Serve the scheduled sync endpoint, only for the scheduler
+	if stravaSyncer != nil && !stravaSyncer.Background() {
+		syncHandler, err := authn.RequireGoogleServiceAccount(ctx, log, schedulerAudience, schedulerServiceAccount,
+			stravasvc.SyncHandler(log, stravaSyncer))
+		if err != nil {
+			return fmt.Errorf("failed to create scheduled sync handler: %w", err)
+		}
+		mux.Handle(stravasvc.SyncPath, syncHandler)
 	}
 
 	// Register the logout handler directly on the mux
@@ -259,6 +363,16 @@ func run(
 			log.ErrorContext(ctx, "Failed to shutdown server", slogor.Err(err))
 		}
 	}()
+	if stravaWebhook != nil {
+		// Strava calls the webhook while subscribing, so subscribe once the
+		// server is serving. Listing the existing subscription first gives
+		// it time to start.
+		go func() {
+			if err := stravaWebhook.Subscribe(ctx); err != nil {
+				log.ErrorContext(ctx, "Failed to subscribe to Strava webhook events, new activities sync periodically instead", slogor.Err(err))
+			}
+		}()
+	}
 	log.InfoContext(ctx, "Serving on", slog.String("addr", address))
 	if err := serveFn(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to serve: %w", err)
