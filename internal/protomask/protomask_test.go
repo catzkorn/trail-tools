@@ -1,6 +1,7 @@
 package protomask_test
 
 import (
+	"slices"
 	"testing"
 
 	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
@@ -38,6 +39,41 @@ func TestApply(t *testing.T) {
 
 	for _, path := range []string{"nope", "id"} {
 		if err := protomask.Apply(newDst(), src, &fieldmaskpb.FieldMask{Paths: []string{path}}, "id"); err == nil {
+			t.Errorf("expected error for path %q", path)
+		}
+	}
+}
+
+func TestFields(t *testing.T) {
+	t.Parallel()
+	md := (&racesv1.Race{}).ProtoReflect().Descriptor()
+	names := func(mask *fieldmaskpb.FieldMask) ([]string, error) {
+		fields, err := protomask.Fields(md, mask, "id")
+		var result []string
+		for _, fd := range fields {
+			result = append(result, string(fd.Name()))
+		}
+		return result, err
+	}
+
+	got, err := names(&fieldmaskpb.FieldMask{Paths: []string{"notes", "websiteUrl", "notes"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"notes", "website_url"}; !slices.Equal(got, want) {
+		t.Errorf("got fields %v, want %v", got, want)
+	}
+
+	got, err = names(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != md.Fields().Len()-1 || slices.Contains(got, "id") {
+		t.Errorf("unexpected fields for empty mask %v", got)
+	}
+
+	for _, path := range []string{"nope", "id"} {
+		if _, err := names(&fieldmaskpb.FieldMask{Paths: []string{path}}); err == nil {
 			t.Errorf("expected error for path %q", path)
 		}
 	}

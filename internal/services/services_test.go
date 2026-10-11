@@ -37,6 +37,7 @@ import (
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	"github.com/catzkorn/trail-tools/internal/services/race"
+	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -67,7 +68,10 @@ type env struct {
 	mapDataAPI routingv1connect.MapDataServiceClient
 	imports    *fakeImportRunner
 	races      racesv1connect.RaceServiceClient
+	racePlans  racesv1connect.RacePlanServiceClient
+	anonPlans  racesv1connect.RacePlanServiceClient
 	otherRaces racesv1connect.RaceServiceClient
+	otherPlans racesv1connect.RacePlanServiceClient
 }
 
 func newEnv(t *testing.T) *env {
@@ -120,6 +124,7 @@ func newEnv(t *testing.T) *env {
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, "https://trail.example")
 
 	mux := http.NewServeMux()
 	server := connect.NewServer()
@@ -130,6 +135,7 @@ func newEnv(t *testing.T) *env {
 	routesv1connect.RegisterRouteServiceHandler(server, routeService)
 	geov1connect.RegisterGeoServiceHandler(server, geoService)
 	racesv1connect.RegisterRaceServiceHandler(server, raceService)
+	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
 	connecthttp.Mount(mux, server)
 
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
@@ -146,6 +152,7 @@ func newEnv(t *testing.T) *env {
 
 	client := e.srv.Client()
 	authed := connect.NewClient(connecthttp.NewTransport(client, e.srv.URL), bearerInterceptor(e.token))
+	anon := connect.NewClient(connecthttp.NewTransport(client, e.srv.URL))
 	e.users = usersv1connect.NewUserServiceClient(authed)
 	e.activity = activitiesv1connect.NewActivityServiceClient(authed)
 	e.stravaAPI = stravav1connect.NewStravaServiceClient(authed)
@@ -153,7 +160,11 @@ func newEnv(t *testing.T) *env {
 	e.geo = geov1connect.NewGeoServiceClient(authed)
 	e.mapDataAPI = routingv1connect.NewMapDataServiceClient(authed)
 	e.races = racesv1connect.NewRaceServiceClient(authed)
-	e.otherRaces = racesv1connect.NewRaceServiceClient(connect.NewClient(connecthttp.NewTransport(client, e.srv.URL), bearerInterceptor(otherToken)))
+	e.racePlans = racesv1connect.NewRacePlanServiceClient(authed)
+	e.anonPlans = racesv1connect.NewRacePlanServiceClient(anon)
+	other := connect.NewClient(connecthttp.NewTransport(client, e.srv.URL), bearerInterceptor(otherToken))
+	e.otherRaces = racesv1connect.NewRaceServiceClient(other)
+	e.otherPlans = racesv1connect.NewRacePlanServiceClient(other)
 	return e
 }
 

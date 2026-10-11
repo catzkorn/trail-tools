@@ -1,4 +1,4 @@
-// Package races stores races.
+// Package races stores races and race plans.
 package races
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// Repository stores races.
+// Repository stores races and race plans.
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB
@@ -134,7 +134,7 @@ func (r *Repository) UpdateRace(ctx context.Context, race *Race) (*Race, error) 
 	return raceFromDB(dbRace), nil
 }
 
-// DeleteRace deletes a race.
+// DeleteRace deletes a race and its race plans.
 func (r *Repository) DeleteRace(ctx context.Context, userID, raceID pgtype.UUID) error {
 	n, err := r.q.DeleteRace(ctx, &internal.DeleteRaceParams{ID: raceID, UserID: userID})
 	if err != nil {

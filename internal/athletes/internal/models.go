@@ -12,6 +12,71 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type ContingencyScenario string
+
+const (
+	ContingencyScenarioGiDistress     ContingencyScenario = "gi_distress"
+	ContingencyScenarioBehindSchedule ContingencyScenario = "behind_schedule"
+	ContingencyScenarioLowEnergy      ContingencyScenario = "low_energy"
+	ContingencyScenarioInjury         ContingencyScenario = "injury"
+	ContingencyScenarioWeather        ContingencyScenario = "weather"
+	ContingencyScenarioGearFailure    ContingencyScenario = "gear_failure"
+	ContingencyScenarioLowMotivation  ContingencyScenario = "low_motivation"
+	ContingencyScenarioNavigation     ContingencyScenario = "navigation"
+	ContingencyScenarioOther          ContingencyScenario = "other"
+)
+
+func (e *ContingencyScenario) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ContingencyScenario(s)
+	case string:
+		*e = ContingencyScenario(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ContingencyScenario: %T", src)
+	}
+	return nil
+}
+
+type NullContingencyScenario struct {
+	ContingencyScenario ContingencyScenario
+	Valid               bool // Valid is true if ContingencyScenario is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullContingencyScenario) Scan(value interface{}) error {
+	if value == nil {
+		ns.ContingencyScenario, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ContingencyScenario.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullContingencyScenario) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ContingencyScenario), nil
+}
+
+func (e ContingencyScenario) Valid() bool {
+	switch e {
+	case ContingencyScenarioGiDistress,
+		ContingencyScenarioBehindSchedule,
+		ContingencyScenarioLowEnergy,
+		ContingencyScenarioInjury,
+		ContingencyScenarioWeather,
+		ContingencyScenarioGearFailure,
+		ContingencyScenarioLowMotivation,
+		ContingencyScenarioNavigation,
+		ContingencyScenarioOther:
+		return true
+	}
+	return false
+}
+
 type InvitationKind string
 
 const (
@@ -476,6 +541,95 @@ type Race struct {
 	Notes               string
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
+}
+
+type RacePlan struct {
+	ID                         pgtype.UUID
+	UserID                     pgtype.UUID
+	RaceID                     pgtype.UUID
+	ShareToken                 pgtype.Text
+	GoalsAFinishSeconds        int32
+	GoalsBFinishSeconds        int32
+	GoalsCFinishSeconds        int32
+	GoalsNotes                 string
+	PacingStrategy             string
+	PacingHikeGradePercent     float64
+	PacingHeartRateCapBpm      int32
+	PacingNotes                string
+	NutritionCarbsGramsPerHour float64
+	NutritionFluidMlPerHour    float64
+	NutritionSodiumMgPerHour   float64
+	NutritionNotes             string
+	CrewHasCrew                bool
+	CrewMembers                string
+	CrewNotes                  string
+	MentalMantras              []string
+	MentalNotes                string
+	Notes                      string
+	CreateTime                 pgtype.Timestamptz
+	UpdateTime                 pgtype.Timestamptz
+}
+
+type RacePlanCheckpoint struct {
+	PlanID                pgtype.UUID
+	Position              int32
+	Name                  string
+	DistanceMeters        float64
+	ElevationGainMeters   float64
+	ElevationLossMeters   float64
+	CutoffSeconds         int32
+	CrewAccess            bool
+	DropBag               bool
+	Aid                   string
+	PlannedSegmentSeconds int32
+	PlannedStopSeconds    int32
+	SegmentStrategy       string
+	Tasks                 string
+	CrewInstructions      string
+	DropBagContents       string
+}
+
+type RacePlanContingency struct {
+	PlanID   pgtype.UUID
+	Position int32
+	Scenario ContingencyScenario
+	Trigger  string
+	Response string
+}
+
+type RacePlanGear struct {
+	PlanID    pgtype.UUID
+	Position  int32
+	Name      string
+	Mandatory bool
+	Location  string
+	Packed    bool
+	Notes     string
+}
+
+type RacePlanIntake struct {
+	PlanID             pgtype.UUID
+	CheckpointPosition int32
+	Position           int32
+	Product            string
+	Quantity           float64
+}
+
+type RacePlanNutritionProduct struct {
+	PlanID     pgtype.UUID
+	Position   int32
+	Name       string
+	CarbsGrams float64
+	SodiumMg   float64
+	FluidMl    float64
+	CaffeineMg float64
+}
+
+type RacePlanRaceMorning struct {
+	PlanID      pgtype.UUID
+	Position    int32
+	Time        string
+	Description string
 }
 
 type Route struct {

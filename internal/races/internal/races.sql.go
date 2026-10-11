@@ -82,6 +82,272 @@ func (q *Queries) CreateRace(ctx context.Context, arg *CreateRaceParams) (*Race,
 	return &i, err
 }
 
+const createRacePlan = `-- name: CreateRacePlan :one
+insert into race_plans (
+  user_id,
+  race_id,
+  goals_a_finish_seconds,
+  goals_b_finish_seconds,
+  goals_c_finish_seconds,
+  goals_notes,
+  pacing_strategy,
+  pacing_hike_grade_percent,
+  pacing_heart_rate_cap_bpm,
+  pacing_notes,
+  nutrition_carbs_grams_per_hour,
+  nutrition_fluid_ml_per_hour,
+  nutrition_sodium_mg_per_hour,
+  nutrition_notes,
+  crew_has_crew,
+  crew_members,
+  crew_notes,
+  mental_mantras,
+  mental_notes,
+  notes
+) values (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+)
+returning id
+`
+
+type CreateRacePlanParams struct {
+	UserID                     pgtype.UUID
+	RaceID                     pgtype.UUID
+	GoalsAFinishSeconds        int32
+	GoalsBFinishSeconds        int32
+	GoalsCFinishSeconds        int32
+	GoalsNotes                 string
+	PacingStrategy             string
+	PacingHikeGradePercent     float64
+	PacingHeartRateCapBpm      int32
+	PacingNotes                string
+	NutritionCarbsGramsPerHour float64
+	NutritionFluidMlPerHour    float64
+	NutritionSodiumMgPerHour   float64
+	NutritionNotes             string
+	CrewHasCrew                bool
+	CrewMembers                string
+	CrewNotes                  string
+	MentalMantras              []string
+	MentalNotes                string
+	Notes                      string
+}
+
+func (q *Queries) CreateRacePlan(ctx context.Context, arg *CreateRacePlanParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, createRacePlan,
+		arg.UserID,
+		arg.RaceID,
+		arg.GoalsAFinishSeconds,
+		arg.GoalsBFinishSeconds,
+		arg.GoalsCFinishSeconds,
+		arg.GoalsNotes,
+		arg.PacingStrategy,
+		arg.PacingHikeGradePercent,
+		arg.PacingHeartRateCapBpm,
+		arg.PacingNotes,
+		arg.NutritionCarbsGramsPerHour,
+		arg.NutritionFluidMlPerHour,
+		arg.NutritionSodiumMgPerHour,
+		arg.NutritionNotes,
+		arg.CrewHasCrew,
+		arg.CrewMembers,
+		arg.CrewNotes,
+		arg.MentalMantras,
+		arg.MentalNotes,
+		arg.Notes,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createRacePlanContingencies = `-- name: CreateRacePlanContingencies :exec
+insert into race_plan_contingencies (
+  plan_id,
+  position,
+  scenario,
+  trigger,
+  response
+)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::text[])::contingency_scenario,
+  unnest($4::text[]),
+  unnest($5::text[])
+`
+
+type CreateRacePlanContingenciesParams struct {
+	PlanID    pgtype.UUID
+	Positions []int32
+	Scenarios []string
+	Triggers  []string
+	Responses []string
+}
+
+func (q *Queries) CreateRacePlanContingencies(ctx context.Context, arg *CreateRacePlanContingenciesParams) error {
+	_, err := q.db.Exec(ctx, createRacePlanContingencies,
+		arg.PlanID,
+		arg.Positions,
+		arg.Scenarios,
+		arg.Triggers,
+		arg.Responses,
+	)
+	return err
+}
+
+const createRacePlanGear = `-- name: CreateRacePlanGear :exec
+insert into race_plan_gear (
+  plan_id,
+  position,
+  name,
+  mandatory,
+  location,
+  packed,
+  notes
+)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::text[]),
+  unnest($4::boolean[]),
+  unnest($5::text[]),
+  unnest($6::boolean[]),
+  unnest($7::text[])
+`
+
+type CreateRacePlanGearParams struct {
+	PlanID    pgtype.UUID
+	Positions []int32
+	Names     []string
+	Mandatory []bool
+	Locations []string
+	Packed    []bool
+	Notes     []string
+}
+
+func (q *Queries) CreateRacePlanGear(ctx context.Context, arg *CreateRacePlanGearParams) error {
+	_, err := q.db.Exec(ctx, createRacePlanGear,
+		arg.PlanID,
+		arg.Positions,
+		arg.Names,
+		arg.Mandatory,
+		arg.Locations,
+		arg.Packed,
+		arg.Notes,
+	)
+	return err
+}
+
+const createRacePlanIntakes = `-- name: CreateRacePlanIntakes :exec
+insert into race_plan_intakes (
+  plan_id,
+  checkpoint_position,
+  position,
+  product,
+  quantity
+)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::integer[]),
+  unnest($4::text[]),
+  unnest($5::double precision[])
+`
+
+type CreateRacePlanIntakesParams struct {
+	PlanID              pgtype.UUID
+	CheckpointPositions []int32
+	Positions           []int32
+	Products            []string
+	Quantities          []float64
+}
+
+func (q *Queries) CreateRacePlanIntakes(ctx context.Context, arg *CreateRacePlanIntakesParams) error {
+	_, err := q.db.Exec(ctx, createRacePlanIntakes,
+		arg.PlanID,
+		arg.CheckpointPositions,
+		arg.Positions,
+		arg.Products,
+		arg.Quantities,
+	)
+	return err
+}
+
+const createRacePlanNutritionProducts = `-- name: CreateRacePlanNutritionProducts :exec
+insert into race_plan_nutrition_products (
+  plan_id,
+  position,
+  name,
+  carbs_grams,
+  sodium_mg,
+  fluid_ml,
+  caffeine_mg
+)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::text[]),
+  unnest($4::double precision[]),
+  unnest($5::double precision[]),
+  unnest($6::double precision[]),
+  unnest($7::double precision[])
+`
+
+type CreateRacePlanNutritionProductsParams struct {
+	PlanID     pgtype.UUID
+	Positions  []int32
+	Names      []string
+	CarbsGrams []float64
+	SodiumMg   []float64
+	FluidMl    []float64
+	CaffeineMg []float64
+}
+
+func (q *Queries) CreateRacePlanNutritionProducts(ctx context.Context, arg *CreateRacePlanNutritionProductsParams) error {
+	_, err := q.db.Exec(ctx, createRacePlanNutritionProducts,
+		arg.PlanID,
+		arg.Positions,
+		arg.Names,
+		arg.CarbsGrams,
+		arg.SodiumMg,
+		arg.FluidMl,
+		arg.CaffeineMg,
+	)
+	return err
+}
+
+const createRacePlanRaceMorning = `-- name: CreateRacePlanRaceMorning :exec
+insert into race_plan_race_morning (
+  plan_id,
+  position,
+  time,
+  description
+)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::text[]),
+  unnest($4::text[])
+`
+
+type CreateRacePlanRaceMorningParams struct {
+	PlanID       pgtype.UUID
+	Positions    []int32
+	Times        []string
+	Descriptions []string
+}
+
+func (q *Queries) CreateRacePlanRaceMorning(ctx context.Context, arg *CreateRacePlanRaceMorningParams) error {
+	_, err := q.db.Exec(ctx, createRacePlanRaceMorning,
+		arg.PlanID,
+		arg.Positions,
+		arg.Times,
+		arg.Descriptions,
+	)
+	return err
+}
+
 const deleteRace = `-- name: DeleteRace :execrows
 delete from races
 where id = $1 and user_id = $2
@@ -98,6 +364,89 @@ func (q *Queries) DeleteRace(ctx context.Context, arg *DeleteRaceParams) (int64,
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const deleteRacePlan = `-- name: DeleteRacePlan :execrows
+delete from race_plans
+where id = $1 and user_id = $2
+`
+
+type DeleteRacePlanParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteRacePlan(ctx context.Context, arg *DeleteRacePlanParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRacePlan, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteRacePlanCheckpointsFrom = `-- name: DeleteRacePlanCheckpointsFrom :exec
+delete from race_plan_checkpoints
+where plan_id = $1 and position >= $2
+`
+
+type DeleteRacePlanCheckpointsFromParams struct {
+	PlanID       pgtype.UUID
+	FromPosition int32
+}
+
+func (q *Queries) DeleteRacePlanCheckpointsFrom(ctx context.Context, arg *DeleteRacePlanCheckpointsFromParams) error {
+	_, err := q.db.Exec(ctx, deleteRacePlanCheckpointsFrom, arg.PlanID, arg.FromPosition)
+	return err
+}
+
+const deleteRacePlanContingencies = `-- name: DeleteRacePlanContingencies :exec
+delete from race_plan_contingencies
+where plan_id = $1
+`
+
+func (q *Queries) DeleteRacePlanContingencies(ctx context.Context, planID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRacePlanContingencies, planID)
+	return err
+}
+
+const deleteRacePlanGear = `-- name: DeleteRacePlanGear :exec
+delete from race_plan_gear
+where plan_id = $1
+`
+
+func (q *Queries) DeleteRacePlanGear(ctx context.Context, planID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRacePlanGear, planID)
+	return err
+}
+
+const deleteRacePlanIntakes = `-- name: DeleteRacePlanIntakes :exec
+delete from race_plan_intakes
+where plan_id = $1
+`
+
+func (q *Queries) DeleteRacePlanIntakes(ctx context.Context, planID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRacePlanIntakes, planID)
+	return err
+}
+
+const deleteRacePlanNutritionProducts = `-- name: DeleteRacePlanNutritionProducts :exec
+delete from race_plan_nutrition_products
+where plan_id = $1
+`
+
+func (q *Queries) DeleteRacePlanNutritionProducts(ctx context.Context, planID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRacePlanNutritionProducts, planID)
+	return err
+}
+
+const deleteRacePlanRaceMorning = `-- name: DeleteRacePlanRaceMorning :exec
+delete from race_plan_race_morning
+where plan_id = $1
+`
+
+func (q *Queries) DeleteRacePlanRaceMorning(ctx context.Context, planID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRacePlanRaceMorning, planID)
+	return err
 }
 
 const getRace = `-- name: GetRace :one
@@ -131,6 +480,370 @@ func (q *Queries) GetRace(ctx context.Context, arg *GetRaceParams) (*Race, error
 		&i.UpdateTime,
 	)
 	return &i, err
+}
+
+const getRaceByID = `-- name: GetRaceByID :one
+select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time from races
+where id = $1
+`
+
+func (q *Queries) GetRaceByID(ctx context.Context, id pgtype.UUID) (*Race, error) {
+	row := q.db.QueryRow(ctx, getRaceByID, id)
+	var i Race
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Date,
+		&i.StartTime,
+		&i.Location,
+		&i.WebsiteURL,
+		&i.DistanceMeters,
+		&i.ElevationGainMeters,
+		&i.CutoffSeconds,
+		&i.Priority,
+		&i.CourseRouteID,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const getRacePlan = `-- name: GetRacePlan :one
+select id, user_id, race_id, share_token, goals_a_finish_seconds, goals_b_finish_seconds, goals_c_finish_seconds, goals_notes, pacing_strategy, pacing_hike_grade_percent, pacing_heart_rate_cap_bpm, pacing_notes, nutrition_carbs_grams_per_hour, nutrition_fluid_ml_per_hour, nutrition_sodium_mg_per_hour, nutrition_notes, crew_has_crew, crew_members, crew_notes, mental_mantras, mental_notes, notes, create_time, update_time from race_plans
+where id = $1 and user_id = $2
+`
+
+type GetRacePlanParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetRacePlan(ctx context.Context, arg *GetRacePlanParams) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, getRacePlan, arg.ID, arg.UserID)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.ShareToken,
+		&i.GoalsAFinishSeconds,
+		&i.GoalsBFinishSeconds,
+		&i.GoalsCFinishSeconds,
+		&i.GoalsNotes,
+		&i.PacingStrategy,
+		&i.PacingHikeGradePercent,
+		&i.PacingHeartRateCapBpm,
+		&i.PacingNotes,
+		&i.NutritionCarbsGramsPerHour,
+		&i.NutritionFluidMlPerHour,
+		&i.NutritionSodiumMgPerHour,
+		&i.NutritionNotes,
+		&i.CrewHasCrew,
+		&i.CrewMembers,
+		&i.CrewNotes,
+		&i.MentalMantras,
+		&i.MentalNotes,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const getRacePlanByShareToken = `-- name: GetRacePlanByShareToken :one
+select id, user_id, race_id, share_token, goals_a_finish_seconds, goals_b_finish_seconds, goals_c_finish_seconds, goals_notes, pacing_strategy, pacing_hike_grade_percent, pacing_heart_rate_cap_bpm, pacing_notes, nutrition_carbs_grams_per_hour, nutrition_fluid_ml_per_hour, nutrition_sodium_mg_per_hour, nutrition_notes, crew_has_crew, crew_members, crew_notes, mental_mantras, mental_notes, notes, create_time, update_time from race_plans
+where share_token = $1
+`
+
+func (q *Queries) GetRacePlanByShareToken(ctx context.Context, shareToken pgtype.Text) (*RacePlan, error) {
+	row := q.db.QueryRow(ctx, getRacePlanByShareToken, shareToken)
+	var i RacePlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.RaceID,
+		&i.ShareToken,
+		&i.GoalsAFinishSeconds,
+		&i.GoalsBFinishSeconds,
+		&i.GoalsCFinishSeconds,
+		&i.GoalsNotes,
+		&i.PacingStrategy,
+		&i.PacingHikeGradePercent,
+		&i.PacingHeartRateCapBpm,
+		&i.PacingNotes,
+		&i.NutritionCarbsGramsPerHour,
+		&i.NutritionFluidMlPerHour,
+		&i.NutritionSodiumMgPerHour,
+		&i.NutritionNotes,
+		&i.CrewHasCrew,
+		&i.CrewMembers,
+		&i.CrewNotes,
+		&i.MentalMantras,
+		&i.MentalNotes,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
+	)
+	return &i, err
+}
+
+const listRacePlanCheckpoints = `-- name: ListRacePlanCheckpoints :many
+select plan_id, position, name, distance_meters, elevation_gain_meters, elevation_loss_meters, cutoff_seconds, crew_access, drop_bag, aid, planned_segment_seconds, planned_stop_seconds, segment_strategy, tasks, crew_instructions, drop_bag_contents from race_plan_checkpoints
+where plan_id = any($1::uuid[])
+order by plan_id, position
+`
+
+func (q *Queries) ListRacePlanCheckpoints(ctx context.Context, planIds []pgtype.UUID) ([]*RacePlanCheckpoint, error) {
+	rows, err := q.db.Query(ctx, listRacePlanCheckpoints, planIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlanCheckpoint
+	for rows.Next() {
+		var i RacePlanCheckpoint
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.Position,
+			&i.Name,
+			&i.DistanceMeters,
+			&i.ElevationGainMeters,
+			&i.ElevationLossMeters,
+			&i.CutoffSeconds,
+			&i.CrewAccess,
+			&i.DropBag,
+			&i.Aid,
+			&i.PlannedSegmentSeconds,
+			&i.PlannedStopSeconds,
+			&i.SegmentStrategy,
+			&i.Tasks,
+			&i.CrewInstructions,
+			&i.DropBagContents,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRacePlanContingencies = `-- name: ListRacePlanContingencies :many
+select plan_id, position, scenario, trigger, response from race_plan_contingencies
+where plan_id = any($1::uuid[])
+order by plan_id, position
+`
+
+func (q *Queries) ListRacePlanContingencies(ctx context.Context, planIds []pgtype.UUID) ([]*RacePlanContingency, error) {
+	rows, err := q.db.Query(ctx, listRacePlanContingencies, planIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlanContingency
+	for rows.Next() {
+		var i RacePlanContingency
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.Position,
+			&i.Scenario,
+			&i.Trigger,
+			&i.Response,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRacePlanGear = `-- name: ListRacePlanGear :many
+select plan_id, position, name, mandatory, location, packed, notes from race_plan_gear
+where plan_id = any($1::uuid[])
+order by plan_id, position
+`
+
+func (q *Queries) ListRacePlanGear(ctx context.Context, planIds []pgtype.UUID) ([]*RacePlanGear, error) {
+	rows, err := q.db.Query(ctx, listRacePlanGear, planIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlanGear
+	for rows.Next() {
+		var i RacePlanGear
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.Position,
+			&i.Name,
+			&i.Mandatory,
+			&i.Location,
+			&i.Packed,
+			&i.Notes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRacePlanIntakes = `-- name: ListRacePlanIntakes :many
+select plan_id, checkpoint_position, position, product, quantity from race_plan_intakes
+where plan_id = any($1::uuid[])
+order by plan_id, checkpoint_position, position
+`
+
+func (q *Queries) ListRacePlanIntakes(ctx context.Context, planIds []pgtype.UUID) ([]*RacePlanIntake, error) {
+	rows, err := q.db.Query(ctx, listRacePlanIntakes, planIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlanIntake
+	for rows.Next() {
+		var i RacePlanIntake
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.CheckpointPosition,
+			&i.Position,
+			&i.Product,
+			&i.Quantity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRacePlanNutritionProducts = `-- name: ListRacePlanNutritionProducts :many
+select plan_id, position, name, carbs_grams, sodium_mg, fluid_ml, caffeine_mg from race_plan_nutrition_products
+where plan_id = any($1::uuid[])
+order by plan_id, position
+`
+
+func (q *Queries) ListRacePlanNutritionProducts(ctx context.Context, planIds []pgtype.UUID) ([]*RacePlanNutritionProduct, error) {
+	rows, err := q.db.Query(ctx, listRacePlanNutritionProducts, planIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlanNutritionProduct
+	for rows.Next() {
+		var i RacePlanNutritionProduct
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.Position,
+			&i.Name,
+			&i.CarbsGrams,
+			&i.SodiumMg,
+			&i.FluidMl,
+			&i.CaffeineMg,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRacePlanRaceMorning = `-- name: ListRacePlanRaceMorning :many
+select plan_id, position, time, description from race_plan_race_morning
+where plan_id = any($1::uuid[])
+order by plan_id, position
+`
+
+func (q *Queries) ListRacePlanRaceMorning(ctx context.Context, planIds []pgtype.UUID) ([]*RacePlanRaceMorning, error) {
+	rows, err := q.db.Query(ctx, listRacePlanRaceMorning, planIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlanRaceMorning
+	for rows.Next() {
+		var i RacePlanRaceMorning
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.Position,
+			&i.Time,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRacePlans = `-- name: ListRacePlans :many
+select id, user_id, race_id, share_token, goals_a_finish_seconds, goals_b_finish_seconds, goals_c_finish_seconds, goals_notes, pacing_strategy, pacing_hike_grade_percent, pacing_heart_rate_cap_bpm, pacing_notes, nutrition_carbs_grams_per_hour, nutrition_fluid_ml_per_hour, nutrition_sodium_mg_per_hour, nutrition_notes, crew_has_crew, crew_members, crew_notes, mental_mantras, mental_notes, notes, create_time, update_time from race_plans
+where user_id = $1
+order by create_time, id
+`
+
+func (q *Queries) ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*RacePlan, error) {
+	rows, err := q.db.Query(ctx, listRacePlans, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RacePlan
+	for rows.Next() {
+		var i RacePlan
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.RaceID,
+			&i.ShareToken,
+			&i.GoalsAFinishSeconds,
+			&i.GoalsBFinishSeconds,
+			&i.GoalsCFinishSeconds,
+			&i.GoalsNotes,
+			&i.PacingStrategy,
+			&i.PacingHikeGradePercent,
+			&i.PacingHeartRateCapBpm,
+			&i.PacingNotes,
+			&i.NutritionCarbsGramsPerHour,
+			&i.NutritionFluidMlPerHour,
+			&i.NutritionSodiumMgPerHour,
+			&i.NutritionNotes,
+			&i.CrewHasCrew,
+			&i.CrewMembers,
+			&i.CrewNotes,
+			&i.MentalMantras,
+			&i.MentalNotes,
+			&i.Notes,
+			&i.CreateTime,
+			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listRaces = `-- name: ListRaces :many
@@ -173,6 +886,64 @@ func (q *Queries) ListRaces(ctx context.Context, userID pgtype.UUID) ([]*Race, e
 		return nil, err
 	}
 	return items, nil
+}
+
+const shareRacePlan = `-- name: ShareRacePlan :one
+update race_plans set
+  share_token = coalesce(share_token, $3::text)
+where id = $1 and user_id = $2
+returning share_token
+`
+
+type ShareRacePlanParams struct {
+	ID       pgtype.UUID
+	UserID   pgtype.UUID
+	NewToken string
+}
+
+func (q *Queries) ShareRacePlan(ctx context.Context, arg *ShareRacePlanParams) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, shareRacePlan, arg.ID, arg.UserID, arg.NewToken)
+	var share_token pgtype.Text
+	err := row.Scan(&share_token)
+	return share_token, err
+}
+
+const touchRacePlan = `-- name: TouchRacePlan :execrows
+update race_plans set
+  update_time = now()
+where id = $1 and user_id = $2
+`
+
+type TouchRacePlanParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) TouchRacePlan(ctx context.Context, arg *TouchRacePlanParams) (int64, error) {
+	result, err := q.db.Exec(ctx, touchRacePlan, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const unshareRacePlan = `-- name: UnshareRacePlan :execrows
+update race_plans set
+  share_token = null
+where id = $1 and user_id = $2
+`
+
+type UnshareRacePlanParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) UnshareRacePlan(ctx context.Context, arg *UnshareRacePlanParams) (int64, error) {
+	result, err := q.db.Exec(ctx, unshareRacePlan, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const updateRace = `-- name: UpdateRace :one
@@ -244,4 +1015,241 @@ func (q *Queries) UpdateRace(ctx context.Context, arg *UpdateRaceParams) (*Race,
 		&i.UpdateTime,
 	)
 	return &i, err
+}
+
+const updateRacePlanCrew = `-- name: UpdateRacePlanCrew :exec
+update race_plans set
+  crew_has_crew = $2,
+  crew_members = $3,
+  crew_notes = $4
+where id = $1
+`
+
+type UpdateRacePlanCrewParams struct {
+	ID          pgtype.UUID
+	CrewHasCrew bool
+	CrewMembers string
+	CrewNotes   string
+}
+
+func (q *Queries) UpdateRacePlanCrew(ctx context.Context, arg *UpdateRacePlanCrewParams) error {
+	_, err := q.db.Exec(ctx, updateRacePlanCrew,
+		arg.ID,
+		arg.CrewHasCrew,
+		arg.CrewMembers,
+		arg.CrewNotes,
+	)
+	return err
+}
+
+const updateRacePlanGoals = `-- name: UpdateRacePlanGoals :exec
+update race_plans set
+  goals_a_finish_seconds = $2,
+  goals_b_finish_seconds = $3,
+  goals_c_finish_seconds = $4,
+  goals_notes = $5
+where id = $1
+`
+
+type UpdateRacePlanGoalsParams struct {
+	ID                  pgtype.UUID
+	GoalsAFinishSeconds int32
+	GoalsBFinishSeconds int32
+	GoalsCFinishSeconds int32
+	GoalsNotes          string
+}
+
+func (q *Queries) UpdateRacePlanGoals(ctx context.Context, arg *UpdateRacePlanGoalsParams) error {
+	_, err := q.db.Exec(ctx, updateRacePlanGoals,
+		arg.ID,
+		arg.GoalsAFinishSeconds,
+		arg.GoalsBFinishSeconds,
+		arg.GoalsCFinishSeconds,
+		arg.GoalsNotes,
+	)
+	return err
+}
+
+const updateRacePlanMental = `-- name: UpdateRacePlanMental :exec
+update race_plans set
+  mental_mantras = $2,
+  mental_notes = $3
+where id = $1
+`
+
+type UpdateRacePlanMentalParams struct {
+	ID            pgtype.UUID
+	MentalMantras []string
+	MentalNotes   string
+}
+
+func (q *Queries) UpdateRacePlanMental(ctx context.Context, arg *UpdateRacePlanMentalParams) error {
+	_, err := q.db.Exec(ctx, updateRacePlanMental, arg.ID, arg.MentalMantras, arg.MentalNotes)
+	return err
+}
+
+const updateRacePlanNotes = `-- name: UpdateRacePlanNotes :exec
+update race_plans set
+  notes = $2
+where id = $1
+`
+
+type UpdateRacePlanNotesParams struct {
+	ID    pgtype.UUID
+	Notes string
+}
+
+func (q *Queries) UpdateRacePlanNotes(ctx context.Context, arg *UpdateRacePlanNotesParams) error {
+	_, err := q.db.Exec(ctx, updateRacePlanNotes, arg.ID, arg.Notes)
+	return err
+}
+
+const updateRacePlanNutrition = `-- name: UpdateRacePlanNutrition :exec
+update race_plans set
+  nutrition_carbs_grams_per_hour = $2,
+  nutrition_fluid_ml_per_hour = $3,
+  nutrition_sodium_mg_per_hour = $4,
+  nutrition_notes = $5
+where id = $1
+`
+
+type UpdateRacePlanNutritionParams struct {
+	ID                         pgtype.UUID
+	NutritionCarbsGramsPerHour float64
+	NutritionFluidMlPerHour    float64
+	NutritionSodiumMgPerHour   float64
+	NutritionNotes             string
+}
+
+func (q *Queries) UpdateRacePlanNutrition(ctx context.Context, arg *UpdateRacePlanNutritionParams) error {
+	_, err := q.db.Exec(ctx, updateRacePlanNutrition,
+		arg.ID,
+		arg.NutritionCarbsGramsPerHour,
+		arg.NutritionFluidMlPerHour,
+		arg.NutritionSodiumMgPerHour,
+		arg.NutritionNotes,
+	)
+	return err
+}
+
+const updateRacePlanPacing = `-- name: UpdateRacePlanPacing :exec
+update race_plans set
+  pacing_strategy = $2,
+  pacing_hike_grade_percent = $3,
+  pacing_heart_rate_cap_bpm = $4,
+  pacing_notes = $5
+where id = $1
+`
+
+type UpdateRacePlanPacingParams struct {
+	ID                     pgtype.UUID
+	PacingStrategy         string
+	PacingHikeGradePercent float64
+	PacingHeartRateCapBpm  int32
+	PacingNotes            string
+}
+
+func (q *Queries) UpdateRacePlanPacing(ctx context.Context, arg *UpdateRacePlanPacingParams) error {
+	_, err := q.db.Exec(ctx, updateRacePlanPacing,
+		arg.ID,
+		arg.PacingStrategy,
+		arg.PacingHikeGradePercent,
+		arg.PacingHeartRateCapBpm,
+		arg.PacingNotes,
+	)
+	return err
+}
+
+const upsertRacePlanCheckpoints = `-- name: UpsertRacePlanCheckpoints :exec
+insert into race_plan_checkpoints (
+  plan_id,
+  position,
+  name,
+  distance_meters,
+  elevation_gain_meters,
+  elevation_loss_meters,
+  cutoff_seconds,
+  crew_access,
+  drop_bag,
+  aid,
+  planned_segment_seconds,
+  planned_stop_seconds,
+  segment_strategy,
+  tasks,
+  crew_instructions,
+  drop_bag_contents
+)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::text[]),
+  unnest($4::double precision[]),
+  unnest($5::double precision[]),
+  unnest($6::double precision[]),
+  unnest($7::integer[]),
+  unnest($8::boolean[]),
+  unnest($9::boolean[]),
+  unnest($10::text[]),
+  unnest($11::integer[]),
+  unnest($12::integer[]),
+  unnest($13::text[]),
+  unnest($14::text[]),
+  unnest($15::text[]),
+  unnest($16::text[])
+on conflict (plan_id, position) do update set
+  name = excluded.name,
+  distance_meters = excluded.distance_meters,
+  elevation_gain_meters = excluded.elevation_gain_meters,
+  elevation_loss_meters = excluded.elevation_loss_meters,
+  cutoff_seconds = excluded.cutoff_seconds,
+  crew_access = excluded.crew_access,
+  drop_bag = excluded.drop_bag,
+  aid = excluded.aid,
+  planned_segment_seconds = excluded.planned_segment_seconds,
+  planned_stop_seconds = excluded.planned_stop_seconds,
+  segment_strategy = excluded.segment_strategy,
+  tasks = excluded.tasks,
+  crew_instructions = excluded.crew_instructions,
+  drop_bag_contents = excluded.drop_bag_contents
+`
+
+type UpsertRacePlanCheckpointsParams struct {
+	PlanID                 pgtype.UUID
+	Positions              []int32
+	Names                  []string
+	DistancesMeters        []float64
+	ElevationGainsMeters   []float64
+	ElevationLossesMeters  []float64
+	CutoffsSeconds         []int32
+	CrewAccess             []bool
+	DropBags               []bool
+	Aid                    []string
+	PlannedSegmentsSeconds []int32
+	PlannedStopsSeconds    []int32
+	SegmentStrategies      []string
+	Tasks                  []string
+	CrewInstructions       []string
+	DropBagContents        []string
+}
+
+func (q *Queries) UpsertRacePlanCheckpoints(ctx context.Context, arg *UpsertRacePlanCheckpointsParams) error {
+	_, err := q.db.Exec(ctx, upsertRacePlanCheckpoints,
+		arg.PlanID,
+		arg.Positions,
+		arg.Names,
+		arg.DistancesMeters,
+		arg.ElevationGainsMeters,
+		arg.ElevationLossesMeters,
+		arg.CutoffsSeconds,
+		arg.CrewAccess,
+		arg.DropBags,
+		arg.Aid,
+		arg.PlannedSegmentsSeconds,
+		arg.PlannedStopsSeconds,
+		arg.SegmentStrategies,
+		arg.Tasks,
+		arg.CrewInstructions,
+		arg.DropBagContents,
+	)
+	return err
 }

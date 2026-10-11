@@ -42,6 +42,7 @@ import (
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
 	"github.com/catzkorn/trail-tools/internal/services/race"
+	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -298,6 +299,7 @@ func run(
 	defer importRunner.Wait()
 	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
 	raceService := race.NewService(log, raceRepo, routeRepo)
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, baseURL)
 
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
@@ -310,6 +312,7 @@ func run(
 	geov1connect.RegisterGeoServiceHandler(server, geoService)
 	routingv1connect.RegisterMapDataServiceHandler(server, mapDataService)
 	racesv1connect.RegisterRaceServiceHandler(server, raceService)
+	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
 	apiMux := http.NewServeMux()
 	// GPX files imported as routes can be several megabytes.
 	connecthttp.Mount(apiMux, server, connecthttp.WithReadMaxBytes(maxRequestBytes))
