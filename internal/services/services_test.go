@@ -21,15 +21,18 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
+	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -49,11 +52,13 @@ type env struct {
 	syncer     *stravasvc.Syncer
 	strava     *fakeStrava
 
-	users     usersv1connect.UserServiceClient
-	activity  activitiesv1connect.ActivityServiceClient
-	stravaAPI stravav1connect.StravaServiceClient
-	routes    routesv1connect.RouteServiceClient
-	geo       geov1connect.GeoServiceClient
+	users      usersv1connect.UserServiceClient
+	activity   activitiesv1connect.ActivityServiceClient
+	stravaAPI  stravav1connect.StravaServiceClient
+	routes     routesv1connect.RouteServiceClient
+	geo        geov1connect.GeoServiceClient
+	races      racesv1connect.RaceServiceClient
+	otherRaces racesv1connect.RaceServiceClient
 }
 
 func newEnv(t *testing.T) *env {
@@ -73,9 +78,18 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
+	raceRepo, err := races.NewRepository(log, db)
+	if err != nil {
+		t.Fatal(err)
+	}
 	e := &env{t: t, mapData: &fakeMapData{}, activities: activityRepo, strava: newFakeStrava()}
 	e.userID = storetest.NewUser(t, db)
 	_, e.token, err = userRepo.CreateAPIToken(ctx, e.userID, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherUser := storetest.NewUser(t, db)
+	_, otherToken, err := userRepo.CreateAPIToken(ctx, otherUser, "other")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,6 +110,7 @@ func newEnv(t *testing.T) *env {
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil)
 	routeService := route.NewService(log, routeRepo, activityRepo, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
+	raceService := race.NewService(log, raceRepo, routeRepo)
 
 	mux := http.NewServeMux()
 	mux.Handle(usersv1connect.NewUserServiceHandler(userService))
@@ -104,6 +119,7 @@ func newEnv(t *testing.T) *env {
 	mux.Handle(stravav1connect.NewStravaServiceHandler(stravaService))
 	mux.Handle(routesv1connect.NewRouteServiceHandler(routeService))
 	mux.Handle(geov1connect.NewGeoServiceHandler(geoService))
+	mux.Handle(racesv1connect.NewRaceServiceHandler(raceService))
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
 	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux)
 	if err != nil {
@@ -119,6 +135,8 @@ func newEnv(t *testing.T) *env {
 	e.stravaAPI = stravav1connect.NewStravaServiceClient(client, e.srv.URL, opts)
 	e.routes = routesv1connect.NewRouteServiceClient(client, e.srv.URL, opts)
 	e.geo = geov1connect.NewGeoServiceClient(client, e.srv.URL, opts)
+	e.races = racesv1connect.NewRaceServiceClient(client, e.srv.URL, opts)
+	e.otherRaces = racesv1connect.NewRaceServiceClient(client, e.srv.URL, connect.WithInterceptors(bearerInterceptor(otherToken)))
 	return e
 }
 
