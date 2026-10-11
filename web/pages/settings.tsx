@@ -1,4 +1,5 @@
 import Loading from "@components/loading";
+import Connections from "@components/settings/connections";
 import Invitations from "@components/settings/invitations";
 import Passkeys from "@components/settings/passkeys";
 import StravaCard from "@components/strava/strava-card";
@@ -192,9 +193,7 @@ const McpInstructions: React.FC = () => {
             MCP server
           </a>
           . Connect an AI agent to analyse your training, build training plans,
-          design routes and work through your race plans with you. Create an API
-          token above and use it in place of{" "}
-          <code className="rounded bg-gray-100 px-1">&lt;token&gt;</code>.
+          design routes and work through your race plans with you.
         </p>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-gray-600 uppercase">
@@ -202,6 +201,21 @@ const McpInstructions: React.FC = () => {
           </span>
           <CopyField value={endpoint} />
         </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-600 uppercase">
+            claude.ai, Claude Desktop and other OAuth clients
+          </span>
+          <p>
+            Add a custom connector with the endpoint above. You&apos;ll be asked
+            to sign in to Trail Tools and approve the connection, and the app
+            shows up under connected apps.
+          </p>
+        </div>
+        <p>
+          Clients can also use an API token instead, which is the simplest
+          option for Claude Code: create one above and use it in place of{" "}
+          <code className="rounded bg-gray-100 px-1">&lt;token&gt;</code>.
+        </p>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-gray-600 uppercase">
             Claude Code
@@ -238,6 +252,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
       </div>
       <div className="flex flex-col gap-4">
         <ApiTokens />
+        <Connections />
         <McpInstructions />
       </div>
     </div>

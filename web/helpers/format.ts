@@ -132,6 +132,25 @@ export const formatPercent = (fraction: number): string =>
 export const formatGrade = (percent: number): string =>
   `${percent.toFixed(1)}%`;
 
+/**
+ * FormatRedirectTarget describes the app an OAuth client redirects to, from
+ * its redirect URI, so users can tell which app they are connecting.
+ */
+export const formatRedirectTarget = (uri: string): string => {
+  try {
+    const url = new URL(uri);
+    if (["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {
+      return "an app on this computer";
+    }
+    if (url.protocol === "https:") {
+      return url.host;
+    }
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return uri;
+  }
+};
+
 // FormatBytes formats a size in bytes, e.g. "234 MB".
 export const formatBytes = (bytes: number): string => {
   if (bytes < 1_000_000) {
