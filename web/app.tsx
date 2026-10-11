@@ -11,6 +11,7 @@ import AthletesPage from "pages/athletes";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
 import MapDataPage from "pages/map-data";
+import RacesPage from "pages/races";
 import RoutePage from "pages/route";
 import RoutesPage from "pages/routes";
 import SettingsPage from "pages/settings";
@@ -107,6 +108,7 @@ const App: React.FC = () => {
               path="/routes/:id"
               element={protectedPage(<RoutePage isNew={false} />)}
             />
+            <Route path="/races" element={protectedPage(<RacesPage />)} />
             <Route path="/forecast" element={protectedPage(<ForecastPage />)} />
             <Route
               path="/activities"

@@ -1,4 +1,5 @@
 import { PointOfInterestKind, Terrain } from "gen/geo/v1/geo_pb";
+import { RacePriority } from "gen/races/v1/races_pb";
 import { RoutingProfile, RouteSource } from "gen/routes/v1/routes_pb";
 
 // Human readable labels and colors for API enums.
@@ -25,6 +26,51 @@ export const terrainStyle = (terrain: Terrain): TerrainStyle => {
     }
   }
   return { color: "#cbd5e1", label: "Unknown", terrain };
+};
+
+export interface PriorityOption {
+  value: RacePriority;
+  label: string;
+}
+
+export const PRIORITY_OPTIONS: PriorityOption[] = [
+  { label: "A race (goal)", value: RacePriority.A },
+  { label: "B race (important)", value: RacePriority.B },
+  { label: "C race (training)", value: RacePriority.C },
+];
+
+export const priorityLabel = (priority: RacePriority): string => {
+  switch (priority) {
+    case RacePriority.A: {
+      return "A";
+    }
+    case RacePriority.B: {
+      return "B";
+    }
+    case RacePriority.C: {
+      return "C";
+    }
+    default: {
+      return "–";
+    }
+  }
+};
+
+export const priorityClass = (priority: RacePriority): string => {
+  switch (priority) {
+    case RacePriority.A: {
+      return "bg-rose-100 text-rose-800 ring-rose-300";
+    }
+    case RacePriority.B: {
+      return "bg-amber-100 text-amber-800 ring-amber-300";
+    }
+    case RacePriority.C: {
+      return "bg-sky-100 text-sky-800 ring-sky-300";
+    }
+    default: {
+      return "bg-gray-100 text-gray-700 ring-gray-300";
+    }
+  }
 };
 
 export interface ProfileOption {
