@@ -3,6 +3,7 @@ syntax = "proto3";
 package strava.v1;
 
 import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
 
 // StravaService manages the connection to the user's Strava account and the
 // syncing of activities. The account is connected in the browser by visiting
@@ -16,7 +17,9 @@ service StravaService {
   // resumes automatically. Use GetStravaConnection to follow progress.
   rpc SyncStrava(SyncStravaRequest) returns (SyncStravaResponse);
   // Disconnect the Strava account. Synced activities are kept.
-  rpc DisconnectStrava(DisconnectStravaRequest) returns (DisconnectStravaResponse);
+  rpc DisconnectStrava(DisconnectStravaRequest) returns (DisconnectStravaResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
 }
 
 // SyncState is the state of a Strava sync.
