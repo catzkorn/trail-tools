@@ -4,7 +4,6 @@ go 1.26.7
 
 require (
 	connectrpc.com/connect/v2 v2.0.0
-	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e
@@ -13,7 +12,6 @@ require (
 	github.com/mcosta74/pgx-slog v0.4.1
 	github.com/shopspring/decimal v1.5.0
 	gitlab.com/greyxor/slogor v1.7.0
-	golang.org/x/oauth2 v0.37.0
 	google.golang.org/protobuf v1.36.12
 )
 
@@ -62,7 +60,6 @@ require (
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect

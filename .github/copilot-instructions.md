@@ -9,7 +9,7 @@ This is a full-stack Go/React/TypeScript/PostgreSQL application for trail runnin
 - **Backend**: Go server with Connect RPC handlers in `internal/services/`
 - **Frontend**: React/TypeScript SPA using Connect Query for API calls
 - **Database**: PostgreSQL with SQLC-generated queries and migrations
-- **Authentication**: OIDC + WebAuthn with session-based auth via cookies
+- **Authentication**: WebAuthn with session-based auth via cookies
 - **Build System**: Make-driven with Docker containers for Node.js tools
 
 ## Development Workflows
@@ -17,7 +17,7 @@ This is a full-stack Go/React/TypeScript/PostgreSQL application for trail runnin
 ### Essential Commands
 
 ```bash
-make run      # Start full stack (Postgres + Dex OIDC + Go server)
+make run      # Start full stack (Postgres + Go server)
 make watch    # Development mode with frontend/CSS auto-rebuild
 make gen      # Regenerate all code (protobuf, SQLC, frontend assets)
 make format   # Format Go, TypeScript, and protobuf files
@@ -55,10 +55,9 @@ Services depend on repository interfaces (see `AthleteRepository` in `athlete_se
 
 ### Authentication Flow
 
-1. OIDC login via Dex creates session cookie
+1. WebAuthn login creates a session cookie
 2. `internal/authn` middleware extracts user from session
-3. Services use `authn.UserFromContext(ctx)` for access control
-4. WebAuthn available for passwordless auth
+3. Services use `authn.GetUser(ctx)` for access control
 
 ## Frontend Patterns
 
@@ -95,7 +94,6 @@ All schema changes via numbered migrations in `internal/store/migrations/`. SQLC
 ### Docker Dependencies
 
 - PostgreSQL on `:5432` with password `password`
-- Dex OIDC provider on `:5556` with test config
 - Node.js tools run in Alpine containers with proper user mapping
 
 ### Build Tool Integration
@@ -112,7 +110,6 @@ Go tools are prefixed with `go tool` (e.g., `go tool buf`, `go tool esbuild`, `g
 
 ## Common Debugging
 
-- Check `make run` output for OIDC configuration issues
 - Frontend API errors often indicate Connect transport misconfiguration
 - Database connection issues: ensure `make db` container is running
 - Missing types after schema changes: run `make gen`

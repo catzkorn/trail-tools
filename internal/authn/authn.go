@@ -76,18 +76,13 @@ func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time)
 
 // RegisterLogoutHandler registers a handler that logs out the user by
 // expiring the session cookie and redirecting to the root path.
-// extraLogoutHandlers are additional handlers that will be called
-// before the redirect.
-func RegisterLogoutHandler(logger *slog.Logger, mux *http.ServeMux, sessionRepo SessionRepository, extraLogoutHandlers ...http.Handler) {
+func RegisterLogoutHandler(logger *slog.Logger, mux *http.ServeMux, sessionRepo SessionRepository) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if c, err := r.Cookie(sessionCookieName); err == nil {
 			if err := sessionRepo.DeleteSession(r.Context(), c.Value); err != nil && !errors.Is(err, store.ErrNotFound) {
 				logger.ErrorContext(r.Context(), "failed to delete session", slogor.Err(err))
 			}
 			expireCookie(w, c)
-		}
-		for _, h := range extraLogoutHandlers {
-			h.ServeHTTP(w, r)
 		}
 		http.Redirect(w, r, "/", http.StatusFound)
 	})

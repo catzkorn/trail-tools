@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-import SignInButton, { GoogleLogo } from "./sign-in-button";
 import WebAuthnForm from "./web-authn-form";
 
 const SignInDialog: React.FC = () => {
@@ -24,15 +23,10 @@ const SignInDialog: React.FC = () => {
       <div className="bg-white p-5 flex rounded-lg shadow-md flex-col gap-4 text-center">
         <h3 className="text-base font-semibold text-gray-900">Sign in</h3>
         <div className="flex flex-col gap-2">
-          <a href="/oidc/login">
-            <SignInButton logo={GoogleLogo} text="Sign in with Google" />
-          </a>
-          {/* Conditionally display the WebAuthn registration options */}
-          {isWebAuthnSupported && (
-            <div className="flex flex-col gap-2">
-              <p>Or</p>
-              <WebAuthnForm />
-            </div>
+          {isWebAuthnSupported ? (
+            <WebAuthnForm />
+          ) : (
+            <p>This browser doesn&apos;t support passkeys.</p>
           )}
         </div>
       </div>

@@ -29,14 +29,6 @@ func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, er
 	}
 	var retUser User
 	switch user.Type {
-	case "oidc":
-		dbUser, err := querier.GetOIDCUser(ctx, user.UserID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get OIDC user: %w", err)
-		}
-		retUser = &OIDCUser{
-			OIDCUser: dbUser,
-		}
 	case "webauthn":
 		dbUser, err := querier.GetWebAuthnUser(ctx, user.UserID)
 		if err != nil {
