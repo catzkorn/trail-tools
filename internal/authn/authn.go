@@ -91,6 +91,19 @@ func GetUserID(ctx context.Context) (pgtype.UUID, bool) {
 	return user.ID(), true
 }
 
+// RequireUser rejects unauthenticated requests with a 401 Unauthorized. It
+// must be wrapped by the authn middleware.
+func RequireUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := GetUser(r.Context()); !ok {
+			w.Header().Set("WWW-Authenticate", "Bearer")
+			http.Error(w, "authentication required: create an API token in the Trail Tools settings and send it in an \"Authorization: Bearer <token>\" header", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // SessionCookie returns the session cookie for a session.
 func SessionCookie(sessionID string, expiry time.Time) *http.Cookie {
 	return &http.Cookie{
