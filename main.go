@@ -23,6 +23,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
@@ -30,12 +31,14 @@ import (
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
+	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
@@ -246,6 +249,10 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create race repository: %w", err)
 	}
+	planRepo, err := plans.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create plan repository: %w", err)
+	}
 	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
@@ -277,6 +284,7 @@ func run(
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
 	routeService := route.NewService(log, routeRepo, activityRepo, mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
+	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
 
@@ -293,6 +301,7 @@ func run(
 		func() (string, http.Handler) { return stravav1connect.NewStravaServiceHandler(stravaService) },
 		func() (string, http.Handler) { return routesv1connect.NewRouteServiceHandler(routeService) },
 		func() (string, http.Handler) { return geov1connect.NewGeoServiceHandler(geoService) },
+		func() (string, http.Handler) { return plansv1connect.NewTrainingPlanServiceHandler(planService) },
 		func() (string, http.Handler) { return racesv1connect.NewRaceServiceHandler(raceService) },
 		func() (string, http.Handler) { return racesv1connect.NewRacePlanServiceHandler(racePlanService) },
 	} {

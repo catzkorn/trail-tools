@@ -135,14 +135,27 @@ func (r *Repository) UpdateRace(ctx context.Context, race *Race) (*Race, error) 
 	return raceFromDB(dbRace), nil
 }
 
-// DeleteRace deletes a race and its race plans.
+// DeleteRace deletes a race, its race plans and removes it from the goal
+// races of the user's training plans.
 func (r *Repository) DeleteRace(ctx context.Context, userID, raceID pgtype.UUID) error {
-	n, err := r.q.DeleteRace(ctx, &internal.DeleteRaceParams{ID: raceID, UserID: userID})
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback(context.Background())
+	q := r.q.WithTx(tx)
+	n, err := q.DeleteRace(ctx, &internal.DeleteRaceParams{ID: raceID, UserID: userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete race: %w", err)
 	}
 	if n == 0 {
 		return store.ErrNotFound
+	}
+	if err := q.RemoveGoalRace(ctx, &internal.RemoveGoalRaceParams{UserID: userID, RaceID: raceID}); err != nil {
+		return fmt.Errorf("failed to remove goal race from plans: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
 }
