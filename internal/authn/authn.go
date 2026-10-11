@@ -3,6 +3,7 @@ package authn
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -27,7 +28,27 @@ type SessionRepository interface {
 
 type authCtx struct{}
 
-func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepository, next http.Handler) (http.Handler, error) {
+// Option configures the authn middleware.
+type Option func(*options)
+
+type options struct {
+	resourceMetadataURL string
+}
+
+// WithResourceMetadata points OAuth clients that send an invalid token to
+// the protected resource metadata (RFC 9728) at the URL, so they can get a
+// new token.
+func WithResourceMetadata(url string) Option {
+	return func(o *options) {
+		o.resourceMetadataURL = url
+	}
+}
+
+func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepository, next http.Handler, opts ...Option) (http.Handler, error) {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// API clients authenticate with a bearer token instead of a cookie.
 		if secret, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer "); ok {
@@ -35,8 +56,8 @@ func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepos
 			if err != nil {
 				if errors.Is(err, store.ErrNotFound) {
 					log.DebugContext(r.Context(), "Invalid API token", slog.String("path", r.URL.Path))
-					w.Header().Set("WWW-Authenticate", `Bearer error="invalid_token"`)
-					http.Error(w, "invalid API token", http.StatusUnauthorized)
+					w.Header().Set("WWW-Authenticate", bearerChallenge(o.resourceMetadataURL, "invalid_token"))
+					http.Error(w, "invalid or expired token", http.StatusUnauthorized)
 					return
 				}
 				log.ErrorContext(r.Context(), "Failed to get API token user", slogor.Err(err))
@@ -92,16 +113,34 @@ func GetUserID(ctx context.Context) (pgtype.UUID, bool) {
 }
 
 // RequireUser rejects unauthenticated requests with a 401 Unauthorized. It
-// must be wrapped by the authn middleware.
-func RequireUser(next http.Handler) http.Handler {
+// must be wrapped by the authn middleware. If resourceMetadataURL is set, the
+// WWW-Authenticate header points OAuth clients to the protected resource
+// metadata (RFC 9728), so they can discover how to sign in.
+func RequireUser(resourceMetadataURL string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := GetUser(r.Context()); !ok {
-			w.Header().Set("WWW-Authenticate", "Bearer")
-			http.Error(w, "authentication required: create an API token in the Trail Tools settings and send it in an \"Authorization: Bearer <token>\" header", http.StatusUnauthorized)
+			w.Header().Set("WWW-Authenticate", bearerChallenge(resourceMetadataURL, ""))
+			http.Error(w, "authentication required: connect with OAuth, or create an API token in the Trail Tools settings and send it in an \"Authorization: Bearer <token>\" header", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// bearerChallenge returns a Bearer WWW-Authenticate challenge (RFC 6750
+// section 3), with the optional resource metadata URL and error code.
+func bearerChallenge(resourceMetadataURL, errorCode string) string {
+	var params []string
+	if resourceMetadataURL != "" {
+		params = append(params, fmt.Sprintf("resource_metadata=%q", resourceMetadataURL))
+	}
+	if errorCode != "" {
+		params = append(params, fmt.Sprintf("error=%q", errorCode))
+	}
+	if len(params) == 0 {
+		return "Bearer"
+	}
+	return "Bearer " + strings.Join(params, ", ")
 }
 
 // SessionCookie returns the session cookie for a session.

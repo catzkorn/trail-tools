@@ -24,6 +24,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/oauth/v1/oauthv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
@@ -34,6 +35,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/mcp"
+	"github.com/catzkorn/trail-tools/internal/oauth"
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -43,6 +45,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	oauthsvc "github.com/catzkorn/trail-tools/internal/services/oauth"
 	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
@@ -60,6 +63,8 @@ import (
 const (
 	defaultHostname = "localhost"
 	defaultPort     = "8080"
+	// mcpPath is the path of the MCP server.
+	mcpPath = "/mcp"
 )
 
 var (
@@ -292,6 +297,10 @@ func run(
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
+	// MCP clients that require OAuth, like claude.ai, authorize with this
+	// authorization server instead of API tokens.
+	oauthServer := oauth.NewServer(log, users, baseURL, mcpPath)
+	oauthService := oauthsvc.NewService(log, oauthServer, users)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -310,6 +319,7 @@ func run(
 		func() (string, http.Handler) { return plansv1connect.NewTrainingPlanServiceHandler(planService) },
 		func() (string, http.Handler) { return racesv1connect.NewRaceServiceHandler(raceService) },
 		func() (string, http.Handler) { return racesv1connect.NewRacePlanServiceHandler(racePlanService) },
+		func() (string, http.Handler) { return oauthv1connect.NewOAuthServiceHandler(oauthService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)
@@ -337,7 +347,7 @@ func run(
 	}
 
 	// Serve the same API to AI agents over MCP. MCP clients authenticate
-	// with API tokens.
+	// with API tokens or OAuth access tokens.
 	mcpServer, err := mcp.NewServer(log,
 		mcp.Service{Name: usersv1connect.UserServiceName, Handler: userService},
 		mcp.Service{Name: activitiesv1connect.ActivityServiceName, Handler: activityService},
@@ -351,7 +361,15 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create MCP server: %w", err)
 	}
-	mux.Handle("/mcp", authenticate(authn.RequireUser(mcpServer.Handler())))
+	resourceMetadataURL := oauthServer.ResourceMetadataURL()
+	mcpHandler, err := authn.NewAuthnMiddleware(ctx, log, users,
+		authn.RequireUser(resourceMetadataURL, mcpServer.Handler()),
+		authn.WithResourceMetadata(resourceMetadataURL),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create MCP authentication middleware: %w", err)
+	}
+	mux.Handle(mcpPath, mcpHandler)
 
 	// Serve Strava OAuth handlers
 	if stravaOAuth != nil {
@@ -386,6 +404,9 @@ func run(
 	// For all other requests, serve the contents of index.html
 	indexHandler := html.ServeIndexHTML(serveDir != "")
 	mux.Handle("/", indexHandler)
+	// Serve the OAuth endpoints, with the frontend's consent page for valid
+	// authorization requests.
+	oauthServer.RegisterHandlers(mux, indexHandler)
 	// Serve routes as GPX files, falling back to the frontend for other
 	// /routes/ pages.
 	mux.Handle("/routes/", authenticate(routeService.GPXHandler(indexHandler)))
