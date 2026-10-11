@@ -1,4 +1,5 @@
 import { PointOfInterestKind, Terrain } from "gen/geo/v1/geo_pb";
+import { ContingencyScenario, RuleStatus } from "gen/races/v1/race_plans_pb";
 import { RacePriority } from "gen/races/v1/races_pb";
 import { RoutingProfile, RouteSource } from "gen/routes/v1/routes_pb";
 
@@ -97,6 +98,49 @@ export const routeSourceLabel = (source: RouteSource): string => {
     }
     default: {
       return "";
+    }
+  }
+};
+
+export interface ContingencyOption {
+  value: ContingencyScenario;
+  label: string;
+}
+
+export const CONTINGENCY_OPTIONS: ContingencyOption[] = [
+  { label: "GI distress", value: ContingencyScenario.GI_DISTRESS },
+  { label: "Behind schedule", value: ContingencyScenario.BEHIND_SCHEDULE },
+  { label: "Low energy", value: ContingencyScenario.LOW_ENERGY },
+  { label: "Injury", value: ContingencyScenario.INJURY },
+  { label: "Weather", value: ContingencyScenario.WEATHER },
+  { label: "Gear failure", value: ContingencyScenario.GEAR_FAILURE },
+  { label: "Low motivation", value: ContingencyScenario.LOW_MOTIVATION },
+  { label: "Navigation", value: ContingencyScenario.NAVIGATION },
+  { label: "Other", value: ContingencyScenario.OTHER },
+];
+
+export const contingencyLabel = (scenario: ContingencyScenario): string => {
+  for (const option of CONTINGENCY_OPTIONS) {
+    if (option.value === scenario) {
+      return option.label;
+    }
+  }
+  return "Unspecified";
+};
+
+export const ruleStatusLabel = (status: RuleStatus): string => {
+  switch (status) {
+    case RuleStatus.PASS: {
+      return "Pass";
+    }
+    case RuleStatus.WARN: {
+      return "Warning";
+    }
+    case RuleStatus.FAIL: {
+      return "Fail";
+    }
+    default: {
+      return "Unknown";
     }
   }
 };
