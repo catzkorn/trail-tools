@@ -28,6 +28,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -59,6 +60,7 @@ type env struct {
 	activities *activities.Repository
 	syncer     *stravasvc.Syncer
 	strava     *fakeStrava
+	liveTrack  *fakeLiveTrack
 
 	users      usersv1connect.UserServiceClient
 	activity   activitiesv1connect.ActivityServiceClient
@@ -124,7 +126,8 @@ func newEnv(t *testing.T) *env {
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
-	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, "https://trail.example")
+	e.liveTrack = &fakeLiveTrack{}
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
 
 	mux := http.NewServeMux()
 	server := connect.NewServer()
@@ -314,6 +317,21 @@ func (f *fakeMapData) FindFeatures(_ context.Context, center geo.Point, radius f
 		{Type: "node", ID: 1, Lat: center.Lat + 0.01, Lng: center.Lng, Tags: map[string]string{"natural": "peak", "name": "Far Peak", "ele": "1234"}},
 		{Type: "node", ID: 2, Lat: center.Lat + 0.001, Lng: center.Lng, Tags: map[string]string{"amenity": "drinking_water"}},
 	}, nil
+}
+
+// fakeLiveTrack returns a fixed position for a session.
+type fakeLiveTrack struct {
+	mu    sync.Mutex
+	track livetrack.Track
+}
+
+func (f *fakeLiveTrack) Track(_ context.Context, s livetrack.Session) (livetrack.Track, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if s.ID != "aaaaaaaa-bbbb" || s.Token != "TOKEN" {
+		return livetrack.Track{}, fmt.Errorf("the LiveTrack session was not found; check the link")
+	}
+	return f.track, nil
 }
 
 func approx(a, b, tolerance float64) bool {

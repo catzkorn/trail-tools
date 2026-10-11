@@ -10,6 +10,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/races/internal"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -31,8 +32,11 @@ type RacePlan struct {
 	RaceMorning   []*TimelineItem
 	Mental        MentalStrategy
 	Notes         string
-	CreateTime    time.Time
-	UpdateTime    time.Time
+	// What happened on race day. Not a section: updated with UpdateRaceDay
+	// and SetCheckpointSplit.
+	RaceDay    RaceDay
+	CreateTime time.Time
+	UpdateTime time.Time
 }
 
 // RaceGoals are finish time goals, from most to least ambitious.
@@ -148,6 +152,36 @@ type MentalStrategy struct {
 	Mantras []string
 	Notes   string
 }
+
+// RaceDay is what happened on race day, as recorded by the runner or crew.
+type RaceDay struct {
+	// Empty if no LiveTrack session is linked.
+	LivetrackURL string
+	// Zero if the start time hasn't been recorded.
+	StartTime time.Time
+	// The recorded checkpoint times in checkpoint order.
+	Splits []*CheckpointSplit
+}
+
+// CheckpointSplit is the recorded times at a checkpoint.
+type CheckpointSplit struct {
+	// The index of the checkpoint in the plan.
+	CheckpointIndex int32
+	// Zero if not recorded. At least one of the times must be set.
+	ArrivalTime   time.Time
+	DepartureTime time.Time
+}
+
+// RaceDayFields selects the race day fields to update.
+type RaceDayFields struct {
+	LivetrackURL bool
+	StartTime    bool
+	Splits       bool
+}
+
+// ErrCheckpointNotFound is returned when a split refers to a checkpoint the
+// plan doesn't have.
+var ErrCheckpointNotFound = errors.New("checkpoint not found")
 
 // RacePlanSection is a section of a race plan. A section is the unit of
 // update: updating a section replaces it as a whole.
@@ -358,6 +392,101 @@ func (r *Repository) DeleteRacePlan(ctx context.Context, userID, planID pgtype.U
 	return nil
 }
 
+// UpdateRaceDay replaces the selected fields of the race day of a race plan,
+// leaving the others unchanged, and returns the updated plan. The caller must
+// check the plan may be updated, e.g. that it belongs to the user or the
+// share token matches.
+func (r *Repository) UpdateRaceDay(ctx context.Context, planID pgtype.UUID, raceDay *RaceDay, fields RaceDayFields) (*RacePlan, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback(context.Background())
+	q := r.q.WithTx(tx)
+	// Locking the plan serializes concurrent updates of the splits.
+	if _, err := q.LockRacePlan(ctx, planID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to lock race plan: %w", err)
+	}
+	if fields.LivetrackURL {
+		if err := q.SetRaceDayLivetrackURL(ctx, &internal.SetRaceDayLivetrackURLParams{ID: planID, RaceDayLivetrackURL: raceDay.LivetrackURL}); err != nil {
+			return nil, fmt.Errorf("failed to set LiveTrack URL: %w", err)
+		}
+	}
+	if fields.StartTime {
+		if err := q.SetRaceDayStartTime(ctx, &internal.SetRaceDayStartTimeParams{ID: planID, RaceDayStartTime: timeToPG(raceDay.StartTime)}); err != nil {
+			return nil, fmt.Errorf("failed to set start time: %w", err)
+		}
+	}
+	if fields.Splits {
+		if err := q.DeleteRacePlanSplits(ctx, planID); err != nil {
+			return nil, fmt.Errorf("failed to delete splits: %w", err)
+		}
+		if err := upsertSplits(ctx, q, planID, raceDay.Splits); err != nil {
+			return nil, err
+		}
+	}
+	updated, err := getRacePlanByID(ctx, q, planID)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return updated, nil
+}
+
+// SetCheckpointSplit sets the recorded times at a single checkpoint of a race
+// plan, leaving the other checkpoints unchanged, and returns the updated plan.
+// If both times are zero, the split is deleted. The caller must check the
+// plan may be updated, e.g. that it belongs to the user or the share token
+// matches.
+func (r *Repository) SetCheckpointSplit(ctx context.Context, planID pgtype.UUID, split *CheckpointSplit) (*RacePlan, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback(context.Background())
+	q := r.q.WithTx(tx)
+	if split.ArrivalTime.IsZero() && split.DepartureTime.IsZero() {
+		if err := q.DeleteRacePlanSplit(ctx, &internal.DeleteRacePlanSplitParams{PlanID: planID, CheckpointPosition: split.CheckpointIndex}); err != nil {
+			return nil, fmt.Errorf("failed to delete split: %w", err)
+		}
+	} else if err := upsertSplits(ctx, q, planID, []*CheckpointSplit{split}); err != nil {
+		return nil, err
+	}
+	updated, err := getRacePlanByID(ctx, q, planID)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return updated, nil
+}
+
+func upsertSplits(ctx context.Context, q *internal.Queries, planID pgtype.UUID, splits []*CheckpointSplit) error {
+	if len(splits) == 0 {
+		return nil
+	}
+	params := &internal.UpsertRacePlanSplitsParams{PlanID: planID}
+	for _, split := range splits {
+		params.CheckpointPositions = append(params.CheckpointPositions, split.CheckpointIndex)
+		params.ArrivalTimes = append(params.ArrivalTimes, timeToPG(split.ArrivalTime))
+		params.DepartureTimes = append(params.DepartureTimes, timeToPG(split.DepartureTime))
+	}
+	if err := q.UpsertRacePlanSplits(ctx, params); err != nil {
+		// A foreign key violation means the checkpoint doesn't exist.
+		if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return ErrCheckpointNotFound
+		}
+		return fmt.Errorf("failed to set splits: %w", err)
+	}
+	return nil
+}
+
 // read runs fn in a read only transaction, so that a plan and its child rows
 // are read from the same snapshot.
 func (r *Repository) read(ctx context.Context, fn func(q *internal.Queries) error) error {
@@ -373,6 +502,21 @@ func (r *Repository) read(ctx context.Context, fn func(q *internal.Queries) erro
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
+}
+
+func getRacePlanByID(ctx context.Context, q *internal.Queries, planID pgtype.UUID) (*RacePlan, error) {
+	row, err := q.GetRacePlanByID(ctx, planID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get race plan: %w", err)
+	}
+	plans, err := loadRacePlans(ctx, q, []*internal.RacePlan{row})
+	if err != nil {
+		return nil, err
+	}
+	return plans[0], nil
 }
 
 func getRacePlan(ctx context.Context, q *internal.Queries, userID, planID pgtype.UUID) (*RacePlan, error) {
@@ -499,6 +643,19 @@ func loadRacePlans(ctx context.Context, q *internal.Queries, rows []*internal.Ra
 	for _, t := range raceMorning {
 		plan := byID[t.PlanID]
 		plan.RaceMorning = append(plan.RaceMorning, &TimelineItem{Time: t.Time, Description: t.Description})
+	}
+
+	splits, err := q.ListRacePlanSplits(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list splits: %w", err)
+	}
+	for _, split := range splits {
+		plan := byID[split.PlanID]
+		plan.RaceDay.Splits = append(plan.RaceDay.Splits, &CheckpointSplit{
+			CheckpointIndex: split.CheckpointPosition,
+			ArrivalTime:     timeFromPG(split.ArrivalTime),
+			DepartureTime:   timeFromPG(split.DepartureTime),
+		})
 	}
 	return plans, nil
 }
@@ -687,6 +844,22 @@ func writeRaceMorning(ctx context.Context, q *internal.Queries, planID pgtype.UU
 	return q.CreateRacePlanRaceMorning(ctx, params)
 }
 
+// timeToPG converts a time to a postgres timestamp. The zero time is NULL.
+func timeToPG(t time.Time) pgtype.Timestamptz {
+	if t.IsZero() {
+		return pgtype.Timestamptz{}
+	}
+	return pgtype.Timestamptz{Time: t, Valid: true}
+}
+
+// timeFromPG converts a postgres timestamp to a time. NULL is the zero time.
+func timeFromPG(t pgtype.Timestamptz) time.Time {
+	if !t.Valid {
+		return time.Time{}
+	}
+	return t.Time
+}
+
 func nonNil(s []string) []string {
 	if s == nil {
 		return []string{}
@@ -728,7 +901,11 @@ func planFromDB(p *internal.RacePlan) *RacePlan {
 			Mantras: p.MentalMantras,
 			Notes:   p.MentalNotes,
 		},
-		Notes:      p.Notes,
+		Notes: p.Notes,
+		RaceDay: RaceDay{
+			LivetrackURL: p.RaceDayLivetrackURL,
+			StartTime:    timeFromPG(p.RaceDayStartTime),
+		},
 		CreateTime: p.CreateTime.Time,
 		UpdateTime: p.UpdateTime.Time,
 	}

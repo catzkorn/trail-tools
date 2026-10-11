@@ -567,6 +567,8 @@ type RacePlan struct {
 	Notes                      string
 	CreateTime                 pgtype.Timestamptz
 	UpdateTime                 pgtype.Timestamptz
+	RaceDayLivetrackUrl        string
+	RaceDayStartTime           pgtype.Timestamptz
 }
 
 type RacePlanCheckpoint struct {
@@ -629,6 +631,13 @@ type RacePlanRaceMorning struct {
 	Position    int32
 	Time        string
 	Description string
+}
+
+type RacePlanSplit struct {
+	PlanID             pgtype.UUID
+	CheckpointPosition int32
+	ArrivalTime        pgtype.Timestamptz
+	DepartureTime      pgtype.Timestamptz
 }
 
 type Route struct {

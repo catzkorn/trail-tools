@@ -1,6 +1,8 @@
 package raceplan
 
 import (
+	"time"
+
 	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -123,8 +125,61 @@ func planToProto(p *races.RacePlan, shareURL string) *racesv1.RacePlan {
 			Mantras: p.Mental.Mantras,
 			Notes:   p.Mental.Notes,
 		}.Build(),
-		Notes: p.Notes,
+		Notes:   p.Notes,
+		RaceDay: raceDayToProto(&p.RaceDay),
 	}.Build()
+}
+
+func raceDayToProto(rd *races.RaceDay) *racesv1.RaceDay {
+	splits := make([]*racesv1.CheckpointSplit, len(rd.Splits))
+	for i, split := range rd.Splits {
+		splits[i] = racesv1.CheckpointSplit_builder{
+			CheckpointIndex: split.CheckpointIndex,
+			ArrivalTime:     timeToProto(split.ArrivalTime),
+			DepartureTime:   timeToProto(split.DepartureTime),
+		}.Build()
+	}
+	return racesv1.RaceDay_builder{
+		LivetrackUrl: rd.LivetrackURL,
+		StartTime:    timeToProto(rd.StartTime),
+		Splits:       splits,
+	}.Build()
+}
+
+func raceDayFromProto(rd *racesv1.RaceDay) *races.RaceDay {
+	var splits []*races.CheckpointSplit
+	for _, split := range rd.GetSplits() {
+		splits = append(splits, splitFromProto(split))
+	}
+	return &races.RaceDay{
+		LivetrackURL: rd.GetLivetrackUrl(),
+		StartTime:    timeFromProto(rd.GetStartTime()),
+		Splits:       splits,
+	}
+}
+
+func splitFromProto(split *racesv1.CheckpointSplit) *races.CheckpointSplit {
+	return &races.CheckpointSplit{
+		CheckpointIndex: split.GetCheckpointIndex(),
+		ArrivalTime:     timeFromProto(split.GetArrivalTime()),
+		DepartureTime:   timeFromProto(split.GetDepartureTime()),
+	}
+}
+
+// timeToProto converts a time to a timestamp. The zero time is unset.
+func timeToProto(t time.Time) *timestamppb.Timestamp {
+	if t.IsZero() {
+		return nil
+	}
+	return timestamppb.New(t)
+}
+
+// timeFromProto converts a timestamp to a time. Unset is the zero time.
+func timeFromProto(ts *timestamppb.Timestamp) time.Time {
+	if ts == nil {
+		return time.Time{}
+	}
+	return ts.AsTime()
 }
 
 // planFromProto converts the sections of a plan. The plan must have been

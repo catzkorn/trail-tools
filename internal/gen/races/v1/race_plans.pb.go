@@ -7,7 +7,8 @@
 package racesv1
 
 import (
-	v1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
+	v1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
+	v11 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -98,6 +99,156 @@ func (x ContingencyScenario) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// EstimateSource is what race day estimates are based on.
+type EstimateSource int32
+
+const (
+	EstimateSource_ESTIMATE_SOURCE_UNSPECIFIED EstimateSource = 0
+	// The race hasn't started or there is no progress yet: estimates follow
+	// the plan.
+	EstimateSource_ESTIMATE_SOURCE_PLAN EstimateSource = 1
+	// The most recent recorded checkpoint time.
+	EstimateSource_ESTIMATE_SOURCE_CHECKPOINT EstimateSource = 2
+	// The runner's latest LiveTrack position.
+	EstimateSource_ESTIMATE_SOURCE_LIVETRACK EstimateSource = 3
+)
+
+// Enum value maps for EstimateSource.
+var (
+	EstimateSource_name = map[int32]string{
+		0: "ESTIMATE_SOURCE_UNSPECIFIED",
+		1: "ESTIMATE_SOURCE_PLAN",
+		2: "ESTIMATE_SOURCE_CHECKPOINT",
+		3: "ESTIMATE_SOURCE_LIVETRACK",
+	}
+	EstimateSource_value = map[string]int32{
+		"ESTIMATE_SOURCE_UNSPECIFIED": 0,
+		"ESTIMATE_SOURCE_PLAN":        1,
+		"ESTIMATE_SOURCE_CHECKPOINT":  2,
+		"ESTIMATE_SOURCE_LIVETRACK":   3,
+	}
+)
+
+func (x EstimateSource) Enum() *EstimateSource {
+	p := new(EstimateSource)
+	*p = x
+	return p
+}
+
+func (x EstimateSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EstimateSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_races_v1_race_plans_proto_enumTypes[1].Descriptor()
+}
+
+func (EstimateSource) Type() protoreflect.EnumType {
+	return &file_races_v1_race_plans_proto_enumTypes[1]
+}
+
+func (x EstimateSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// CheckpointStatus is where the runner is relative to a checkpoint.
+type CheckpointStatus int32
+
+const (
+	CheckpointStatus_CHECKPOINT_STATUS_UNSPECIFIED CheckpointStatus = 0
+	// The runner hasn't reached the checkpoint yet.
+	CheckpointStatus_CHECKPOINT_STATUS_UPCOMING CheckpointStatus = 1
+	// The runner is at the checkpoint.
+	CheckpointStatus_CHECKPOINT_STATUS_ARRIVED CheckpointStatus = 2
+	// The runner has left the checkpoint.
+	CheckpointStatus_CHECKPOINT_STATUS_DEPARTED CheckpointStatus = 3
+)
+
+// Enum value maps for CheckpointStatus.
+var (
+	CheckpointStatus_name = map[int32]string{
+		0: "CHECKPOINT_STATUS_UNSPECIFIED",
+		1: "CHECKPOINT_STATUS_UPCOMING",
+		2: "CHECKPOINT_STATUS_ARRIVED",
+		3: "CHECKPOINT_STATUS_DEPARTED",
+	}
+	CheckpointStatus_value = map[string]int32{
+		"CHECKPOINT_STATUS_UNSPECIFIED": 0,
+		"CHECKPOINT_STATUS_UPCOMING":    1,
+		"CHECKPOINT_STATUS_ARRIVED":     2,
+		"CHECKPOINT_STATUS_DEPARTED":    3,
+	}
+)
+
+func (x CheckpointStatus) Enum() *CheckpointStatus {
+	p := new(CheckpointStatus)
+	*p = x
+	return p
+}
+
+func (x CheckpointStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CheckpointStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_races_v1_race_plans_proto_enumTypes[2].Descriptor()
+}
+
+func (CheckpointStatus) Type() protoreflect.EnumType {
+	return &file_races_v1_race_plans_proto_enumTypes[2]
+}
+
+func (x CheckpointStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// StartTimeSource is where the start time used for estimates comes from.
+type StartTimeSource int32
+
+const (
+	StartTimeSource_START_TIME_SOURCE_UNSPECIFIED StartTimeSource = 0
+	// The start time was recorded in the race day data.
+	StartTimeSource_START_TIME_SOURCE_RECORDED StartTimeSource = 1
+	// The start time comes from the LiveTrack activity.
+	StartTimeSource_START_TIME_SOURCE_LIVETRACK StartTimeSource = 2
+)
+
+// Enum value maps for StartTimeSource.
+var (
+	StartTimeSource_name = map[int32]string{
+		0: "START_TIME_SOURCE_UNSPECIFIED",
+		1: "START_TIME_SOURCE_RECORDED",
+		2: "START_TIME_SOURCE_LIVETRACK",
+	}
+	StartTimeSource_value = map[string]int32{
+		"START_TIME_SOURCE_UNSPECIFIED": 0,
+		"START_TIME_SOURCE_RECORDED":    1,
+		"START_TIME_SOURCE_LIVETRACK":   2,
+	}
+)
+
+func (x StartTimeSource) Enum() *StartTimeSource {
+	p := new(StartTimeSource)
+	*p = x
+	return p
+}
+
+func (x StartTimeSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (StartTimeSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_races_v1_race_plans_proto_enumTypes[3].Descriptor()
+}
+
+func (StartTimeSource) Type() protoreflect.EnumType {
+	return &file_races_v1_race_plans_proto_enumTypes[3]
+}
+
+func (x StartTimeSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // RuleStatus is the result of checking a rule.
 type RuleStatus int32
 
@@ -138,11 +289,11 @@ func (x RuleStatus) String() string {
 }
 
 func (RuleStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_races_v1_race_plans_proto_enumTypes[1].Descriptor()
+	return file_races_v1_race_plans_proto_enumTypes[4].Descriptor()
 }
 
 func (RuleStatus) Type() protoreflect.EnumType {
-	return &file_races_v1_race_plans_proto_enumTypes[1]
+	return &file_races_v1_race_plans_proto_enumTypes[4]
 }
 
 func (x RuleStatus) Number() protoreflect.EnumNumber {
@@ -167,6 +318,7 @@ type RacePlan struct {
 	xxx_hidden_RaceMorning   *[]*TimelineItem       `protobuf:"bytes,13,rep,name=race_morning,json=raceMorning,proto3"`
 	xxx_hidden_Mental        *MentalStrategy        `protobuf:"bytes,14,opt,name=mental,proto3"`
 	xxx_hidden_Notes         string                 `protobuf:"bytes,15,opt,name=notes,proto3"`
+	xxx_hidden_RaceDay       *RaceDay               `protobuf:"bytes,16,opt,name=race_day,json=raceDay,proto3"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -309,6 +461,13 @@ func (x *RacePlan) GetNotes() string {
 	return ""
 }
 
+func (x *RacePlan) GetRaceDay() *RaceDay {
+	if x != nil {
+		return x.xxx_hidden_RaceDay
+	}
+	return nil
+}
+
 func (x *RacePlan) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -369,6 +528,10 @@ func (x *RacePlan) SetNotes(v string) {
 	x.xxx_hidden_Notes = v
 }
 
+func (x *RacePlan) SetRaceDay(v *RaceDay) {
+	x.xxx_hidden_RaceDay = v
+}
+
 func (x *RacePlan) HasCreateTime() bool {
 	if x == nil {
 		return false
@@ -418,6 +581,13 @@ func (x *RacePlan) HasMental() bool {
 	return x.xxx_hidden_Mental != nil
 }
 
+func (x *RacePlan) HasRaceDay() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_RaceDay != nil
+}
+
 func (x *RacePlan) ClearCreateTime() {
 	x.xxx_hidden_CreateTime = nil
 }
@@ -444,6 +614,10 @@ func (x *RacePlan) ClearCrew() {
 
 func (x *RacePlan) ClearMental() {
 	x.xxx_hidden_Mental = nil
+}
+
+func (x *RacePlan) ClearRaceDay() {
+	x.xxx_hidden_RaceDay = nil
 }
 
 type RacePlan_builder struct {
@@ -481,6 +655,9 @@ type RacePlan_builder struct {
 	Mental *MentalStrategy
 	// Free text notes that don't fit anywhere else.
 	Notes string
+	// What happened on race day. Updated with UpdateRaceDay, not
+	// UpdateRacePlan.
+	RaceDay *RaceDay
 }
 
 func (b0 RacePlan_builder) Build() *RacePlan {
@@ -502,6 +679,7 @@ func (b0 RacePlan_builder) Build() *RacePlan {
 	x.xxx_hidden_RaceMorning = &b.RaceMorning
 	x.xxx_hidden_Mental = b.Mental
 	x.xxx_hidden_Notes = b.Notes
+	x.xxx_hidden_RaceDay = b.RaceDay
 	return m0
 }
 
@@ -1752,6 +1930,1011 @@ func (b0 MentalStrategy_builder) Build() *MentalStrategy {
 	return m0
 }
 
+// What happened on race day, as recorded by the runner or crew.
+type RaceDay struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_LivetrackUrl string                 `protobuf:"bytes,1,opt,name=livetrack_url,json=livetrackUrl,proto3"`
+	xxx_hidden_StartTime    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3"`
+	xxx_hidden_Splits       *[]*CheckpointSplit    `protobuf:"bytes,3,rep,name=splits,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *RaceDay) Reset() {
+	*x = RaceDay{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RaceDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RaceDay) ProtoMessage() {}
+
+func (x *RaceDay) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RaceDay) GetLivetrackUrl() string {
+	if x != nil {
+		return x.xxx_hidden_LivetrackUrl
+	}
+	return ""
+}
+
+func (x *RaceDay) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_StartTime
+	}
+	return nil
+}
+
+func (x *RaceDay) GetSplits() []*CheckpointSplit {
+	if x != nil {
+		if x.xxx_hidden_Splits != nil {
+			return *x.xxx_hidden_Splits
+		}
+	}
+	return nil
+}
+
+func (x *RaceDay) SetLivetrackUrl(v string) {
+	x.xxx_hidden_LivetrackUrl = v
+}
+
+func (x *RaceDay) SetStartTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_StartTime = v
+}
+
+func (x *RaceDay) SetSplits(v []*CheckpointSplit) {
+	x.xxx_hidden_Splits = &v
+}
+
+func (x *RaceDay) HasStartTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_StartTime != nil
+}
+
+func (x *RaceDay) ClearStartTime() {
+	x.xxx_hidden_StartTime = nil
+}
+
+type RaceDay_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The Garmin LiveTrack link of the runner's activity, e.g.
+	// https://livetrack.garmin.com/session/<id>/token/<token>. Empty if not
+	// linked.
+	LivetrackUrl string
+	// When the runner started. If unset, the start time of the LiveTrack
+	// session is used.
+	StartTime *timestamppb.Timestamp
+	// The recorded checkpoint times.
+	Splits []*CheckpointSplit
+}
+
+func (b0 RaceDay_builder) Build() *RaceDay {
+	m0 := &RaceDay{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_LivetrackUrl = b.LivetrackUrl
+	x.xxx_hidden_StartTime = b.StartTime
+	x.xxx_hidden_Splits = &b.Splits
+	return m0
+}
+
+// The recorded times at a checkpoint.
+type CheckpointSplit struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CheckpointIndex int32                  `protobuf:"varint,1,opt,name=checkpoint_index,json=checkpointIndex,proto3"`
+	xxx_hidden_ArrivalTime     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=arrival_time,json=arrivalTime,proto3"`
+	xxx_hidden_DepartureTime   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=departure_time,json=departureTime,proto3"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *CheckpointSplit) Reset() {
+	*x = CheckpointSplit{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckpointSplit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckpointSplit) ProtoMessage() {}
+
+func (x *CheckpointSplit) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CheckpointSplit) GetCheckpointIndex() int32 {
+	if x != nil {
+		return x.xxx_hidden_CheckpointIndex
+	}
+	return 0
+}
+
+func (x *CheckpointSplit) GetArrivalTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ArrivalTime
+	}
+	return nil
+}
+
+func (x *CheckpointSplit) GetDepartureTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_DepartureTime
+	}
+	return nil
+}
+
+func (x *CheckpointSplit) SetCheckpointIndex(v int32) {
+	x.xxx_hidden_CheckpointIndex = v
+}
+
+func (x *CheckpointSplit) SetArrivalTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ArrivalTime = v
+}
+
+func (x *CheckpointSplit) SetDepartureTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_DepartureTime = v
+}
+
+func (x *CheckpointSplit) HasArrivalTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ArrivalTime != nil
+}
+
+func (x *CheckpointSplit) HasDepartureTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_DepartureTime != nil
+}
+
+func (x *CheckpointSplit) ClearArrivalTime() {
+	x.xxx_hidden_ArrivalTime = nil
+}
+
+func (x *CheckpointSplit) ClearDepartureTime() {
+	x.xxx_hidden_DepartureTime = nil
+}
+
+type CheckpointSplit_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The index of the checkpoint in the plan, starting at 0.
+	CheckpointIndex int32
+	// When the runner arrived at the checkpoint, if recorded.
+	ArrivalTime *timestamppb.Timestamp
+	// When the runner left the checkpoint, if recorded.
+	DepartureTime *timestamppb.Timestamp
+}
+
+func (b0 CheckpointSplit_builder) Build() *CheckpointSplit {
+	m0 := &CheckpointSplit{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CheckpointIndex = b.CheckpointIndex
+	x.xxx_hidden_ArrivalTime = b.ArrivalTime
+	x.xxx_hidden_DepartureTime = b.DepartureTime
+	return m0
+}
+
+// The runner's latest position from Garmin LiveTrack.
+type LiveTrackPosition struct {
+	state                           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Time                 *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3"`
+	xxx_hidden_Location             *v1.LatLng             `protobuf:"bytes,2,opt,name=location,proto3"`
+	xxx_hidden_ElevationMeters      float64                `protobuf:"fixed64,4,opt,name=elevation_meters,json=elevationMeters,proto3"`
+	xxx_hidden_DistanceMeters       float64                `protobuf:"fixed64,5,opt,name=distance_meters,json=distanceMeters,proto3"`
+	xxx_hidden_CourseDistanceMeters float64                `protobuf:"fixed64,6,opt,name=course_distance_meters,json=courseDistanceMeters,proto3"`
+	xxx_hidden_ElapsedSeconds       int32                  `protobuf:"varint,7,opt,name=elapsed_seconds,json=elapsedSeconds,proto3"`
+	xxx_hidden_SpeedMps             float64                `protobuf:"fixed64,8,opt,name=speed_mps,json=speedMps,proto3"`
+	xxx_hidden_Ended                bool                   `protobuf:"varint,9,opt,name=ended,proto3"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
+}
+
+func (x *LiveTrackPosition) Reset() {
+	*x = LiveTrackPosition{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LiveTrackPosition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LiveTrackPosition) ProtoMessage() {}
+
+func (x *LiveTrackPosition) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *LiveTrackPosition) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Time
+	}
+	return nil
+}
+
+func (x *LiveTrackPosition) GetLocation() *v1.LatLng {
+	if x != nil {
+		return x.xxx_hidden_Location
+	}
+	return nil
+}
+
+func (x *LiveTrackPosition) GetElevationMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_ElevationMeters
+	}
+	return 0
+}
+
+func (x *LiveTrackPosition) GetDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_DistanceMeters
+	}
+	return 0
+}
+
+func (x *LiveTrackPosition) GetCourseDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_CourseDistanceMeters
+	}
+	return 0
+}
+
+func (x *LiveTrackPosition) GetElapsedSeconds() int32 {
+	if x != nil {
+		return x.xxx_hidden_ElapsedSeconds
+	}
+	return 0
+}
+
+func (x *LiveTrackPosition) GetSpeedMps() float64 {
+	if x != nil {
+		return x.xxx_hidden_SpeedMps
+	}
+	return 0
+}
+
+func (x *LiveTrackPosition) GetEnded() bool {
+	if x != nil {
+		return x.xxx_hidden_Ended
+	}
+	return false
+}
+
+func (x *LiveTrackPosition) SetTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Time = v
+}
+
+func (x *LiveTrackPosition) SetLocation(v *v1.LatLng) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *LiveTrackPosition) SetElevationMeters(v float64) {
+	x.xxx_hidden_ElevationMeters = v
+}
+
+func (x *LiveTrackPosition) SetDistanceMeters(v float64) {
+	x.xxx_hidden_DistanceMeters = v
+}
+
+func (x *LiveTrackPosition) SetCourseDistanceMeters(v float64) {
+	x.xxx_hidden_CourseDistanceMeters = v
+}
+
+func (x *LiveTrackPosition) SetElapsedSeconds(v int32) {
+	x.xxx_hidden_ElapsedSeconds = v
+}
+
+func (x *LiveTrackPosition) SetSpeedMps(v float64) {
+	x.xxx_hidden_SpeedMps = v
+}
+
+func (x *LiveTrackPosition) SetEnded(v bool) {
+	x.xxx_hidden_Ended = v
+}
+
+func (x *LiveTrackPosition) HasTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Time != nil
+}
+
+func (x *LiveTrackPosition) HasLocation() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Location != nil
+}
+
+func (x *LiveTrackPosition) ClearTime() {
+	x.xxx_hidden_Time = nil
+}
+
+func (x *LiveTrackPosition) ClearLocation() {
+	x.xxx_hidden_Location = nil
+}
+
+type LiveTrackPosition_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// When the position was recorded.
+	Time *timestamppb.Timestamp
+	// The location.
+	Location *v1.LatLng
+	// The elevation in meters, if known.
+	ElevationMeters float64
+	// The distance recorded by the watch in meters.
+	DistanceMeters float64
+	// The position matched to the race course, as a distance from the start in
+	// meters. Equal to distance_meters if the race has no course.
+	CourseDistanceMeters float64
+	// The elapsed time of the activity in seconds.
+	ElapsedSeconds int32
+	// The current speed in meters per second.
+	SpeedMps float64
+	// Whether the activity has ended.
+	Ended bool
+}
+
+func (b0 LiveTrackPosition_builder) Build() *LiveTrackPosition {
+	m0 := &LiveTrackPosition{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_ElevationMeters = b.ElevationMeters
+	x.xxx_hidden_DistanceMeters = b.DistanceMeters
+	x.xxx_hidden_CourseDistanceMeters = b.CourseDistanceMeters
+	x.xxx_hidden_ElapsedSeconds = b.ElapsedSeconds
+	x.xxx_hidden_SpeedMps = b.SpeedMps
+	x.xxx_hidden_Ended = b.Ended
+	return m0
+}
+
+// The estimated and recorded times at a checkpoint.
+type CheckpointEstimate struct {
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CheckpointIndex     int32                  `protobuf:"varint,1,opt,name=checkpoint_index,json=checkpointIndex,proto3"`
+	xxx_hidden_Name                string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_DistanceMeters      float64                `protobuf:"fixed64,13,opt,name=distance_meters,json=distanceMeters,proto3"`
+	xxx_hidden_Status              CheckpointStatus       `protobuf:"varint,3,opt,name=status,proto3,enum=races.v1.CheckpointStatus"`
+	xxx_hidden_ArrivalTime         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=arrival_time,json=arrivalTime,proto3"`
+	xxx_hidden_ArrivalRecorded     bool                   `protobuf:"varint,5,opt,name=arrival_recorded,json=arrivalRecorded,proto3"`
+	xxx_hidden_DepartureTime       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=departure_time,json=departureTime,proto3"`
+	xxx_hidden_DepartureRecorded   bool                   `protobuf:"varint,7,opt,name=departure_recorded,json=departureRecorded,proto3"`
+	xxx_hidden_PlannedArrivalTime  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=planned_arrival_time,json=plannedArrivalTime,proto3"`
+	xxx_hidden_DelaySeconds        int32                  `protobuf:"varint,9,opt,name=delay_seconds,json=delaySeconds,proto3"`
+	xxx_hidden_CutoffTime          *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=cutoff_time,json=cutoffTime,proto3"`
+	xxx_hidden_CutoffBufferSeconds int32                  `protobuf:"varint,11,opt,name=cutoff_buffer_seconds,json=cutoffBufferSeconds,proto3"`
+	xxx_hidden_Overdue             bool                   `protobuf:"varint,12,opt,name=overdue,proto3"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
+}
+
+func (x *CheckpointEstimate) Reset() {
+	*x = CheckpointEstimate{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckpointEstimate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckpointEstimate) ProtoMessage() {}
+
+func (x *CheckpointEstimate) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CheckpointEstimate) GetCheckpointIndex() int32 {
+	if x != nil {
+		return x.xxx_hidden_CheckpointIndex
+	}
+	return 0
+}
+
+func (x *CheckpointEstimate) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *CheckpointEstimate) GetDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_DistanceMeters
+	}
+	return 0
+}
+
+func (x *CheckpointEstimate) GetStatus() CheckpointStatus {
+	if x != nil {
+		return x.xxx_hidden_Status
+	}
+	return CheckpointStatus_CHECKPOINT_STATUS_UNSPECIFIED
+}
+
+func (x *CheckpointEstimate) GetArrivalTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ArrivalTime
+	}
+	return nil
+}
+
+func (x *CheckpointEstimate) GetArrivalRecorded() bool {
+	if x != nil {
+		return x.xxx_hidden_ArrivalRecorded
+	}
+	return false
+}
+
+func (x *CheckpointEstimate) GetDepartureTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_DepartureTime
+	}
+	return nil
+}
+
+func (x *CheckpointEstimate) GetDepartureRecorded() bool {
+	if x != nil {
+		return x.xxx_hidden_DepartureRecorded
+	}
+	return false
+}
+
+func (x *CheckpointEstimate) GetPlannedArrivalTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_PlannedArrivalTime
+	}
+	return nil
+}
+
+func (x *CheckpointEstimate) GetDelaySeconds() int32 {
+	if x != nil {
+		return x.xxx_hidden_DelaySeconds
+	}
+	return 0
+}
+
+func (x *CheckpointEstimate) GetCutoffTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CutoffTime
+	}
+	return nil
+}
+
+func (x *CheckpointEstimate) GetCutoffBufferSeconds() int32 {
+	if x != nil {
+		return x.xxx_hidden_CutoffBufferSeconds
+	}
+	return 0
+}
+
+func (x *CheckpointEstimate) GetOverdue() bool {
+	if x != nil {
+		return x.xxx_hidden_Overdue
+	}
+	return false
+}
+
+func (x *CheckpointEstimate) SetCheckpointIndex(v int32) {
+	x.xxx_hidden_CheckpointIndex = v
+}
+
+func (x *CheckpointEstimate) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CheckpointEstimate) SetDistanceMeters(v float64) {
+	x.xxx_hidden_DistanceMeters = v
+}
+
+func (x *CheckpointEstimate) SetStatus(v CheckpointStatus) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *CheckpointEstimate) SetArrivalTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ArrivalTime = v
+}
+
+func (x *CheckpointEstimate) SetArrivalRecorded(v bool) {
+	x.xxx_hidden_ArrivalRecorded = v
+}
+
+func (x *CheckpointEstimate) SetDepartureTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_DepartureTime = v
+}
+
+func (x *CheckpointEstimate) SetDepartureRecorded(v bool) {
+	x.xxx_hidden_DepartureRecorded = v
+}
+
+func (x *CheckpointEstimate) SetPlannedArrivalTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_PlannedArrivalTime = v
+}
+
+func (x *CheckpointEstimate) SetDelaySeconds(v int32) {
+	x.xxx_hidden_DelaySeconds = v
+}
+
+func (x *CheckpointEstimate) SetCutoffTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CutoffTime = v
+}
+
+func (x *CheckpointEstimate) SetCutoffBufferSeconds(v int32) {
+	x.xxx_hidden_CutoffBufferSeconds = v
+}
+
+func (x *CheckpointEstimate) SetOverdue(v bool) {
+	x.xxx_hidden_Overdue = v
+}
+
+func (x *CheckpointEstimate) HasArrivalTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ArrivalTime != nil
+}
+
+func (x *CheckpointEstimate) HasDepartureTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_DepartureTime != nil
+}
+
+func (x *CheckpointEstimate) HasPlannedArrivalTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_PlannedArrivalTime != nil
+}
+
+func (x *CheckpointEstimate) HasCutoffTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CutoffTime != nil
+}
+
+func (x *CheckpointEstimate) ClearArrivalTime() {
+	x.xxx_hidden_ArrivalTime = nil
+}
+
+func (x *CheckpointEstimate) ClearDepartureTime() {
+	x.xxx_hidden_DepartureTime = nil
+}
+
+func (x *CheckpointEstimate) ClearPlannedArrivalTime() {
+	x.xxx_hidden_PlannedArrivalTime = nil
+}
+
+func (x *CheckpointEstimate) ClearCutoffTime() {
+	x.xxx_hidden_CutoffTime = nil
+}
+
+type CheckpointEstimate_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The index of the checkpoint in the plan.
+	CheckpointIndex int32
+	// The name of the checkpoint.
+	Name string
+	// The distance of the checkpoint from the start in meters.
+	DistanceMeters float64
+	// Where the runner is relative to the checkpoint.
+	Status CheckpointStatus
+	// The arrival time: recorded if arrival_recorded is set, otherwise
+	// estimated.
+	ArrivalTime *timestamppb.Timestamp
+	// Whether the arrival time was recorded rather than estimated.
+	ArrivalRecorded bool
+	// The departure time: recorded if departure_recorded is set, otherwise
+	// estimated.
+	DepartureTime *timestamppb.Timestamp
+	// Whether the departure time was recorded rather than estimated.
+	DepartureRecorded bool
+	// The arrival time according to the plan, from the actual start time.
+	PlannedArrivalTime *timestamppb.Timestamp
+	// The difference between the arrival time and the planned arrival time in
+	// seconds. Positive if behind the plan.
+	DelaySeconds int32
+	// The cutoff time, if the checkpoint has a cutoff.
+	CutoffTime *timestamppb.Timestamp
+	// The time between the arrival time and the cutoff in seconds. Negative
+	// if the cutoff is missed.
+	CutoffBufferSeconds int32
+	// Whether the runner was expected at the checkpoint but hasn't been
+	// recorded there yet.
+	Overdue bool
+}
+
+func (b0 CheckpointEstimate_builder) Build() *CheckpointEstimate {
+	m0 := &CheckpointEstimate{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CheckpointIndex = b.CheckpointIndex
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_DistanceMeters = b.DistanceMeters
+	x.xxx_hidden_Status = b.Status
+	x.xxx_hidden_ArrivalTime = b.ArrivalTime
+	x.xxx_hidden_ArrivalRecorded = b.ArrivalRecorded
+	x.xxx_hidden_DepartureTime = b.DepartureTime
+	x.xxx_hidden_DepartureRecorded = b.DepartureRecorded
+	x.xxx_hidden_PlannedArrivalTime = b.PlannedArrivalTime
+	x.xxx_hidden_DelaySeconds = b.DelaySeconds
+	x.xxx_hidden_CutoffTime = b.CutoffTime
+	x.xxx_hidden_CutoffBufferSeconds = b.CutoffBufferSeconds
+	x.xxx_hidden_Overdue = b.Overdue
+	return m0
+}
+
+// The live status of a race.
+type RaceDayStatus struct {
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RaceDay                 *RaceDay               `protobuf:"bytes,1,opt,name=race_day,json=raceDay,proto3"`
+	xxx_hidden_StartTime               *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3"`
+	xxx_hidden_StartTimeSource         StartTimeSource        `protobuf:"varint,11,opt,name=start_time_source,json=startTimeSource,proto3,enum=races.v1.StartTimeSource"`
+	xxx_hidden_Livetrack               *LiveTrackPosition     `protobuf:"bytes,3,opt,name=livetrack,proto3"`
+	xxx_hidden_LivetrackError          string                 `protobuf:"bytes,4,opt,name=livetrack_error,json=livetrackError,proto3"`
+	xxx_hidden_EstimateSource          EstimateSource         `protobuf:"varint,5,opt,name=estimate_source,json=estimateSource,proto3,enum=races.v1.EstimateSource"`
+	xxx_hidden_PaceFactor              float64                `protobuf:"fixed64,6,opt,name=pace_factor,json=paceFactor,proto3"`
+	xxx_hidden_DistanceMeters          float64                `protobuf:"fixed64,7,opt,name=distance_meters,json=distanceMeters,proto3"`
+	xxx_hidden_EstimatedDistanceMeters float64                `protobuf:"fixed64,12,opt,name=estimated_distance_meters,json=estimatedDistanceMeters,proto3"`
+	xxx_hidden_EstimatedLocation       *v1.LatLng             `protobuf:"bytes,13,opt,name=estimated_location,json=estimatedLocation,proto3"`
+	xxx_hidden_Checkpoints             *[]*CheckpointEstimate `protobuf:"bytes,8,rep,name=checkpoints,proto3"`
+	xxx_hidden_EstimatedFinishTime     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=estimated_finish_time,json=estimatedFinishTime,proto3"`
+	xxx_hidden_StatusTime              *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=status_time,json=statusTime,proto3"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
+}
+
+func (x *RaceDayStatus) Reset() {
+	*x = RaceDayStatus{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RaceDayStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RaceDayStatus) ProtoMessage() {}
+
+func (x *RaceDayStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RaceDayStatus) GetRaceDay() *RaceDay {
+	if x != nil {
+		return x.xxx_hidden_RaceDay
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_StartTime
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) GetStartTimeSource() StartTimeSource {
+	if x != nil {
+		return x.xxx_hidden_StartTimeSource
+	}
+	return StartTimeSource_START_TIME_SOURCE_UNSPECIFIED
+}
+
+func (x *RaceDayStatus) GetLivetrack() *LiveTrackPosition {
+	if x != nil {
+		return x.xxx_hidden_Livetrack
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) GetLivetrackError() string {
+	if x != nil {
+		return x.xxx_hidden_LivetrackError
+	}
+	return ""
+}
+
+func (x *RaceDayStatus) GetEstimateSource() EstimateSource {
+	if x != nil {
+		return x.xxx_hidden_EstimateSource
+	}
+	return EstimateSource_ESTIMATE_SOURCE_UNSPECIFIED
+}
+
+func (x *RaceDayStatus) GetPaceFactor() float64 {
+	if x != nil {
+		return x.xxx_hidden_PaceFactor
+	}
+	return 0
+}
+
+func (x *RaceDayStatus) GetDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_DistanceMeters
+	}
+	return 0
+}
+
+func (x *RaceDayStatus) GetEstimatedDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_EstimatedDistanceMeters
+	}
+	return 0
+}
+
+func (x *RaceDayStatus) GetEstimatedLocation() *v1.LatLng {
+	if x != nil {
+		return x.xxx_hidden_EstimatedLocation
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) GetCheckpoints() []*CheckpointEstimate {
+	if x != nil {
+		if x.xxx_hidden_Checkpoints != nil {
+			return *x.xxx_hidden_Checkpoints
+		}
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) GetEstimatedFinishTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_EstimatedFinishTime
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) GetStatusTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_StatusTime
+	}
+	return nil
+}
+
+func (x *RaceDayStatus) SetRaceDay(v *RaceDay) {
+	x.xxx_hidden_RaceDay = v
+}
+
+func (x *RaceDayStatus) SetStartTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_StartTime = v
+}
+
+func (x *RaceDayStatus) SetStartTimeSource(v StartTimeSource) {
+	x.xxx_hidden_StartTimeSource = v
+}
+
+func (x *RaceDayStatus) SetLivetrack(v *LiveTrackPosition) {
+	x.xxx_hidden_Livetrack = v
+}
+
+func (x *RaceDayStatus) SetLivetrackError(v string) {
+	x.xxx_hidden_LivetrackError = v
+}
+
+func (x *RaceDayStatus) SetEstimateSource(v EstimateSource) {
+	x.xxx_hidden_EstimateSource = v
+}
+
+func (x *RaceDayStatus) SetPaceFactor(v float64) {
+	x.xxx_hidden_PaceFactor = v
+}
+
+func (x *RaceDayStatus) SetDistanceMeters(v float64) {
+	x.xxx_hidden_DistanceMeters = v
+}
+
+func (x *RaceDayStatus) SetEstimatedDistanceMeters(v float64) {
+	x.xxx_hidden_EstimatedDistanceMeters = v
+}
+
+func (x *RaceDayStatus) SetEstimatedLocation(v *v1.LatLng) {
+	x.xxx_hidden_EstimatedLocation = v
+}
+
+func (x *RaceDayStatus) SetCheckpoints(v []*CheckpointEstimate) {
+	x.xxx_hidden_Checkpoints = &v
+}
+
+func (x *RaceDayStatus) SetEstimatedFinishTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_EstimatedFinishTime = v
+}
+
+func (x *RaceDayStatus) SetStatusTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_StatusTime = v
+}
+
+func (x *RaceDayStatus) HasRaceDay() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_RaceDay != nil
+}
+
+func (x *RaceDayStatus) HasStartTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_StartTime != nil
+}
+
+func (x *RaceDayStatus) HasLivetrack() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Livetrack != nil
+}
+
+func (x *RaceDayStatus) HasEstimatedLocation() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_EstimatedLocation != nil
+}
+
+func (x *RaceDayStatus) HasEstimatedFinishTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_EstimatedFinishTime != nil
+}
+
+func (x *RaceDayStatus) HasStatusTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_StatusTime != nil
+}
+
+func (x *RaceDayStatus) ClearRaceDay() {
+	x.xxx_hidden_RaceDay = nil
+}
+
+func (x *RaceDayStatus) ClearStartTime() {
+	x.xxx_hidden_StartTime = nil
+}
+
+func (x *RaceDayStatus) ClearLivetrack() {
+	x.xxx_hidden_Livetrack = nil
+}
+
+func (x *RaceDayStatus) ClearEstimatedLocation() {
+	x.xxx_hidden_EstimatedLocation = nil
+}
+
+func (x *RaceDayStatus) ClearEstimatedFinishTime() {
+	x.xxx_hidden_EstimatedFinishTime = nil
+}
+
+func (x *RaceDayStatus) ClearStatusTime() {
+	x.xxx_hidden_StatusTime = nil
+}
+
+type RaceDayStatus_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The recorded race day data.
+	RaceDay *RaceDay
+	// The start time used for estimates: recorded, or from LiveTrack. Unset if
+	// unknown, in which case there are no estimates.
+	StartTime *timestamppb.Timestamp
+	// Where the start time comes from. Unspecified if there is no start time.
+	StartTimeSource StartTimeSource
+	// The latest LiveTrack position, if a LiveTrack session is linked and has
+	// data.
+	Livetrack *LiveTrackPosition
+	// Why the LiveTrack position couldn't be fetched, if it failed.
+	LivetrackError string
+	// What the estimates are based on.
+	EstimateSource EstimateSource
+	// The runner's moving pace relative to the plan, e.g. 1.1 means 10% slower
+	// than planned. 1 if there is no progress yet.
+	PaceFactor float64
+	// The distance covered at the latest known progress (a recorded checkpoint
+	// or LiveTrack position), in meters.
+	DistanceMeters float64
+	// The estimated distance covered now, in meters, extrapolated from the
+	// latest known progress and the estimates.
+	EstimatedDistanceMeters float64
+	// The runner's estimated location now: the LiveTrack position if it is
+	// the latest known progress, otherwise the point on the course at
+	// estimated_distance_meters. Unset if unknown.
+	EstimatedLocation *v1.LatLng
+	// The estimates for each checkpoint, in course order.
+	Checkpoints []*CheckpointEstimate
+	// The estimated finish time.
+	EstimatedFinishTime *timestamppb.Timestamp
+	// When the status was computed.
+	StatusTime *timestamppb.Timestamp
+}
+
+func (b0 RaceDayStatus_builder) Build() *RaceDayStatus {
+	m0 := &RaceDayStatus{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RaceDay = b.RaceDay
+	x.xxx_hidden_StartTime = b.StartTime
+	x.xxx_hidden_StartTimeSource = b.StartTimeSource
+	x.xxx_hidden_Livetrack = b.Livetrack
+	x.xxx_hidden_LivetrackError = b.LivetrackError
+	x.xxx_hidden_EstimateSource = b.EstimateSource
+	x.xxx_hidden_PaceFactor = b.PaceFactor
+	x.xxx_hidden_DistanceMeters = b.DistanceMeters
+	x.xxx_hidden_EstimatedDistanceMeters = b.EstimatedDistanceMeters
+	x.xxx_hidden_EstimatedLocation = b.EstimatedLocation
+	x.xxx_hidden_Checkpoints = &b.Checkpoints
+	x.xxx_hidden_EstimatedFinishTime = b.EstimatedFinishTime
+	x.xxx_hidden_StatusTime = b.StatusTime
+	return m0
+}
+
 // The computed analysis of a checkpoint.
 type CheckpointAnalysis struct {
 	state                                 protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1777,7 +2960,7 @@ type CheckpointAnalysis struct {
 
 func (x *CheckpointAnalysis) Reset() {
 	*x = CheckpointAnalysis{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[12]
+	mi := &file_races_v1_race_plans_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1789,7 +2972,7 @@ func (x *CheckpointAnalysis) String() string {
 func (*CheckpointAnalysis) ProtoMessage() {}
 
 func (x *CheckpointAnalysis) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[12]
+	mi := &file_races_v1_race_plans_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2053,7 +3236,7 @@ type RuleResult struct {
 
 func (x *RuleResult) Reset() {
 	*x = RuleResult{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[13]
+	mi := &file_races_v1_race_plans_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2065,7 +3248,7 @@ func (x *RuleResult) String() string {
 func (*RuleResult) ProtoMessage() {}
 
 func (x *RuleResult) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[13]
+	mi := &file_races_v1_race_plans_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2191,7 +3374,7 @@ type RacePlanAnalysis struct {
 
 func (x *RacePlanAnalysis) Reset() {
 	*x = RacePlanAnalysis{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[14]
+	mi := &file_races_v1_race_plans_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2203,7 +3386,7 @@ func (x *RacePlanAnalysis) String() string {
 func (*RacePlanAnalysis) ProtoMessage() {}
 
 func (x *RacePlanAnalysis) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[14]
+	mi := &file_races_v1_race_plans_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2379,7 +3562,7 @@ type CreateRacePlanRequest struct {
 
 func (x *CreateRacePlanRequest) Reset() {
 	*x = CreateRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[15]
+	mi := &file_races_v1_race_plans_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2391,7 +3574,7 @@ func (x *CreateRacePlanRequest) String() string {
 func (*CreateRacePlanRequest) ProtoMessage() {}
 
 func (x *CreateRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[15]
+	mi := &file_races_v1_race_plans_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2439,7 +3622,7 @@ type CreateRacePlanResponse struct {
 
 func (x *CreateRacePlanResponse) Reset() {
 	*x = CreateRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[16]
+	mi := &file_races_v1_race_plans_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2451,7 +3634,7 @@ func (x *CreateRacePlanResponse) String() string {
 func (*CreateRacePlanResponse) ProtoMessage() {}
 
 func (x *CreateRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[16]
+	mi := &file_races_v1_race_plans_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2558,7 +3741,7 @@ type GetRacePlanRequest struct {
 
 func (x *GetRacePlanRequest) Reset() {
 	*x = GetRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[17]
+	mi := &file_races_v1_race_plans_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2570,7 +3753,7 @@ func (x *GetRacePlanRequest) String() string {
 func (*GetRacePlanRequest) ProtoMessage() {}
 
 func (x *GetRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[17]
+	mi := &file_races_v1_race_plans_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2618,7 +3801,7 @@ type GetRacePlanResponse struct {
 
 func (x *GetRacePlanResponse) Reset() {
 	*x = GetRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[18]
+	mi := &file_races_v1_race_plans_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2630,7 +3813,7 @@ func (x *GetRacePlanResponse) String() string {
 func (*GetRacePlanResponse) ProtoMessage() {}
 
 func (x *GetRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[18]
+	mi := &file_races_v1_race_plans_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2736,7 +3919,7 @@ type ListRacePlansRequest struct {
 
 func (x *ListRacePlansRequest) Reset() {
 	*x = ListRacePlansRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[19]
+	mi := &file_races_v1_race_plans_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2748,7 +3931,7 @@ func (x *ListRacePlansRequest) String() string {
 func (*ListRacePlansRequest) ProtoMessage() {}
 
 func (x *ListRacePlansRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[19]
+	mi := &file_races_v1_race_plans_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2786,7 +3969,7 @@ type RacePlanSummary struct {
 
 func (x *RacePlanSummary) Reset() {
 	*x = RacePlanSummary{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[20]
+	mi := &file_races_v1_race_plans_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2798,7 +3981,7 @@ func (x *RacePlanSummary) String() string {
 func (*RacePlanSummary) ProtoMessage() {}
 
 func (x *RacePlanSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[20]
+	mi := &file_races_v1_race_plans_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2936,7 +4119,7 @@ type ListRacePlansResponse struct {
 
 func (x *ListRacePlansResponse) Reset() {
 	*x = ListRacePlansResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[21]
+	mi := &file_races_v1_race_plans_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2948,7 +4131,7 @@ func (x *ListRacePlansResponse) String() string {
 func (*ListRacePlansResponse) ProtoMessage() {}
 
 func (x *ListRacePlansResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[21]
+	mi := &file_races_v1_race_plans_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2997,7 +4180,7 @@ type UpdateRacePlanRequest struct {
 
 func (x *UpdateRacePlanRequest) Reset() {
 	*x = UpdateRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[22]
+	mi := &file_races_v1_race_plans_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3009,7 +4192,7 @@ func (x *UpdateRacePlanRequest) String() string {
 func (*UpdateRacePlanRequest) ProtoMessage() {}
 
 func (x *UpdateRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[22]
+	mi := &file_races_v1_race_plans_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3094,7 +4277,7 @@ type UpdateRacePlanResponse struct {
 
 func (x *UpdateRacePlanResponse) Reset() {
 	*x = UpdateRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[23]
+	mi := &file_races_v1_race_plans_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3106,7 +4289,7 @@ func (x *UpdateRacePlanResponse) String() string {
 func (*UpdateRacePlanResponse) ProtoMessage() {}
 
 func (x *UpdateRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[23]
+	mi := &file_races_v1_race_plans_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3213,7 +4396,7 @@ type DeleteRacePlanRequest struct {
 
 func (x *DeleteRacePlanRequest) Reset() {
 	*x = DeleteRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[24]
+	mi := &file_races_v1_race_plans_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3225,7 +4408,7 @@ func (x *DeleteRacePlanRequest) String() string {
 func (*DeleteRacePlanRequest) ProtoMessage() {}
 
 func (x *DeleteRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[24]
+	mi := &file_races_v1_race_plans_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3270,7 +4453,7 @@ type DeleteRacePlanResponse struct {
 
 func (x *DeleteRacePlanResponse) Reset() {
 	*x = DeleteRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[25]
+	mi := &file_races_v1_race_plans_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3282,7 +4465,7 @@ func (x *DeleteRacePlanResponse) String() string {
 func (*DeleteRacePlanResponse) ProtoMessage() {}
 
 func (x *DeleteRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[25]
+	mi := &file_races_v1_race_plans_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3314,7 +4497,7 @@ type ShareRacePlanRequest struct {
 
 func (x *ShareRacePlanRequest) Reset() {
 	*x = ShareRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[26]
+	mi := &file_races_v1_race_plans_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3326,7 +4509,7 @@ func (x *ShareRacePlanRequest) String() string {
 func (*ShareRacePlanRequest) ProtoMessage() {}
 
 func (x *ShareRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[26]
+	mi := &file_races_v1_race_plans_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3372,7 +4555,7 @@ type ShareRacePlanResponse struct {
 
 func (x *ShareRacePlanResponse) Reset() {
 	*x = ShareRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[27]
+	mi := &file_races_v1_race_plans_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3384,7 +4567,7 @@ func (x *ShareRacePlanResponse) String() string {
 func (*ShareRacePlanResponse) ProtoMessage() {}
 
 func (x *ShareRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[27]
+	mi := &file_races_v1_race_plans_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3430,7 +4613,7 @@ type UnshareRacePlanRequest struct {
 
 func (x *UnshareRacePlanRequest) Reset() {
 	*x = UnshareRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[28]
+	mi := &file_races_v1_race_plans_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3442,7 +4625,7 @@ func (x *UnshareRacePlanRequest) String() string {
 func (*UnshareRacePlanRequest) ProtoMessage() {}
 
 func (x *UnshareRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[28]
+	mi := &file_races_v1_race_plans_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3487,7 +4670,7 @@ type UnshareRacePlanResponse struct {
 
 func (x *UnshareRacePlanResponse) Reset() {
 	*x = UnshareRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[29]
+	mi := &file_races_v1_race_plans_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3499,7 +4682,7 @@ func (x *UnshareRacePlanResponse) String() string {
 func (*UnshareRacePlanResponse) ProtoMessage() {}
 
 func (x *UnshareRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[29]
+	mi := &file_races_v1_race_plans_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3531,7 +4714,7 @@ type GetSharedRacePlanRequest struct {
 
 func (x *GetSharedRacePlanRequest) Reset() {
 	*x = GetSharedRacePlanRequest{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[30]
+	mi := &file_races_v1_race_plans_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3543,7 +4726,7 @@ func (x *GetSharedRacePlanRequest) String() string {
 func (*GetSharedRacePlanRequest) ProtoMessage() {}
 
 func (x *GetSharedRacePlanRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[30]
+	mi := &file_races_v1_race_plans_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3585,14 +4768,14 @@ type GetSharedRacePlanResponse struct {
 	xxx_hidden_Plan     *RacePlan              `protobuf:"bytes,1,opt,name=plan,proto3"`
 	xxx_hidden_Race     *Race                  `protobuf:"bytes,2,opt,name=race,proto3"`
 	xxx_hidden_Analysis *RacePlanAnalysis      `protobuf:"bytes,3,opt,name=analysis,proto3"`
-	xxx_hidden_Course   *[]*v1.RoutePoint      `protobuf:"bytes,4,rep,name=course,proto3"`
+	xxx_hidden_Course   *[]*v11.RoutePoint     `protobuf:"bytes,4,rep,name=course,proto3"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetSharedRacePlanResponse) Reset() {
 	*x = GetSharedRacePlanResponse{}
-	mi := &file_races_v1_race_plans_proto_msgTypes[31]
+	mi := &file_races_v1_race_plans_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3604,7 +4787,7 @@ func (x *GetSharedRacePlanResponse) String() string {
 func (*GetSharedRacePlanResponse) ProtoMessage() {}
 
 func (x *GetSharedRacePlanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_plans_proto_msgTypes[31]
+	mi := &file_races_v1_race_plans_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3636,7 +4819,7 @@ func (x *GetSharedRacePlanResponse) GetAnalysis() *RacePlanAnalysis {
 	return nil
 }
 
-func (x *GetSharedRacePlanResponse) GetCourse() []*v1.RoutePoint {
+func (x *GetSharedRacePlanResponse) GetCourse() []*v11.RoutePoint {
 	if x != nil {
 		if x.xxx_hidden_Course != nil {
 			return *x.xxx_hidden_Course
@@ -3657,7 +4840,7 @@ func (x *GetSharedRacePlanResponse) SetAnalysis(v *RacePlanAnalysis) {
 	x.xxx_hidden_Analysis = v
 }
 
-func (x *GetSharedRacePlanResponse) SetCourse(v []*v1.RoutePoint) {
+func (x *GetSharedRacePlanResponse) SetCourse(v []*v11.RoutePoint) {
 	x.xxx_hidden_Course = &v
 }
 
@@ -3705,7 +4888,7 @@ type GetSharedRacePlanResponse_builder struct {
 	Analysis *RacePlanAnalysis
 	// The race course path, if the race has a course route, downsampled for
 	// display.
-	Course []*v1.RoutePoint
+	Course []*v11.RoutePoint
 }
 
 func (b0 GetSharedRacePlanResponse_builder) Build() *GetSharedRacePlanResponse {
@@ -3719,11 +4902,805 @@ func (b0 GetSharedRacePlanResponse_builder) Build() *GetSharedRacePlanResponse {
 	return m0
 }
 
+type GetRaceDayStatusRequest struct {
+	state           protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_Plan isGetRaceDayStatusRequest_Plan `protobuf_oneof:"plan"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetRaceDayStatusRequest) Reset() {
+	*x = GetRaceDayStatusRequest{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRaceDayStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRaceDayStatusRequest) ProtoMessage() {}
+
+func (x *GetRaceDayStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetRaceDayStatusRequest) GetPlanId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Plan.(*getRaceDayStatusRequest_PlanId); ok {
+			return x.PlanId
+		}
+	}
+	return ""
+}
+
+func (x *GetRaceDayStatusRequest) GetShareToken() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Plan.(*getRaceDayStatusRequest_ShareToken); ok {
+			return x.ShareToken
+		}
+	}
+	return ""
+}
+
+func (x *GetRaceDayStatusRequest) SetPlanId(v string) {
+	x.xxx_hidden_Plan = &getRaceDayStatusRequest_PlanId{v}
+}
+
+func (x *GetRaceDayStatusRequest) SetShareToken(v string) {
+	x.xxx_hidden_Plan = &getRaceDayStatusRequest_ShareToken{v}
+}
+
+func (x *GetRaceDayStatusRequest) HasPlan() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Plan != nil
+}
+
+func (x *GetRaceDayStatusRequest) HasPlanId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Plan.(*getRaceDayStatusRequest_PlanId)
+	return ok
+}
+
+func (x *GetRaceDayStatusRequest) HasShareToken() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Plan.(*getRaceDayStatusRequest_ShareToken)
+	return ok
+}
+
+func (x *GetRaceDayStatusRequest) ClearPlan() {
+	x.xxx_hidden_Plan = nil
+}
+
+func (x *GetRaceDayStatusRequest) ClearPlanId() {
+	if _, ok := x.xxx_hidden_Plan.(*getRaceDayStatusRequest_PlanId); ok {
+		x.xxx_hidden_Plan = nil
+	}
+}
+
+func (x *GetRaceDayStatusRequest) ClearShareToken() {
+	if _, ok := x.xxx_hidden_Plan.(*getRaceDayStatusRequest_ShareToken); ok {
+		x.xxx_hidden_Plan = nil
+	}
+}
+
+const GetRaceDayStatusRequest_Plan_not_set_case case_GetRaceDayStatusRequest_Plan = 0
+const GetRaceDayStatusRequest_PlanId_case case_GetRaceDayStatusRequest_Plan = 1
+const GetRaceDayStatusRequest_ShareToken_case case_GetRaceDayStatusRequest_Plan = 2
+
+func (x *GetRaceDayStatusRequest) WhichPlan() case_GetRaceDayStatusRequest_Plan {
+	if x == nil {
+		return GetRaceDayStatusRequest_Plan_not_set_case
+	}
+	switch x.xxx_hidden_Plan.(type) {
+	case *getRaceDayStatusRequest_PlanId:
+		return GetRaceDayStatusRequest_PlanId_case
+	case *getRaceDayStatusRequest_ShareToken:
+		return GetRaceDayStatusRequest_ShareToken_case
+	default:
+		return GetRaceDayStatusRequest_Plan_not_set_case
+	}
+}
+
+type GetRaceDayStatusRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The plan to get the status of. Exactly one must be set.
+
+	// Fields of oneof xxx_hidden_Plan:
+	// The ID of the plan. Requires authentication.
+	PlanId *string
+	// The share token of the plan.
+	ShareToken *string
+	// -- end of xxx_hidden_Plan
+}
+
+func (b0 GetRaceDayStatusRequest_builder) Build() *GetRaceDayStatusRequest {
+	m0 := &GetRaceDayStatusRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.PlanId != nil {
+		x.xxx_hidden_Plan = &getRaceDayStatusRequest_PlanId{*b.PlanId}
+	}
+	if b.ShareToken != nil {
+		x.xxx_hidden_Plan = &getRaceDayStatusRequest_ShareToken{*b.ShareToken}
+	}
+	return m0
+}
+
+type case_GetRaceDayStatusRequest_Plan protoreflect.FieldNumber
+
+func (x case_GetRaceDayStatusRequest_Plan) String() string {
+	md := file_races_v1_race_plans_proto_msgTypes[37].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isGetRaceDayStatusRequest_Plan interface {
+	isGetRaceDayStatusRequest_Plan()
+}
+
+type getRaceDayStatusRequest_PlanId struct {
+	// The ID of the plan. Requires authentication.
+	PlanId string `protobuf:"bytes,1,opt,name=plan_id,json=planId,proto3,oneof"`
+}
+
+type getRaceDayStatusRequest_ShareToken struct {
+	// The share token of the plan.
+	ShareToken string `protobuf:"bytes,2,opt,name=share_token,json=shareToken,proto3,oneof"`
+}
+
+func (*getRaceDayStatusRequest_PlanId) isGetRaceDayStatusRequest_Plan() {}
+
+func (*getRaceDayStatusRequest_ShareToken) isGetRaceDayStatusRequest_Plan() {}
+
+type GetRaceDayStatusResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Status *RaceDayStatus         `protobuf:"bytes,1,opt,name=status,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetRaceDayStatusResponse) Reset() {
+	*x = GetRaceDayStatusResponse{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRaceDayStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRaceDayStatusResponse) ProtoMessage() {}
+
+func (x *GetRaceDayStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetRaceDayStatusResponse) GetStatus() *RaceDayStatus {
+	if x != nil {
+		return x.xxx_hidden_Status
+	}
+	return nil
+}
+
+func (x *GetRaceDayStatusResponse) SetStatus(v *RaceDayStatus) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *GetRaceDayStatusResponse) HasStatus() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Status != nil
+}
+
+func (x *GetRaceDayStatusResponse) ClearStatus() {
+	x.xxx_hidden_Status = nil
+}
+
+type GetRaceDayStatusResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The race day status.
+	Status *RaceDayStatus
+}
+
+func (b0 GetRaceDayStatusResponse_builder) Build() *GetRaceDayStatusResponse {
+	m0 := &GetRaceDayStatusResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Status = b.Status
+	return m0
+}
+
+type UpdateRaceDayRequest struct {
+	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Plan       isUpdateRaceDayRequest_Plan `protobuf_oneof:"plan"`
+	xxx_hidden_RaceDay    *RaceDay                    `protobuf:"bytes,3,opt,name=race_day,json=raceDay,proto3"`
+	xxx_hidden_UpdateMask *fieldmaskpb.FieldMask      `protobuf:"bytes,4,opt,name=update_mask,json=updateMask,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *UpdateRaceDayRequest) Reset() {
+	*x = UpdateRaceDayRequest{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRaceDayRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRaceDayRequest) ProtoMessage() {}
+
+func (x *UpdateRaceDayRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateRaceDayRequest) GetPlanId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Plan.(*updateRaceDayRequest_PlanId); ok {
+			return x.PlanId
+		}
+	}
+	return ""
+}
+
+func (x *UpdateRaceDayRequest) GetShareToken() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Plan.(*updateRaceDayRequest_ShareToken); ok {
+			return x.ShareToken
+		}
+	}
+	return ""
+}
+
+func (x *UpdateRaceDayRequest) GetRaceDay() *RaceDay {
+	if x != nil {
+		return x.xxx_hidden_RaceDay
+	}
+	return nil
+}
+
+func (x *UpdateRaceDayRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.xxx_hidden_UpdateMask
+	}
+	return nil
+}
+
+func (x *UpdateRaceDayRequest) SetPlanId(v string) {
+	x.xxx_hidden_Plan = &updateRaceDayRequest_PlanId{v}
+}
+
+func (x *UpdateRaceDayRequest) SetShareToken(v string) {
+	x.xxx_hidden_Plan = &updateRaceDayRequest_ShareToken{v}
+}
+
+func (x *UpdateRaceDayRequest) SetRaceDay(v *RaceDay) {
+	x.xxx_hidden_RaceDay = v
+}
+
+func (x *UpdateRaceDayRequest) SetUpdateMask(v *fieldmaskpb.FieldMask) {
+	x.xxx_hidden_UpdateMask = v
+}
+
+func (x *UpdateRaceDayRequest) HasPlan() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Plan != nil
+}
+
+func (x *UpdateRaceDayRequest) HasPlanId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Plan.(*updateRaceDayRequest_PlanId)
+	return ok
+}
+
+func (x *UpdateRaceDayRequest) HasShareToken() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Plan.(*updateRaceDayRequest_ShareToken)
+	return ok
+}
+
+func (x *UpdateRaceDayRequest) HasRaceDay() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_RaceDay != nil
+}
+
+func (x *UpdateRaceDayRequest) HasUpdateMask() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_UpdateMask != nil
+}
+
+func (x *UpdateRaceDayRequest) ClearPlan() {
+	x.xxx_hidden_Plan = nil
+}
+
+func (x *UpdateRaceDayRequest) ClearPlanId() {
+	if _, ok := x.xxx_hidden_Plan.(*updateRaceDayRequest_PlanId); ok {
+		x.xxx_hidden_Plan = nil
+	}
+}
+
+func (x *UpdateRaceDayRequest) ClearShareToken() {
+	if _, ok := x.xxx_hidden_Plan.(*updateRaceDayRequest_ShareToken); ok {
+		x.xxx_hidden_Plan = nil
+	}
+}
+
+func (x *UpdateRaceDayRequest) ClearRaceDay() {
+	x.xxx_hidden_RaceDay = nil
+}
+
+func (x *UpdateRaceDayRequest) ClearUpdateMask() {
+	x.xxx_hidden_UpdateMask = nil
+}
+
+const UpdateRaceDayRequest_Plan_not_set_case case_UpdateRaceDayRequest_Plan = 0
+const UpdateRaceDayRequest_PlanId_case case_UpdateRaceDayRequest_Plan = 1
+const UpdateRaceDayRequest_ShareToken_case case_UpdateRaceDayRequest_Plan = 2
+
+func (x *UpdateRaceDayRequest) WhichPlan() case_UpdateRaceDayRequest_Plan {
+	if x == nil {
+		return UpdateRaceDayRequest_Plan_not_set_case
+	}
+	switch x.xxx_hidden_Plan.(type) {
+	case *updateRaceDayRequest_PlanId:
+		return UpdateRaceDayRequest_PlanId_case
+	case *updateRaceDayRequest_ShareToken:
+		return UpdateRaceDayRequest_ShareToken_case
+	default:
+		return UpdateRaceDayRequest_Plan_not_set_case
+	}
+}
+
+type UpdateRaceDayRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The plan to update. Exactly one must be set.
+
+	// Fields of oneof xxx_hidden_Plan:
+	// The ID of the plan. Requires authentication.
+	PlanId *string
+	// The share token of the plan.
+	ShareToken *string
+	// -- end of xxx_hidden_Plan
+	// The race day data.
+	RaceDay *RaceDay
+	// The fields to update: "livetrack_url", "start_time" or "splits". If
+	// empty, all fields are replaced.
+	UpdateMask *fieldmaskpb.FieldMask
+}
+
+func (b0 UpdateRaceDayRequest_builder) Build() *UpdateRaceDayRequest {
+	m0 := &UpdateRaceDayRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.PlanId != nil {
+		x.xxx_hidden_Plan = &updateRaceDayRequest_PlanId{*b.PlanId}
+	}
+	if b.ShareToken != nil {
+		x.xxx_hidden_Plan = &updateRaceDayRequest_ShareToken{*b.ShareToken}
+	}
+	x.xxx_hidden_RaceDay = b.RaceDay
+	x.xxx_hidden_UpdateMask = b.UpdateMask
+	return m0
+}
+
+type case_UpdateRaceDayRequest_Plan protoreflect.FieldNumber
+
+func (x case_UpdateRaceDayRequest_Plan) String() string {
+	md := file_races_v1_race_plans_proto_msgTypes[39].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isUpdateRaceDayRequest_Plan interface {
+	isUpdateRaceDayRequest_Plan()
+}
+
+type updateRaceDayRequest_PlanId struct {
+	// The ID of the plan. Requires authentication.
+	PlanId string `protobuf:"bytes,1,opt,name=plan_id,json=planId,proto3,oneof"`
+}
+
+type updateRaceDayRequest_ShareToken struct {
+	// The share token of the plan.
+	ShareToken string `protobuf:"bytes,2,opt,name=share_token,json=shareToken,proto3,oneof"`
+}
+
+func (*updateRaceDayRequest_PlanId) isUpdateRaceDayRequest_Plan() {}
+
+func (*updateRaceDayRequest_ShareToken) isUpdateRaceDayRequest_Plan() {}
+
+type UpdateRaceDayResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Status *RaceDayStatus         `protobuf:"bytes,1,opt,name=status,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UpdateRaceDayResponse) Reset() {
+	*x = UpdateRaceDayResponse{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRaceDayResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRaceDayResponse) ProtoMessage() {}
+
+func (x *UpdateRaceDayResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateRaceDayResponse) GetStatus() *RaceDayStatus {
+	if x != nil {
+		return x.xxx_hidden_Status
+	}
+	return nil
+}
+
+func (x *UpdateRaceDayResponse) SetStatus(v *RaceDayStatus) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *UpdateRaceDayResponse) HasStatus() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Status != nil
+}
+
+func (x *UpdateRaceDayResponse) ClearStatus() {
+	x.xxx_hidden_Status = nil
+}
+
+type UpdateRaceDayResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The updated race day status.
+	Status *RaceDayStatus
+}
+
+func (b0 UpdateRaceDayResponse_builder) Build() *UpdateRaceDayResponse {
+	m0 := &UpdateRaceDayResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Status = b.Status
+	return m0
+}
+
+type SetCheckpointSplitRequest struct {
+	state            protoimpl.MessageState           `protogen:"opaque.v1"`
+	xxx_hidden_Plan  isSetCheckpointSplitRequest_Plan `protobuf_oneof:"plan"`
+	xxx_hidden_Split *CheckpointSplit                 `protobuf:"bytes,3,opt,name=split,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetCheckpointSplitRequest) Reset() {
+	*x = SetCheckpointSplitRequest{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetCheckpointSplitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetCheckpointSplitRequest) ProtoMessage() {}
+
+func (x *SetCheckpointSplitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SetCheckpointSplitRequest) GetPlanId() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Plan.(*setCheckpointSplitRequest_PlanId); ok {
+			return x.PlanId
+		}
+	}
+	return ""
+}
+
+func (x *SetCheckpointSplitRequest) GetShareToken() string {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Plan.(*setCheckpointSplitRequest_ShareToken); ok {
+			return x.ShareToken
+		}
+	}
+	return ""
+}
+
+func (x *SetCheckpointSplitRequest) GetSplit() *CheckpointSplit {
+	if x != nil {
+		return x.xxx_hidden_Split
+	}
+	return nil
+}
+
+func (x *SetCheckpointSplitRequest) SetPlanId(v string) {
+	x.xxx_hidden_Plan = &setCheckpointSplitRequest_PlanId{v}
+}
+
+func (x *SetCheckpointSplitRequest) SetShareToken(v string) {
+	x.xxx_hidden_Plan = &setCheckpointSplitRequest_ShareToken{v}
+}
+
+func (x *SetCheckpointSplitRequest) SetSplit(v *CheckpointSplit) {
+	x.xxx_hidden_Split = v
+}
+
+func (x *SetCheckpointSplitRequest) HasPlan() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Plan != nil
+}
+
+func (x *SetCheckpointSplitRequest) HasPlanId() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Plan.(*setCheckpointSplitRequest_PlanId)
+	return ok
+}
+
+func (x *SetCheckpointSplitRequest) HasShareToken() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Plan.(*setCheckpointSplitRequest_ShareToken)
+	return ok
+}
+
+func (x *SetCheckpointSplitRequest) HasSplit() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Split != nil
+}
+
+func (x *SetCheckpointSplitRequest) ClearPlan() {
+	x.xxx_hidden_Plan = nil
+}
+
+func (x *SetCheckpointSplitRequest) ClearPlanId() {
+	if _, ok := x.xxx_hidden_Plan.(*setCheckpointSplitRequest_PlanId); ok {
+		x.xxx_hidden_Plan = nil
+	}
+}
+
+func (x *SetCheckpointSplitRequest) ClearShareToken() {
+	if _, ok := x.xxx_hidden_Plan.(*setCheckpointSplitRequest_ShareToken); ok {
+		x.xxx_hidden_Plan = nil
+	}
+}
+
+func (x *SetCheckpointSplitRequest) ClearSplit() {
+	x.xxx_hidden_Split = nil
+}
+
+const SetCheckpointSplitRequest_Plan_not_set_case case_SetCheckpointSplitRequest_Plan = 0
+const SetCheckpointSplitRequest_PlanId_case case_SetCheckpointSplitRequest_Plan = 1
+const SetCheckpointSplitRequest_ShareToken_case case_SetCheckpointSplitRequest_Plan = 2
+
+func (x *SetCheckpointSplitRequest) WhichPlan() case_SetCheckpointSplitRequest_Plan {
+	if x == nil {
+		return SetCheckpointSplitRequest_Plan_not_set_case
+	}
+	switch x.xxx_hidden_Plan.(type) {
+	case *setCheckpointSplitRequest_PlanId:
+		return SetCheckpointSplitRequest_PlanId_case
+	case *setCheckpointSplitRequest_ShareToken:
+		return SetCheckpointSplitRequest_ShareToken_case
+	default:
+		return SetCheckpointSplitRequest_Plan_not_set_case
+	}
+}
+
+type SetCheckpointSplitRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The plan to update. Exactly one must be set.
+
+	// Fields of oneof xxx_hidden_Plan:
+	// The ID of the plan. Requires authentication.
+	PlanId *string
+	// The share token of the plan.
+	ShareToken *string
+	// -- end of xxx_hidden_Plan
+	// The times at the checkpoint, identified by checkpoint_index. Unset times
+	// are cleared.
+	Split *CheckpointSplit
+}
+
+func (b0 SetCheckpointSplitRequest_builder) Build() *SetCheckpointSplitRequest {
+	m0 := &SetCheckpointSplitRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.PlanId != nil {
+		x.xxx_hidden_Plan = &setCheckpointSplitRequest_PlanId{*b.PlanId}
+	}
+	if b.ShareToken != nil {
+		x.xxx_hidden_Plan = &setCheckpointSplitRequest_ShareToken{*b.ShareToken}
+	}
+	x.xxx_hidden_Split = b.Split
+	return m0
+}
+
+type case_SetCheckpointSplitRequest_Plan protoreflect.FieldNumber
+
+func (x case_SetCheckpointSplitRequest_Plan) String() string {
+	md := file_races_v1_race_plans_proto_msgTypes[41].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isSetCheckpointSplitRequest_Plan interface {
+	isSetCheckpointSplitRequest_Plan()
+}
+
+type setCheckpointSplitRequest_PlanId struct {
+	// The ID of the plan. Requires authentication.
+	PlanId string `protobuf:"bytes,1,opt,name=plan_id,json=planId,proto3,oneof"`
+}
+
+type setCheckpointSplitRequest_ShareToken struct {
+	// The share token of the plan.
+	ShareToken string `protobuf:"bytes,2,opt,name=share_token,json=shareToken,proto3,oneof"`
+}
+
+func (*setCheckpointSplitRequest_PlanId) isSetCheckpointSplitRequest_Plan() {}
+
+func (*setCheckpointSplitRequest_ShareToken) isSetCheckpointSplitRequest_Plan() {}
+
+type SetCheckpointSplitResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Status *RaceDayStatus         `protobuf:"bytes,1,opt,name=status,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SetCheckpointSplitResponse) Reset() {
+	*x = SetCheckpointSplitResponse{}
+	mi := &file_races_v1_race_plans_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetCheckpointSplitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetCheckpointSplitResponse) ProtoMessage() {}
+
+func (x *SetCheckpointSplitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_plans_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SetCheckpointSplitResponse) GetStatus() *RaceDayStatus {
+	if x != nil {
+		return x.xxx_hidden_Status
+	}
+	return nil
+}
+
+func (x *SetCheckpointSplitResponse) SetStatus(v *RaceDayStatus) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *SetCheckpointSplitResponse) HasStatus() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Status != nil
+}
+
+func (x *SetCheckpointSplitResponse) ClearStatus() {
+	x.xxx_hidden_Status = nil
+}
+
+type SetCheckpointSplitResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The updated race day status.
+	Status *RaceDayStatus
+}
+
+func (b0 SetCheckpointSplitResponse_builder) Build() *SetCheckpointSplitResponse {
+	m0 := &SetCheckpointSplitResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Status = b.Status
+	return m0
+}
+
 var File_races_v1_race_plans_proto protoreflect.FileDescriptor
 
 const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\n" +
-	"\x19races/v1/race_plans.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14races/v1/races.proto\x1a\x16routes/v1/routes.proto\"\xaa\x05\n" +
+	"\x19races/v1/race_plans.proto\x12\braces.v1\x1a\x10geo/v1/geo.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14races/v1/races.proto\x1a\x16routes/v1/routes.proto\"\xd8\x05\n" +
 	"\bRacePlan\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\arace_id\x18\x02 \x01(\tR\x06raceId\x12\x1b\n" +
@@ -3742,7 +5719,8 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\rcontingencies\x18\f \x03(\v2\x15.races.v1.ContingencyR\rcontingencies\x129\n" +
 	"\frace_morning\x18\r \x03(\v2\x16.races.v1.TimelineItemR\vraceMorning\x120\n" +
 	"\x06mental\x18\x0e \x01(\v2\x18.races.v1.MentalStrategyR\x06mental\x12\x14\n" +
-	"\x05notes\x18\x0f \x01(\tR\x05notes\"\x9f\x01\n" +
+	"\x05notes\x18\x0f \x01(\tR\x05notes\x12,\n" +
+	"\brace_day\x18\x10 \x01(\v2\x11.races.v1.RaceDayR\araceDay\"\x9f\x01\n" +
 	"\tRaceGoals\x12(\n" +
 	"\x10a_finish_seconds\x18\x01 \x01(\x05R\x0eaFinishSeconds\x12(\n" +
 	"\x10b_finish_seconds\x18\x02 \x01(\x05R\x0ebFinishSeconds\x12(\n" +
@@ -3808,7 +5786,59 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\"@\n" +
 	"\x0eMentalStrategy\x12\x18\n" +
 	"\amantras\x18\x01 \x03(\tR\amantras\x12\x14\n" +
-	"\x05notes\x18\x02 \x01(\tR\x05notes\"\xd4\x05\n" +
+	"\x05notes\x18\x02 \x01(\tR\x05notes\"\x9c\x01\n" +
+	"\aRaceDay\x12#\n" +
+	"\rlivetrack_url\x18\x01 \x01(\tR\flivetrackUrl\x129\n" +
+	"\n" +
+	"start_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x121\n" +
+	"\x06splits\x18\x03 \x03(\v2\x19.races.v1.CheckpointSplitR\x06splits\"\xbe\x01\n" +
+	"\x0fCheckpointSplit\x12)\n" +
+	"\x10checkpoint_index\x18\x01 \x01(\x05R\x0fcheckpointIndex\x12=\n" +
+	"\farrival_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\varrivalTime\x12A\n" +
+	"\x0edeparture_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\rdepartureTime\"\xd5\x02\n" +
+	"\x11LiveTrackPosition\x12.\n" +
+	"\x04time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12*\n" +
+	"\blocation\x18\x02 \x01(\v2\x0e.geo.v1.LatLngR\blocation\x12)\n" +
+	"\x10elevation_meters\x18\x04 \x01(\x01R\x0felevationMeters\x12'\n" +
+	"\x0fdistance_meters\x18\x05 \x01(\x01R\x0edistanceMeters\x124\n" +
+	"\x16course_distance_meters\x18\x06 \x01(\x01R\x14courseDistanceMeters\x12'\n" +
+	"\x0felapsed_seconds\x18\a \x01(\x05R\x0eelapsedSeconds\x12\x1b\n" +
+	"\tspeed_mps\x18\b \x01(\x01R\bspeedMps\x12\x14\n" +
+	"\x05ended\x18\t \x01(\bR\x05ended\"\x8a\x05\n" +
+	"\x12CheckpointEstimate\x12)\n" +
+	"\x10checkpoint_index\x18\x01 \x01(\x05R\x0fcheckpointIndex\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
+	"\x0fdistance_meters\x18\r \x01(\x01R\x0edistanceMeters\x122\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x1a.races.v1.CheckpointStatusR\x06status\x12=\n" +
+	"\farrival_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\varrivalTime\x12)\n" +
+	"\x10arrival_recorded\x18\x05 \x01(\bR\x0farrivalRecorded\x12A\n" +
+	"\x0edeparture_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\rdepartureTime\x12-\n" +
+	"\x12departure_recorded\x18\a \x01(\bR\x11departureRecorded\x12L\n" +
+	"\x14planned_arrival_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x12plannedArrivalTime\x12#\n" +
+	"\rdelay_seconds\x18\t \x01(\x05R\fdelaySeconds\x12;\n" +
+	"\vcutoff_time\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"cutoffTime\x122\n" +
+	"\x15cutoff_buffer_seconds\x18\v \x01(\x05R\x13cutoffBufferSeconds\x12\x18\n" +
+	"\aoverdue\x18\f \x01(\bR\aoverdue\"\xf8\x05\n" +
+	"\rRaceDayStatus\x12,\n" +
+	"\brace_day\x18\x01 \x01(\v2\x11.races.v1.RaceDayR\araceDay\x129\n" +
+	"\n" +
+	"start_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x12E\n" +
+	"\x11start_time_source\x18\v \x01(\x0e2\x19.races.v1.StartTimeSourceR\x0fstartTimeSource\x129\n" +
+	"\tlivetrack\x18\x03 \x01(\v2\x1b.races.v1.LiveTrackPositionR\tlivetrack\x12'\n" +
+	"\x0flivetrack_error\x18\x04 \x01(\tR\x0elivetrackError\x12A\n" +
+	"\x0festimate_source\x18\x05 \x01(\x0e2\x18.races.v1.EstimateSourceR\x0eestimateSource\x12\x1f\n" +
+	"\vpace_factor\x18\x06 \x01(\x01R\n" +
+	"paceFactor\x12'\n" +
+	"\x0fdistance_meters\x18\a \x01(\x01R\x0edistanceMeters\x12:\n" +
+	"\x19estimated_distance_meters\x18\f \x01(\x01R\x17estimatedDistanceMeters\x12=\n" +
+	"\x12estimated_location\x18\r \x01(\v2\x0e.geo.v1.LatLngR\x11estimatedLocation\x12>\n" +
+	"\vcheckpoints\x18\b \x03(\v2\x1c.races.v1.CheckpointEstimateR\vcheckpoints\x12N\n" +
+	"\x15estimated_finish_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x13estimatedFinishTime\x12;\n" +
+	"\vstatus_time\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"statusTime\"\xd4\x05\n" +
 	"\x12CheckpointAnalysis\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x126\n" +
 	"\x17segment_distance_meters\x18\x02 \x01(\x01R\x15segmentDistanceMeters\x12A\n" +
@@ -3898,7 +5928,32 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\x04plan\x18\x01 \x01(\v2\x12.races.v1.RacePlanR\x04plan\x12\"\n" +
 	"\x04race\x18\x02 \x01(\v2\x0e.races.v1.RaceR\x04race\x126\n" +
 	"\banalysis\x18\x03 \x01(\v2\x1a.races.v1.RacePlanAnalysisR\banalysis\x12-\n" +
-	"\x06course\x18\x04 \x03(\v2\x15.routes.v1.RoutePointR\x06course*\x88\x03\n" +
+	"\x06course\x18\x04 \x03(\v2\x15.routes.v1.RoutePointR\x06course\"_\n" +
+	"\x17GetRaceDayStatusRequest\x12\x19\n" +
+	"\aplan_id\x18\x01 \x01(\tH\x00R\x06planId\x12!\n" +
+	"\vshare_token\x18\x02 \x01(\tH\x00R\n" +
+	"shareTokenB\x06\n" +
+	"\x04plan\"K\n" +
+	"\x18GetRaceDayStatusResponse\x12/\n" +
+	"\x06status\x18\x01 \x01(\v2\x17.races.v1.RaceDayStatusR\x06status\"\xc7\x01\n" +
+	"\x14UpdateRaceDayRequest\x12\x19\n" +
+	"\aplan_id\x18\x01 \x01(\tH\x00R\x06planId\x12!\n" +
+	"\vshare_token\x18\x02 \x01(\tH\x00R\n" +
+	"shareToken\x12,\n" +
+	"\brace_day\x18\x03 \x01(\v2\x11.races.v1.RaceDayR\araceDay\x12;\n" +
+	"\vupdate_mask\x18\x04 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMaskB\x06\n" +
+	"\x04plan\"H\n" +
+	"\x15UpdateRaceDayResponse\x12/\n" +
+	"\x06status\x18\x01 \x01(\v2\x17.races.v1.RaceDayStatusR\x06status\"\x92\x01\n" +
+	"\x19SetCheckpointSplitRequest\x12\x19\n" +
+	"\aplan_id\x18\x01 \x01(\tH\x00R\x06planId\x12!\n" +
+	"\vshare_token\x18\x02 \x01(\tH\x00R\n" +
+	"shareToken\x12/\n" +
+	"\x05split\x18\x03 \x01(\v2\x19.races.v1.CheckpointSplitR\x05splitB\x06\n" +
+	"\x04plan\"M\n" +
+	"\x1aSetCheckpointSplitResponse\x12/\n" +
+	"\x06status\x18\x01 \x01(\v2\x17.races.v1.RaceDayStatusR\x06status*\x88\x03\n" +
 	"\x13ContingencyScenario\x12$\n" +
 	" CONTINGENCY_SCENARIO_UNSPECIFIED\x10\x00\x12$\n" +
 	" CONTINGENCY_SCENARIO_GI_DISTRESS\x10\x01\x12(\n" +
@@ -3909,13 +5964,27 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"!CONTINGENCY_SCENARIO_GEAR_FAILURE\x10\x06\x12'\n" +
 	"#CONTINGENCY_SCENARIO_LOW_MOTIVATION\x10\a\x12#\n" +
 	"\x1fCONTINGENCY_SCENARIO_NAVIGATION\x10\b\x12\x1e\n" +
-	"\x1aCONTINGENCY_SCENARIO_OTHER\x10\t*k\n" +
+	"\x1aCONTINGENCY_SCENARIO_OTHER\x10\t*\x8a\x01\n" +
+	"\x0eEstimateSource\x12\x1f\n" +
+	"\x1bESTIMATE_SOURCE_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14ESTIMATE_SOURCE_PLAN\x10\x01\x12\x1e\n" +
+	"\x1aESTIMATE_SOURCE_CHECKPOINT\x10\x02\x12\x1d\n" +
+	"\x19ESTIMATE_SOURCE_LIVETRACK\x10\x03*\x94\x01\n" +
+	"\x10CheckpointStatus\x12!\n" +
+	"\x1dCHECKPOINT_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aCHECKPOINT_STATUS_UPCOMING\x10\x01\x12\x1d\n" +
+	"\x19CHECKPOINT_STATUS_ARRIVED\x10\x02\x12\x1e\n" +
+	"\x1aCHECKPOINT_STATUS_DEPARTED\x10\x03*u\n" +
+	"\x0fStartTimeSource\x12!\n" +
+	"\x1dSTART_TIME_SOURCE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aSTART_TIME_SOURCE_RECORDED\x10\x01\x12\x1f\n" +
+	"\x1bSTART_TIME_SOURCE_LIVETRACK\x10\x02*k\n" +
 	"\n" +
 	"RuleStatus\x12\x1b\n" +
 	"\x17RULE_STATUS_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10RULE_STATUS_PASS\x10\x01\x12\x14\n" +
 	"\x10RULE_STATUS_WARN\x10\x02\x12\x14\n" +
-	"\x10RULE_STATUS_FAIL\x10\x032\xb6\x05\n" +
+	"\x10RULE_STATUS_FAIL\x10\x032\xc4\a\n" +
 	"\x0fRacePlanService\x12S\n" +
 	"\x0eCreateRacePlan\x12\x1f.races.v1.CreateRacePlanRequest\x1a .races.v1.CreateRacePlanResponse\x12J\n" +
 	"\vGetRacePlan\x12\x1c.races.v1.GetRacePlanRequest\x1a\x1d.races.v1.GetRacePlanResponse\x12P\n" +
@@ -3924,108 +5993,159 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\x0eDeleteRacePlan\x12\x1f.races.v1.DeleteRacePlanRequest\x1a .races.v1.DeleteRacePlanResponse\x12P\n" +
 	"\rShareRacePlan\x12\x1e.races.v1.ShareRacePlanRequest\x1a\x1f.races.v1.ShareRacePlanResponse\x12V\n" +
 	"\x0fUnshareRacePlan\x12 .races.v1.UnshareRacePlanRequest\x1a!.races.v1.UnshareRacePlanResponse\x12\\\n" +
-	"\x11GetSharedRacePlan\x12\".races.v1.GetSharedRacePlanRequest\x1a#.races.v1.GetSharedRacePlanResponseB\x9e\x01\n" +
+	"\x11GetSharedRacePlan\x12\".races.v1.GetSharedRacePlanRequest\x1a#.races.v1.GetSharedRacePlanResponse\x12Y\n" +
+	"\x10GetRaceDayStatus\x12!.races.v1.GetRaceDayStatusRequest\x1a\".races.v1.GetRaceDayStatusResponse\x12P\n" +
+	"\rUpdateRaceDay\x12\x1e.races.v1.UpdateRaceDayRequest\x1a\x1f.races.v1.UpdateRaceDayResponse\x12_\n" +
+	"\x12SetCheckpointSplit\x12#.races.v1.SetCheckpointSplitRequest\x1a$.races.v1.SetCheckpointSplitResponseB\x9e\x01\n" +
 	"\fcom.races.v1B\x0eRacePlansProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/races/v1;racesv1\xa2\x02\x03RXX\xaa\x02\bRaces.V1\xca\x02\bRaces\\V1\xe2\x02\x14Races\\V1\\GPBMetadata\xea\x02\tRaces::V1b\x06proto3"
 
-var file_races_v1_race_plans_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_races_v1_race_plans_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_races_v1_race_plans_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_races_v1_race_plans_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_races_v1_race_plans_proto_goTypes = []any{
-	(ContingencyScenario)(0),          // 0: races.v1.ContingencyScenario
-	(RuleStatus)(0),                   // 1: races.v1.RuleStatus
-	(*RacePlan)(nil),                  // 2: races.v1.RacePlan
-	(*RaceGoals)(nil),                 // 3: races.v1.RaceGoals
-	(*Checkpoint)(nil),                // 4: races.v1.Checkpoint
-	(*Intake)(nil),                    // 5: races.v1.Intake
-	(*PacingStrategy)(nil),            // 6: races.v1.PacingStrategy
-	(*NutritionStrategy)(nil),         // 7: races.v1.NutritionStrategy
-	(*NutritionProduct)(nil),          // 8: races.v1.NutritionProduct
-	(*GearItem)(nil),                  // 9: races.v1.GearItem
-	(*CrewPlan)(nil),                  // 10: races.v1.CrewPlan
-	(*Contingency)(nil),               // 11: races.v1.Contingency
-	(*TimelineItem)(nil),              // 12: races.v1.TimelineItem
-	(*MentalStrategy)(nil),            // 13: races.v1.MentalStrategy
-	(*CheckpointAnalysis)(nil),        // 14: races.v1.CheckpointAnalysis
-	(*RuleResult)(nil),                // 15: races.v1.RuleResult
-	(*RacePlanAnalysis)(nil),          // 16: races.v1.RacePlanAnalysis
-	(*CreateRacePlanRequest)(nil),     // 17: races.v1.CreateRacePlanRequest
-	(*CreateRacePlanResponse)(nil),    // 18: races.v1.CreateRacePlanResponse
-	(*GetRacePlanRequest)(nil),        // 19: races.v1.GetRacePlanRequest
-	(*GetRacePlanResponse)(nil),       // 20: races.v1.GetRacePlanResponse
-	(*ListRacePlansRequest)(nil),      // 21: races.v1.ListRacePlansRequest
-	(*RacePlanSummary)(nil),           // 22: races.v1.RacePlanSummary
-	(*ListRacePlansResponse)(nil),     // 23: races.v1.ListRacePlansResponse
-	(*UpdateRacePlanRequest)(nil),     // 24: races.v1.UpdateRacePlanRequest
-	(*UpdateRacePlanResponse)(nil),    // 25: races.v1.UpdateRacePlanResponse
-	(*DeleteRacePlanRequest)(nil),     // 26: races.v1.DeleteRacePlanRequest
-	(*DeleteRacePlanResponse)(nil),    // 27: races.v1.DeleteRacePlanResponse
-	(*ShareRacePlanRequest)(nil),      // 28: races.v1.ShareRacePlanRequest
-	(*ShareRacePlanResponse)(nil),     // 29: races.v1.ShareRacePlanResponse
-	(*UnshareRacePlanRequest)(nil),    // 30: races.v1.UnshareRacePlanRequest
-	(*UnshareRacePlanResponse)(nil),   // 31: races.v1.UnshareRacePlanResponse
-	(*GetSharedRacePlanRequest)(nil),  // 32: races.v1.GetSharedRacePlanRequest
-	(*GetSharedRacePlanResponse)(nil), // 33: races.v1.GetSharedRacePlanResponse
-	(*timestamppb.Timestamp)(nil),     // 34: google.protobuf.Timestamp
-	(*Race)(nil),                      // 35: races.v1.Race
-	(*fieldmaskpb.FieldMask)(nil),     // 36: google.protobuf.FieldMask
-	(*v1.RoutePoint)(nil),             // 37: routes.v1.RoutePoint
+	(ContingencyScenario)(0),           // 0: races.v1.ContingencyScenario
+	(EstimateSource)(0),                // 1: races.v1.EstimateSource
+	(CheckpointStatus)(0),              // 2: races.v1.CheckpointStatus
+	(StartTimeSource)(0),               // 3: races.v1.StartTimeSource
+	(RuleStatus)(0),                    // 4: races.v1.RuleStatus
+	(*RacePlan)(nil),                   // 5: races.v1.RacePlan
+	(*RaceGoals)(nil),                  // 6: races.v1.RaceGoals
+	(*Checkpoint)(nil),                 // 7: races.v1.Checkpoint
+	(*Intake)(nil),                     // 8: races.v1.Intake
+	(*PacingStrategy)(nil),             // 9: races.v1.PacingStrategy
+	(*NutritionStrategy)(nil),          // 10: races.v1.NutritionStrategy
+	(*NutritionProduct)(nil),           // 11: races.v1.NutritionProduct
+	(*GearItem)(nil),                   // 12: races.v1.GearItem
+	(*CrewPlan)(nil),                   // 13: races.v1.CrewPlan
+	(*Contingency)(nil),                // 14: races.v1.Contingency
+	(*TimelineItem)(nil),               // 15: races.v1.TimelineItem
+	(*MentalStrategy)(nil),             // 16: races.v1.MentalStrategy
+	(*RaceDay)(nil),                    // 17: races.v1.RaceDay
+	(*CheckpointSplit)(nil),            // 18: races.v1.CheckpointSplit
+	(*LiveTrackPosition)(nil),          // 19: races.v1.LiveTrackPosition
+	(*CheckpointEstimate)(nil),         // 20: races.v1.CheckpointEstimate
+	(*RaceDayStatus)(nil),              // 21: races.v1.RaceDayStatus
+	(*CheckpointAnalysis)(nil),         // 22: races.v1.CheckpointAnalysis
+	(*RuleResult)(nil),                 // 23: races.v1.RuleResult
+	(*RacePlanAnalysis)(nil),           // 24: races.v1.RacePlanAnalysis
+	(*CreateRacePlanRequest)(nil),      // 25: races.v1.CreateRacePlanRequest
+	(*CreateRacePlanResponse)(nil),     // 26: races.v1.CreateRacePlanResponse
+	(*GetRacePlanRequest)(nil),         // 27: races.v1.GetRacePlanRequest
+	(*GetRacePlanResponse)(nil),        // 28: races.v1.GetRacePlanResponse
+	(*ListRacePlansRequest)(nil),       // 29: races.v1.ListRacePlansRequest
+	(*RacePlanSummary)(nil),            // 30: races.v1.RacePlanSummary
+	(*ListRacePlansResponse)(nil),      // 31: races.v1.ListRacePlansResponse
+	(*UpdateRacePlanRequest)(nil),      // 32: races.v1.UpdateRacePlanRequest
+	(*UpdateRacePlanResponse)(nil),     // 33: races.v1.UpdateRacePlanResponse
+	(*DeleteRacePlanRequest)(nil),      // 34: races.v1.DeleteRacePlanRequest
+	(*DeleteRacePlanResponse)(nil),     // 35: races.v1.DeleteRacePlanResponse
+	(*ShareRacePlanRequest)(nil),       // 36: races.v1.ShareRacePlanRequest
+	(*ShareRacePlanResponse)(nil),      // 37: races.v1.ShareRacePlanResponse
+	(*UnshareRacePlanRequest)(nil),     // 38: races.v1.UnshareRacePlanRequest
+	(*UnshareRacePlanResponse)(nil),    // 39: races.v1.UnshareRacePlanResponse
+	(*GetSharedRacePlanRequest)(nil),   // 40: races.v1.GetSharedRacePlanRequest
+	(*GetSharedRacePlanResponse)(nil),  // 41: races.v1.GetSharedRacePlanResponse
+	(*GetRaceDayStatusRequest)(nil),    // 42: races.v1.GetRaceDayStatusRequest
+	(*GetRaceDayStatusResponse)(nil),   // 43: races.v1.GetRaceDayStatusResponse
+	(*UpdateRaceDayRequest)(nil),       // 44: races.v1.UpdateRaceDayRequest
+	(*UpdateRaceDayResponse)(nil),      // 45: races.v1.UpdateRaceDayResponse
+	(*SetCheckpointSplitRequest)(nil),  // 46: races.v1.SetCheckpointSplitRequest
+	(*SetCheckpointSplitResponse)(nil), // 47: races.v1.SetCheckpointSplitResponse
+	(*timestamppb.Timestamp)(nil),      // 48: google.protobuf.Timestamp
+	(*v1.LatLng)(nil),                  // 49: geo.v1.LatLng
+	(*Race)(nil),                       // 50: races.v1.Race
+	(*fieldmaskpb.FieldMask)(nil),      // 51: google.protobuf.FieldMask
+	(*v11.RoutePoint)(nil),             // 52: routes.v1.RoutePoint
 }
 var file_races_v1_race_plans_proto_depIdxs = []int32{
-	34, // 0: races.v1.RacePlan.create_time:type_name -> google.protobuf.Timestamp
-	34, // 1: races.v1.RacePlan.update_time:type_name -> google.protobuf.Timestamp
-	3,  // 2: races.v1.RacePlan.goals:type_name -> races.v1.RaceGoals
-	4,  // 3: races.v1.RacePlan.checkpoints:type_name -> races.v1.Checkpoint
-	6,  // 4: races.v1.RacePlan.pacing:type_name -> races.v1.PacingStrategy
-	7,  // 5: races.v1.RacePlan.nutrition:type_name -> races.v1.NutritionStrategy
-	9,  // 6: races.v1.RacePlan.gear:type_name -> races.v1.GearItem
-	10, // 7: races.v1.RacePlan.crew:type_name -> races.v1.CrewPlan
-	11, // 8: races.v1.RacePlan.contingencies:type_name -> races.v1.Contingency
-	12, // 9: races.v1.RacePlan.race_morning:type_name -> races.v1.TimelineItem
-	13, // 10: races.v1.RacePlan.mental:type_name -> races.v1.MentalStrategy
-	5,  // 11: races.v1.Checkpoint.intake:type_name -> races.v1.Intake
-	8,  // 12: races.v1.NutritionStrategy.products:type_name -> races.v1.NutritionProduct
-	0,  // 13: races.v1.Contingency.scenario:type_name -> races.v1.ContingencyScenario
-	1,  // 14: races.v1.RuleResult.status:type_name -> races.v1.RuleStatus
-	14, // 15: races.v1.RacePlanAnalysis.checkpoints:type_name -> races.v1.CheckpointAnalysis
-	15, // 16: races.v1.RacePlanAnalysis.rules:type_name -> races.v1.RuleResult
-	2,  // 17: races.v1.CreateRacePlanResponse.plan:type_name -> races.v1.RacePlan
-	35, // 18: races.v1.CreateRacePlanResponse.race:type_name -> races.v1.Race
-	16, // 19: races.v1.CreateRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
-	2,  // 20: races.v1.GetRacePlanResponse.plan:type_name -> races.v1.RacePlan
-	35, // 21: races.v1.GetRacePlanResponse.race:type_name -> races.v1.Race
-	16, // 22: races.v1.GetRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
-	35, // 23: races.v1.RacePlanSummary.race:type_name -> races.v1.Race
-	34, // 24: races.v1.RacePlanSummary.update_time:type_name -> google.protobuf.Timestamp
-	22, // 25: races.v1.ListRacePlansResponse.plans:type_name -> races.v1.RacePlanSummary
-	2,  // 26: races.v1.UpdateRacePlanRequest.plan:type_name -> races.v1.RacePlan
-	36, // 27: races.v1.UpdateRacePlanRequest.update_mask:type_name -> google.protobuf.FieldMask
-	2,  // 28: races.v1.UpdateRacePlanResponse.plan:type_name -> races.v1.RacePlan
-	35, // 29: races.v1.UpdateRacePlanResponse.race:type_name -> races.v1.Race
-	16, // 30: races.v1.UpdateRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
-	2,  // 31: races.v1.GetSharedRacePlanResponse.plan:type_name -> races.v1.RacePlan
-	35, // 32: races.v1.GetSharedRacePlanResponse.race:type_name -> races.v1.Race
-	16, // 33: races.v1.GetSharedRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
-	37, // 34: races.v1.GetSharedRacePlanResponse.course:type_name -> routes.v1.RoutePoint
-	17, // 35: races.v1.RacePlanService.CreateRacePlan:input_type -> races.v1.CreateRacePlanRequest
-	19, // 36: races.v1.RacePlanService.GetRacePlan:input_type -> races.v1.GetRacePlanRequest
-	21, // 37: races.v1.RacePlanService.ListRacePlans:input_type -> races.v1.ListRacePlansRequest
-	24, // 38: races.v1.RacePlanService.UpdateRacePlan:input_type -> races.v1.UpdateRacePlanRequest
-	26, // 39: races.v1.RacePlanService.DeleteRacePlan:input_type -> races.v1.DeleteRacePlanRequest
-	28, // 40: races.v1.RacePlanService.ShareRacePlan:input_type -> races.v1.ShareRacePlanRequest
-	30, // 41: races.v1.RacePlanService.UnshareRacePlan:input_type -> races.v1.UnshareRacePlanRequest
-	32, // 42: races.v1.RacePlanService.GetSharedRacePlan:input_type -> races.v1.GetSharedRacePlanRequest
-	18, // 43: races.v1.RacePlanService.CreateRacePlan:output_type -> races.v1.CreateRacePlanResponse
-	20, // 44: races.v1.RacePlanService.GetRacePlan:output_type -> races.v1.GetRacePlanResponse
-	23, // 45: races.v1.RacePlanService.ListRacePlans:output_type -> races.v1.ListRacePlansResponse
-	25, // 46: races.v1.RacePlanService.UpdateRacePlan:output_type -> races.v1.UpdateRacePlanResponse
-	27, // 47: races.v1.RacePlanService.DeleteRacePlan:output_type -> races.v1.DeleteRacePlanResponse
-	29, // 48: races.v1.RacePlanService.ShareRacePlan:output_type -> races.v1.ShareRacePlanResponse
-	31, // 49: races.v1.RacePlanService.UnshareRacePlan:output_type -> races.v1.UnshareRacePlanResponse
-	33, // 50: races.v1.RacePlanService.GetSharedRacePlan:output_type -> races.v1.GetSharedRacePlanResponse
-	43, // [43:51] is the sub-list for method output_type
-	35, // [35:43] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	48, // 0: races.v1.RacePlan.create_time:type_name -> google.protobuf.Timestamp
+	48, // 1: races.v1.RacePlan.update_time:type_name -> google.protobuf.Timestamp
+	6,  // 2: races.v1.RacePlan.goals:type_name -> races.v1.RaceGoals
+	7,  // 3: races.v1.RacePlan.checkpoints:type_name -> races.v1.Checkpoint
+	9,  // 4: races.v1.RacePlan.pacing:type_name -> races.v1.PacingStrategy
+	10, // 5: races.v1.RacePlan.nutrition:type_name -> races.v1.NutritionStrategy
+	12, // 6: races.v1.RacePlan.gear:type_name -> races.v1.GearItem
+	13, // 7: races.v1.RacePlan.crew:type_name -> races.v1.CrewPlan
+	14, // 8: races.v1.RacePlan.contingencies:type_name -> races.v1.Contingency
+	15, // 9: races.v1.RacePlan.race_morning:type_name -> races.v1.TimelineItem
+	16, // 10: races.v1.RacePlan.mental:type_name -> races.v1.MentalStrategy
+	17, // 11: races.v1.RacePlan.race_day:type_name -> races.v1.RaceDay
+	8,  // 12: races.v1.Checkpoint.intake:type_name -> races.v1.Intake
+	11, // 13: races.v1.NutritionStrategy.products:type_name -> races.v1.NutritionProduct
+	0,  // 14: races.v1.Contingency.scenario:type_name -> races.v1.ContingencyScenario
+	48, // 15: races.v1.RaceDay.start_time:type_name -> google.protobuf.Timestamp
+	18, // 16: races.v1.RaceDay.splits:type_name -> races.v1.CheckpointSplit
+	48, // 17: races.v1.CheckpointSplit.arrival_time:type_name -> google.protobuf.Timestamp
+	48, // 18: races.v1.CheckpointSplit.departure_time:type_name -> google.protobuf.Timestamp
+	48, // 19: races.v1.LiveTrackPosition.time:type_name -> google.protobuf.Timestamp
+	49, // 20: races.v1.LiveTrackPosition.location:type_name -> geo.v1.LatLng
+	2,  // 21: races.v1.CheckpointEstimate.status:type_name -> races.v1.CheckpointStatus
+	48, // 22: races.v1.CheckpointEstimate.arrival_time:type_name -> google.protobuf.Timestamp
+	48, // 23: races.v1.CheckpointEstimate.departure_time:type_name -> google.protobuf.Timestamp
+	48, // 24: races.v1.CheckpointEstimate.planned_arrival_time:type_name -> google.protobuf.Timestamp
+	48, // 25: races.v1.CheckpointEstimate.cutoff_time:type_name -> google.protobuf.Timestamp
+	17, // 26: races.v1.RaceDayStatus.race_day:type_name -> races.v1.RaceDay
+	48, // 27: races.v1.RaceDayStatus.start_time:type_name -> google.protobuf.Timestamp
+	3,  // 28: races.v1.RaceDayStatus.start_time_source:type_name -> races.v1.StartTimeSource
+	19, // 29: races.v1.RaceDayStatus.livetrack:type_name -> races.v1.LiveTrackPosition
+	1,  // 30: races.v1.RaceDayStatus.estimate_source:type_name -> races.v1.EstimateSource
+	49, // 31: races.v1.RaceDayStatus.estimated_location:type_name -> geo.v1.LatLng
+	20, // 32: races.v1.RaceDayStatus.checkpoints:type_name -> races.v1.CheckpointEstimate
+	48, // 33: races.v1.RaceDayStatus.estimated_finish_time:type_name -> google.protobuf.Timestamp
+	48, // 34: races.v1.RaceDayStatus.status_time:type_name -> google.protobuf.Timestamp
+	4,  // 35: races.v1.RuleResult.status:type_name -> races.v1.RuleStatus
+	22, // 36: races.v1.RacePlanAnalysis.checkpoints:type_name -> races.v1.CheckpointAnalysis
+	23, // 37: races.v1.RacePlanAnalysis.rules:type_name -> races.v1.RuleResult
+	5,  // 38: races.v1.CreateRacePlanResponse.plan:type_name -> races.v1.RacePlan
+	50, // 39: races.v1.CreateRacePlanResponse.race:type_name -> races.v1.Race
+	24, // 40: races.v1.CreateRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
+	5,  // 41: races.v1.GetRacePlanResponse.plan:type_name -> races.v1.RacePlan
+	50, // 42: races.v1.GetRacePlanResponse.race:type_name -> races.v1.Race
+	24, // 43: races.v1.GetRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
+	50, // 44: races.v1.RacePlanSummary.race:type_name -> races.v1.Race
+	48, // 45: races.v1.RacePlanSummary.update_time:type_name -> google.protobuf.Timestamp
+	30, // 46: races.v1.ListRacePlansResponse.plans:type_name -> races.v1.RacePlanSummary
+	5,  // 47: races.v1.UpdateRacePlanRequest.plan:type_name -> races.v1.RacePlan
+	51, // 48: races.v1.UpdateRacePlanRequest.update_mask:type_name -> google.protobuf.FieldMask
+	5,  // 49: races.v1.UpdateRacePlanResponse.plan:type_name -> races.v1.RacePlan
+	50, // 50: races.v1.UpdateRacePlanResponse.race:type_name -> races.v1.Race
+	24, // 51: races.v1.UpdateRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
+	5,  // 52: races.v1.GetSharedRacePlanResponse.plan:type_name -> races.v1.RacePlan
+	50, // 53: races.v1.GetSharedRacePlanResponse.race:type_name -> races.v1.Race
+	24, // 54: races.v1.GetSharedRacePlanResponse.analysis:type_name -> races.v1.RacePlanAnalysis
+	52, // 55: races.v1.GetSharedRacePlanResponse.course:type_name -> routes.v1.RoutePoint
+	21, // 56: races.v1.GetRaceDayStatusResponse.status:type_name -> races.v1.RaceDayStatus
+	17, // 57: races.v1.UpdateRaceDayRequest.race_day:type_name -> races.v1.RaceDay
+	51, // 58: races.v1.UpdateRaceDayRequest.update_mask:type_name -> google.protobuf.FieldMask
+	21, // 59: races.v1.UpdateRaceDayResponse.status:type_name -> races.v1.RaceDayStatus
+	18, // 60: races.v1.SetCheckpointSplitRequest.split:type_name -> races.v1.CheckpointSplit
+	21, // 61: races.v1.SetCheckpointSplitResponse.status:type_name -> races.v1.RaceDayStatus
+	25, // 62: races.v1.RacePlanService.CreateRacePlan:input_type -> races.v1.CreateRacePlanRequest
+	27, // 63: races.v1.RacePlanService.GetRacePlan:input_type -> races.v1.GetRacePlanRequest
+	29, // 64: races.v1.RacePlanService.ListRacePlans:input_type -> races.v1.ListRacePlansRequest
+	32, // 65: races.v1.RacePlanService.UpdateRacePlan:input_type -> races.v1.UpdateRacePlanRequest
+	34, // 66: races.v1.RacePlanService.DeleteRacePlan:input_type -> races.v1.DeleteRacePlanRequest
+	36, // 67: races.v1.RacePlanService.ShareRacePlan:input_type -> races.v1.ShareRacePlanRequest
+	38, // 68: races.v1.RacePlanService.UnshareRacePlan:input_type -> races.v1.UnshareRacePlanRequest
+	40, // 69: races.v1.RacePlanService.GetSharedRacePlan:input_type -> races.v1.GetSharedRacePlanRequest
+	42, // 70: races.v1.RacePlanService.GetRaceDayStatus:input_type -> races.v1.GetRaceDayStatusRequest
+	44, // 71: races.v1.RacePlanService.UpdateRaceDay:input_type -> races.v1.UpdateRaceDayRequest
+	46, // 72: races.v1.RacePlanService.SetCheckpointSplit:input_type -> races.v1.SetCheckpointSplitRequest
+	26, // 73: races.v1.RacePlanService.CreateRacePlan:output_type -> races.v1.CreateRacePlanResponse
+	28, // 74: races.v1.RacePlanService.GetRacePlan:output_type -> races.v1.GetRacePlanResponse
+	31, // 75: races.v1.RacePlanService.ListRacePlans:output_type -> races.v1.ListRacePlansResponse
+	33, // 76: races.v1.RacePlanService.UpdateRacePlan:output_type -> races.v1.UpdateRacePlanResponse
+	35, // 77: races.v1.RacePlanService.DeleteRacePlan:output_type -> races.v1.DeleteRacePlanResponse
+	37, // 78: races.v1.RacePlanService.ShareRacePlan:output_type -> races.v1.ShareRacePlanResponse
+	39, // 79: races.v1.RacePlanService.UnshareRacePlan:output_type -> races.v1.UnshareRacePlanResponse
+	41, // 80: races.v1.RacePlanService.GetSharedRacePlan:output_type -> races.v1.GetSharedRacePlanResponse
+	43, // 81: races.v1.RacePlanService.GetRaceDayStatus:output_type -> races.v1.GetRaceDayStatusResponse
+	45, // 82: races.v1.RacePlanService.UpdateRaceDay:output_type -> races.v1.UpdateRaceDayResponse
+	47, // 83: races.v1.RacePlanService.SetCheckpointSplit:output_type -> races.v1.SetCheckpointSplitResponse
+	73, // [73:84] is the sub-list for method output_type
+	62, // [62:73] is the sub-list for method input_type
+	62, // [62:62] is the sub-list for extension type_name
+	62, // [62:62] is the sub-list for extension extendee
+	0,  // [0:62] is the sub-list for field type_name
 }
 
 func init() { file_races_v1_race_plans_proto_init() }
@@ -4034,13 +6154,25 @@ func file_races_v1_race_plans_proto_init() {
 		return
 	}
 	file_races_v1_races_proto_init()
+	file_races_v1_race_plans_proto_msgTypes[37].OneofWrappers = []any{
+		(*getRaceDayStatusRequest_PlanId)(nil),
+		(*getRaceDayStatusRequest_ShareToken)(nil),
+	}
+	file_races_v1_race_plans_proto_msgTypes[39].OneofWrappers = []any{
+		(*updateRaceDayRequest_PlanId)(nil),
+		(*updateRaceDayRequest_ShareToken)(nil),
+	}
+	file_races_v1_race_plans_proto_msgTypes[41].OneofWrappers = []any{
+		(*setCheckpointSplitRequest_PlanId)(nil),
+		(*setCheckpointSplitRequest_ShareToken)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_races_v1_race_plans_proto_rawDesc), len(file_races_v1_race_plans_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   32,
+			NumEnums:      5,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

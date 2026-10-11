@@ -4,6 +4,8 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { LatLng } from "../../geo/v1/geo_pb";
+import { file_geo_v1_geo } from "../../geo/v1/geo_pb";
 import type { FieldMask, Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_field_mask, file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Race } from "./races_pb";
@@ -16,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file races/v1/race_plans.proto.
  */
 export const file_races_v1_race_plans: GenFile = /*@__PURE__*/
-  fileDesc("ChlyYWNlcy92MS9yYWNlX3BsYW5zLnByb3RvEghyYWNlcy52MSKeBAoIUmFjZVBsYW4SCgoCaWQYASABKAkSDwoHcmFjZV9pZBgCIAEoCRIRCglzaGFyZV91cmwYAyABKAkSLwoLY3JlYXRlX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC3VwZGF0ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIiCgVnb2FscxgGIAEoCzITLnJhY2VzLnYxLlJhY2VHb2FscxIpCgtjaGVja3BvaW50cxgHIAMoCzIULnJhY2VzLnYxLkNoZWNrcG9pbnQSKAoGcGFjaW5nGAggASgLMhgucmFjZXMudjEuUGFjaW5nU3RyYXRlZ3kSLgoJbnV0cml0aW9uGAkgASgLMhsucmFjZXMudjEuTnV0cml0aW9uU3RyYXRlZ3kSIAoEZ2VhchgKIAMoCzISLnJhY2VzLnYxLkdlYXJJdGVtEiAKBGNyZXcYCyABKAsyEi5yYWNlcy52MS5DcmV3UGxhbhIsCg1jb250aW5nZW5jaWVzGAwgAygLMhUucmFjZXMudjEuQ29udGluZ2VuY3kSLAoMcmFjZV9tb3JuaW5nGA0gAygLMhYucmFjZXMudjEuVGltZWxpbmVJdGVtEigKBm1lbnRhbBgOIAEoCzIYLnJhY2VzLnYxLk1lbnRhbFN0cmF0ZWd5Eg0KBW5vdGVzGA8gASgJImgKCVJhY2VHb2FscxIYChBhX2ZpbmlzaF9zZWNvbmRzGAEgASgFEhgKEGJfZmluaXNoX3NlY29uZHMYAiABKAUSGAoQY19maW5pc2hfc2Vjb25kcxgDIAEoBRINCgVub3RlcxgEIAEoCSL9AgoKQ2hlY2twb2ludBIMCgRuYW1lGAEgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgCIAEoARIdChVlbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAyABKAESHQoVZWxldmF0aW9uX2xvc3NfbWV0ZXJzGAQgASgBEhYKDmN1dG9mZl9zZWNvbmRzGAUgASgFEhMKC2NyZXdfYWNjZXNzGAYgASgIEhAKCGRyb3BfYmFnGAcgASgIEgsKA2FpZBgIIAEoCRIfChdwbGFubmVkX3NlZ21lbnRfc2Vjb25kcxgJIAEoBRIcChRwbGFubmVkX3N0b3Bfc2Vjb25kcxgKIAEoBRIYChBzZWdtZW50X3N0cmF0ZWd5GAsgASgJEiAKBmludGFrZRgMIAMoCzIQLnJhY2VzLnYxLkludGFrZRINCgV0YXNrcxgNIAEoCRIZChFjcmV3X2luc3RydWN0aW9ucxgOIAEoCRIZChFkcm9wX2JhZ19jb250ZW50cxgPIAEoCSIrCgZJbnRha2USDwoHcHJvZHVjdBgBIAEoCRIQCghxdWFudGl0eRgCIAEoASJpCg5QYWNpbmdTdHJhdGVneRIQCghzdHJhdGVneRgBIAEoCRIaChJoaWtlX2dyYWRlX3BlcmNlbnQYAiABKAESGgoSaGVhcnRfcmF0ZV9jYXBfYnBtGAMgASgFEg0KBW5vdGVzGAQgASgJIqUBChFOdXRyaXRpb25TdHJhdGVneRIcChRjYXJic19ncmFtc19wZXJfaG91chgBIAEoARIZChFmbHVpZF9tbF9wZXJfaG91chgCIAEoARIaChJzb2RpdW1fbWdfcGVyX2hvdXIYAyABKAESLAoIcHJvZHVjdHMYBCADKAsyGi5yYWNlcy52MS5OdXRyaXRpb25Qcm9kdWN0Eg0KBW5vdGVzGAUgASgJIm8KEE51dHJpdGlvblByb2R1Y3QSDAoEbmFtZRgBIAEoCRITCgtjYXJic19ncmFtcxgCIAEoARIRCglzb2RpdW1fbWcYAyABKAESEAoIZmx1aWRfbWwYBCABKAESEwoLY2FmZmVpbmVfbWcYBSABKAEiXAoIR2Vhckl0ZW0SDAoEbmFtZRgBIAEoCRIRCgltYW5kYXRvcnkYAiABKAgSEAoIbG9jYXRpb24YAyABKAkSDgoGcGFja2VkGAQgASgIEg0KBW5vdGVzGAUgASgJIjwKCENyZXdQbGFuEhAKCGhhc19jcmV3GAEgASgIEg8KB21lbWJlcnMYAiABKAkSDQoFbm90ZXMYAyABKAkiYQoLQ29udGluZ2VuY3kSLwoIc2NlbmFyaW8YASABKA4yHS5yYWNlcy52MS5Db250aW5nZW5jeVNjZW5hcmlvEg8KB3RyaWdnZXIYAiABKAkSEAoIcmVzcG9uc2UYAyABKAkiMQoMVGltZWxpbmVJdGVtEgwKBHRpbWUYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkiMAoOTWVudGFsU3RyYXRlZ3kSDwoHbWFudHJhcxgBIAMoCRINCgVub3RlcxgCIAEoCSLCAwoSQ2hlY2twb2ludEFuYWx5c2lzEgwKBG5hbWUYASABKAkSHwoXc2VnbWVudF9kaXN0YW5jZV9tZXRlcnMYAiABKAESJQodc2VnbWVudF9lbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAyABKAESJQodc2VnbWVudF9lbGV2YXRpb25fbG9zc19tZXRlcnMYBCABKAESFwoPYXJyaXZhbF9zZWNvbmRzGAUgASgFEhoKEmFycml2YWxfY2xvY2tfdGltZRgGIAEoCRIZChFkZXBhcnR1cmVfc2Vjb25kcxgHIAEoBRIdChVjdXRvZmZfYnVmZmVyX3NlY29uZHMYCCABKAUSEgoKaGFzX2N1dG9mZhgJIAEoCBIjChtzZWdtZW50X3BhY2Vfc2Vjb25kc19wZXJfa20YCiABKAESEwoLY2FyYnNfZ3JhbXMYCyABKAESGgoSY2FyYnNfdGFyZ2V0X2dyYW1zGAwgASgBEhAKCGZsdWlkX21sGA0gASgBEhcKD2ZsdWlkX3RhcmdldF9tbBgOIAEoARIRCglzb2RpdW1fbWcYDyABKAESGAoQc29kaXVtX3RhcmdldF9tZxgQIAEoASKEAQoKUnVsZVJlc3VsdBIKCgJpZBgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEg0KBXRpdGxlGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEiQKBnN0YXR1cxgFIAEoDjIULnJhY2VzLnYxLlJ1bGVTdGF0dXMSDwoHbWVzc2FnZRgGIAEoCSK/AgoQUmFjZVBsYW5BbmFseXNpcxIxCgtjaGVja3BvaW50cxgBIAMoCzIcLnJhY2VzLnYxLkNoZWNrcG9pbnRBbmFseXNpcxIeChZwbGFubmVkX2ZpbmlzaF9zZWNvbmRzGAIgASgFEiEKGXBsYW5uZWRfZmluaXNoX2Nsb2NrX3RpbWUYAyABKAkSGQoRdG90YWxfY2FyYnNfZ3JhbXMYBCABKAESFgoOdG90YWxfZmx1aWRfbWwYBSABKAESFwoPdG90YWxfc29kaXVtX21nGAYgASgBEhkKEXRvdGFsX2NhZmZlaW5lX21nGAcgASgBEiMKBXJ1bGVzGAggAygLMhQucmFjZXMudjEuUnVsZVJlc3VsdBIUCgxydWxlc19wYXNzZWQYCSABKAUSEwoLcnVsZXNfdG90YWwYCiABKAUiKAoVQ3JlYXRlUmFjZVBsYW5SZXF1ZXN0Eg8KB3JhY2VfaWQYASABKAkihgEKFkNyZWF0ZVJhY2VQbGFuUmVzcG9uc2USIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEiwKCGFuYWx5c2lzGAMgASgLMhoucmFjZXMudjEuUmFjZVBsYW5BbmFseXNpcyIgChJHZXRSYWNlUGxhblJlcXVlc3QSCgoCaWQYASABKAkigwEKE0dldFJhY2VQbGFuUmVzcG9uc2USIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEiwKCGFuYWx5c2lzGAMgASgLMhoucmFjZXMudjEuUmFjZVBsYW5BbmFseXNpcyIWChRMaXN0UmFjZVBsYW5zUmVxdWVzdCKnAQoPUmFjZVBsYW5TdW1tYXJ5EgoKAmlkGAEgASgJEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEhQKDHJ1bGVzX3Bhc3NlZBgDIAEoBRITCgtydWxlc190b3RhbBgEIAEoBRIOCgZzaGFyZWQYBSABKAgSLwoLdXBkYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIkEKFUxpc3RSYWNlUGxhbnNSZXNwb25zZRIoCgVwbGFucxgBIAMoCzIZLnJhY2VzLnYxLlJhY2VQbGFuU3VtbWFyeSJqChVVcGRhdGVSYWNlUGxhblJlcXVlc3QSIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayKGAQoWVXBkYXRlUmFjZVBsYW5SZXNwb25zZRIgCgRwbGFuGAEgASgLMhIucmFjZXMudjEuUmFjZVBsYW4SHAoEcmFjZRgCIAEoCzIOLnJhY2VzLnYxLlJhY2USLAoIYW5hbHlzaXMYAyABKAsyGi5yYWNlcy52MS5SYWNlUGxhbkFuYWx5c2lzIiMKFURlbGV0ZVJhY2VQbGFuUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVSYWNlUGxhblJlc3BvbnNlIiIKFFNoYXJlUmFjZVBsYW5SZXF1ZXN0EgoKAmlkGAEgASgJIioKFVNoYXJlUmFjZVBsYW5SZXNwb25zZRIRCglzaGFyZV91cmwYASABKAkiJAoWVW5zaGFyZVJhY2VQbGFuUmVxdWVzdBIKCgJpZBgBIAEoCSIZChdVbnNoYXJlUmFjZVBsYW5SZXNwb25zZSIpChhHZXRTaGFyZWRSYWNlUGxhblJlcXVlc3QSDQoFdG9rZW4YASABKAkisAEKGUdldFNoYXJlZFJhY2VQbGFuUmVzcG9uc2USIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEiwKCGFuYWx5c2lzGAMgASgLMhoucmFjZXMudjEuUmFjZVBsYW5BbmFseXNpcxIlCgZjb3Vyc2UYBCADKAsyFS5yb3V0ZXMudjEuUm91dGVQb2ludCqIAwoTQ29udGluZ2VuY3lTY2VuYXJpbxIkCiBDT05USU5HRU5DWV9TQ0VOQVJJT19VTlNQRUNJRklFRBAAEiQKIENPTlRJTkdFTkNZX1NDRU5BUklPX0dJX0RJU1RSRVNTEAESKAokQ09OVElOR0VOQ1lfU0NFTkFSSU9fQkVISU5EX1NDSEVEVUxFEAISIwofQ09OVElOR0VOQ1lfU0NFTkFSSU9fTE9XX0VORVJHWRADEh8KG0NPTlRJTkdFTkNZX1NDRU5BUklPX0lOSlVSWRAEEiAKHENPTlRJTkdFTkNZX1NDRU5BUklPX1dFQVRIRVIQBRIlCiFDT05USU5HRU5DWV9TQ0VOQVJJT19HRUFSX0ZBSUxVUkUQBhInCiNDT05USU5HRU5DWV9TQ0VOQVJJT19MT1dfTU9USVZBVElPThAHEiMKH0NPTlRJTkdFTkNZX1NDRU5BUklPX05BVklHQVRJT04QCBIeChpDT05USU5HRU5DWV9TQ0VOQVJJT19PVEhFUhAJKmsKClJ1bGVTdGF0dXMSGwoXUlVMRV9TVEFUVVNfVU5TUEVDSUZJRUQQABIUChBSVUxFX1NUQVRVU19QQVNTEAESFAoQUlVMRV9TVEFUVVNfV0FSThACEhQKEFJVTEVfU1RBVFVTX0ZBSUwQAzK2BQoPUmFjZVBsYW5TZXJ2aWNlElMKDkNyZWF0ZVJhY2VQbGFuEh8ucmFjZXMudjEuQ3JlYXRlUmFjZVBsYW5SZXF1ZXN0GiAucmFjZXMudjEuQ3JlYXRlUmFjZVBsYW5SZXNwb25zZRJKCgtHZXRSYWNlUGxhbhIcLnJhY2VzLnYxLkdldFJhY2VQbGFuUmVxdWVzdBodLnJhY2VzLnYxLkdldFJhY2VQbGFuUmVzcG9uc2USUAoNTGlzdFJhY2VQbGFucxIeLnJhY2VzLnYxLkxpc3RSYWNlUGxhbnNSZXF1ZXN0Gh8ucmFjZXMudjEuTGlzdFJhY2VQbGFuc1Jlc3BvbnNlElMKDlVwZGF0ZVJhY2VQbGFuEh8ucmFjZXMudjEuVXBkYXRlUmFjZVBsYW5SZXF1ZXN0GiAucmFjZXMudjEuVXBkYXRlUmFjZVBsYW5SZXNwb25zZRJTCg5EZWxldGVSYWNlUGxhbhIfLnJhY2VzLnYxLkRlbGV0ZVJhY2VQbGFuUmVxdWVzdBogLnJhY2VzLnYxLkRlbGV0ZVJhY2VQbGFuUmVzcG9uc2USUAoNU2hhcmVSYWNlUGxhbhIeLnJhY2VzLnYxLlNoYXJlUmFjZVBsYW5SZXF1ZXN0Gh8ucmFjZXMudjEuU2hhcmVSYWNlUGxhblJlc3BvbnNlElYKD1Vuc2hhcmVSYWNlUGxhbhIgLnJhY2VzLnYxLlVuc2hhcmVSYWNlUGxhblJlcXVlc3QaIS5yYWNlcy52MS5VbnNoYXJlUmFjZVBsYW5SZXNwb25zZRJcChFHZXRTaGFyZWRSYWNlUGxhbhIiLnJhY2VzLnYxLkdldFNoYXJlZFJhY2VQbGFuUmVxdWVzdBojLnJhY2VzLnYxLkdldFNoYXJlZFJhY2VQbGFuUmVzcG9uc2VCngEKDGNvbS5yYWNlcy52MUIOUmFjZVBsYW5zUHJvdG9QAVo9Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcmFjZXMvdjE7cmFjZXN2MaICA1JYWKoCCFJhY2VzLlYxygIIUmFjZXNcVjHiAhRSYWNlc1xWMVxHUEJNZXRhZGF0YeoCCVJhY2VzOjpWMWIGcHJvdG8z", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_races_v1_races, file_routes_v1_routes]);
+  fileDesc("ChlyYWNlcy92MS9yYWNlX3BsYW5zLnByb3RvEghyYWNlcy52MSLDBAoIUmFjZVBsYW4SCgoCaWQYASABKAkSDwoHcmFjZV9pZBgCIAEoCRIRCglzaGFyZV91cmwYAyABKAkSLwoLY3JlYXRlX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC3VwZGF0ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIiCgVnb2FscxgGIAEoCzITLnJhY2VzLnYxLlJhY2VHb2FscxIpCgtjaGVja3BvaW50cxgHIAMoCzIULnJhY2VzLnYxLkNoZWNrcG9pbnQSKAoGcGFjaW5nGAggASgLMhgucmFjZXMudjEuUGFjaW5nU3RyYXRlZ3kSLgoJbnV0cml0aW9uGAkgASgLMhsucmFjZXMudjEuTnV0cml0aW9uU3RyYXRlZ3kSIAoEZ2VhchgKIAMoCzISLnJhY2VzLnYxLkdlYXJJdGVtEiAKBGNyZXcYCyABKAsyEi5yYWNlcy52MS5DcmV3UGxhbhIsCg1jb250aW5nZW5jaWVzGAwgAygLMhUucmFjZXMudjEuQ29udGluZ2VuY3kSLAoMcmFjZV9tb3JuaW5nGA0gAygLMhYucmFjZXMudjEuVGltZWxpbmVJdGVtEigKBm1lbnRhbBgOIAEoCzIYLnJhY2VzLnYxLk1lbnRhbFN0cmF0ZWd5Eg0KBW5vdGVzGA8gASgJEiMKCHJhY2VfZGF5GBAgASgLMhEucmFjZXMudjEuUmFjZURheSJoCglSYWNlR29hbHMSGAoQYV9maW5pc2hfc2Vjb25kcxgBIAEoBRIYChBiX2ZpbmlzaF9zZWNvbmRzGAIgASgFEhgKEGNfZmluaXNoX3NlY29uZHMYAyABKAUSDQoFbm90ZXMYBCABKAki/QIKCkNoZWNrcG9pbnQSDAoEbmFtZRgBIAEoCRIXCg9kaXN0YW5jZV9tZXRlcnMYAiABKAESHQoVZWxldmF0aW9uX2dhaW5fbWV0ZXJzGAMgASgBEh0KFWVsZXZhdGlvbl9sb3NzX21ldGVycxgEIAEoARIWCg5jdXRvZmZfc2Vjb25kcxgFIAEoBRITCgtjcmV3X2FjY2VzcxgGIAEoCBIQCghkcm9wX2JhZxgHIAEoCBILCgNhaWQYCCABKAkSHwoXcGxhbm5lZF9zZWdtZW50X3NlY29uZHMYCSABKAUSHAoUcGxhbm5lZF9zdG9wX3NlY29uZHMYCiABKAUSGAoQc2VnbWVudF9zdHJhdGVneRgLIAEoCRIgCgZpbnRha2UYDCADKAsyEC5yYWNlcy52MS5JbnRha2USDQoFdGFza3MYDSABKAkSGQoRY3Jld19pbnN0cnVjdGlvbnMYDiABKAkSGQoRZHJvcF9iYWdfY29udGVudHMYDyABKAkiKwoGSW50YWtlEg8KB3Byb2R1Y3QYASABKAkSEAoIcXVhbnRpdHkYAiABKAEiaQoOUGFjaW5nU3RyYXRlZ3kSEAoIc3RyYXRlZ3kYASABKAkSGgoSaGlrZV9ncmFkZV9wZXJjZW50GAIgASgBEhoKEmhlYXJ0X3JhdGVfY2FwX2JwbRgDIAEoBRINCgVub3RlcxgEIAEoCSKlAQoRTnV0cml0aW9uU3RyYXRlZ3kSHAoUY2FyYnNfZ3JhbXNfcGVyX2hvdXIYASABKAESGQoRZmx1aWRfbWxfcGVyX2hvdXIYAiABKAESGgoSc29kaXVtX21nX3Blcl9ob3VyGAMgASgBEiwKCHByb2R1Y3RzGAQgAygLMhoucmFjZXMudjEuTnV0cml0aW9uUHJvZHVjdBINCgVub3RlcxgFIAEoCSJvChBOdXRyaXRpb25Qcm9kdWN0EgwKBG5hbWUYASABKAkSEwoLY2FyYnNfZ3JhbXMYAiABKAESEQoJc29kaXVtX21nGAMgASgBEhAKCGZsdWlkX21sGAQgASgBEhMKC2NhZmZlaW5lX21nGAUgASgBIlwKCEdlYXJJdGVtEgwKBG5hbWUYASABKAkSEQoJbWFuZGF0b3J5GAIgASgIEhAKCGxvY2F0aW9uGAMgASgJEg4KBnBhY2tlZBgEIAEoCBINCgVub3RlcxgFIAEoCSI8CghDcmV3UGxhbhIQCghoYXNfY3JldxgBIAEoCBIPCgdtZW1iZXJzGAIgASgJEg0KBW5vdGVzGAMgASgJImEKC0NvbnRpbmdlbmN5Ei8KCHNjZW5hcmlvGAEgASgOMh0ucmFjZXMudjEuQ29udGluZ2VuY3lTY2VuYXJpbxIPCgd0cmlnZ2VyGAIgASgJEhAKCHJlc3BvbnNlGAMgASgJIjEKDFRpbWVsaW5lSXRlbRIMCgR0aW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJIjAKDk1lbnRhbFN0cmF0ZWd5Eg8KB21hbnRyYXMYASADKAkSDQoFbm90ZXMYAiABKAkiewoHUmFjZURheRIVCg1saXZldHJhY2tfdXJsGAEgASgJEi4KCnN0YXJ0X3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEikKBnNwbGl0cxgDIAMoCzIZLnJhY2VzLnYxLkNoZWNrcG9pbnRTcGxpdCKRAQoPQ2hlY2twb2ludFNwbGl0EhgKEGNoZWNrcG9pbnRfaW5kZXgYASABKAUSMAoMYXJyaXZhbF90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIyCg5kZXBhcnR1cmVfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAi7QEKEUxpdmVUcmFja1Bvc2l0aW9uEigKBHRpbWUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiAKCGxvY2F0aW9uGAIgASgLMg4uZ2VvLnYxLkxhdExuZxIYChBlbGV2YXRpb25fbWV0ZXJzGAQgASgBEhcKD2Rpc3RhbmNlX21ldGVycxgFIAEoARIeChZjb3Vyc2VfZGlzdGFuY2VfbWV0ZXJzGAYgASgBEhcKD2VsYXBzZWRfc2Vjb25kcxgHIAEoBRIRCglzcGVlZF9tcHMYCCABKAESDQoFZW5kZWQYCSABKAgizwMKEkNoZWNrcG9pbnRFc3RpbWF0ZRIYChBjaGVja3BvaW50X2luZGV4GAEgASgFEgwKBG5hbWUYAiABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGA0gASgBEioKBnN0YXR1cxgDIAEoDjIaLnJhY2VzLnYxLkNoZWNrcG9pbnRTdGF0dXMSMAoMYXJyaXZhbF90aW1lGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIYChBhcnJpdmFsX3JlY29yZGVkGAUgASgIEjIKDmRlcGFydHVyZV90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIaChJkZXBhcnR1cmVfcmVjb3JkZWQYByABKAgSOAoUcGxhbm5lZF9hcnJpdmFsX3RpbWUYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhUKDWRlbGF5X3NlY29uZHMYCSABKAUSLwoLY3V0b2ZmX3RpbWUYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh0KFWN1dG9mZl9idWZmZXJfc2Vjb25kcxgLIAEoBRIPCgdvdmVyZHVlGAwgASgIIrIECg1SYWNlRGF5U3RhdHVzEiMKCHJhY2VfZGF5GAEgASgLMhEucmFjZXMudjEuUmFjZURheRIuCgpzdGFydF90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI0ChFzdGFydF90aW1lX3NvdXJjZRgLIAEoDjIZLnJhY2VzLnYxLlN0YXJ0VGltZVNvdXJjZRIuCglsaXZldHJhY2sYAyABKAsyGy5yYWNlcy52MS5MaXZlVHJhY2tQb3NpdGlvbhIXCg9saXZldHJhY2tfZXJyb3IYBCABKAkSMQoPZXN0aW1hdGVfc291cmNlGAUgASgOMhgucmFjZXMudjEuRXN0aW1hdGVTb3VyY2USEwoLcGFjZV9mYWN0b3IYBiABKAESFwoPZGlzdGFuY2VfbWV0ZXJzGAcgASgBEiEKGWVzdGltYXRlZF9kaXN0YW5jZV9tZXRlcnMYDCABKAESKgoSZXN0aW1hdGVkX2xvY2F0aW9uGA0gASgLMg4uZ2VvLnYxLkxhdExuZxIxCgtjaGVja3BvaW50cxgIIAMoCzIcLnJhY2VzLnYxLkNoZWNrcG9pbnRFc3RpbWF0ZRI5ChVlc3RpbWF0ZWRfZmluaXNoX3RpbWUYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC3N0YXR1c190aW1lGAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCLCAwoSQ2hlY2twb2ludEFuYWx5c2lzEgwKBG5hbWUYASABKAkSHwoXc2VnbWVudF9kaXN0YW5jZV9tZXRlcnMYAiABKAESJQodc2VnbWVudF9lbGV2YXRpb25fZ2Fpbl9tZXRlcnMYAyABKAESJQodc2VnbWVudF9lbGV2YXRpb25fbG9zc19tZXRlcnMYBCABKAESFwoPYXJyaXZhbF9zZWNvbmRzGAUgASgFEhoKEmFycml2YWxfY2xvY2tfdGltZRgGIAEoCRIZChFkZXBhcnR1cmVfc2Vjb25kcxgHIAEoBRIdChVjdXRvZmZfYnVmZmVyX3NlY29uZHMYCCABKAUSEgoKaGFzX2N1dG9mZhgJIAEoCBIjChtzZWdtZW50X3BhY2Vfc2Vjb25kc19wZXJfa20YCiABKAESEwoLY2FyYnNfZ3JhbXMYCyABKAESGgoSY2FyYnNfdGFyZ2V0X2dyYW1zGAwgASgBEhAKCGZsdWlkX21sGA0gASgBEhcKD2ZsdWlkX3RhcmdldF9tbBgOIAEoARIRCglzb2RpdW1fbWcYDyABKAESGAoQc29kaXVtX3RhcmdldF9tZxgQIAEoASKEAQoKUnVsZVJlc3VsdBIKCgJpZBgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEg0KBXRpdGxlGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEiQKBnN0YXR1cxgFIAEoDjIULnJhY2VzLnYxLlJ1bGVTdGF0dXMSDwoHbWVzc2FnZRgGIAEoCSK/AgoQUmFjZVBsYW5BbmFseXNpcxIxCgtjaGVja3BvaW50cxgBIAMoCzIcLnJhY2VzLnYxLkNoZWNrcG9pbnRBbmFseXNpcxIeChZwbGFubmVkX2ZpbmlzaF9zZWNvbmRzGAIgASgFEiEKGXBsYW5uZWRfZmluaXNoX2Nsb2NrX3RpbWUYAyABKAkSGQoRdG90YWxfY2FyYnNfZ3JhbXMYBCABKAESFgoOdG90YWxfZmx1aWRfbWwYBSABKAESFwoPdG90YWxfc29kaXVtX21nGAYgASgBEhkKEXRvdGFsX2NhZmZlaW5lX21nGAcgASgBEiMKBXJ1bGVzGAggAygLMhQucmFjZXMudjEuUnVsZVJlc3VsdBIUCgxydWxlc19wYXNzZWQYCSABKAUSEwoLcnVsZXNfdG90YWwYCiABKAUiKAoVQ3JlYXRlUmFjZVBsYW5SZXF1ZXN0Eg8KB3JhY2VfaWQYASABKAkihgEKFkNyZWF0ZVJhY2VQbGFuUmVzcG9uc2USIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEiwKCGFuYWx5c2lzGAMgASgLMhoucmFjZXMudjEuUmFjZVBsYW5BbmFseXNpcyIgChJHZXRSYWNlUGxhblJlcXVlc3QSCgoCaWQYASABKAkigwEKE0dldFJhY2VQbGFuUmVzcG9uc2USIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEiwKCGFuYWx5c2lzGAMgASgLMhoucmFjZXMudjEuUmFjZVBsYW5BbmFseXNpcyIWChRMaXN0UmFjZVBsYW5zUmVxdWVzdCKnAQoPUmFjZVBsYW5TdW1tYXJ5EgoKAmlkGAEgASgJEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEhQKDHJ1bGVzX3Bhc3NlZBgDIAEoBRITCgtydWxlc190b3RhbBgEIAEoBRIOCgZzaGFyZWQYBSABKAgSLwoLdXBkYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIkEKFUxpc3RSYWNlUGxhbnNSZXNwb25zZRIoCgVwbGFucxgBIAMoCzIZLnJhY2VzLnYxLlJhY2VQbGFuU3VtbWFyeSJqChVVcGRhdGVSYWNlUGxhblJlcXVlc3QSIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayKGAQoWVXBkYXRlUmFjZVBsYW5SZXNwb25zZRIgCgRwbGFuGAEgASgLMhIucmFjZXMudjEuUmFjZVBsYW4SHAoEcmFjZRgCIAEoCzIOLnJhY2VzLnYxLlJhY2USLAoIYW5hbHlzaXMYAyABKAsyGi5yYWNlcy52MS5SYWNlUGxhbkFuYWx5c2lzIiMKFURlbGV0ZVJhY2VQbGFuUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVSYWNlUGxhblJlc3BvbnNlIiIKFFNoYXJlUmFjZVBsYW5SZXF1ZXN0EgoKAmlkGAEgASgJIioKFVNoYXJlUmFjZVBsYW5SZXNwb25zZRIRCglzaGFyZV91cmwYASABKAkiJAoWVW5zaGFyZVJhY2VQbGFuUmVxdWVzdBIKCgJpZBgBIAEoCSIZChdVbnNoYXJlUmFjZVBsYW5SZXNwb25zZSIpChhHZXRTaGFyZWRSYWNlUGxhblJlcXVlc3QSDQoFdG9rZW4YASABKAkisAEKGUdldFNoYXJlZFJhY2VQbGFuUmVzcG9uc2USIAoEcGxhbhgBIAEoCzISLnJhY2VzLnYxLlJhY2VQbGFuEhwKBHJhY2UYAiABKAsyDi5yYWNlcy52MS5SYWNlEiwKCGFuYWx5c2lzGAMgASgLMhoucmFjZXMudjEuUmFjZVBsYW5BbmFseXNpcxIlCgZjb3Vyc2UYBCADKAsyFS5yb3V0ZXMudjEuUm91dGVQb2ludCJLChdHZXRSYWNlRGF5U3RhdHVzUmVxdWVzdBIRCgdwbGFuX2lkGAEgASgJSAASFQoLc2hhcmVfdG9rZW4YAiABKAlIAEIGCgRwbGFuIkMKGEdldFJhY2VEYXlTdGF0dXNSZXNwb25zZRInCgZzdGF0dXMYASABKAsyFy5yYWNlcy52MS5SYWNlRGF5U3RhdHVzIp4BChRVcGRhdGVSYWNlRGF5UmVxdWVzdBIRCgdwbGFuX2lkGAEgASgJSAASFQoLc2hhcmVfdG9rZW4YAiABKAlIABIjCghyYWNlX2RheRgDIAEoCzIRLnJhY2VzLnYxLlJhY2VEYXkSLwoLdXBkYXRlX21hc2sYBCABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrQgYKBHBsYW4iQAoVVXBkYXRlUmFjZURheVJlc3BvbnNlEicKBnN0YXR1cxgBIAEoCzIXLnJhY2VzLnYxLlJhY2VEYXlTdGF0dXMidwoZU2V0Q2hlY2twb2ludFNwbGl0UmVxdWVzdBIRCgdwbGFuX2lkGAEgASgJSAASFQoLc2hhcmVfdG9rZW4YAiABKAlIABIoCgVzcGxpdBgDIAEoCzIZLnJhY2VzLnYxLkNoZWNrcG9pbnRTcGxpdEIGCgRwbGFuIkUKGlNldENoZWNrcG9pbnRTcGxpdFJlc3BvbnNlEicKBnN0YXR1cxgBIAEoCzIXLnJhY2VzLnYxLlJhY2VEYXlTdGF0dXMqiAMKE0NvbnRpbmdlbmN5U2NlbmFyaW8SJAogQ09OVElOR0VOQ1lfU0NFTkFSSU9fVU5TUEVDSUZJRUQQABIkCiBDT05USU5HRU5DWV9TQ0VOQVJJT19HSV9ESVNUUkVTUxABEigKJENPTlRJTkdFTkNZX1NDRU5BUklPX0JFSElORF9TQ0hFRFVMRRACEiMKH0NPTlRJTkdFTkNZX1NDRU5BUklPX0xPV19FTkVSR1kQAxIfChtDT05USU5HRU5DWV9TQ0VOQVJJT19JTkpVUlkQBBIgChxDT05USU5HRU5DWV9TQ0VOQVJJT19XRUFUSEVSEAUSJQohQ09OVElOR0VOQ1lfU0NFTkFSSU9fR0VBUl9GQUlMVVJFEAYSJwojQ09OVElOR0VOQ1lfU0NFTkFSSU9fTE9XX01PVElWQVRJT04QBxIjCh9DT05USU5HRU5DWV9TQ0VOQVJJT19OQVZJR0FUSU9OEAgSHgoaQ09OVElOR0VOQ1lfU0NFTkFSSU9fT1RIRVIQCSqKAQoORXN0aW1hdGVTb3VyY2USHwobRVNUSU1BVEVfU09VUkNFX1VOU1BFQ0lGSUVEEAASGAoURVNUSU1BVEVfU09VUkNFX1BMQU4QARIeChpFU1RJTUFURV9TT1VSQ0VfQ0hFQ0tQT0lOVBACEh0KGUVTVElNQVRFX1NPVVJDRV9MSVZFVFJBQ0sQAyqUAQoQQ2hlY2twb2ludFN0YXR1cxIhCh1DSEVDS1BPSU5UX1NUQVRVU19VTlNQRUNJRklFRBAAEh4KGkNIRUNLUE9JTlRfU1RBVFVTX1VQQ09NSU5HEAESHQoZQ0hFQ0tQT0lOVF9TVEFUVVNfQVJSSVZFRBACEh4KGkNIRUNLUE9JTlRfU1RBVFVTX0RFUEFSVEVEEAMqdQoPU3RhcnRUaW1lU291cmNlEiEKHVNUQVJUX1RJTUVfU09VUkNFX1VOU1BFQ0lGSUVEEAASHgoaU1RBUlRfVElNRV9TT1VSQ0VfUkVDT1JERUQQARIfChtTVEFSVF9USU1FX1NPVVJDRV9MSVZFVFJBQ0sQAiprCgpSdWxlU3RhdHVzEhsKF1JVTEVfU1RBVFVTX1VOU1BFQ0lGSUVEEAASFAoQUlVMRV9TVEFUVVNfUEFTUxABEhQKEFJVTEVfU1RBVFVTX1dBUk4QAhIUChBSVUxFX1NUQVRVU19GQUlMEAMyxAcKD1JhY2VQbGFuU2VydmljZRJTCg5DcmVhdGVSYWNlUGxhbhIfLnJhY2VzLnYxLkNyZWF0ZVJhY2VQbGFuUmVxdWVzdBogLnJhY2VzLnYxLkNyZWF0ZVJhY2VQbGFuUmVzcG9uc2USSgoLR2V0UmFjZVBsYW4SHC5yYWNlcy52MS5HZXRSYWNlUGxhblJlcXVlc3QaHS5yYWNlcy52MS5HZXRSYWNlUGxhblJlc3BvbnNlElAKDUxpc3RSYWNlUGxhbnMSHi5yYWNlcy52MS5MaXN0UmFjZVBsYW5zUmVxdWVzdBofLnJhY2VzLnYxLkxpc3RSYWNlUGxhbnNSZXNwb25zZRJTCg5VcGRhdGVSYWNlUGxhbhIfLnJhY2VzLnYxLlVwZGF0ZVJhY2VQbGFuUmVxdWVzdBogLnJhY2VzLnYxLlVwZGF0ZVJhY2VQbGFuUmVzcG9uc2USUwoORGVsZXRlUmFjZVBsYW4SHy5yYWNlcy52MS5EZWxldGVSYWNlUGxhblJlcXVlc3QaIC5yYWNlcy52MS5EZWxldGVSYWNlUGxhblJlc3BvbnNlElAKDVNoYXJlUmFjZVBsYW4SHi5yYWNlcy52MS5TaGFyZVJhY2VQbGFuUmVxdWVzdBofLnJhY2VzLnYxLlNoYXJlUmFjZVBsYW5SZXNwb25zZRJWCg9VbnNoYXJlUmFjZVBsYW4SIC5yYWNlcy52MS5VbnNoYXJlUmFjZVBsYW5SZXF1ZXN0GiEucmFjZXMudjEuVW5zaGFyZVJhY2VQbGFuUmVzcG9uc2USXAoRR2V0U2hhcmVkUmFjZVBsYW4SIi5yYWNlcy52MS5HZXRTaGFyZWRSYWNlUGxhblJlcXVlc3QaIy5yYWNlcy52MS5HZXRTaGFyZWRSYWNlUGxhblJlc3BvbnNlElkKEEdldFJhY2VEYXlTdGF0dXMSIS5yYWNlcy52MS5HZXRSYWNlRGF5U3RhdHVzUmVxdWVzdBoiLnJhY2VzLnYxLkdldFJhY2VEYXlTdGF0dXNSZXNwb25zZRJQCg1VcGRhdGVSYWNlRGF5Eh4ucmFjZXMudjEuVXBkYXRlUmFjZURheVJlcXVlc3QaHy5yYWNlcy52MS5VcGRhdGVSYWNlRGF5UmVzcG9uc2USXwoSU2V0Q2hlY2twb2ludFNwbGl0EiMucmFjZXMudjEuU2V0Q2hlY2twb2ludFNwbGl0UmVxdWVzdBokLnJhY2VzLnYxLlNldENoZWNrcG9pbnRTcGxpdFJlc3BvbnNlQp4BCgxjb20ucmFjZXMudjFCDlJhY2VQbGFuc1Byb3RvUAFaPWdpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL3JhY2VzL3YxO3JhY2VzdjGiAgNSWFiqAghSYWNlcy5WMcoCCFJhY2VzXFYx4gIUUmFjZXNcVjFcR1BCTWV0YWRhdGHqAglSYWNlczo6VjFiBnByb3RvMw", [file_geo_v1_geo, file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_races_v1_races, file_routes_v1_routes]);
 
 /**
  * A race plan.
@@ -130,6 +132,14 @@ export type RacePlan = Message<"races.v1.RacePlan"> & {
    * @generated from field: string notes = 15;
    */
   notes: string;
+
+  /**
+   * What happened on race day. Updated with UpdateRaceDay, not
+   * UpdateRacePlan.
+   *
+   * @generated from field: races.v1.RaceDay race_day = 16;
+   */
+  raceDay?: RaceDay | undefined;
 };
 
 /**
@@ -653,6 +663,372 @@ export const MentalStrategySchema: GenMessage<MentalStrategy> = /*@__PURE__*/
   messageDesc(file_races_v1_race_plans, 11);
 
 /**
+ * What happened on race day, as recorded by the runner or crew.
+ *
+ * @generated from message races.v1.RaceDay
+ */
+export type RaceDay = Message<"races.v1.RaceDay"> & {
+  /**
+   * The Garmin LiveTrack link of the runner's activity, e.g.
+   * https://livetrack.garmin.com/session/<id>/token/<token>. Empty if not
+   * linked.
+   *
+   * @generated from field: string livetrack_url = 1;
+   */
+  livetrackUrl: string;
+
+  /**
+   * When the runner started. If unset, the start time of the LiveTrack
+   * session is used.
+   *
+   * @generated from field: google.protobuf.Timestamp start_time = 2;
+   */
+  startTime?: Timestamp | undefined;
+
+  /**
+   * The recorded checkpoint times.
+   *
+   * @generated from field: repeated races.v1.CheckpointSplit splits = 3;
+   */
+  splits: CheckpointSplit[];
+};
+
+/**
+ * Describes the message races.v1.RaceDay.
+ * Use `create(RaceDaySchema)` to create a new message.
+ */
+export const RaceDaySchema: GenMessage<RaceDay> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 12);
+
+/**
+ * The recorded times at a checkpoint.
+ *
+ * @generated from message races.v1.CheckpointSplit
+ */
+export type CheckpointSplit = Message<"races.v1.CheckpointSplit"> & {
+  /**
+   * The index of the checkpoint in the plan, starting at 0.
+   *
+   * @generated from field: int32 checkpoint_index = 1;
+   */
+  checkpointIndex: number;
+
+  /**
+   * When the runner arrived at the checkpoint, if recorded.
+   *
+   * @generated from field: google.protobuf.Timestamp arrival_time = 2;
+   */
+  arrivalTime?: Timestamp | undefined;
+
+  /**
+   * When the runner left the checkpoint, if recorded.
+   *
+   * @generated from field: google.protobuf.Timestamp departure_time = 3;
+   */
+  departureTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message races.v1.CheckpointSplit.
+ * Use `create(CheckpointSplitSchema)` to create a new message.
+ */
+export const CheckpointSplitSchema: GenMessage<CheckpointSplit> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 13);
+
+/**
+ * The runner's latest position from Garmin LiveTrack.
+ *
+ * @generated from message races.v1.LiveTrackPosition
+ */
+export type LiveTrackPosition = Message<"races.v1.LiveTrackPosition"> & {
+  /**
+   * When the position was recorded.
+   *
+   * @generated from field: google.protobuf.Timestamp time = 1;
+   */
+  time?: Timestamp | undefined;
+
+  /**
+   * The location.
+   *
+   * @generated from field: geo.v1.LatLng location = 2;
+   */
+  location?: LatLng | undefined;
+
+  /**
+   * The elevation in meters, if known.
+   *
+   * @generated from field: double elevation_meters = 4;
+   */
+  elevationMeters: number;
+
+  /**
+   * The distance recorded by the watch in meters.
+   *
+   * @generated from field: double distance_meters = 5;
+   */
+  distanceMeters: number;
+
+  /**
+   * The position matched to the race course, as a distance from the start in
+   * meters. Equal to distance_meters if the race has no course.
+   *
+   * @generated from field: double course_distance_meters = 6;
+   */
+  courseDistanceMeters: number;
+
+  /**
+   * The elapsed time of the activity in seconds.
+   *
+   * @generated from field: int32 elapsed_seconds = 7;
+   */
+  elapsedSeconds: number;
+
+  /**
+   * The current speed in meters per second.
+   *
+   * @generated from field: double speed_mps = 8;
+   */
+  speedMps: number;
+
+  /**
+   * Whether the activity has ended.
+   *
+   * @generated from field: bool ended = 9;
+   */
+  ended: boolean;
+};
+
+/**
+ * Describes the message races.v1.LiveTrackPosition.
+ * Use `create(LiveTrackPositionSchema)` to create a new message.
+ */
+export const LiveTrackPositionSchema: GenMessage<LiveTrackPosition> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 14);
+
+/**
+ * The estimated and recorded times at a checkpoint.
+ *
+ * @generated from message races.v1.CheckpointEstimate
+ */
+export type CheckpointEstimate = Message<"races.v1.CheckpointEstimate"> & {
+  /**
+   * The index of the checkpoint in the plan.
+   *
+   * @generated from field: int32 checkpoint_index = 1;
+   */
+  checkpointIndex: number;
+
+  /**
+   * The name of the checkpoint.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * The distance of the checkpoint from the start in meters.
+   *
+   * @generated from field: double distance_meters = 13;
+   */
+  distanceMeters: number;
+
+  /**
+   * Where the runner is relative to the checkpoint.
+   *
+   * @generated from field: races.v1.CheckpointStatus status = 3;
+   */
+  status: CheckpointStatus;
+
+  /**
+   * The arrival time: recorded if arrival_recorded is set, otherwise
+   * estimated.
+   *
+   * @generated from field: google.protobuf.Timestamp arrival_time = 4;
+   */
+  arrivalTime?: Timestamp | undefined;
+
+  /**
+   * Whether the arrival time was recorded rather than estimated.
+   *
+   * @generated from field: bool arrival_recorded = 5;
+   */
+  arrivalRecorded: boolean;
+
+  /**
+   * The departure time: recorded if departure_recorded is set, otherwise
+   * estimated.
+   *
+   * @generated from field: google.protobuf.Timestamp departure_time = 6;
+   */
+  departureTime?: Timestamp | undefined;
+
+  /**
+   * Whether the departure time was recorded rather than estimated.
+   *
+   * @generated from field: bool departure_recorded = 7;
+   */
+  departureRecorded: boolean;
+
+  /**
+   * The arrival time according to the plan, from the actual start time.
+   *
+   * @generated from field: google.protobuf.Timestamp planned_arrival_time = 8;
+   */
+  plannedArrivalTime?: Timestamp | undefined;
+
+  /**
+   * The difference between the arrival time and the planned arrival time in
+   * seconds. Positive if behind the plan.
+   *
+   * @generated from field: int32 delay_seconds = 9;
+   */
+  delaySeconds: number;
+
+  /**
+   * The cutoff time, if the checkpoint has a cutoff.
+   *
+   * @generated from field: google.protobuf.Timestamp cutoff_time = 10;
+   */
+  cutoffTime?: Timestamp | undefined;
+
+  /**
+   * The time between the arrival time and the cutoff in seconds. Negative
+   * if the cutoff is missed.
+   *
+   * @generated from field: int32 cutoff_buffer_seconds = 11;
+   */
+  cutoffBufferSeconds: number;
+
+  /**
+   * Whether the runner was expected at the checkpoint but hasn't been
+   * recorded there yet.
+   *
+   * @generated from field: bool overdue = 12;
+   */
+  overdue: boolean;
+};
+
+/**
+ * Describes the message races.v1.CheckpointEstimate.
+ * Use `create(CheckpointEstimateSchema)` to create a new message.
+ */
+export const CheckpointEstimateSchema: GenMessage<CheckpointEstimate> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 15);
+
+/**
+ * The live status of a race.
+ *
+ * @generated from message races.v1.RaceDayStatus
+ */
+export type RaceDayStatus = Message<"races.v1.RaceDayStatus"> & {
+  /**
+   * The recorded race day data.
+   *
+   * @generated from field: races.v1.RaceDay race_day = 1;
+   */
+  raceDay?: RaceDay | undefined;
+
+  /**
+   * The start time used for estimates: recorded, or from LiveTrack. Unset if
+   * unknown, in which case there are no estimates.
+   *
+   * @generated from field: google.protobuf.Timestamp start_time = 2;
+   */
+  startTime?: Timestamp | undefined;
+
+  /**
+   * Where the start time comes from. Unspecified if there is no start time.
+   *
+   * @generated from field: races.v1.StartTimeSource start_time_source = 11;
+   */
+  startTimeSource: StartTimeSource;
+
+  /**
+   * The latest LiveTrack position, if a LiveTrack session is linked and has
+   * data.
+   *
+   * @generated from field: races.v1.LiveTrackPosition livetrack = 3;
+   */
+  livetrack?: LiveTrackPosition | undefined;
+
+  /**
+   * Why the LiveTrack position couldn't be fetched, if it failed.
+   *
+   * @generated from field: string livetrack_error = 4;
+   */
+  livetrackError: string;
+
+  /**
+   * What the estimates are based on.
+   *
+   * @generated from field: races.v1.EstimateSource estimate_source = 5;
+   */
+  estimateSource: EstimateSource;
+
+  /**
+   * The runner's moving pace relative to the plan, e.g. 1.1 means 10% slower
+   * than planned. 1 if there is no progress yet.
+   *
+   * @generated from field: double pace_factor = 6;
+   */
+  paceFactor: number;
+
+  /**
+   * The distance covered at the latest known progress (a recorded checkpoint
+   * or LiveTrack position), in meters.
+   *
+   * @generated from field: double distance_meters = 7;
+   */
+  distanceMeters: number;
+
+  /**
+   * The estimated distance covered now, in meters, extrapolated from the
+   * latest known progress and the estimates.
+   *
+   * @generated from field: double estimated_distance_meters = 12;
+   */
+  estimatedDistanceMeters: number;
+
+  /**
+   * The runner's estimated location now: the LiveTrack position if it is
+   * the latest known progress, otherwise the point on the course at
+   * estimated_distance_meters. Unset if unknown.
+   *
+   * @generated from field: geo.v1.LatLng estimated_location = 13;
+   */
+  estimatedLocation?: LatLng | undefined;
+
+  /**
+   * The estimates for each checkpoint, in course order.
+   *
+   * @generated from field: repeated races.v1.CheckpointEstimate checkpoints = 8;
+   */
+  checkpoints: CheckpointEstimate[];
+
+  /**
+   * The estimated finish time.
+   *
+   * @generated from field: google.protobuf.Timestamp estimated_finish_time = 9;
+   */
+  estimatedFinishTime?: Timestamp | undefined;
+
+  /**
+   * When the status was computed.
+   *
+   * @generated from field: google.protobuf.Timestamp status_time = 10;
+   */
+  statusTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message races.v1.RaceDayStatus.
+ * Use `create(RaceDayStatusSchema)` to create a new message.
+ */
+export const RaceDayStatusSchema: GenMessage<RaceDayStatus> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 16);
+
+/**
  * The computed analysis of a checkpoint.
  *
  * @generated from message races.v1.CheckpointAnalysis
@@ -778,7 +1154,7 @@ export type CheckpointAnalysis = Message<"races.v1.CheckpointAnalysis"> & {
  * Use `create(CheckpointAnalysisSchema)` to create a new message.
  */
 export const CheckpointAnalysisSchema: GenMessage<CheckpointAnalysis> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 12);
+  messageDesc(file_races_v1_race_plans, 17);
 
 /**
  * The result of checking a plan against a rule.
@@ -834,7 +1210,7 @@ export type RuleResult = Message<"races.v1.RuleResult"> & {
  * Use `create(RuleResultSchema)` to create a new message.
  */
 export const RuleResultSchema: GenMessage<RuleResult> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 13);
+  messageDesc(file_races_v1_race_plans, 18);
 
 /**
  * The computed analysis of a race plan.
@@ -918,7 +1294,7 @@ export type RacePlanAnalysis = Message<"races.v1.RacePlanAnalysis"> & {
  * Use `create(RacePlanAnalysisSchema)` to create a new message.
  */
 export const RacePlanAnalysisSchema: GenMessage<RacePlanAnalysis> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 14);
+  messageDesc(file_races_v1_race_plans, 19);
 
 /**
  * @generated from message races.v1.CreateRacePlanRequest
@@ -937,7 +1313,7 @@ export type CreateRacePlanRequest = Message<"races.v1.CreateRacePlanRequest"> & 
  * Use `create(CreateRacePlanRequestSchema)` to create a new message.
  */
 export const CreateRacePlanRequestSchema: GenMessage<CreateRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 15);
+  messageDesc(file_races_v1_race_plans, 20);
 
 /**
  * @generated from message races.v1.CreateRacePlanResponse
@@ -970,7 +1346,7 @@ export type CreateRacePlanResponse = Message<"races.v1.CreateRacePlanResponse"> 
  * Use `create(CreateRacePlanResponseSchema)` to create a new message.
  */
 export const CreateRacePlanResponseSchema: GenMessage<CreateRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 16);
+  messageDesc(file_races_v1_race_plans, 21);
 
 /**
  * @generated from message races.v1.GetRacePlanRequest
@@ -989,7 +1365,7 @@ export type GetRacePlanRequest = Message<"races.v1.GetRacePlanRequest"> & {
  * Use `create(GetRacePlanRequestSchema)` to create a new message.
  */
 export const GetRacePlanRequestSchema: GenMessage<GetRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 17);
+  messageDesc(file_races_v1_race_plans, 22);
 
 /**
  * @generated from message races.v1.GetRacePlanResponse
@@ -1022,7 +1398,7 @@ export type GetRacePlanResponse = Message<"races.v1.GetRacePlanResponse"> & {
  * Use `create(GetRacePlanResponseSchema)` to create a new message.
  */
 export const GetRacePlanResponseSchema: GenMessage<GetRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 18);
+  messageDesc(file_races_v1_race_plans, 23);
 
 /**
  * @generated from message races.v1.ListRacePlansRequest
@@ -1035,7 +1411,7 @@ export type ListRacePlansRequest = Message<"races.v1.ListRacePlansRequest"> & {
  * Use `create(ListRacePlansRequestSchema)` to create a new message.
  */
 export const ListRacePlansRequestSchema: GenMessage<ListRacePlansRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 19);
+  messageDesc(file_races_v1_race_plans, 24);
 
 /**
  * A race plan with its race, for listings.
@@ -1091,7 +1467,7 @@ export type RacePlanSummary = Message<"races.v1.RacePlanSummary"> & {
  * Use `create(RacePlanSummarySchema)` to create a new message.
  */
 export const RacePlanSummarySchema: GenMessage<RacePlanSummary> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 20);
+  messageDesc(file_races_v1_race_plans, 25);
 
 /**
  * @generated from message races.v1.ListRacePlansResponse
@@ -1110,7 +1486,7 @@ export type ListRacePlansResponse = Message<"races.v1.ListRacePlansResponse"> & 
  * Use `create(ListRacePlansResponseSchema)` to create a new message.
  */
 export const ListRacePlansResponseSchema: GenMessage<ListRacePlansResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 21);
+  messageDesc(file_races_v1_race_plans, 26);
 
 /**
  * @generated from message races.v1.UpdateRacePlanRequest
@@ -1137,7 +1513,7 @@ export type UpdateRacePlanRequest = Message<"races.v1.UpdateRacePlanRequest"> & 
  * Use `create(UpdateRacePlanRequestSchema)` to create a new message.
  */
 export const UpdateRacePlanRequestSchema: GenMessage<UpdateRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 22);
+  messageDesc(file_races_v1_race_plans, 27);
 
 /**
  * @generated from message races.v1.UpdateRacePlanResponse
@@ -1170,7 +1546,7 @@ export type UpdateRacePlanResponse = Message<"races.v1.UpdateRacePlanResponse"> 
  * Use `create(UpdateRacePlanResponseSchema)` to create a new message.
  */
 export const UpdateRacePlanResponseSchema: GenMessage<UpdateRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 23);
+  messageDesc(file_races_v1_race_plans, 28);
 
 /**
  * @generated from message races.v1.DeleteRacePlanRequest
@@ -1189,7 +1565,7 @@ export type DeleteRacePlanRequest = Message<"races.v1.DeleteRacePlanRequest"> & 
  * Use `create(DeleteRacePlanRequestSchema)` to create a new message.
  */
 export const DeleteRacePlanRequestSchema: GenMessage<DeleteRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 24);
+  messageDesc(file_races_v1_race_plans, 29);
 
 /**
  * @generated from message races.v1.DeleteRacePlanResponse
@@ -1202,7 +1578,7 @@ export type DeleteRacePlanResponse = Message<"races.v1.DeleteRacePlanResponse"> 
  * Use `create(DeleteRacePlanResponseSchema)` to create a new message.
  */
 export const DeleteRacePlanResponseSchema: GenMessage<DeleteRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 25);
+  messageDesc(file_races_v1_race_plans, 30);
 
 /**
  * @generated from message races.v1.ShareRacePlanRequest
@@ -1221,7 +1597,7 @@ export type ShareRacePlanRequest = Message<"races.v1.ShareRacePlanRequest"> & {
  * Use `create(ShareRacePlanRequestSchema)` to create a new message.
  */
 export const ShareRacePlanRequestSchema: GenMessage<ShareRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 26);
+  messageDesc(file_races_v1_race_plans, 31);
 
 /**
  * @generated from message races.v1.ShareRacePlanResponse
@@ -1240,7 +1616,7 @@ export type ShareRacePlanResponse = Message<"races.v1.ShareRacePlanResponse"> & 
  * Use `create(ShareRacePlanResponseSchema)` to create a new message.
  */
 export const ShareRacePlanResponseSchema: GenMessage<ShareRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 27);
+  messageDesc(file_races_v1_race_plans, 32);
 
 /**
  * @generated from message races.v1.UnshareRacePlanRequest
@@ -1259,7 +1635,7 @@ export type UnshareRacePlanRequest = Message<"races.v1.UnshareRacePlanRequest"> 
  * Use `create(UnshareRacePlanRequestSchema)` to create a new message.
  */
 export const UnshareRacePlanRequestSchema: GenMessage<UnshareRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 28);
+  messageDesc(file_races_v1_race_plans, 33);
 
 /**
  * @generated from message races.v1.UnshareRacePlanResponse
@@ -1272,7 +1648,7 @@ export type UnshareRacePlanResponse = Message<"races.v1.UnshareRacePlanResponse"
  * Use `create(UnshareRacePlanResponseSchema)` to create a new message.
  */
 export const UnshareRacePlanResponseSchema: GenMessage<UnshareRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 29);
+  messageDesc(file_races_v1_race_plans, 34);
 
 /**
  * @generated from message races.v1.GetSharedRacePlanRequest
@@ -1291,7 +1667,7 @@ export type GetSharedRacePlanRequest = Message<"races.v1.GetSharedRacePlanReques
  * Use `create(GetSharedRacePlanRequestSchema)` to create a new message.
  */
 export const GetSharedRacePlanRequestSchema: GenMessage<GetSharedRacePlanRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 30);
+  messageDesc(file_races_v1_race_plans, 35);
 
 /**
  * @generated from message races.v1.GetSharedRacePlanResponse
@@ -1332,7 +1708,192 @@ export type GetSharedRacePlanResponse = Message<"races.v1.GetSharedRacePlanRespo
  * Use `create(GetSharedRacePlanResponseSchema)` to create a new message.
  */
 export const GetSharedRacePlanResponseSchema: GenMessage<GetSharedRacePlanResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_plans, 31);
+  messageDesc(file_races_v1_race_plans, 36);
+
+/**
+ * @generated from message races.v1.GetRaceDayStatusRequest
+ */
+export type GetRaceDayStatusRequest = Message<"races.v1.GetRaceDayStatusRequest"> & {
+  /**
+   * The plan to get the status of. Exactly one must be set.
+   *
+   * @generated from oneof races.v1.GetRaceDayStatusRequest.plan
+   */
+  plan: {
+    /**
+     * The ID of the plan. Requires authentication.
+     *
+     * @generated from field: string plan_id = 1;
+     */
+    value: string;
+    case: "planId";
+  } | {
+    /**
+     * The share token of the plan.
+     *
+     * @generated from field: string share_token = 2;
+     */
+    value: string;
+    case: "shareToken";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message races.v1.GetRaceDayStatusRequest.
+ * Use `create(GetRaceDayStatusRequestSchema)` to create a new message.
+ */
+export const GetRaceDayStatusRequestSchema: GenMessage<GetRaceDayStatusRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 37);
+
+/**
+ * @generated from message races.v1.GetRaceDayStatusResponse
+ */
+export type GetRaceDayStatusResponse = Message<"races.v1.GetRaceDayStatusResponse"> & {
+  /**
+   * The race day status.
+   *
+   * @generated from field: races.v1.RaceDayStatus status = 1;
+   */
+  status?: RaceDayStatus | undefined;
+};
+
+/**
+ * Describes the message races.v1.GetRaceDayStatusResponse.
+ * Use `create(GetRaceDayStatusResponseSchema)` to create a new message.
+ */
+export const GetRaceDayStatusResponseSchema: GenMessage<GetRaceDayStatusResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 38);
+
+/**
+ * @generated from message races.v1.UpdateRaceDayRequest
+ */
+export type UpdateRaceDayRequest = Message<"races.v1.UpdateRaceDayRequest"> & {
+  /**
+   * The plan to update. Exactly one must be set.
+   *
+   * @generated from oneof races.v1.UpdateRaceDayRequest.plan
+   */
+  plan: {
+    /**
+     * The ID of the plan. Requires authentication.
+     *
+     * @generated from field: string plan_id = 1;
+     */
+    value: string;
+    case: "planId";
+  } | {
+    /**
+     * The share token of the plan.
+     *
+     * @generated from field: string share_token = 2;
+     */
+    value: string;
+    case: "shareToken";
+  } | { case: undefined; value?: undefined };
+
+  /**
+   * The race day data.
+   *
+   * @generated from field: races.v1.RaceDay race_day = 3;
+   */
+  raceDay?: RaceDay | undefined;
+
+  /**
+   * The fields to update: "livetrack_url", "start_time" or "splits". If
+   * empty, all fields are replaced.
+   *
+   * @generated from field: google.protobuf.FieldMask update_mask = 4;
+   */
+  updateMask?: FieldMask | undefined;
+};
+
+/**
+ * Describes the message races.v1.UpdateRaceDayRequest.
+ * Use `create(UpdateRaceDayRequestSchema)` to create a new message.
+ */
+export const UpdateRaceDayRequestSchema: GenMessage<UpdateRaceDayRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 39);
+
+/**
+ * @generated from message races.v1.UpdateRaceDayResponse
+ */
+export type UpdateRaceDayResponse = Message<"races.v1.UpdateRaceDayResponse"> & {
+  /**
+   * The updated race day status.
+   *
+   * @generated from field: races.v1.RaceDayStatus status = 1;
+   */
+  status?: RaceDayStatus | undefined;
+};
+
+/**
+ * Describes the message races.v1.UpdateRaceDayResponse.
+ * Use `create(UpdateRaceDayResponseSchema)` to create a new message.
+ */
+export const UpdateRaceDayResponseSchema: GenMessage<UpdateRaceDayResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 40);
+
+/**
+ * @generated from message races.v1.SetCheckpointSplitRequest
+ */
+export type SetCheckpointSplitRequest = Message<"races.v1.SetCheckpointSplitRequest"> & {
+  /**
+   * The plan to update. Exactly one must be set.
+   *
+   * @generated from oneof races.v1.SetCheckpointSplitRequest.plan
+   */
+  plan: {
+    /**
+     * The ID of the plan. Requires authentication.
+     *
+     * @generated from field: string plan_id = 1;
+     */
+    value: string;
+    case: "planId";
+  } | {
+    /**
+     * The share token of the plan.
+     *
+     * @generated from field: string share_token = 2;
+     */
+    value: string;
+    case: "shareToken";
+  } | { case: undefined; value?: undefined };
+
+  /**
+   * The times at the checkpoint, identified by checkpoint_index. Unset times
+   * are cleared.
+   *
+   * @generated from field: races.v1.CheckpointSplit split = 3;
+   */
+  split?: CheckpointSplit | undefined;
+};
+
+/**
+ * Describes the message races.v1.SetCheckpointSplitRequest.
+ * Use `create(SetCheckpointSplitRequestSchema)` to create a new message.
+ */
+export const SetCheckpointSplitRequestSchema: GenMessage<SetCheckpointSplitRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 41);
+
+/**
+ * @generated from message races.v1.SetCheckpointSplitResponse
+ */
+export type SetCheckpointSplitResponse = Message<"races.v1.SetCheckpointSplitResponse"> & {
+  /**
+   * The updated race day status.
+   *
+   * @generated from field: races.v1.RaceDayStatus status = 1;
+   */
+  status?: RaceDayStatus | undefined;
+};
+
+/**
+ * Describes the message races.v1.SetCheckpointSplitResponse.
+ * Use `create(SetCheckpointSplitResponseSchema)` to create a new message.
+ */
+export const SetCheckpointSplitResponseSchema: GenMessage<SetCheckpointSplitResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_plans, 42);
 
 /**
  * ContingencyScenario is a kind of problem that can occur during a race.
@@ -1416,6 +1977,117 @@ export const ContingencyScenarioSchema: GenEnum<ContingencyScenario> = /*@__PURE
   enumDesc(file_races_v1_race_plans, 0);
 
 /**
+ * EstimateSource is what race day estimates are based on.
+ *
+ * @generated from enum races.v1.EstimateSource
+ */
+export enum EstimateSource {
+  /**
+   * @generated from enum value: ESTIMATE_SOURCE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The race hasn't started or there is no progress yet: estimates follow
+   * the plan.
+   *
+   * @generated from enum value: ESTIMATE_SOURCE_PLAN = 1;
+   */
+  PLAN = 1,
+
+  /**
+   * The most recent recorded checkpoint time.
+   *
+   * @generated from enum value: ESTIMATE_SOURCE_CHECKPOINT = 2;
+   */
+  CHECKPOINT = 2,
+
+  /**
+   * The runner's latest LiveTrack position.
+   *
+   * @generated from enum value: ESTIMATE_SOURCE_LIVETRACK = 3;
+   */
+  LIVETRACK = 3,
+}
+
+/**
+ * Describes the enum races.v1.EstimateSource.
+ */
+export const EstimateSourceSchema: GenEnum<EstimateSource> = /*@__PURE__*/
+  enumDesc(file_races_v1_race_plans, 1);
+
+/**
+ * CheckpointStatus is where the runner is relative to a checkpoint.
+ *
+ * @generated from enum races.v1.CheckpointStatus
+ */
+export enum CheckpointStatus {
+  /**
+   * @generated from enum value: CHECKPOINT_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The runner hasn't reached the checkpoint yet.
+   *
+   * @generated from enum value: CHECKPOINT_STATUS_UPCOMING = 1;
+   */
+  UPCOMING = 1,
+
+  /**
+   * The runner is at the checkpoint.
+   *
+   * @generated from enum value: CHECKPOINT_STATUS_ARRIVED = 2;
+   */
+  ARRIVED = 2,
+
+  /**
+   * The runner has left the checkpoint.
+   *
+   * @generated from enum value: CHECKPOINT_STATUS_DEPARTED = 3;
+   */
+  DEPARTED = 3,
+}
+
+/**
+ * Describes the enum races.v1.CheckpointStatus.
+ */
+export const CheckpointStatusSchema: GenEnum<CheckpointStatus> = /*@__PURE__*/
+  enumDesc(file_races_v1_race_plans, 2);
+
+/**
+ * StartTimeSource is where the start time used for estimates comes from.
+ *
+ * @generated from enum races.v1.StartTimeSource
+ */
+export enum StartTimeSource {
+  /**
+   * @generated from enum value: START_TIME_SOURCE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The start time was recorded in the race day data.
+   *
+   * @generated from enum value: START_TIME_SOURCE_RECORDED = 1;
+   */
+  RECORDED = 1,
+
+  /**
+   * The start time comes from the LiveTrack activity.
+   *
+   * @generated from enum value: START_TIME_SOURCE_LIVETRACK = 2;
+   */
+  LIVETRACK = 2,
+}
+
+/**
+ * Describes the enum races.v1.StartTimeSource.
+ */
+export const StartTimeSourceSchema: GenEnum<StartTimeSource> = /*@__PURE__*/
+  enumDesc(file_races_v1_race_plans, 3);
+
+/**
  * RuleStatus is the result of checking a rule.
  *
  * @generated from enum races.v1.RuleStatus
@@ -1452,7 +2124,7 @@ export enum RuleStatus {
  * Describes the enum races.v1.RuleStatus.
  */
 export const RuleStatusSchema: GenEnum<RuleStatus> = /*@__PURE__*/
-  enumDesc(file_races_v1_race_plans, 1);
+  enumDesc(file_races_v1_race_plans, 4);
 
 /**
  * RacePlanService manages race day plans. A race plan is an opinionated
@@ -1465,7 +2137,11 @@ export const RuleStatusSchema: GenEnum<RuleStatus> = /*@__PURE__*/
  * and segment elevation from the race course, and checks the plan against a
  * list of rules. Work through the rules until they all pass.
  *
- * Plans can be shared with others, such as crew, via a share link.
+ * Plans can be shared with others via a share link. On race day, crew can use
+ * the share link to follow the runner: link the runner's Garmin LiveTrack
+ * session and record arrival and departure times at checkpoints, and the
+ * server re-estimates the arrival times at the remaining checkpoints from the
+ * runner's pace relative to the plan.
  *
  * @generated from service races.v1.RacePlanService
  */
@@ -1554,6 +2230,44 @@ export const RacePlanService: GenService<{
     methodKind: "unary";
     input: typeof GetSharedRacePlanRequestSchema;
     output: typeof GetSharedRacePlanResponseSchema;
+  },
+  /**
+   * Get the live race day status of a plan: the recorded checkpoint times,
+   * the runner's latest LiveTrack position and estimated arrival times at
+   * the remaining checkpoints. Identify the plan by its ID (authenticated) or
+   * its share token (unauthenticated).
+   *
+   * @generated from rpc races.v1.RacePlanService.GetRaceDayStatus
+   */
+  getRaceDayStatus: {
+    methodKind: "unary";
+    input: typeof GetRaceDayStatusRequestSchema;
+    output: typeof GetRaceDayStatusResponseSchema;
+  },
+  /**
+   * Update the race day data of a plan: the actual start time, the LiveTrack
+   * link and the checkpoint times. Anyone with the share link can update it,
+   * so crew can record times. Returns the updated status.
+   *
+   * @generated from rpc races.v1.RacePlanService.UpdateRaceDay
+   */
+  updateRaceDay: {
+    methodKind: "unary";
+    input: typeof UpdateRaceDayRequestSchema;
+    output: typeof UpdateRaceDayResponseSchema;
+  },
+  /**
+   * Set or clear the recorded times at a single checkpoint, leaving the
+   * other checkpoints unchanged. Use this rather than UpdateRaceDay to record
+   * times, so crew recording at different checkpoints at the same time don't
+   * overwrite each other. Returns the updated status.
+   *
+   * @generated from rpc races.v1.RacePlanService.SetCheckpointSplit
+   */
+  setCheckpointSplit: {
+    methodKind: "unary";
+    input: typeof SetCheckpointSplitRequestSchema;
+    output: typeof SetCheckpointSplitResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_races_v1_race_plans, 0);

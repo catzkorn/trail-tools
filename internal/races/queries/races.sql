@@ -339,3 +339,51 @@ order by plan_id, position;
 -- name: GetRaceByID :one
 select * from races
 where id = $1;
+
+-- name: GetRacePlanByID :one
+select * from race_plans
+where id = $1;
+
+-- name: LockRacePlan :one
+select id from race_plans
+where id = $1
+for update;
+
+-- name: SetRaceDayLivetrackURL :exec
+update race_plans set
+  race_day_livetrack_url = $2
+where id = $1;
+
+-- name: SetRaceDayStartTime :exec
+update race_plans set
+  race_day_start_time = $2
+where id = $1;
+
+-- name: UpsertRacePlanSplits :exec
+insert into race_plan_splits (
+  plan_id,
+  checkpoint_position,
+  arrival_time,
+  departure_time
+)
+select
+  sqlc.arg(plan_id)::uuid,
+  unnest(sqlc.arg(checkpoint_positions)::integer[]),
+  unnest(sqlc.arg(arrival_times)::timestamptz[]),
+  unnest(sqlc.arg(departure_times)::timestamptz[])
+on conflict (plan_id, checkpoint_position) do update set
+  arrival_time = excluded.arrival_time,
+  departure_time = excluded.departure_time;
+
+-- name: DeleteRacePlanSplits :exec
+delete from race_plan_splits
+where plan_id = $1;
+
+-- name: DeleteRacePlanSplit :exec
+delete from race_plan_splits
+where plan_id = $1 and checkpoint_position = $2;
+
+-- name: ListRacePlanSplits :many
+select * from race_plan_splits
+where plan_id = any(sqlc.arg(plan_ids)::uuid[])
+order by plan_id, checkpoint_position;

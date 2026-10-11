@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
@@ -39,6 +40,8 @@ type RacePlanRepository interface {
 	UpdateRacePlan(ctx context.Context, plan *races.RacePlan, sections []races.RacePlanSection) (*races.RacePlan, error)
 	ShareRacePlan(ctx context.Context, userID, planID pgtype.UUID) (string, error)
 	UnshareRacePlan(ctx context.Context, userID, planID pgtype.UUID) error
+	UpdateRaceDay(ctx context.Context, planID pgtype.UUID, raceDay *races.RaceDay, fields races.RaceDayFields) (*races.RacePlan, error)
+	SetCheckpointSplit(ctx context.Context, planID pgtype.UUID, split *races.CheckpointSplit) (*races.RacePlan, error)
 	DeleteRacePlan(ctx context.Context, userID, planID pgtype.UUID) error
 }
 
@@ -48,20 +51,24 @@ type RouteRepository interface {
 
 // Service implements API handlers for the race plan service.
 type Service struct {
-	log     *slog.Logger
-	repo    RacePlanRepository
-	routes  RouteRepository
-	baseURL string
+	log         *slog.Logger
+	repo        RacePlanRepository
+	routes      RouteRepository
+	liveTracker LiveTracker
+	baseURL     string
+	nowFn       func() time.Time
 }
 
 // NewService creates a new Service. baseURL is the public URL of the server,
 // used to create share links.
-func NewService(log *slog.Logger, repo RacePlanRepository, routes RouteRepository, baseURL string) *Service {
+func NewService(log *slog.Logger, repo RacePlanRepository, routes RouteRepository, liveTracker LiveTracker, baseURL string) *Service {
 	return &Service{
-		log:     log,
-		repo:    repo,
-		routes:  routes,
-		baseURL: strings.TrimSuffix(baseURL, "/"),
+		log:         log,
+		repo:        repo,
+		routes:      routes,
+		liveTracker: liveTracker,
+		baseURL:     strings.TrimSuffix(baseURL, "/"),
+		nowFn:       time.Now,
 	}
 }
 
@@ -157,8 +164,9 @@ func (s *Service) ListRacePlans(ctx context.Context, req *racesv1.ListRacePlansR
 	return racesv1.ListRacePlansResponse_builder{Plans: summaries}.Build(), nil
 }
 
-// outputFields are the fields of a race plan that are not sections.
-var outputFields = []protoreflect.Name{"id", "race_id", "share_url", "create_time", "update_time"}
+// outputFields are the fields of a race plan that are not sections. The race
+// day is updated with UpdateRaceDay.
+var outputFields = []protoreflect.Name{"id", "race_id", "share_url", "create_time", "update_time", "race_day"}
 
 func (s *Service) UpdateRacePlan(ctx context.Context, req *racesv1.UpdateRacePlanRequest) (*racesv1.UpdateRacePlanResponse, error) {
 	userID, planID, err := s.parsePlanID(ctx, req.GetPlan().GetId())
@@ -405,6 +413,8 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 		return err
 	case errors.Is(err, store.ErrNotFound):
 		return connect.NewError(connect.CodeNotFound, "not found")
+	case errors.Is(err, races.ErrCheckpointNotFound):
+		return connect.NewError(connect.CodeInvalidArgument, "the checkpoint doesn't exist in the plan")
 	default:
 		s.log.ErrorContext(ctx, msg, slogor.Err(err))
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)

@@ -48,6 +48,15 @@ const (
 	// RacePlanServiceGetSharedRacePlanProcedure is the procedure name of the RacePlanService's
 	// GetSharedRacePlan RPC.
 	RacePlanServiceGetSharedRacePlanProcedure = "/races.v1.RacePlanService/GetSharedRacePlan"
+	// RacePlanServiceGetRaceDayStatusProcedure is the procedure name of the RacePlanService's
+	// GetRaceDayStatus RPC.
+	RacePlanServiceGetRaceDayStatusProcedure = "/races.v1.RacePlanService/GetRaceDayStatus"
+	// RacePlanServiceUpdateRaceDayProcedure is the procedure name of the RacePlanService's
+	// UpdateRaceDay RPC.
+	RacePlanServiceUpdateRaceDayProcedure = "/races.v1.RacePlanService/UpdateRaceDay"
+	// RacePlanServiceSetCheckpointSplitProcedure is the procedure name of the RacePlanService's
+	// SetCheckpointSplit RPC.
+	RacePlanServiceSetCheckpointSplitProcedure = "/races.v1.RacePlanService/SetCheckpointSplit"
 )
 
 var (
@@ -107,6 +116,27 @@ var (
 			Procedure:  RacePlanServiceGetSharedRacePlanProcedure,
 		}
 	})
+	racePlanServiceGetRaceDayStatusSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_race_plans_proto.Services().ByName("RacePlanService").Methods().ByName("GetRaceDayStatus"),
+			Procedure:  RacePlanServiceGetRaceDayStatusProcedure,
+		}
+	})
+	racePlanServiceUpdateRaceDaySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_race_plans_proto.Services().ByName("RacePlanService").Methods().ByName("UpdateRaceDay"),
+			Procedure:  RacePlanServiceUpdateRaceDayProcedure,
+		}
+	})
+	racePlanServiceSetCheckpointSplitSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_race_plans_proto.Services().ByName("RacePlanService").Methods().ByName("SetCheckpointSplit"),
+			Procedure:  RacePlanServiceSetCheckpointSplitProcedure,
+		}
+	})
 )
 
 // RacePlanServiceClient is a client for the races.v1.RacePlanService service.
@@ -132,6 +162,20 @@ type RacePlanServiceClient interface {
 	// Get a shared race plan by its share token. Does not require
 	// authentication.
 	GetSharedRacePlan(context.Context, *v1.GetSharedRacePlanRequest) (*v1.GetSharedRacePlanResponse, error)
+	// Get the live race day status of a plan: the recorded checkpoint times,
+	// the runner's latest LiveTrack position and estimated arrival times at
+	// the remaining checkpoints. Identify the plan by its ID (authenticated) or
+	// its share token (unauthenticated).
+	GetRaceDayStatus(context.Context, *v1.GetRaceDayStatusRequest) (*v1.GetRaceDayStatusResponse, error)
+	// Update the race day data of a plan: the actual start time, the LiveTrack
+	// link and the checkpoint times. Anyone with the share link can update it,
+	// so crew can record times. Returns the updated status.
+	UpdateRaceDay(context.Context, *v1.UpdateRaceDayRequest) (*v1.UpdateRaceDayResponse, error)
+	// Set or clear the recorded times at a single checkpoint, leaving the
+	// other checkpoints unchanged. Use this rather than UpdateRaceDay to record
+	// times, so crew recording at different checkpoints at the same time don't
+	// overwrite each other. Returns the updated status.
+	SetCheckpointSplit(context.Context, *v1.SetCheckpointSplitRequest) (*v1.SetCheckpointSplitResponse, error)
 }
 
 // NewRacePlanServiceClient constructs a client for the races.v1.RacePlanService service. Multiple
@@ -163,6 +207,20 @@ type RacePlanServiceHandler interface {
 	// Get a shared race plan by its share token. Does not require
 	// authentication.
 	GetSharedRacePlan(context.Context, *v1.GetSharedRacePlanRequest) (*v1.GetSharedRacePlanResponse, error)
+	// Get the live race day status of a plan: the recorded checkpoint times,
+	// the runner's latest LiveTrack position and estimated arrival times at
+	// the remaining checkpoints. Identify the plan by its ID (authenticated) or
+	// its share token (unauthenticated).
+	GetRaceDayStatus(context.Context, *v1.GetRaceDayStatusRequest) (*v1.GetRaceDayStatusResponse, error)
+	// Update the race day data of a plan: the actual start time, the LiveTrack
+	// link and the checkpoint times. Anyone with the share link can update it,
+	// so crew can record times. Returns the updated status.
+	UpdateRaceDay(context.Context, *v1.UpdateRaceDayRequest) (*v1.UpdateRaceDayResponse, error)
+	// Set or clear the recorded times at a single checkpoint, leaving the
+	// other checkpoints unchanged. Use this rather than UpdateRaceDay to record
+	// times, so crew recording at different checkpoints at the same time don't
+	// overwrite each other. Returns the updated status.
+	SetCheckpointSplit(context.Context, *v1.SetCheckpointSplitRequest) (*v1.SetCheckpointSplitResponse, error)
 }
 
 // RegisterRacePlanServiceHandler registers svc as the races.v1.RacePlanService implementation on
@@ -178,6 +236,9 @@ func RegisterRacePlanServiceHandler(server *connect.Server, svc RacePlanServiceH
 		connect.Method{Spec: racePlanServiceShareRacePlanSpec(), Handler: adapter.shareRacePlan},
 		connect.Method{Spec: racePlanServiceUnshareRacePlanSpec(), Handler: adapter.unshareRacePlan},
 		connect.Method{Spec: racePlanServiceGetSharedRacePlanSpec(), Handler: adapter.getSharedRacePlan},
+		connect.Method{Spec: racePlanServiceGetRaceDayStatusSpec(), Handler: adapter.getRaceDayStatus},
+		connect.Method{Spec: racePlanServiceUpdateRaceDaySpec(), Handler: adapter.updateRaceDay},
+		connect.Method{Spec: racePlanServiceSetCheckpointSplitSpec(), Handler: adapter.setCheckpointSplit},
 	)
 }
 
@@ -214,6 +275,18 @@ func (UnimplementedRacePlanServiceHandler) UnshareRacePlan(context.Context, *v1.
 
 func (UnimplementedRacePlanServiceHandler) GetSharedRacePlan(context.Context, *v1.GetSharedRacePlanRequest) (*v1.GetSharedRacePlanResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RacePlanService.GetSharedRacePlan is not implemented")
+}
+
+func (UnimplementedRacePlanServiceHandler) GetRaceDayStatus(context.Context, *v1.GetRaceDayStatusRequest) (*v1.GetRaceDayStatusResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RacePlanService.GetRaceDayStatus is not implemented")
+}
+
+func (UnimplementedRacePlanServiceHandler) UpdateRaceDay(context.Context, *v1.UpdateRaceDayRequest) (*v1.UpdateRaceDayResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RacePlanService.UpdateRaceDay is not implemented")
+}
+
+func (UnimplementedRacePlanServiceHandler) SetCheckpointSplit(context.Context, *v1.SetCheckpointSplitRequest) (*v1.SetCheckpointSplitResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RacePlanService.SetCheckpointSplit is not implemented")
 }
 
 type racePlanServiceClient struct {
@@ -279,6 +352,30 @@ func (c *racePlanServiceClient) UnshareRacePlan(ctx context.Context, req *v1.Uns
 func (c *racePlanServiceClient) GetSharedRacePlan(ctx context.Context, req *v1.GetSharedRacePlanRequest) (*v1.GetSharedRacePlanResponse, error) {
 	var res v1.GetSharedRacePlanResponse
 	if err := c.client.CallUnary(ctx, racePlanServiceGetSharedRacePlanSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *racePlanServiceClient) GetRaceDayStatus(ctx context.Context, req *v1.GetRaceDayStatusRequest) (*v1.GetRaceDayStatusResponse, error) {
+	var res v1.GetRaceDayStatusResponse
+	if err := c.client.CallUnary(ctx, racePlanServiceGetRaceDayStatusSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *racePlanServiceClient) UpdateRaceDay(ctx context.Context, req *v1.UpdateRaceDayRequest) (*v1.UpdateRaceDayResponse, error) {
+	var res v1.UpdateRaceDayResponse
+	if err := c.client.CallUnary(ctx, racePlanServiceUpdateRaceDaySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *racePlanServiceClient) SetCheckpointSplit(ctx context.Context, req *v1.SetCheckpointSplitRequest) (*v1.SetCheckpointSplitResponse, error) {
+	var res v1.SetCheckpointSplitResponse
+	if err := c.client.CallUnary(ctx, racePlanServiceSetCheckpointSplitSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -376,6 +473,42 @@ func (h racePlanServiceHandler) getSharedRacePlan(ctx context.Context, _ connect
 		return err
 	}
 	res, err := h.svc.GetSharedRacePlan(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h racePlanServiceHandler) getRaceDayStatus(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetRaceDayStatusRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRaceDayStatus(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h racePlanServiceHandler) updateRaceDay(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateRaceDayRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateRaceDay(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h racePlanServiceHandler) setCheckpointSplit(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SetCheckpointSplitRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SetCheckpointSplit(ctx, &req)
 	if err != nil {
 		return err
 	}

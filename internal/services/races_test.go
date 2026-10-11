@@ -303,7 +303,7 @@ func TestRacePlanSections(t *testing.T) {
 		t.Fatal(err)
 	}
 	stored := proto.CloneOf(got.GetPlan())
-	for _, field := range []string{"id", "race_id", "share_url", "create_time", "update_time"} {
+	for _, field := range []string{"id", "race_id", "share_url", "create_time", "update_time", "race_day"} {
 		stored.ProtoReflect().Clear(stored.ProtoReflect().Descriptor().Fields().ByName(protoreflect.Name(field)))
 	}
 	if !proto.Equal(stored, sections) {
