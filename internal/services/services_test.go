@@ -29,6 +29,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/mcp"
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -41,6 +42,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
+	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/store/storetest"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -49,6 +51,7 @@ import (
 // env is a running server for a test, with clients authenticated as a user.
 type env struct {
 	t          *testing.T
+	db         *store.DB
 	userID     pgtype.UUID
 	token      string
 	srv        *httptest.Server
@@ -95,7 +98,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := &env{t: t, mapData: &fakeMapData{}, activities: activityRepo, strava: newFakeStrava()}
+	e := &env{t: t, db: db, mapData: &fakeMapData{}, activities: activityRepo, strava: newFakeStrava()}
 	e.userID = storetest.NewUser(t, db)
 	_, e.token, err = userRepo.CreateAPIToken(ctx, e.userID, "test")
 	if err != nil {
@@ -139,6 +142,14 @@ func newEnv(t *testing.T) *env {
 	mux.Handle(racesv1connect.NewRaceServiceHandler(raceService))
 	mux.Handle(racesv1connect.NewRacePlanServiceHandler(racePlanService))
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
+	mcpServer, err := mcp.NewServer(log,
+		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
+		mcp.Service{Name: routesv1connect.RouteServiceName, Handler: routeService},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux.Handle("/mcp", authn.RequireUser(mcpServer.Handler()))
 	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux)
 	if err != nil {
 		t.Fatal(err)

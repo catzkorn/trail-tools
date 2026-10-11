@@ -31,6 +31,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/mcp"
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -329,6 +330,23 @@ func run(
 	for _, path := range apiPaths {
 		mux.Handle(path, authHandler)
 	}
+
+	// Serve the same API to AI agents over MCP. MCP clients authenticate
+	// with API tokens.
+	mcpServer, err := mcp.NewServer(log,
+		mcp.Service{Name: usersv1connect.UserServiceName, Handler: userService},
+		mcp.Service{Name: activitiesv1connect.ActivityServiceName, Handler: activityService},
+		mcp.Service{Name: stravav1connect.StravaServiceName, Handler: stravaService},
+		mcp.Service{Name: routesv1connect.RouteServiceName, Handler: routeService},
+		mcp.Service{Name: geov1connect.GeoServiceName, Handler: geoService},
+		mcp.Service{Name: plansv1connect.TrainingPlanServiceName, Handler: planService},
+		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
+		mcp.Service{Name: racesv1connect.RacePlanServiceName, Handler: racePlanService},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create MCP server: %w", err)
+	}
+	mux.Handle("/mcp", authenticate(authn.RequireUser(mcpServer.Handler())))
 
 	// Serve Strava OAuth handlers
 	if stravaOAuth != nil {

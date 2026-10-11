@@ -7,10 +7,12 @@ require (
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-passkeys/go-passkeys v0.4.1
 	github.com/golang-migrate/migrate/v4 v4.20.1
+	github.com/google/jsonschema-go v0.4.3
 	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/johanbrandhorst/reload v1.0.0
 	github.com/mcosta74/pgx-slog v0.4.1
+	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/shopspring/decimal v1.5.0
 	gitlab.com/greyxor/slogor v1.7.0
 	golang.org/x/oauth2 v0.37.0
@@ -114,6 +116,7 @@ require (
 	github.com/tidwall/btree v1.8.1 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20250409022910-10ac41983c07 // indirect
 	github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.lsp.dev/jsonrpc2 v0.10.0 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.lsp.dev/protocol v0.12.0 // indirect
@@ -136,6 +139,7 @@ require (
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260904194346-d0f1323225a4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260904194346-d0f1323225a4 // indirect

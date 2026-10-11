@@ -162,6 +162,67 @@ const ApiTokens: React.FC = () => {
   );
 };
 
+const McpInstructions: React.FC = () => {
+  const endpoint = `${globalThis.location.origin}/mcp`;
+  const command = `claude mcp add --transport http trail-tools ${endpoint} --header "Authorization: Bearer <token>"`;
+  const json = JSON.stringify(
+    {
+      mcpServers: {
+        "trail-tools": {
+          headers: { Authorization: "Bearer <token>" },
+          type: "http",
+          url: endpoint,
+        },
+      },
+    },
+    null,
+    2
+  );
+  return (
+    <Card title="Connect your AI agent (MCP)">
+      <div className="flex flex-col gap-4 text-sm text-gray-700">
+        <p>
+          Trail Tools is also an{" "}
+          <a
+            href="https://modelcontextprotocol.io"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-emerald-700 hover:underline"
+          >
+            MCP server
+          </a>
+          . Connect an AI agent to analyse your training, build training plans,
+          design routes and work through your race plans with you. Create an API
+          token above and use it in place of{" "}
+          <code className="rounded bg-gray-100 px-1">&lt;token&gt;</code>.
+        </p>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-600 uppercase">
+            Endpoint (streamable HTTP)
+          </span>
+          <CopyField value={endpoint} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-600 uppercase">
+            Claude Code
+          </span>
+          <CopyField value={command} multiline />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-600 uppercase">
+            Other MCP clients
+          </span>
+          <p className="text-xs text-gray-500">
+            Most clients accept a configuration like this for a remote server
+            using the streamable HTTP transport.
+          </p>
+          <CopyField value={json} multiline />
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 interface SettingsPageProps {
   user: User | null;
 }
@@ -177,6 +238,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
       </div>
       <div className="flex flex-col gap-4">
         <ApiTokens />
+        <McpInstructions />
       </div>
     </div>
   </div>
