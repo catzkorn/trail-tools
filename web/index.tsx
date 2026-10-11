@@ -13,8 +13,12 @@ if (rootDiv === null) {
 }
 const root = ReactDOM.createRoot(rootDiv);
 
+/**
+ * Use the origin rather than a relative URL, so that RPCs work from nested
+ * client side routes such as /routes/123.
+ */
 const transport = createConnectTransport({
-  baseUrl: ".",
+  baseUrl: globalThis.location.origin,
 });
 
 const queryClient = new QueryClient();
