@@ -14,6 +14,7 @@ import { primaryButton, secondaryButton } from "@components/ui/styles";
 import { useMutation } from "@connectrpc/connect-query";
 import {
   ArrowDownTrayIcon,
+  CloudIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,7 +26,7 @@ import { routeSourceLabel } from "helpers/labels";
 import { invalidateServices } from "helpers/query";
 import type { LatLngTuple } from "leaflet";
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { toTuples } from "./route-geometry";
 import { RouteStatsPanel } from "./route-stats";
@@ -108,6 +109,13 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
                 <ArrowDownTrayIcon className="size-4" />
                 GPX
               </a>
+              <Link
+                to={`/forecast?route=${route.id}`}
+                className={secondaryButton}
+              >
+                <CloudIcon className="size-4" />
+                Weather forecast
+              </Link>
               <ConfirmButton
                 title="Delete route?"
                 message={`This permanently deletes "${route.name}".`}
