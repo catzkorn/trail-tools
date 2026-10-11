@@ -1,0 +1,12 @@
+# Configuration for building the container image with ko (https://ko.build).
+defaultBaseImage: gcr.io/distroless/static-debian12:nonroot
+defaultPlatforms:
+  - linux/amd64
+builds:
+  - id: trail-tools
+    main: .
+    flags:
+      - -trimpath
+    ldflags:
+      - -s
+      - -w
