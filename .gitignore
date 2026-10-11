@@ -1,2 +1,5 @@
 localhost-key.pem
 localhost.pem
+
+# Binaries built with go build
+/trail-tools
