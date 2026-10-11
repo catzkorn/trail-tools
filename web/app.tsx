@@ -11,10 +11,12 @@ import AthletesPage from "pages/athletes";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
 import MapDataPage from "pages/map-data";
+import RacePlanPage from "pages/race-plan";
 import RacesPage from "pages/races";
 import RoutePage from "pages/route";
 import RoutesPage from "pages/routes";
 import SettingsPage from "pages/settings";
+import SharedRacePlanPage from "pages/shared-race-plan";
 import type { ReactNode } from "react";
 import React from "react";
 import { Link, Route, Routes } from "react-router";
@@ -109,6 +111,14 @@ const App: React.FC = () => {
               element={protectedPage(<RoutePage isNew={false} />)}
             />
             <Route path="/races" element={protectedPage(<RacesPage />)} />
+            <Route
+              path="/race-plans/:id"
+              element={protectedPage(<RacePlanPage />)}
+            />
+            <Route
+              path="/share/race-plans/:token"
+              element={<SharedRacePlanPage />}
+            />
             <Route path="/forecast" element={protectedPage(<ForecastPage />)} />
             <Route
               path="/activities"
