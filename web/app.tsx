@@ -11,6 +11,7 @@ import AthletesPage from "pages/athletes";
 import DashboardPage from "pages/dashboard";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
+import OAuthConsentPage from "pages/oauth-consent";
 import PlanPage from "pages/plan";
 import PlansPage from "pages/plans";
 import RacePlanPage from "pages/race-plan";
@@ -138,6 +139,10 @@ const App: React.FC = () => {
               element={protectedPage(<SettingsPage user={user} />)}
             />
             <Route path="/invite/:token" element={<InvitePage />} />
+            <Route
+              path="/oauth/authorize"
+              element={protectedPage(<OAuthConsentPage />)}
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
