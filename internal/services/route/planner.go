@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -39,9 +40,10 @@ type Router interface {
 	Regions(ctx context.Context) ([]geo.Bounds, error)
 }
 
-// MapData provides elevation data.
+// MapData provides elevation and weather data.
 type MapData interface {
 	FillElevations(ctx context.Context, points []geo.Point, maxLookups int) error
+	Forecast(ctx context.Context, queries []mapdata.ForecastQuery) ([]mapdata.Weather, error)
 }
 
 // errInvalidRoute is wrapped by errors caused by invalid input, such as

@@ -39,6 +39,9 @@ const (
 	// RouteServiceCheckTrackCoverageProcedure is the procedure name of the RouteService's
 	// CheckTrackCoverage RPC.
 	RouteServiceCheckTrackCoverageProcedure = "/routes.v1.RouteService/CheckTrackCoverage"
+	// RouteServiceGetRouteForecastProcedure is the procedure name of the RouteService's
+	// GetRouteForecast RPC.
+	RouteServiceGetRouteForecastProcedure = "/routes.v1.RouteService/GetRouteForecast"
 )
 
 var (
@@ -92,6 +95,13 @@ var (
 			IdempotencyLevel: connect.IdempotencyNoSideEffects,
 		}
 	})
+	routeServiceGetRouteForecastSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_routes_v1_routes_proto.Services().ByName("RouteService").Methods().ByName("GetRouteForecast"),
+			Procedure:  RouteServiceGetRouteForecastProcedure,
+		}
+	})
 )
 
 // RouteServiceClient is a client for the routes.v1.RouteService service.
@@ -124,6 +134,15 @@ type RouteServiceClient interface {
 	// before creating a route with conversion SNAP, and keep the track EXACT
 	// if much of it isn't covered.
 	CheckTrackCoverage(context.Context, *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error)
+	// Get an hourly weather forecast along a route for a planned start time and
+	// speed. The route can be a saved route, a GPX file or a list of
+	// coordinates. The server estimates where the runner will be at each hour
+	// and returns the forecast for that place and time, adjusted to the
+	// elevation of the point. It also returns the forecast at the highest point
+	// and the finish, and warnings about hazards such as thunderstorms, freezing
+	// levels below the route, strong gusts and darkness. Forecasts are available
+	// up to 15 days ahead.
+	GetRouteForecast(context.Context, *v1.GetRouteForecastRequest) (*v1.GetRouteForecastResponse, error)
 }
 
 // NewRouteServiceClient constructs a client for the routes.v1.RouteService service. Multiple
@@ -162,6 +181,15 @@ type RouteServiceHandler interface {
 	// before creating a route with conversion SNAP, and keep the track EXACT
 	// if much of it isn't covered.
 	CheckTrackCoverage(context.Context, *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error)
+	// Get an hourly weather forecast along a route for a planned start time and
+	// speed. The route can be a saved route, a GPX file or a list of
+	// coordinates. The server estimates where the runner will be at each hour
+	// and returns the forecast for that place and time, adjusted to the
+	// elevation of the point. It also returns the forecast at the highest point
+	// and the finish, and warnings about hazards such as thunderstorms, freezing
+	// levels below the route, strong gusts and darkness. Forecasts are available
+	// up to 15 days ahead.
+	GetRouteForecast(context.Context, *v1.GetRouteForecastRequest) (*v1.GetRouteForecastResponse, error)
 }
 
 // RegisterRouteServiceHandler registers svc as the routes.v1.RouteService implementation on server.
@@ -175,6 +203,7 @@ func RegisterRouteServiceHandler(server *connect.Server, svc RouteServiceHandler
 		connect.Method{Spec: routeServiceUpdateRouteSpec(), Handler: adapter.updateRoute},
 		connect.Method{Spec: routeServiceDeleteRouteSpec(), Handler: adapter.deleteRoute},
 		connect.Method{Spec: routeServiceCheckTrackCoverageSpec(), Handler: adapter.checkTrackCoverage},
+		connect.Method{Spec: routeServiceGetRouteForecastSpec(), Handler: adapter.getRouteForecast},
 	)
 }
 
@@ -207,6 +236,10 @@ func (UnimplementedRouteServiceHandler) DeleteRoute(context.Context, *v1.DeleteR
 
 func (UnimplementedRouteServiceHandler) CheckTrackCoverage(context.Context, *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "routes.v1.RouteService.CheckTrackCoverage is not implemented")
+}
+
+func (UnimplementedRouteServiceHandler) GetRouteForecast(context.Context, *v1.GetRouteForecastRequest) (*v1.GetRouteForecastResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "routes.v1.RouteService.GetRouteForecast is not implemented")
 }
 
 type routeServiceClient struct {
@@ -264,6 +297,14 @@ func (c *routeServiceClient) DeleteRoute(ctx context.Context, req *v1.DeleteRout
 func (c *routeServiceClient) CheckTrackCoverage(ctx context.Context, req *v1.CheckTrackCoverageRequest) (*v1.CheckTrackCoverageResponse, error) {
 	var res v1.CheckTrackCoverageResponse
 	if err := c.client.CallUnary(ctx, routeServiceCheckTrackCoverageSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *routeServiceClient) GetRouteForecast(ctx context.Context, req *v1.GetRouteForecastRequest) (*v1.GetRouteForecastResponse, error) {
+	var res v1.GetRouteForecastResponse
+	if err := c.client.CallUnary(ctx, routeServiceGetRouteForecastSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -349,6 +390,18 @@ func (h routeServiceHandler) checkTrackCoverage(ctx context.Context, _ connect.S
 		return err
 	}
 	res, err := h.svc.CheckTrackCoverage(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h routeServiceHandler) getRouteForecast(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetRouteForecastRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRouteForecast(ctx, &req)
 	if err != nil {
 		return err
 	}
