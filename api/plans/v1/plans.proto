@@ -1,0 +1,288 @@
+syntax = "proto3";
+
+package plans.v1;
+
+import "geo/v1/geo.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// TrainingPlanService manages training plans of up to a year leading to one or
+// more goal races. A plan is organised at three levels:
+//
+// 1. Months: the training phase (e.g. base, build, peak, taper) and monthly
+//    volume targets.
+// 2. Weeks: the weekly focus and volume targets. Weeks start on Monday.
+// 3. Days: individual workouts, each optionally linked to a route.
+//
+// Months and weeks are both plan periods, created with SetPlanPeriods. Workouts
+// are created in bulk with CreateWorkouts. Dates are local dates in the format
+// YYYY-MM-DD. Compare the plan with what was actually run using
+// ActivityService.SummarizeActivities and ActivityService.ListActivities.
+service TrainingPlanService {
+  // Create a training plan.
+  rpc CreateTrainingPlan(CreateTrainingPlanRequest) returns (CreateTrainingPlanResponse);
+  // Get a training plan with its month and week periods. Workouts are listed
+  // separately with ListWorkouts.
+  rpc GetTrainingPlan(GetTrainingPlanRequest) returns (GetTrainingPlanResponse);
+  // List the user's training plans, most recent start date first.
+  rpc ListTrainingPlans(ListTrainingPlansRequest) returns (ListTrainingPlansResponse);
+  // Update a training plan's details.
+  rpc UpdateTrainingPlan(UpdateTrainingPlanRequest) returns (UpdateTrainingPlanResponse);
+  // Delete a training plan, including its periods and workouts.
+  rpc DeleteTrainingPlan(DeleteTrainingPlanRequest) returns (DeleteTrainingPlanResponse);
+  // Create or replace month and week periods. A period is identified by its
+  // granularity and start date; setting a period that already exists replaces
+  // it. Start dates are normalised to the first of the month for months and
+  // to Monday for weeks.
+  rpc SetPlanPeriods(SetPlanPeriodsRequest) returns (SetPlanPeriodsResponse);
+  // Delete month or week periods.
+  rpc DeletePlanPeriods(DeletePlanPeriodsRequest) returns (DeletePlanPeriodsResponse);
+  // List a plan's workouts in date order, optionally within a date range.
+  rpc ListWorkouts(ListWorkoutsRequest) returns (ListWorkoutsResponse);
+  // Get a workout by ID.
+  rpc GetWorkout(GetWorkoutRequest) returns (GetWorkoutResponse);
+  // Create one or more workouts in a plan. A day may have several workouts.
+  rpc CreateWorkouts(CreateWorkoutsRequest) returns (CreateWorkoutsResponse);
+  // Update a workout.
+  rpc UpdateWorkout(UpdateWorkoutRequest) returns (UpdateWorkoutResponse);
+  // Delete one or more workouts.
+  rpc DeleteWorkouts(DeleteWorkoutsRequest) returns (DeleteWorkoutsResponse);
+}
+
+// A training plan.
+message TrainingPlan {
+  // The ID of the plan. Ignored when creating a plan.
+  string id = 1;
+  // The name of the plan.
+  string name = 2;
+  // A description of the plan: the athlete's background, goals, constraints
+  // and the overall approach.
+  string description = 3;
+  // The first day of the plan (YYYY-MM-DD).
+  string start_date = 4;
+  // The last day of the plan (YYYY-MM-DD). At most 366 days after the start.
+  string end_date = 5;
+  // The IDs of the goal races the plan builds towards. See RaceService.
+  repeated string goal_race_ids = 6;
+  // When the plan was created.
+  google.protobuf.Timestamp create_time = 7;
+  // When the plan was last updated.
+  google.protobuf.Timestamp update_time = 8;
+}
+
+// PeriodGranularity is the length of a plan period.
+enum PeriodGranularity {
+  PERIOD_GRANULARITY_UNSPECIFIED = 0;
+  // A calendar month.
+  PERIOD_GRANULARITY_MONTH = 1;
+  // A week starting on Monday.
+  PERIOD_GRANULARITY_WEEK = 2;
+}
+
+// A month or week in a training plan, with its focus and volume targets.
+message PlanPeriod {
+  // The ID of the period.
+  string id = 1;
+  // Whether this is a month or a week.
+  PeriodGranularity granularity = 2;
+  // The first day of the period (YYYY-MM-DD). The first of the month for
+  // months, a Monday for weeks.
+  string start_date = 3;
+  // A short title, e.g. "Base 2", "Recovery week" or "Taper".
+  string title = 4;
+  // The focus of the period and any notes, e.g. key workouts and the reason
+  // for the volume.
+  string notes = 5;
+  // Target distance in meters. 0 if not set.
+  double target_distance_meters = 6;
+  // Target elevation gain in meters. 0 if not set.
+  double target_elevation_gain_meters = 7;
+  // Target moving time in seconds. 0 if not set.
+  int32 target_duration_seconds = 8;
+}
+
+// WorkoutType is the type of a workout.
+enum WorkoutType {
+  WORKOUT_TYPE_UNSPECIFIED = 0;
+  // An easy aerobic run.
+  WORKOUT_TYPE_EASY = 1;
+  // The week's long run.
+  WORKOUT_TYPE_LONG_RUN = 2;
+  // A sustained effort at threshold.
+  WORKOUT_TYPE_TEMPO = 3;
+  // Intervals at high intensity.
+  WORKOUT_TYPE_INTERVALS = 4;
+  // Repeated uphill efforts.
+  WORKOUT_TYPE_HILL_REPEATS = 5;
+  // A run or hike focused on elevation gain.
+  WORKOUT_TYPE_VERT = 6;
+  // A very easy recovery run.
+  WORKOUT_TYPE_RECOVERY = 7;
+  // A rest day.
+  WORKOUT_TYPE_REST = 8;
+  // Cycling, swimming, skiing or other non-running cardio.
+  WORKOUT_TYPE_CROSS_TRAINING = 9;
+  // Strength and mobility training.
+  WORKOUT_TYPE_STRENGTH = 10;
+  // A race, either a goal race or a tune-up.
+  WORKOUT_TYPE_RACE = 11;
+  // Anything else.
+  WORKOUT_TYPE_OTHER = 12;
+}
+
+// A workout planned for a day.
+message Workout {
+  // The ID of the workout. Ignored when creating workouts.
+  string id = 1;
+  // The ID of the plan the workout belongs to.
+  string plan_id = 2;
+  // The date of the workout (YYYY-MM-DD).
+  string date = 3;
+  // The type of workout.
+  WorkoutType type = 4;
+  // A short title, e.g. "Long run with 1000m vert".
+  string title = 5;
+  // A description of the workout: structure, intensity and purpose.
+  string description = 6;
+  // Target distance in meters. 0 if not set.
+  double target_distance_meters = 7;
+  // Target elevation gain in meters. 0 if not set.
+  double target_elevation_gain_meters = 8;
+  // Target moving time in seconds. 0 if not set.
+  int32 target_duration_seconds = 9;
+  // The preferred terrain, if any.
+  geo.v1.Terrain target_terrain = 10;
+  // The ID of the route to run, if any. See RouteService.
+  string route_id = 11;
+  // The ID of the activity that completed this workout, if any. See
+  // ActivityService.
+  string completed_activity_id = 12;
+}
+
+message CreateTrainingPlanRequest {
+  // The plan to create.
+  TrainingPlan plan = 1;
+}
+
+message CreateTrainingPlanResponse {
+  // The created plan.
+  TrainingPlan plan = 1;
+}
+
+message GetTrainingPlanRequest {
+  // The ID of the plan.
+  string id = 1;
+}
+
+message GetTrainingPlanResponse {
+  // The plan.
+  TrainingPlan plan = 1;
+  // The plan's month and week periods in date order.
+  repeated PlanPeriod periods = 2;
+}
+
+message ListTrainingPlansRequest {}
+
+message ListTrainingPlansResponse {
+  // The user's plans.
+  repeated TrainingPlan plans = 1;
+}
+
+message UpdateTrainingPlanRequest {
+  // The plan to update. The ID must be set.
+  TrainingPlan plan = 1;
+  // The fields to update, e.g. "name,description". If empty, all fields are
+  // replaced.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateTrainingPlanResponse {
+  // The updated plan.
+  TrainingPlan plan = 1;
+}
+
+message DeleteTrainingPlanRequest {
+  // The ID of the plan to delete.
+  string id = 1;
+}
+
+message DeleteTrainingPlanResponse {}
+
+message SetPlanPeriodsRequest {
+  // The ID of the plan.
+  string plan_id = 1;
+  // The periods to create or replace.
+  repeated PlanPeriod periods = 2;
+}
+
+message SetPlanPeriodsResponse {
+  // The created or replaced periods.
+  repeated PlanPeriod periods = 1;
+}
+
+message DeletePlanPeriodsRequest {
+  // The ID of the plan.
+  string plan_id = 1;
+  // The IDs of the periods to delete.
+  repeated string ids = 2;
+}
+
+message DeletePlanPeriodsResponse {}
+
+message ListWorkoutsRequest {
+  // The ID of the plan.
+  string plan_id = 1;
+  // Only include workouts on or after this date (YYYY-MM-DD).
+  string start_date = 2;
+  // Only include workouts on or before this date (YYYY-MM-DD).
+  string end_date = 3;
+}
+
+message ListWorkoutsResponse {
+  // The workouts in date order.
+  repeated Workout workouts = 1;
+}
+
+message GetWorkoutRequest {
+  // The ID of the workout.
+  string id = 1;
+}
+
+message GetWorkoutResponse {
+  // The workout.
+  Workout workout = 1;
+}
+
+message CreateWorkoutsRequest {
+  // The ID of the plan.
+  string plan_id = 1;
+  // The workouts to create. Each date must be within the plan. Maximum 400.
+  repeated Workout workouts = 2;
+}
+
+message CreateWorkoutsResponse {
+  // The created workouts.
+  repeated Workout workouts = 1;
+}
+
+message UpdateWorkoutRequest {
+  // The workout to update. The ID must be set.
+  Workout workout = 1;
+  // The fields to update, e.g. "title,route_id". If empty, all fields are
+  // replaced.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateWorkoutResponse {
+  // The updated workout.
+  Workout workout = 1;
+}
+
+message DeleteWorkoutsRequest {
+  // The ID of the plan.
+  string plan_id = 1;
+  // The IDs of the workouts to delete.
+  repeated string ids = 2;
+}
+
+message DeleteWorkoutsResponse {}

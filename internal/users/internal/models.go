@@ -113,6 +113,57 @@ func (e PasskeyCeremony) Valid() bool {
 	return false
 }
 
+type PeriodGranularity string
+
+const (
+	PeriodGranularityMonth PeriodGranularity = "month"
+	PeriodGranularityWeek  PeriodGranularity = "week"
+)
+
+func (e *PeriodGranularity) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PeriodGranularity(s)
+	case string:
+		*e = PeriodGranularity(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PeriodGranularity: %T", src)
+	}
+	return nil
+}
+
+type NullPeriodGranularity struct {
+	PeriodGranularity PeriodGranularity
+	Valid             bool // Valid is true if PeriodGranularity is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPeriodGranularity) Scan(value interface{}) error {
+	if value == nil {
+		ns.PeriodGranularity, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PeriodGranularity.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPeriodGranularity) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PeriodGranularity), nil
+}
+
+func (e PeriodGranularity) Valid() bool {
+	switch e {
+	case PeriodGranularityMonth,
+		PeriodGranularityWeek:
+		return true
+	}
+	return false
+}
+
 type RacePriority string
 
 const (
@@ -384,6 +435,132 @@ func (e StravaSyncState) Valid() bool {
 	return false
 }
 
+type Terrain string
+
+const (
+	TerrainPaved     Terrain = "paved"
+	TerrainGravel    Terrain = "gravel"
+	TerrainTrail     Terrain = "trail"
+	TerrainTechnical Terrain = "technical"
+)
+
+func (e *Terrain) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Terrain(s)
+	case string:
+		*e = Terrain(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Terrain: %T", src)
+	}
+	return nil
+}
+
+type NullTerrain struct {
+	Terrain Terrain
+	Valid   bool // Valid is true if Terrain is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTerrain) Scan(value interface{}) error {
+	if value == nil {
+		ns.Terrain, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Terrain.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTerrain) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Terrain), nil
+}
+
+func (e Terrain) Valid() bool {
+	switch e {
+	case TerrainPaved,
+		TerrainGravel,
+		TerrainTrail,
+		TerrainTechnical:
+		return true
+	}
+	return false
+}
+
+type WorkoutType string
+
+const (
+	WorkoutTypeEasy          WorkoutType = "easy"
+	WorkoutTypeLongRun       WorkoutType = "long_run"
+	WorkoutTypeTempo         WorkoutType = "tempo"
+	WorkoutTypeIntervals     WorkoutType = "intervals"
+	WorkoutTypeHillRepeats   WorkoutType = "hill_repeats"
+	WorkoutTypeVert          WorkoutType = "vert"
+	WorkoutTypeRecovery      WorkoutType = "recovery"
+	WorkoutTypeRest          WorkoutType = "rest"
+	WorkoutTypeCrossTraining WorkoutType = "cross_training"
+	WorkoutTypeStrength      WorkoutType = "strength"
+	WorkoutTypeRace          WorkoutType = "race"
+	WorkoutTypeOther         WorkoutType = "other"
+)
+
+func (e *WorkoutType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WorkoutType(s)
+	case string:
+		*e = WorkoutType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WorkoutType: %T", src)
+	}
+	return nil
+}
+
+type NullWorkoutType struct {
+	WorkoutType WorkoutType
+	Valid       bool // Valid is true if WorkoutType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWorkoutType) Scan(value interface{}) error {
+	if value == nil {
+		ns.WorkoutType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WorkoutType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWorkoutType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WorkoutType), nil
+}
+
+func (e WorkoutType) Valid() bool {
+	switch e {
+	case WorkoutTypeEasy,
+		WorkoutTypeLongRun,
+		WorkoutTypeTempo,
+		WorkoutTypeIntervals,
+		WorkoutTypeHillRepeats,
+		WorkoutTypeVert,
+		WorkoutTypeRecovery,
+		WorkoutTypeRest,
+		WorkoutTypeCrossTraining,
+		WorkoutTypeStrength,
+		WorkoutTypeRace,
+		WorkoutTypeOther:
+		return true
+	}
+	return false
+}
+
 type APIToken struct {
 	ID           pgtype.UUID
 	UserID       pgtype.UUID
@@ -457,6 +634,18 @@ type PasskeyUser struct {
 	ID         pgtype.UUID
 	UserHandle []byte
 	Name       string
+}
+
+type PlanPeriod struct {
+	ID                        pgtype.UUID
+	PlanID                    pgtype.UUID
+	Granularity               PeriodGranularity
+	StartDate                 pgtype.Date
+	Title                     string
+	Notes                     string
+	TargetDistanceMeters      float64
+	TargetElevationGainMeters float64
+	TargetDurationSeconds     int32
 }
 
 type Race struct {
@@ -601,8 +790,36 @@ type StravaConnection struct {
 	CreateTime   pgtype.Timestamptz
 }
 
+type TrainingPlan struct {
+	ID          pgtype.UUID
+	UserID      pgtype.UUID
+	Name        string
+	Description string
+	StartDate   pgtype.Date
+	EndDate     pgtype.Date
+	GoalRaceIds []pgtype.UUID
+	CreateTime  pgtype.Timestamptz
+	UpdateTime  pgtype.Timestamptz
+}
+
 type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
 	IsAdmin    bool
+}
+
+type Workout struct {
+	ID                        pgtype.UUID
+	PlanID                    pgtype.UUID
+	Date                      pgtype.Date
+	Type                      WorkoutType
+	Title                     string
+	Description               string
+	TargetDistanceMeters      float64
+	TargetElevationGainMeters float64
+	TargetDurationSeconds     int32
+	TargetTerrain             NullTerrain
+	RouteID                   pgtype.UUID
+	CompletedActivityID       pgtype.UUID
+	CreateTime                pgtype.Timestamptz
 }

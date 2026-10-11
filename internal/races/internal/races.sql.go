@@ -335,6 +335,22 @@ func (q *Queries) ListRaces(ctx context.Context, userID pgtype.UUID) ([]*Race, e
 	return items, nil
 }
 
+const removeGoalRace = `-- name: RemoveGoalRace :exec
+update training_plans set
+  goal_race_ids = array_remove(goal_race_ids, $2::uuid)
+where user_id = $1
+`
+
+type RemoveGoalRaceParams struct {
+	UserID pgtype.UUID
+	RaceID pgtype.UUID
+}
+
+func (q *Queries) RemoveGoalRace(ctx context.Context, arg *RemoveGoalRaceParams) error {
+	_, err := q.db.Exec(ctx, removeGoalRace, arg.UserID, arg.RaceID)
+	return err
+}
+
 const setRacePlanRaceDay = `-- name: SetRacePlanRaceDay :one
 update race_plans set
   race_day = $2

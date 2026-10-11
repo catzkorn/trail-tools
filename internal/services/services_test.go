@@ -21,6 +21,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
@@ -29,6 +30,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
@@ -36,6 +38,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
@@ -68,6 +71,7 @@ type env struct {
 	geo        geov1connect.GeoServiceClient
 	mapDataAPI routingv1connect.MapDataServiceClient
 	imports    *fakeImportRunner
+	plans      plansv1connect.TrainingPlanServiceClient
 	races      racesv1connect.RaceServiceClient
 	racePlans  racesv1connect.RacePlanServiceClient
 	anonPlans  racesv1connect.RacePlanServiceClient
@@ -92,6 +96,10 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	raceRepo, err := races.NewRepository(log, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	planRepo, err := plans.NewRepository(log, db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,6 +131,7 @@ func newEnv(t *testing.T) *env {
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil)
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
+	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	e.liveTrack = &fakeLiveTrack{}
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
@@ -134,6 +143,7 @@ func newEnv(t *testing.T) *env {
 	mux.Handle(stravav1connect.NewStravaServiceHandler(stravaService))
 	mux.Handle(routesv1connect.NewRouteServiceHandler(routeService))
 	mux.Handle(geov1connect.NewGeoServiceHandler(geoService))
+	mux.Handle(plansv1connect.NewTrainingPlanServiceHandler(planService))
 	mux.Handle(racesv1connect.NewRaceServiceHandler(raceService))
 	mux.Handle(racesv1connect.NewRacePlanServiceHandler(racePlanService))
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
@@ -154,6 +164,7 @@ func newEnv(t *testing.T) *env {
 	e.routes = routesv1connect.NewRouteServiceClient(client, e.srv.URL, opts)
 	e.geo = geov1connect.NewGeoServiceClient(client, e.srv.URL, opts)
 	e.mapDataAPI = routingv1connect.NewMapDataServiceClient(client, e.srv.URL, opts)
+	e.plans = plansv1connect.NewTrainingPlanServiceClient(client, e.srv.URL, opts)
 	e.races = racesv1connect.NewRaceServiceClient(client, e.srv.URL, opts)
 	e.racePlans = racesv1connect.NewRacePlanServiceClient(client, e.srv.URL, opts)
 	e.anonPlans = racesv1connect.NewRacePlanServiceClient(client, e.srv.URL)
