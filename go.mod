@@ -12,6 +12,7 @@ require (
 	github.com/mcosta74/pgx-slog v0.4.1
 	github.com/shopspring/decimal v1.5.0
 	gitlab.com/greyxor/slogor v1.7.0
+	golang.org/x/oauth2 v0.37.0
 	google.golang.org/protobuf v1.36.12
 )
 
