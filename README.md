@@ -15,6 +15,10 @@ To start Postgres and run the server locally, use:
 $ make run
 ```
 
+Then open http://localhost:8080/invite/local-admin to create the
+administrator account with a passkey. Trail Tools is invite only: invite other
+users, or yourself to add a passkey on another device, from the settings page.
+
 ## Development
 
 To run the server with auto-rebuild of the backend, frontend and CSS, run:
