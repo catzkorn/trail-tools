@@ -9,6 +9,7 @@ package usersv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -273,11 +274,483 @@ func (b0 GetCurrentUserResponse_builder) Build() *GetCurrentUserResponse {
 	return m0
 }
 
+// An API token. The token secret is only returned when it is created.
+type APIToken struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id           string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_CreateTime   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3"`
+	xxx_hidden_LastUsedTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_used_time,json=lastUsedTime,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *APIToken) Reset() {
+	*x = APIToken{}
+	mi := &file_users_v1_users_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *APIToken) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*APIToken) ProtoMessage() {}
+
+func (x *APIToken) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *APIToken) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *APIToken) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *APIToken) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CreateTime
+	}
+	return nil
+}
+
+func (x *APIToken) GetLastUsedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_LastUsedTime
+	}
+	return nil
+}
+
+func (x *APIToken) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *APIToken) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *APIToken) SetCreateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreateTime = v
+}
+
+func (x *APIToken) SetLastUsedTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LastUsedTime = v
+}
+
+func (x *APIToken) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreateTime != nil
+}
+
+func (x *APIToken) HasLastUsedTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LastUsedTime != nil
+}
+
+func (x *APIToken) ClearCreateTime() {
+	x.xxx_hidden_CreateTime = nil
+}
+
+func (x *APIToken) ClearLastUsedTime() {
+	x.xxx_hidden_LastUsedTime = nil
+}
+
+type APIToken_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the token.
+	Id string
+	// A name describing what the token is used for.
+	Name string
+	// When the token was created.
+	CreateTime *timestamppb.Timestamp
+	// When the token was last used, if ever.
+	LastUsedTime *timestamppb.Timestamp
+}
+
+func (b0 APIToken_builder) Build() *APIToken {
+	m0 := &APIToken{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_LastUsedTime = b.LastUsedTime
+	return m0
+}
+
+type CreateAPITokenRequest struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CreateAPITokenRequest) Reset() {
+	*x = CreateAPITokenRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateAPITokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAPITokenRequest) ProtoMessage() {}
+
+func (x *CreateAPITokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateAPITokenRequest) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *CreateAPITokenRequest) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type CreateAPITokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// A name describing what the token is used for.
+	Name string
+}
+
+func (b0 CreateAPITokenRequest_builder) Build() *CreateAPITokenRequest {
+	m0 := &CreateAPITokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+type CreateAPITokenResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token  *APIToken              `protobuf:"bytes,1,opt,name=token,proto3"`
+	xxx_hidden_Secret string                 `protobuf:"bytes,2,opt,name=secret,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CreateAPITokenResponse) Reset() {
+	*x = CreateAPITokenResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateAPITokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAPITokenResponse) ProtoMessage() {}
+
+func (x *CreateAPITokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateAPITokenResponse) GetToken() *APIToken {
+	if x != nil {
+		return x.xxx_hidden_Token
+	}
+	return nil
+}
+
+func (x *CreateAPITokenResponse) GetSecret() string {
+	if x != nil {
+		return x.xxx_hidden_Secret
+	}
+	return ""
+}
+
+func (x *CreateAPITokenResponse) SetToken(v *APIToken) {
+	x.xxx_hidden_Token = v
+}
+
+func (x *CreateAPITokenResponse) SetSecret(v string) {
+	x.xxx_hidden_Secret = v
+}
+
+func (x *CreateAPITokenResponse) HasToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Token != nil
+}
+
+func (x *CreateAPITokenResponse) ClearToken() {
+	x.xxx_hidden_Token = nil
+}
+
+type CreateAPITokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The created token.
+	Token *APIToken
+	// The token secret. It is not stored and cannot be retrieved again.
+	Secret string
+}
+
+func (b0 CreateAPITokenResponse_builder) Build() *CreateAPITokenResponse {
+	m0 := &CreateAPITokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Token = b.Token
+	x.xxx_hidden_Secret = b.Secret
+	return m0
+}
+
+type ListAPITokensRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAPITokensRequest) Reset() {
+	*x = ListAPITokensRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAPITokensRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAPITokensRequest) ProtoMessage() {}
+
+func (x *ListAPITokensRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type ListAPITokensRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 ListAPITokensRequest_builder) Build() *ListAPITokensRequest {
+	m0 := &ListAPITokensRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type ListAPITokensResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Tokens *[]*APIToken           `protobuf:"bytes,1,rep,name=tokens,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ListAPITokensResponse) Reset() {
+	*x = ListAPITokensResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAPITokensResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAPITokensResponse) ProtoMessage() {}
+
+func (x *ListAPITokensResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ListAPITokensResponse) GetTokens() []*APIToken {
+	if x != nil {
+		if x.xxx_hidden_Tokens != nil {
+			return *x.xxx_hidden_Tokens
+		}
+	}
+	return nil
+}
+
+func (x *ListAPITokensResponse) SetTokens(v []*APIToken) {
+	x.xxx_hidden_Tokens = &v
+}
+
+type ListAPITokensResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The user's tokens.
+	Tokens []*APIToken
+}
+
+func (b0 ListAPITokensResponse_builder) Build() *ListAPITokensResponse {
+	m0 := &ListAPITokensResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Tokens = &b.Tokens
+	return m0
+}
+
+type DeleteAPITokenRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAPITokenRequest) Reset() {
+	*x = DeleteAPITokenRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAPITokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAPITokenRequest) ProtoMessage() {}
+
+func (x *DeleteAPITokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DeleteAPITokenRequest) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *DeleteAPITokenRequest) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+type DeleteAPITokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the token to delete.
+	Id string
+}
+
+func (b0 DeleteAPITokenRequest_builder) Build() *DeleteAPITokenRequest {
+	m0 := &DeleteAPITokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
+type DeleteAPITokenResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAPITokenResponse) Reset() {
+	*x = DeleteAPITokenResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAPITokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAPITokenResponse) ProtoMessage() {}
+
+func (x *DeleteAPITokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type DeleteAPITokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 DeleteAPITokenResponse_builder) Build() *DeleteAPITokenResponse {
+	m0 := &DeleteAPITokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
 var File_users_v1_users_proto protoreflect.FileDescriptor
 
 const file_users_v1_users_proto_rawDesc = "" +
 	"\n" +
-	"\x14users/v1/users.proto\x12\busers.v1\"\xb5\x01\n" +
+	"\x14users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
@@ -291,27 +764,65 @@ const file_users_v1_users_proto_rawDesc = "" +
 	"\x05admin\x18\a \x01(\bR\x05admin\"\x17\n" +
 	"\x15GetCurrentUserRequest\"<\n" +
 	"\x16GetCurrentUserResponse\x12\"\n" +
-	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user2b\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user\"\xad\x01\n" +
+	"\bAPIToken\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12;\n" +
+	"\vcreate_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12@\n" +
+	"\x0elast_used_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastUsedTime\"+\n" +
+	"\x15CreateAPITokenRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"Z\n" +
+	"\x16CreateAPITokenResponse\x12(\n" +
+	"\x05token\x18\x01 \x01(\v2\x12.users.v1.APITokenR\x05token\x12\x16\n" +
+	"\x06secret\x18\x02 \x01(\tR\x06secret\"\x16\n" +
+	"\x14ListAPITokensRequest\"C\n" +
+	"\x15ListAPITokensResponse\x12*\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x12.users.v1.APITokenR\x06tokens\"'\n" +
+	"\x15DeleteAPITokenRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
+	"\x16DeleteAPITokenResponse2\xde\x02\n" +
 	"\vUserService\x12S\n" +
-	"\x0eGetCurrentUser\x12\x1f.users.v1.GetCurrentUserRequest\x1a .users.v1.GetCurrentUserResponseB\x9a\x01\n" +
+	"\x0eGetCurrentUser\x12\x1f.users.v1.GetCurrentUserRequest\x1a .users.v1.GetCurrentUserResponse\x12S\n" +
+	"\x0eCreateAPIToken\x12\x1f.users.v1.CreateAPITokenRequest\x1a .users.v1.CreateAPITokenResponse\x12P\n" +
+	"\rListAPITokens\x12\x1e.users.v1.ListAPITokensRequest\x1a\x1f.users.v1.ListAPITokensResponse\x12S\n" +
+	"\x0eDeleteAPIToken\x12\x1f.users.v1.DeleteAPITokenRequest\x1a .users.v1.DeleteAPITokenResponseB\x9a\x01\n" +
 	"\fcom.users.v1B\n" +
 	"UsersProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/users/v1;usersv1\xa2\x02\x03UXX\xaa\x02\bUsers.V1\xca\x02\bUsers\\V1\xe2\x02\x14Users\\V1\\GPBMetadata\xea\x02\tUsers::V1b\x06proto3"
 
-var file_users_v1_users_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_users_v1_users_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_users_v1_users_proto_goTypes = []any{
 	(*User)(nil),                   // 0: users.v1.User
 	(*GetCurrentUserRequest)(nil),  // 1: users.v1.GetCurrentUserRequest
 	(*GetCurrentUserResponse)(nil), // 2: users.v1.GetCurrentUserResponse
+	(*APIToken)(nil),               // 3: users.v1.APIToken
+	(*CreateAPITokenRequest)(nil),  // 4: users.v1.CreateAPITokenRequest
+	(*CreateAPITokenResponse)(nil), // 5: users.v1.CreateAPITokenResponse
+	(*ListAPITokensRequest)(nil),   // 6: users.v1.ListAPITokensRequest
+	(*ListAPITokensResponse)(nil),  // 7: users.v1.ListAPITokensResponse
+	(*DeleteAPITokenRequest)(nil),  // 8: users.v1.DeleteAPITokenRequest
+	(*DeleteAPITokenResponse)(nil), // 9: users.v1.DeleteAPITokenResponse
+	(*timestamppb.Timestamp)(nil),  // 10: google.protobuf.Timestamp
 }
 var file_users_v1_users_proto_depIdxs = []int32{
-	0, // 0: users.v1.GetCurrentUserResponse.user:type_name -> users.v1.User
-	1, // 1: users.v1.UserService.GetCurrentUser:input_type -> users.v1.GetCurrentUserRequest
-	2, // 2: users.v1.UserService.GetCurrentUser:output_type -> users.v1.GetCurrentUserResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0,  // 0: users.v1.GetCurrentUserResponse.user:type_name -> users.v1.User
+	10, // 1: users.v1.APIToken.create_time:type_name -> google.protobuf.Timestamp
+	10, // 2: users.v1.APIToken.last_used_time:type_name -> google.protobuf.Timestamp
+	3,  // 3: users.v1.CreateAPITokenResponse.token:type_name -> users.v1.APIToken
+	3,  // 4: users.v1.ListAPITokensResponse.tokens:type_name -> users.v1.APIToken
+	1,  // 5: users.v1.UserService.GetCurrentUser:input_type -> users.v1.GetCurrentUserRequest
+	4,  // 6: users.v1.UserService.CreateAPIToken:input_type -> users.v1.CreateAPITokenRequest
+	6,  // 7: users.v1.UserService.ListAPITokens:input_type -> users.v1.ListAPITokensRequest
+	8,  // 8: users.v1.UserService.DeleteAPIToken:input_type -> users.v1.DeleteAPITokenRequest
+	2,  // 9: users.v1.UserService.GetCurrentUser:output_type -> users.v1.GetCurrentUserResponse
+	5,  // 10: users.v1.UserService.CreateAPIToken:output_type -> users.v1.CreateAPITokenResponse
+	7,  // 11: users.v1.UserService.ListAPITokens:output_type -> users.v1.ListAPITokensResponse
+	9,  // 12: users.v1.UserService.DeleteAPIToken:output_type -> users.v1.DeleteAPITokenResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_users_v1_users_proto_init() }
@@ -325,7 +836,7 @@ func file_users_v1_users_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_v1_users_proto_rawDesc), len(file_users_v1_users_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

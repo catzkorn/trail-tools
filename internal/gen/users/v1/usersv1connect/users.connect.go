@@ -26,6 +26,12 @@ const (
 const (
 	// UserServiceGetCurrentUserProcedure is the procedure name of the UserService's GetCurrentUser RPC.
 	UserServiceGetCurrentUserProcedure = "/users.v1.UserService/GetCurrentUser"
+	// UserServiceCreateAPITokenProcedure is the procedure name of the UserService's CreateAPIToken RPC.
+	UserServiceCreateAPITokenProcedure = "/users.v1.UserService/CreateAPIToken"
+	// UserServiceListAPITokensProcedure is the procedure name of the UserService's ListAPITokens RPC.
+	UserServiceListAPITokensProcedure = "/users.v1.UserService/ListAPITokens"
+	// UserServiceDeleteAPITokenProcedure is the procedure name of the UserService's DeleteAPIToken RPC.
+	UserServiceDeleteAPITokenProcedure = "/users.v1.UserService/DeleteAPIToken"
 )
 
 var (
@@ -36,12 +42,40 @@ var (
 			Procedure:  UserServiceGetCurrentUserProcedure,
 		}
 	})
+	userServiceCreateAPITokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("CreateAPIToken"),
+			Procedure:  UserServiceCreateAPITokenProcedure,
+		}
+	})
+	userServiceListAPITokensSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("ListAPITokens"),
+			Procedure:  UserServiceListAPITokensProcedure,
+		}
+	})
+	userServiceDeleteAPITokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("DeleteAPIToken"),
+			Procedure:  UserServiceDeleteAPITokenProcedure,
+		}
+	})
 )
 
 // UserServiceClient is a client for the users.v1.UserService service.
 type UserServiceClient interface {
 	// Get the signed in user.
 	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
+	// Create an API token. API tokens authenticate MCP clients and other API
+	// clients with an "Authorization: Bearer <token>" header.
+	CreateAPIToken(context.Context, *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error)
+	// List the user's API tokens.
+	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
+	// Delete an API token.
+	DeleteAPIToken(context.Context, *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error)
 }
 
 // NewUserServiceClient constructs a client for the users.v1.UserService service. Multiple service
@@ -54,6 +88,13 @@ func NewUserServiceClient(client *connect.Client) UserServiceClient {
 type UserServiceHandler interface {
 	// Get the signed in user.
 	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
+	// Create an API token. API tokens authenticate MCP clients and other API
+	// clients with an "Authorization: Bearer <token>" header.
+	CreateAPIToken(context.Context, *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error)
+	// List the user's API tokens.
+	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
+	// Delete an API token.
+	DeleteAPIToken(context.Context, *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error)
 }
 
 // RegisterUserServiceHandler registers svc as the users.v1.UserService implementation on server.
@@ -61,6 +102,9 @@ func RegisterUserServiceHandler(server *connect.Server, svc UserServiceHandler) 
 	adapter := userServiceHandler{svc: svc}
 	server.Register(
 		connect.Method{Spec: userServiceGetCurrentUserSpec(), Handler: adapter.getCurrentUser},
+		connect.Method{Spec: userServiceCreateAPITokenSpec(), Handler: adapter.createAPIToken},
+		connect.Method{Spec: userServiceListAPITokensSpec(), Handler: adapter.listAPITokens},
+		connect.Method{Spec: userServiceDeleteAPITokenSpec(), Handler: adapter.deleteAPIToken},
 	)
 }
 
@@ -69,6 +113,18 @@ type UnimplementedUserServiceHandler struct{}
 
 func (UnimplementedUserServiceHandler) GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.GetCurrentUser is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) CreateAPIToken(context.Context, *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.CreateAPIToken is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.ListAPITokens is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) DeleteAPIToken(context.Context, *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.DeleteAPIToken is not implemented")
 }
 
 type userServiceClient struct {
@@ -83,6 +139,30 @@ func (c *userServiceClient) GetCurrentUser(ctx context.Context, req *v1.GetCurre
 	return &res, nil
 }
 
+func (c *userServiceClient) CreateAPIToken(ctx context.Context, req *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error) {
+	var res v1.CreateAPITokenResponse
+	if err := c.client.CallUnary(ctx, userServiceCreateAPITokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) ListAPITokens(ctx context.Context, req *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error) {
+	var res v1.ListAPITokensResponse
+	if err := c.client.CallUnary(ctx, userServiceListAPITokensSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) DeleteAPIToken(ctx context.Context, req *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error) {
+	var res v1.DeleteAPITokenResponse
+	if err := c.client.CallUnary(ctx, userServiceDeleteAPITokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type userServiceHandler struct{ svc UserServiceHandler }
 
 func (h userServiceHandler) getCurrentUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
@@ -91,6 +171,42 @@ func (h userServiceHandler) getCurrentUser(ctx context.Context, _ connect.Spec, 
 		return err
 	}
 	res, err := h.svc.GetCurrentUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) createAPIToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateAPITokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateAPIToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) listAPITokens(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListAPITokensRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListAPITokens(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) deleteAPIToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteAPITokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteAPIToken(ctx, &req)
 	if err != nil {
 		return err
 	}

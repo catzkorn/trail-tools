@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file users/v1/users.proto.
  */
 export const file_users_v1_users: GenFile = /*@__PURE__*/
-  fileDesc("ChR1c2Vycy92MS91c2Vycy5wcm90bxIIdXNlcnMudjEiewoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJEhIKCmdpdmVuX25hbWUYBCABKAkSEwoLZmFtaWx5X25hbWUYBSABKAkSEgoKYXZhdGFyX3VybBgGIAEoCRINCgVhZG1pbhgHIAEoCCIXChVHZXRDdXJyZW50VXNlclJlcXVlc3QiNgoWR2V0Q3VycmVudFVzZXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlcjJiCgtVc2VyU2VydmljZRJTCg5HZXRDdXJyZW50VXNlchIfLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVxdWVzdBogLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVzcG9uc2VCmgEKDGNvbS51c2Vycy52MUIKVXNlcnNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi91c2Vycy92MTt1c2Vyc3YxogIDVVhYqgIIVXNlcnMuVjHKAghVc2Vyc1xWMeICFFVzZXJzXFYxXEdQQk1ldGFkYXRh6gIJVXNlcnM6OlYxYgZwcm90bzM");
+  fileDesc("ChR1c2Vycy92MS91c2Vycy5wcm90bxIIdXNlcnMudjEiewoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJEhIKCmdpdmVuX25hbWUYBCABKAkSEwoLZmFtaWx5X25hbWUYBSABKAkSEgoKYXZhdGFyX3VybBgGIAEoCRINCgVhZG1pbhgHIAEoCCIXChVHZXRDdXJyZW50VXNlclJlcXVlc3QiNgoWR2V0Q3VycmVudFVzZXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlciKJAQoIQVBJVG9rZW4SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIvCgtjcmVhdGVfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMgoObGFzdF91c2VkX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiUKFUNyZWF0ZUFQSVRva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJIksKFkNyZWF0ZUFQSVRva2VuUmVzcG9uc2USIQoFdG9rZW4YASABKAsyEi51c2Vycy52MS5BUElUb2tlbhIOCgZzZWNyZXQYAiABKAkiFgoUTGlzdEFQSVRva2Vuc1JlcXVlc3QiOwoVTGlzdEFQSVRva2Vuc1Jlc3BvbnNlEiIKBnRva2VucxgBIAMoCzISLnVzZXJzLnYxLkFQSVRva2VuIiMKFURlbGV0ZUFQSVRva2VuUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVBUElUb2tlblJlc3BvbnNlMt4CCgtVc2VyU2VydmljZRJTCg5HZXRDdXJyZW50VXNlchIfLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVxdWVzdBogLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVzcG9uc2USUwoOQ3JlYXRlQVBJVG9rZW4SHy51c2Vycy52MS5DcmVhdGVBUElUb2tlblJlcXVlc3QaIC51c2Vycy52MS5DcmVhdGVBUElUb2tlblJlc3BvbnNlElAKDUxpc3RBUElUb2tlbnMSHi51c2Vycy52MS5MaXN0QVBJVG9rZW5zUmVxdWVzdBofLnVzZXJzLnYxLkxpc3RBUElUb2tlbnNSZXNwb25zZRJTCg5EZWxldGVBUElUb2tlbhIfLnVzZXJzLnYxLkRlbGV0ZUFQSVRva2VuUmVxdWVzdBogLnVzZXJzLnYxLkRlbGV0ZUFQSVRva2VuUmVzcG9uc2VCmgEKDGNvbS51c2Vycy52MUIKVXNlcnNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi91c2Vycy92MTt1c2Vyc3YxogIDVVhYqgIIVXNlcnMuVjHKAghVc2Vyc1xWMeICFFVzZXJzXFYxXEdQQk1ldGFkYXRh6gIJVXNlcnM6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message users.v1.User
@@ -92,6 +94,157 @@ export const GetCurrentUserResponseSchema: GenMessage<GetCurrentUserResponse> = 
   messageDesc(file_users_v1_users, 2);
 
 /**
+ * An API token. The token secret is only returned when it is created.
+ *
+ * @generated from message users.v1.APIToken
+ */
+export type APIToken = Message<"users.v1.APIToken"> & {
+  /**
+   * The ID of the token.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * A name describing what the token is used for.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * When the token was created.
+   *
+   * @generated from field: google.protobuf.Timestamp create_time = 3;
+   */
+  createTime?: Timestamp | undefined;
+
+  /**
+   * When the token was last used, if ever.
+   *
+   * @generated from field: google.protobuf.Timestamp last_used_time = 4;
+   */
+  lastUsedTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message users.v1.APIToken.
+ * Use `create(APITokenSchema)` to create a new message.
+ */
+export const APITokenSchema: GenMessage<APIToken> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 3);
+
+/**
+ * @generated from message users.v1.CreateAPITokenRequest
+ */
+export type CreateAPITokenRequest = Message<"users.v1.CreateAPITokenRequest"> & {
+  /**
+   * A name describing what the token is used for.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message users.v1.CreateAPITokenRequest.
+ * Use `create(CreateAPITokenRequestSchema)` to create a new message.
+ */
+export const CreateAPITokenRequestSchema: GenMessage<CreateAPITokenRequest> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 4);
+
+/**
+ * @generated from message users.v1.CreateAPITokenResponse
+ */
+export type CreateAPITokenResponse = Message<"users.v1.CreateAPITokenResponse"> & {
+  /**
+   * The created token.
+   *
+   * @generated from field: users.v1.APIToken token = 1;
+   */
+  token?: APIToken | undefined;
+
+  /**
+   * The token secret. It is not stored and cannot be retrieved again.
+   *
+   * @generated from field: string secret = 2;
+   */
+  secret: string;
+};
+
+/**
+ * Describes the message users.v1.CreateAPITokenResponse.
+ * Use `create(CreateAPITokenResponseSchema)` to create a new message.
+ */
+export const CreateAPITokenResponseSchema: GenMessage<CreateAPITokenResponse> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 5);
+
+/**
+ * @generated from message users.v1.ListAPITokensRequest
+ */
+export type ListAPITokensRequest = Message<"users.v1.ListAPITokensRequest"> & {
+};
+
+/**
+ * Describes the message users.v1.ListAPITokensRequest.
+ * Use `create(ListAPITokensRequestSchema)` to create a new message.
+ */
+export const ListAPITokensRequestSchema: GenMessage<ListAPITokensRequest> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 6);
+
+/**
+ * @generated from message users.v1.ListAPITokensResponse
+ */
+export type ListAPITokensResponse = Message<"users.v1.ListAPITokensResponse"> & {
+  /**
+   * The user's tokens.
+   *
+   * @generated from field: repeated users.v1.APIToken tokens = 1;
+   */
+  tokens: APIToken[];
+};
+
+/**
+ * Describes the message users.v1.ListAPITokensResponse.
+ * Use `create(ListAPITokensResponseSchema)` to create a new message.
+ */
+export const ListAPITokensResponseSchema: GenMessage<ListAPITokensResponse> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 7);
+
+/**
+ * @generated from message users.v1.DeleteAPITokenRequest
+ */
+export type DeleteAPITokenRequest = Message<"users.v1.DeleteAPITokenRequest"> & {
+  /**
+   * The ID of the token to delete.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message users.v1.DeleteAPITokenRequest.
+ * Use `create(DeleteAPITokenRequestSchema)` to create a new message.
+ */
+export const DeleteAPITokenRequestSchema: GenMessage<DeleteAPITokenRequest> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 8);
+
+/**
+ * @generated from message users.v1.DeleteAPITokenResponse
+ */
+export type DeleteAPITokenResponse = Message<"users.v1.DeleteAPITokenResponse"> & {
+};
+
+/**
+ * Describes the message users.v1.DeleteAPITokenResponse.
+ * Use `create(DeleteAPITokenResponseSchema)` to create a new message.
+ */
+export const DeleteAPITokenResponseSchema: GenMessage<DeleteAPITokenResponse> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 9);
+
+/**
  * UserService provides information about the signed in user.
  *
  * @generated from service users.v1.UserService
@@ -106,6 +259,37 @@ export const UserService: GenService<{
     methodKind: "unary";
     input: typeof GetCurrentUserRequestSchema;
     output: typeof GetCurrentUserResponseSchema;
+  },
+  /**
+   * Create an API token. API tokens authenticate MCP clients and other API
+   * clients with an "Authorization: Bearer <token>" header.
+   *
+   * @generated from rpc users.v1.UserService.CreateAPIToken
+   */
+  createAPIToken: {
+    methodKind: "unary";
+    input: typeof CreateAPITokenRequestSchema;
+    output: typeof CreateAPITokenResponseSchema;
+  },
+  /**
+   * List the user's API tokens.
+   *
+   * @generated from rpc users.v1.UserService.ListAPITokens
+   */
+  listAPITokens: {
+    methodKind: "unary";
+    input: typeof ListAPITokensRequestSchema;
+    output: typeof ListAPITokensResponseSchema;
+  },
+  /**
+   * Delete an API token.
+   *
+   * @generated from rpc users.v1.UserService.DeleteAPIToken
+   */
+  deleteAPIToken: {
+    methodKind: "unary";
+    input: typeof DeleteAPITokenRequestSchema;
+    output: typeof DeleteAPITokenResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_users_v1_users, 0);

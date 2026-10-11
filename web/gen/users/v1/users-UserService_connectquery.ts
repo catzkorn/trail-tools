@@ -10,3 +10,25 @@ import { UserService } from "./users_pb";
  * @generated from rpc users.v1.UserService.GetCurrentUser
  */
 export const getCurrentUser = UserService.method.getCurrentUser;
+
+/**
+ * Create an API token. API tokens authenticate MCP clients and other API
+ * clients with an "Authorization: Bearer <token>" header.
+ *
+ * @generated from rpc users.v1.UserService.CreateAPIToken
+ */
+export const createAPIToken = UserService.method.createAPIToken;
+
+/**
+ * List the user's API tokens.
+ *
+ * @generated from rpc users.v1.UserService.ListAPITokens
+ */
+export const listAPITokens = UserService.method.listAPITokens;
+
+/**
+ * Delete an API token.
+ *
+ * @generated from rpc users.v1.UserService.DeleteAPIToken
+ */
+export const deleteAPIToken = UserService.method.deleteAPIToken;
