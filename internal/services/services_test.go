@@ -21,6 +21,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/oauth/v1/oauthv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
@@ -30,12 +31,14 @@ import (
 	"github.com/catzkorn/trail-tools/internal/livetrack"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/mcp"
+	"github.com/catzkorn/trail-tools/internal/oauth"
 	"github.com/catzkorn/trail-tools/internal/plans"
 	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
+	oauthsvc "github.com/catzkorn/trail-tools/internal/services/oauth"
 	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
@@ -71,7 +74,12 @@ type env struct {
 	racePlans  racesv1connect.RacePlanServiceClient
 	anonPlans  racesv1connect.RacePlanServiceClient
 	otherRaces racesv1connect.RaceServiceClient
+	oauth      oauthv1connect.OAuthServiceClient
+	anonOAuth  oauthv1connect.OAuthServiceClient
 }
+
+// consentPage stands in for the frontend's OAuth consent page.
+const consentPage = "consent page"
 
 func newEnv(t *testing.T) *env {
 	t.Helper()
@@ -131,7 +139,18 @@ func newEnv(t *testing.T) *env {
 	e.liveTrack = &fakeLiveTrack{}
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
 
+	// Start listening before creating the handler, as the OAuth server needs
+	// the URL of the server.
+	e.srv = httptest.NewUnstartedServer(nil)
+	t.Cleanup(e.srv.Close)
+	oauthServer := oauth.NewServer(log, userRepo, "http://"+e.srv.Listener.Addr().String(), "/mcp")
+	resourceMetadataURL := oauthServer.ResourceMetadataURL()
+
 	mux := http.NewServeMux()
+	mux.Handle(oauthv1connect.NewOAuthServiceHandler(oauthsvc.NewService(log, oauthServer, userRepo)))
+	oauthServer.RegisterHandlers(mux, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, consentPage)
+	}))
 	mux.Handle(usersv1connect.NewUserServiceHandler(userService))
 	mux.Handle(authv1connect.NewAuthServiceHandler(authService))
 	mux.Handle(activitiesv1connect.NewActivityServiceHandler(activityService))
@@ -149,13 +168,13 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mux.Handle("/mcp", authn.RequireUser(mcpServer.Handler()))
-	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux)
+	mux.Handle("/mcp", authn.RequireUser(resourceMetadataURL, mcpServer.Handler()))
+	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux, authn.WithResourceMetadata(resourceMetadataURL))
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.srv = httptest.NewServer(handler)
-	t.Cleanup(e.srv.Close)
+	e.srv.Config.Handler = handler
+	e.srv.Start()
 
 	client := e.srv.Client()
 	opts := connect.WithInterceptors(bearerInterceptor(e.token))
@@ -169,6 +188,8 @@ func newEnv(t *testing.T) *env {
 	e.racePlans = racesv1connect.NewRacePlanServiceClient(client, e.srv.URL, opts)
 	e.anonPlans = racesv1connect.NewRacePlanServiceClient(client, e.srv.URL)
 	e.otherRaces = racesv1connect.NewRaceServiceClient(client, e.srv.URL, connect.WithInterceptors(bearerInterceptor(otherToken)))
+	e.oauth = oauthv1connect.NewOAuthServiceClient(client, e.srv.URL, opts)
+	e.anonOAuth = oauthv1connect.NewOAuthServiceClient(client, e.srv.URL)
 	return e
 }
 

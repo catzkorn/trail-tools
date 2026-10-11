@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package oauth.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// OAuthService lets users connect OAuth clients, such as claude.ai custom
+// connectors, to their account, and manage the connected clients. The OAuth
+// protocol endpoints themselves are served under /oauth/.
+service OAuthService {
+  // Get the client of an authorization request, to ask the signed in user
+  // for consent.
+  rpc GetAuthorization(GetAuthorizationRequest) returns (GetAuthorizationResponse);
+  // Approve an authorization request as the signed in user. Returns where to
+  // redirect the user, with an authorization code for the client.
+  rpc ApproveAuthorization(ApproveAuthorizationRequest) returns (ApproveAuthorizationResponse);
+  // Deny an authorization request. Returns where to redirect the user, with
+  // an error for the client.
+  rpc DenyAuthorization(DenyAuthorizationRequest) returns (DenyAuthorizationResponse);
+  // List the clients connected to the signed in user's account, newest
+  // first.
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse);
+  // Disconnect a client, revoking its tokens.
+  rpc DeleteConnection(DeleteConnectionRequest) returns (DeleteConnectionResponse);
+}
+
+message GetAuthorizationRequest {
+  // The query string of the authorization request, as sent by the client to
+  // /oauth/authorize.
+  string query = 1;
+}
+
+message GetAuthorizationResponse {
+  // The name the client registered with. It is chosen by the client, so it
+  // is not verified.
+  string client_name = 1;
+  // Where the user is redirected after approving.
+  string redirect_uri = 2;
+}
+
+message ApproveAuthorizationRequest {
+  // The query string of the authorization request, as sent by the client to
+  // /oauth/authorize.
+  string query = 1;
+}
+
+message ApproveAuthorizationResponse {
+  // The URL to redirect the user to, which returns the authorization code
+  // to the client.
+  string redirect_uri = 1;
+}
+
+message DenyAuthorizationRequest {
+  // The query string of the authorization request, as sent by the client to
+  // /oauth/authorize.
+  string query = 1;
+}
+
+message DenyAuthorizationResponse {
+  // The URL to redirect the user to, which tells the client that access was
+  // denied.
+  string redirect_uri = 1;
+}
+
+// A client connected to a user's account with OAuth.
+message Connection {
+  // The ID of the connection.
+  string id = 1;
+  // The name the client registered with.
+  string client_name = 2;
+  // The redirect URI the client was authorized with.
+  string redirect_uri = 3;
+  // When the user connected the client.
+  google.protobuf.Timestamp create_time = 4;
+  // When the client last used the API, if ever.
+  google.protobuf.Timestamp last_used_time = 5;
+}
+
+message ListConnectionsRequest {}
+
+message ListConnectionsResponse {
+  // The connected clients.
+  repeated Connection connections = 1;
+}
+
+message DeleteConnectionRequest {
+  // The ID of the connection to delete.
+  string id = 1;
+}
+
+message DeleteConnectionResponse {}

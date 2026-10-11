@@ -1,8 +1,8 @@
 package mcp
 
 import (
-	// Register the auth service's types, which aren't otherwise used by the
-	// tests, so every API method's schema can be validated.
+	// Register the auth and OAuth services' types, which aren't otherwise
+	// used by the tests, so every API method's schema can be validated.
 	"encoding/json"
 	"math"
 	"slices"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	_ "github.com/catzkorn/trail-tools/internal/gen/auth/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/oauth/v1"
 
 	"github.com/catzkorn/trail-tools/internal/apidesc"
 	"github.com/google/jsonschema-go/jsonschema"
