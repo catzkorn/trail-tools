@@ -5,6 +5,8 @@ import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
 import { getCurrentUser } from "gen/users/v1/users-UserService_connectquery";
 import type { User } from "gen/users/v1/users_pb";
+import ActivitiesPage from "pages/activities";
+import ActivityPage from "pages/activity";
 import AthletesPage from "pages/athletes";
 import InvitePage from "pages/invite";
 import SettingsPage from "pages/settings";
@@ -92,6 +94,14 @@ const App: React.FC = () => {
         <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
           <Routes>
             <Route path="/" element={<AthletesPage user={user} />} />
+            <Route
+              path="/activities"
+              element={protectedPage(<ActivitiesPage />)}
+            />
+            <Route
+              path="/activities/:id"
+              element={protectedPage(<ActivityPage />)}
+            />
             <Route path="/athletes" element={<AthletesPage user={user} />} />
             <Route
               path="/settings"

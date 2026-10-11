@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   --color-google-text-gray: #3c4043;
@@ -20,5 +21,25 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+/*
+  Leaflet's layers control references a PNG next to leaflet.css, which is not
+  copied into the build. Use an inline SVG icon instead.
+*/
+.leaflet-control-layers-toggle,
+.leaflet-retina .leaflet-control-layers-toggle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 3 2 8l10 5 10-5-10-5Z'/%3E%3Cpath d='m2 13 10 5 10-5'/%3E%3C/svg%3E");
+  background-size: 22px 22px;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
+
+@media print {
+  .leaflet-control-container {
+    display: none;
   }
 }

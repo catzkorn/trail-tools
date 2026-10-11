@@ -1,6 +1,7 @@
 import Loading from "@components/loading";
 import Invitations from "@components/settings/invitations";
 import Passkeys from "@components/settings/passkeys";
+import StravaCard from "@components/strava/strava-card";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
 import { CopyField, PageHeader } from "@components/ui/misc";
@@ -172,6 +173,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
       <div className="flex flex-col gap-4">
         <Passkeys />
         <Invitations admin={user !== null && user.admin} />
+        <StravaCard showDisconnect />
       </div>
       <div className="flex flex-col gap-4">
         <ApiTokens />
