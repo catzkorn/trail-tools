@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
+	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -237,6 +238,18 @@ func TestStravaSyncAndActivities(t *testing.T) {
 		t.Errorf("unexpected first week %v", weeks[0])
 	}
 
+	// The heatmap counts each activity once per cell.
+	heatmap, err := e.geo.GetPersonalHeatmap(ctx, connect.NewRequest(geov1.GetPersonalHeatmapRequest_builder{
+		Bounds:         geov1.BoundingBox_builder{South: -0.001, West: -0.001, North: 0.02, East: 0.001}.Build(),
+		CellSizeMeters: 100,
+	}.Build()))
+	if err != nil {
+		t.Fatalf("GetPersonalHeatmap: %v", err)
+	}
+	if heatmap.Msg.GetActivityCount() != 2 || len(heatmap.Msg.GetCells()) == 0 || heatmap.Msg.GetCells()[0].GetActivityCount() != 2 {
+		t.Errorf("unexpected heatmap: %d activities, %d cells", heatmap.Msg.GetActivityCount(), len(heatmap.Msg.GetCells()))
+	}
+
 	// An activity can become a route.
 	route, err := e.routes.CreateRoute(ctx, connect.NewRequest(routesv1.CreateRouteRequest_builder{
 		ActivityId: new(run0.GetId()),
@@ -253,6 +266,45 @@ func TestStravaSyncAndActivities(t *testing.T) {
 		ActivityId: new(page1.Msg.GetActivities()[0].GetId()),
 	}.Build()))
 	wantCode(t, err, connect.CodeFailedPrecondition)
+}
+
+func TestGeo(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	center := geov1.LatLng_builder{Lat: 46, Lng: 7}.Build()
+
+	places, err := e.geo.SearchPlaces(ctx, connect.NewRequest(geov1.SearchPlacesRequest_builder{Query: "Matterhorn"}.Build()))
+	if err != nil {
+		t.Fatalf("SearchPlaces: %v", err)
+	}
+	if len(places.Msg.GetPlaces()) != 1 || places.Msg.GetPlaces()[0].GetBounds().GetNorth() != 1.1 {
+		t.Errorf("unexpected places %v", places.Msg.GetPlaces())
+	}
+
+	trails, err := e.geo.FindTrails(ctx, connect.NewRequest(geov1.FindTrailsRequest_builder{Center: center}.Build()))
+	if err != nil {
+		t.Fatalf("FindTrails: %v", err)
+	}
+	trail := trails.Msg.GetTrails()[0]
+	if trail.GetName() != "Ridge Trail" || trail.GetTerrain() != geov1.Terrain_TERRAIN_TRAIL || !approx(trail.GetLengthMeters(), 445, 2) || len(trail.GetGeometry()) != 0 {
+		t.Errorf("unexpected trail %v", trail)
+	}
+
+	pois, err := e.geo.FindPointsOfInterest(ctx, connect.NewRequest(geov1.FindPointsOfInterestRequest_builder{
+		Center: center,
+		Kinds:  []geov1.PointOfInterestKind{geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PEAK, geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_WATER},
+	}.Build()))
+	if err != nil {
+		t.Fatalf("FindPointsOfInterest: %v", err)
+	}
+	points := pois.Msg.GetPoints()
+	if len(points) != 2 || points[0].GetKind() != geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_WATER || points[1].GetElevationMeters() != 1234 {
+		t.Errorf("unexpected points %v", points)
+	}
+
+	_, err = e.geo.FindTrails(ctx, connect.NewRequest(geov1.FindTrailsRequest_builder{Center: center, RadiusMeters: 50000}.Build()))
+	wantCode(t, err, connect.CodeInvalidArgument)
 }
 
 func TestScheduledStravaSync(t *testing.T) {

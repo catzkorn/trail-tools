@@ -22,6 +22,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
@@ -31,6 +32,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
+	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/user"
@@ -265,6 +267,7 @@ func run(
 	activityService := activity.NewService(log, activityRepo)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
 	routeService := route.NewService(log, routeRepo, activityRepo, mapData)
+	geoService := geosvc.NewService(log, mapData, activityRepo)
 
 	// Register all handlers to a single mux
 	apiMux := http.NewServeMux()
@@ -278,6 +281,7 @@ func run(
 		func() (string, http.Handler) { return activitiesv1connect.NewActivityServiceHandler(activityService) },
 		func() (string, http.Handler) { return stravav1connect.NewStravaServiceHandler(stravaService) },
 		func() (string, http.Handler) { return routesv1connect.NewRouteServiceHandler(routeService) },
+		func() (string, http.Handler) { return geov1connect.NewGeoServiceHandler(geoService) },
 	} {
 		path, handler := register()
 		apiMux.Handle(path, handler)
