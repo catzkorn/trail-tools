@@ -1,10 +1,12 @@
 import {
   FitBounds,
+  FlyTo,
   HoverMarker,
   MapClick,
   PointMarker,
   PolylineLayer,
 } from "@components/map/layers";
+import type { MapFocus } from "@components/map/layers";
 import MapView from "@components/map/map-view";
 import PhotoMarkers from "@components/map/photo-markers";
 import type { MapPhoto } from "@components/map/photo-markers";
@@ -22,6 +24,8 @@ interface TripMapProps {
   onMovePhoto?: (id: string, position: LatLng) => void;
   // Called with clicks on the map, e.g. to place a photo.
   onMapClick?: ((position: LatLng) => void) | undefined;
+  // Zooms the map to a position, e.g. of a photo shown on the map.
+  focus?: MapFocus | null;
   fitKey: string;
   className?: string;
 }
@@ -38,6 +42,7 @@ const TripMap: React.FC<TripMapProps> = ({
   onSelectPhoto,
   onMovePhoto,
   onMapClick,
+  focus = null,
   fitKey,
   className = "h-96",
 }) => {
@@ -65,6 +70,7 @@ const TripMap: React.FC<TripMapProps> = ({
       />
       {onMapClick !== undefined && <MapClick onClick={onMapClick} />}
       <FitBounds positions={fitPositions} fitKey={fitKey} />
+      <FlyTo focus={focus} />
     </MapView>
   );
 };
