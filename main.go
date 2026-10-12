@@ -25,6 +25,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/cloudrun"
+	"github.com/catzkorn/trail-tools/internal/cloudscheduler"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
@@ -150,6 +151,13 @@ var (
 		"A secret Strava sends back when validating the webhook. If set, the server subscribes to Strava's webhook events"+
 			" at "+stravasvc.WebhookPath+" on startup, to sync new activities right away. Requires a public URL",
 	)
+	stravaSyncJob = flag.String(
+		"strava-sync-job",
+		"",
+		"The Cloud Scheduler job that calls "+stravasvc.SyncPath+", as projects/<project>/locations/<region>/jobs/<job>."+
+			" With -strava-sync-mode=scheduled, it runs when a user asks to sync, so the sync runs right away."+
+			" If unset, those syncs run within the request for a while instead",
+	)
 	schedulerServiceAccount = flag.String(
 		"scheduler-service-account",
 		"",
@@ -223,6 +231,7 @@ func main() {
 		*adminBootstrapToken,
 		*stravaSyncMode,
 		*stravaWebhookVerifyToken,
+		*stravaSyncJob,
 		*schedulerServiceAccount,
 		*schedulerAudience,
 		*importJob,
@@ -252,6 +261,7 @@ func run(
 	adminBootstrapToken string,
 	stravaSyncMode string,
 	stravaWebhookVerifyToken string,
+	stravaSyncJob string,
 	schedulerServiceAccount string,
 	schedulerAudience string,
 	importJob string,
@@ -355,7 +365,15 @@ func run(
 			RedirectURL:  baseURL + stravasvc.CallbackPath,
 		})
 		background := stravaSyncMode == "background"
-		stravaSyncer = stravasvc.NewSyncer(ctx, log, activityRepo, stravaClient, background)
+		var trigger stravasvc.Trigger
+		if !background && stravaSyncJob != "" {
+			job, err := cloudscheduler.NewJob(ctx, stravaSyncJob)
+			if err != nil {
+				return fmt.Errorf("failed to create the Strava sync job client: %w", err)
+			}
+			trigger = job
+		}
+		stravaSyncer = stravasvc.NewSyncer(ctx, log, activityRepo, stravaClient, background, trigger)
 		stravaOAuth = stravasvc.NewOAuth(log, stravaClient, activityRepo, stravaSyncer, []byte(stravaClientSecret))
 		if stravaWebhookVerifyToken != "" {
 			stravaWebhook = stravasvc.NewWebhook(log, activityRepo, stravaSyncer, stravaClient,

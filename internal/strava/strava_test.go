@@ -32,7 +32,7 @@ func TestRateLimit(t *testing.T) {
 	client.nowFn = func() time.Time { return now }
 	ctx := context.Background()
 
-	activities, err := client.ListActivities(ctx, "token", 1, 10)
+	activities, err := client.ListActivities(ctx, "token", time.Time{}, 10)
 	if err != nil {
 		t.Fatalf("ListActivities: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestRateLimit(t *testing.T) {
 	}
 	// 98 of 100 requests used: the next request would be too close to the
 	// limit, so it is rejected until the next 15 minute window.
-	_, err = client.ListActivities(ctx, "token", 2, 10)
+	_, err = client.ListActivities(ctx, "token", time.Time{}, 10)
 	var rateErr *RateLimitError
 	if !errors.As(err, &rateErr) || !rateErr.ResetAt.Equal(time.Date(2026, 9, 7, 10, 15, 0, 0, time.UTC)) {
 		t.Fatalf("got %v, want rate limit until 10:15", err)
@@ -51,10 +51,10 @@ func TestRateLimit(t *testing.T) {
 		t.Errorf("rate limited request should not reach Strava, got %d calls", calls)
 	}
 	now = now.Add(15 * time.Minute)
-	if _, err := client.ListActivities(ctx, "token", 2, 10); err != nil {
+	if _, err := client.ListActivities(ctx, "token", time.Time{}, 10); err != nil {
 		t.Fatalf("request after reset: %v", err)
 	}
-	if _, err := New(Config{BaseURL: srv.URL}).ListActivities(ctx, "bad", 2, 10); !errors.Is(err, ErrUnauthorized) {
+	if _, err := New(Config{BaseURL: srv.URL}).ListActivities(ctx, "bad", time.Time{}, 10); !errors.Is(err, ErrUnauthorized) {
 		t.Errorf("got %v, want ErrUnauthorized", err)
 	}
 }

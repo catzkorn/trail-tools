@@ -33,10 +33,16 @@ type StravaConnection struct {
 	Expiry       time.Time
 	SyncState    SyncState
 	SyncMessage  string
+	// When the sync state last changed.
+	SyncStateTime time.Time
 	// Zero if the user has never synced.
 	LastSyncTime time.Time
 	// Zero unless the sync is rate limited.
 	ResumeTime time.Time
+	// Activities are listed newest first. While a listing is unfinished,
+	// the activities that started before ListBefore remain to be listed,
+	// otherwise it is zero.
+	ListBefore time.Time
 }
 
 // UpsertStravaConnection creates or replaces the user's Strava connection.
@@ -122,6 +128,19 @@ func (r *Repository) UpdateStravaSyncState(ctx context.Context, userID pgtype.UU
 	return nil
 }
 
+// UpdateStravaListBefore records how far an unfinished listing of the
+// user's activities got: the activities that started before listBefore
+// remain to be listed. A zero listBefore records that the listing finished.
+func (r *Repository) UpdateStravaListBefore(ctx context.Context, userID pgtype.UUID, listBefore time.Time) error {
+	if err := r.q.UpdateStravaListBefore(ctx, &internal.UpdateStravaListBeforeParams{
+		UserID:     userID,
+		ListBefore: pgtype.Timestamptz{Time: listBefore, Valid: !listBefore.IsZero()},
+	}); err != nil {
+		return fmt.Errorf("failed to update Strava listing progress: %w", err)
+	}
+	return nil
+}
+
 // DeleteStravaConnection deletes the user's Strava connection.
 func (r *Repository) DeleteStravaConnection(ctx context.Context, userID pgtype.UUID) error {
 	n, err := r.q.DeleteStravaConnection(ctx, userID)
@@ -145,15 +164,17 @@ func (r *Repository) DeleteActivityByStravaID(ctx context.Context, userID pgtype
 
 func connectionFromDB(c *internal.StravaConnection) *StravaConnection {
 	return &StravaConnection{
-		UserID:       c.UserID,
-		AthleteID:    c.AthleteID,
-		AthleteName:  c.AthleteName,
-		AccessToken:  c.AccessToken,
-		RefreshToken: c.RefreshToken,
-		Expiry:       c.Expiry.Time,
-		SyncState:    SyncState(c.SyncState),
-		SyncMessage:  c.SyncMessage,
-		LastSyncTime: c.LastSyncTime.Time,
-		ResumeTime:   c.ResumeTime.Time,
+		UserID:        c.UserID,
+		AthleteID:     c.AthleteID,
+		AthleteName:   c.AthleteName,
+		AccessToken:   c.AccessToken,
+		RefreshToken:  c.RefreshToken,
+		Expiry:        c.Expiry.Time,
+		SyncState:     SyncState(c.SyncState),
+		SyncMessage:   c.SyncMessage,
+		SyncStateTime: c.SyncStateTime.Time,
+		LastSyncTime:  c.LastSyncTime.Time,
+		ResumeTime:    c.ResumeTime.Time,
+		ListBefore:    c.ListBefore.Time,
 	}
 }

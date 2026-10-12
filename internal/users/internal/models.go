@@ -1029,17 +1029,19 @@ type StravaActivityStream struct {
 }
 
 type StravaConnection struct {
-	UserID       pgtype.UUID
-	AthleteID    int64
-	AthleteName  string
-	AccessToken  string
-	RefreshToken string
-	Expiry       pgtype.Timestamptz
-	SyncState    StravaSyncState
-	SyncMessage  string
-	LastSyncTime pgtype.Timestamptz
-	ResumeTime   pgtype.Timestamptz
-	CreateTime   pgtype.Timestamptz
+	UserID        pgtype.UUID
+	AthleteID     int64
+	AthleteName   string
+	AccessToken   string
+	RefreshToken  string
+	Expiry        pgtype.Timestamptz
+	SyncState     StravaSyncState
+	SyncMessage   string
+	LastSyncTime  pgtype.Timestamptz
+	ResumeTime    pgtype.Timestamptz
+	CreateTime    pgtype.Timestamptz
+	SyncStateTime pgtype.Timestamptz
+	ListBefore    pgtype.Timestamptz
 }
 
 type TrainingPlan struct {

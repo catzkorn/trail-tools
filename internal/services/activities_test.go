@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -33,8 +34,13 @@ type fakeStrava struct {
 	revoked     bool
 	refreshes   int
 	streamCalls int
-	// The pages of activities listed.
-	listed []int
+	// The before times activities were listed with.
+	listed []time.Time
+	// The page size of listed activities, if not zero.
+	pageSize int
+	// If set, listing activities fails at the rate limit once, after
+	// listing this many pages.
+	listLimitAfter int
 }
 
 func newFakeStrava() *fakeStrava {
@@ -82,19 +88,31 @@ func (f *fakeStrava) Refresh(_ context.Context, refreshToken string) (*strava.To
 	return &strava.Token{AccessToken: "fresh", RefreshToken: refreshToken, Expiry: time.Now().Add(6 * time.Hour)}, nil
 }
 
-func (f *fakeStrava) ListActivities(_ context.Context, token string, page, perPage int) ([]*strava.Activity, error) {
+func (f *fakeStrava) ListActivities(_ context.Context, token string, before time.Time, perPage int) ([]*strava.Activity, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if token != "fresh" {
 		return nil, strava.ErrUnauthorized
 	}
-	f.listed = append(f.listed, page)
+	if f.listLimitAfter > 0 && len(f.listed) == f.listLimitAfter {
+		f.listLimitAfter = 0
+		return nil, &strava.RateLimitError{ResetAt: time.Now()}
+	}
+	f.listed = append(f.listed, before)
+	if f.pageSize > 0 {
+		perPage = f.pageSize
+	}
 	// Like Strava, newest first.
-	sorted := slices.SortedFunc(slices.Values(f.activities), func(a, b *strava.Activity) int {
+	var result []*strava.Activity
+	for _, a := range f.activities {
+		if before.IsZero() || a.StartDate.Before(before) {
+			result = append(result, a)
+		}
+	}
+	slices.SortFunc(result, func(a, b *strava.Activity) int {
 		return b.StartDate.Compare(a.StartDate)
 	})
-	start := min((page-1)*perPage, len(sorted))
-	return sorted[start:min(start+perPage, len(sorted))], nil
+	return result[:min(perPage, len(result))], nil
 }
 
 func (f *fakeStrava) GetActivity(_ context.Context, _ string, id int64) (*strava.Activity, error) {
@@ -339,7 +357,7 @@ func TestScheduledStravaSync(t *testing.T) {
 	ctx := context.Background()
 	e.connectStrava()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false)
+	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false, nil)
 
 	// Background syncs are disabled.
 	if syncer.Start(e.userID, false) {
@@ -392,7 +410,134 @@ func TestScheduledStravaSync(t *testing.T) {
 	}
 	// The oldest activity is before the overlap, so the second page isn't
 	// listed.
-	if !slices.Equal(e.strava.listed, []int{1}) {
-		t.Errorf("listed pages %v, want only the first", e.strava.listed)
+	if len(e.strava.listed) != 1 {
+		t.Errorf("listed activities %d times, want once", len(e.strava.listed))
+	}
+}
+
+func TestStravaSyncResumesListing(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	e.connectStrava()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false, nil)
+	e.strava.pageSize = 2
+	e.strava.listLimitAfter = 1
+
+	// The first sync lists the two newest activities, then stops at the rate
+	// limit.
+	syncer.SyncOnce(ctx, e.userID, false)
+	conn, err := e.activities.GetStravaConnection(ctx, e.userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	total, _, err := e.activities.CountActivities(ctx, e.userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if conn.SyncState != activities.SyncStateRateLimited || total != 2 || !conn.ListBefore.Equal(e.strava.activities[1].StartDate) {
+		t.Fatalf("got state %q with %d activities listed before %v, want rate limited with 2 before %v",
+			conn.SyncState, total, conn.ListBefore, e.strava.activities[1].StartDate)
+	}
+	// The next incremental syncs continue the listing, although the oldest
+	// activity is more than a week older than the latest. The second stops
+	// at the rate limit for streams.
+	syncer.SyncOnce(ctx, e.userID, false)
+	syncer.SyncOnce(ctx, e.userID, false)
+	if conn, err = e.activities.GetStravaConnection(ctx, e.userID); err != nil {
+		t.Fatal(err)
+	}
+	if total, _, err = e.activities.CountActivities(ctx, e.userID); err != nil {
+		t.Fatal(err)
+	}
+	if conn.SyncState != activities.SyncStateIdle || total != 3 || !conn.ListBefore.IsZero() {
+		t.Errorf("got state %q with %d activities listed before %v, want idle with 3 and the listing finished",
+			conn.SyncState, total, conn.ListBefore)
+	}
+}
+
+// fakeTrigger is a Cloud Scheduler job that syncs due connections.
+type fakeTrigger struct {
+	mu   sync.Mutex
+	runs int
+	err  error
+}
+
+func (f *fakeTrigger) Run(context.Context) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.runs++
+	return f.err
+}
+
+func TestTriggeredStravaSync(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	e.connectStrava()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	trigger := &fakeTrigger{}
+	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false, trigger)
+
+	// A requested sync is marked running and triggered, without syncing
+	// within the request.
+	if err := syncer.Request(ctx, e.userID, false); err != nil {
+		t.Fatalf("Request: %v", err)
+	}
+	conn, err := e.activities.GetStravaConnection(ctx, e.userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if trigger.runs != 1 || conn.SyncState != activities.SyncStateRunning || !syncer.Active(conn) || len(e.strava.listed) != 0 {
+		t.Fatalf("got %d runs, state %q and %d listings, want 1 run of an active sync and no listings", trigger.runs, conn.SyncState, len(e.strava.listed))
+	}
+	// Requesting it again while it's starting doesn't trigger it again.
+	if err := syncer.Request(ctx, e.userID, false); err != nil || trigger.runs != 1 {
+		t.Fatalf("got %d runs (%v), want 1", trigger.runs, err)
+	}
+	// The triggered scheduled sync runs it, stopping at the rate limit.
+	if err := syncer.SyncDue(ctx); err != nil {
+		t.Fatalf("SyncDue: %v", err)
+	}
+	if conn, err = e.activities.GetStravaConnection(ctx, e.userID); err != nil {
+		t.Fatal(err)
+	}
+	if conn.SyncState != activities.SyncStateRateLimited {
+		t.Fatalf("got state %q, want rate limited", conn.SyncState)
+	}
+
+	// A running sync that hasn't made progress for a while was interrupted.
+	if err := e.activities.UpdateStravaSyncState(ctx, e.userID, activities.SyncStateRunning, "Fetched 3 activities", time.Time{}, time.Time{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.db.Exec(ctx, "update strava_connections set sync_state_time = now() - interval '10 minutes'"); err != nil {
+		t.Fatal(err)
+	}
+	if conn, err = e.activities.GetStravaConnection(ctx, e.userID); err != nil {
+		t.Fatal(err)
+	}
+	if syncer.Active(conn) {
+		t.Error("a stale running sync is active")
+	}
+
+	// If the trigger fails, a full sync runs within the request instead.
+	trigger.err = errors.New("unavailable")
+	if err := syncer.Request(ctx, e.userID, true); err != nil {
+		t.Fatalf("Request: %v", err)
+	}
+	if conn, err = e.activities.GetStravaConnection(ctx, e.userID); err != nil {
+		t.Fatal(err)
+	}
+	total, pending, err := e.activities.CountActivities(ctx, e.userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if trigger.runs != 2 || conn.SyncState != activities.SyncStateIdle || total != 3 || pending != 0 || !conn.ListBefore.IsZero() {
+		t.Errorf("got %d runs, state %q, %d activities and %d pending, want 2 runs and an idle connection with 3 and none pending",
+			trigger.runs, conn.SyncState, total, pending)
+	}
+	if last := e.strava.listed[len(e.strava.listed)-2]; last.IsZero() {
+		t.Errorf("the full sync listed from the latest activity, want from the time it was requested")
 	}
 }
