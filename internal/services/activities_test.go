@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -32,6 +33,8 @@ type fakeStrava struct {
 	revoked     bool
 	refreshes   int
 	streamCalls int
+	// The pages of activities listed.
+	listed []int
 }
 
 func newFakeStrava() *fakeStrava {
@@ -79,22 +82,19 @@ func (f *fakeStrava) Refresh(_ context.Context, refreshToken string) (*strava.To
 	return &strava.Token{AccessToken: "fresh", RefreshToken: refreshToken, Expiry: time.Now().Add(6 * time.Hour)}, nil
 }
 
-func (f *fakeStrava) ListActivities(_ context.Context, token string, after time.Time, page, perPage int) ([]*strava.Activity, error) {
+func (f *fakeStrava) ListActivities(_ context.Context, token string, page, perPage int) ([]*strava.Activity, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if token != "fresh" {
 		return nil, strava.ErrUnauthorized
 	}
-	if page > 1 {
-		return nil, nil
-	}
-	var result []*strava.Activity
-	for _, a := range f.activities {
-		if a.StartDate.After(after) {
-			result = append(result, a)
-		}
-	}
-	return result, nil
+	f.listed = append(f.listed, page)
+	// Like Strava, newest first.
+	sorted := slices.SortedFunc(slices.Values(f.activities), func(a, b *strava.Activity) int {
+		return b.StartDate.Compare(a.StartDate)
+	})
+	start := min((page-1)*perPage, len(sorted))
+	return sorted[start:min(start+perPage, len(sorted))], nil
 }
 
 func (f *fakeStrava) GetActivity(_ context.Context, _ string, id int64) (*strava.Activity, error) {
@@ -374,5 +374,25 @@ func TestScheduledStravaSync(t *testing.T) {
 	calls := e.strava.streamCalls
 	if err := syncer.SyncDue(ctx); err != nil || e.strava.streamCalls != calls {
 		t.Errorf("an up to date connection was synced again: %v", err)
+	}
+
+	// An incremental sync picks up new activities, and stops listing at the
+	// ones from before the latest synced activity.
+	latest := e.strava.activities[2]
+	e.strava.upsertActivity(&strava.Activity{
+		ID: 2000, Name: "New run", SportType: "Run",
+		StartDate: latest.StartDate.AddDate(0, 0, 1), StartDateLocal: latest.StartDate.AddDate(0, 0, 1).Format(time.RFC3339),
+	})
+	e.strava.listed = nil
+	if !syncer.SyncOnce(ctx, e.userID, false) {
+		t.Fatal("SyncOnce didn't run")
+	}
+	if total, _, err = e.activities.CountActivities(ctx, e.userID); err != nil || total != 4 {
+		t.Errorf("got %d activities (%v), want 4", total, err)
+	}
+	// The oldest activity is before the overlap, so the second page isn't
+	// listed.
+	if !slices.Equal(e.strava.listed, []int{1}) {
+		t.Errorf("listed pages %v, want only the first", e.strava.listed)
 	}
 }
