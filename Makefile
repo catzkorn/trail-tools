@@ -33,11 +33,15 @@ NODE_RUN := $(CONTAINER_BIN) run --rm \
 	-e BROWSERSLIST_IGNORE_OLD_DATA=true \
 	node:$(NPM_TAG)
 
+# The admin bootstrap token of the local server. Its invitation creates the
+# first administrator, see open-admin-invitation.
+ADMIN_BOOTSTRAP_TOKEN := local-admin
+
 # Flags shared by the `run` and `watch` backend invocations.
 SERVER_FLAGS := \
 	-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
 	-log-level debug \
-	-admin-bootstrap-token local-admin
+	-admin-bootstrap-token $(ADMIN_BOOTSTRAP_TOKEN)
 
 # Strava sync is enabled when STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET are
 # set in the environment. See the README for how to create a Strava API app.
@@ -114,7 +118,18 @@ go-lint:
 .PHONY: run
 run: db ## Run the backend (starts db)
 	@$(WAIT_DB)
+	@$(MAKE) --no-print-directory open-admin-invitation &
 	go run . $(SERVER_FLAGS)
+
+ADMIN_INVITATION_URL := http://localhost:8080/invite/$(ADMIN_BOOTSTRAP_TOKEN)
+
+.PHONY: open-admin-invitation
+open-admin-invitation: ## Open the invitation to create the first administrator once the local server is up, if there's no administrator yet
+	@for i in $$(seq 1 300); do curl -sf -o /dev/null http://localhost:8080/ && break; sleep 1; done; \
+	if ! $(CONTAINER_BIN) exec postgres psql -U postgres -tAc "select 1 from users where is_admin limit 1" 2>/dev/null | grep -q 1; then \
+		echo "Create the first administrator at $(ADMIN_INVITATION_URL)"; \
+		open "$(ADMIN_INVITATION_URL)" 2>/dev/null || xdg-open "$(ADMIN_INVITATION_URL)" >/dev/null 2>&1 || true; \
+	fi
 
 .PHONY: import-osm
 import-osm: db ## Import OpenStreetMap data for routing, e.g. make import-osm REGION=liechtenstein PBF=<url or file>
@@ -156,6 +171,7 @@ tailwindcss:
 .PHONY: watch
 watch: db ## Run backend + assets with live reload
 	@$(WAIT_DB)
+	@$(MAKE) --no-print-directory open-admin-invitation &
 	-/usr/bin/env bash -c "\
 		trap 'kill %1 %2' EXIT;\
 		go tool esbuild web/index.tsx \
