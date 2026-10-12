@@ -1,0 +1,10 @@
+# Generated files, which diffs and GitHub collapse and don't count towards
+# the repository's languages. Regenerate them with make gen.
+web/dist/index.css linguist-generated
+web/dist/index.js linguist-generated
+web/dist/index.js.map linguist-generated
+web/gen/** linguist-generated
+internal/gen/** linguist-generated
+internal/apidesc/descriptor.binpb linguist-generated
+# sqlc's output, in each store package's internal package.
+internal/*/internal/** linguist-generated
