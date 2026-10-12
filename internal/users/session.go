@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/catzkorn/trail-tools/internal/users/internal/gen"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -54,7 +54,7 @@ func (r *Repository) DeleteSession(ctx context.Context, sessionID string) error 
 }
 
 // loadUser loads a user.
-func (r *Repository) loadUser(ctx context.Context, querier *internal.Queries, userID pgtype.UUID) (User, error) {
+func (r *Repository) loadUser(ctx context.Context, querier *gen.Queries, userID pgtype.UUID) (User, error) {
 	row, err := querier.GetPasskeyUser(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

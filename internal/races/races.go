@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/races/internal"
+	"github.com/catzkorn/trail-tools/internal/races/internal/gen"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -18,7 +18,7 @@ import (
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB
-	q   *internal.Queries
+	q   *gen.Queries
 }
 
 // NewRepository creates a new Repository from the provided logger and database.
@@ -26,7 +26,7 @@ func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
 	return &Repository{
 		log: log,
 		db:  db,
-		q:   internal.New(db),
+		q:   gen.New(db),
 	}, nil
 }
 
@@ -63,7 +63,7 @@ type Race struct {
 
 // CreateRace stores a new race.
 func (r *Repository) CreateRace(ctx context.Context, race *Race) (*Race, error) {
-	dbRace, err := r.q.CreateRace(ctx, &internal.CreateRaceParams{
+	dbRace, err := r.q.CreateRace(ctx, &gen.CreateRaceParams{
 		UserID:              race.UserID,
 		Name:                race.Name,
 		Date:                store.DateToPG(race.Date),
@@ -85,7 +85,7 @@ func (r *Repository) CreateRace(ctx context.Context, race *Race) (*Race, error) 
 
 // GetRace gets one of the user's races.
 func (r *Repository) GetRace(ctx context.Context, userID, raceID pgtype.UUID) (*Race, error) {
-	dbRace, err := r.q.GetRace(ctx, &internal.GetRaceParams{ID: raceID, UserID: userID})
+	dbRace, err := r.q.GetRace(ctx, &gen.GetRaceParams{ID: raceID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -110,7 +110,7 @@ func (r *Repository) ListRaces(ctx context.Context, userID pgtype.UUID) ([]*Race
 
 // UpdateRace replaces a race.
 func (r *Repository) UpdateRace(ctx context.Context, race *Race) (*Race, error) {
-	dbRace, err := r.q.UpdateRace(ctx, &internal.UpdateRaceParams{
+	dbRace, err := r.q.UpdateRace(ctx, &gen.UpdateRaceParams{
 		ID:                  race.ID,
 		UserID:              race.UserID,
 		Name:                race.Name,
@@ -143,14 +143,14 @@ func (r *Repository) DeleteRace(ctx context.Context, userID, raceID pgtype.UUID)
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	n, err := q.DeleteRace(ctx, &internal.DeleteRaceParams{ID: raceID, UserID: userID})
+	n, err := q.DeleteRace(ctx, &gen.DeleteRaceParams{ID: raceID, UserID: userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete race: %w", err)
 	}
 	if n == 0 {
 		return store.ErrNotFound
 	}
-	if err := q.RemoveGoalRace(ctx, &internal.RemoveGoalRaceParams{UserID: userID, RaceID: raceID}); err != nil {
+	if err := q.RemoveGoalRace(ctx, &gen.RemoveGoalRaceParams{UserID: userID, RaceID: raceID}); err != nil {
 		return fmt.Errorf("failed to remove goal race from plans: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -159,14 +159,14 @@ func (r *Repository) DeleteRace(ctx context.Context, userID, raceID pgtype.UUID)
 	return nil
 }
 
-func priorityToDB(p Priority) internal.NullRacePriority {
+func priorityToDB(p Priority) gen.NullRacePriority {
 	if p == PriorityUnset {
-		return internal.NullRacePriority{}
+		return gen.NullRacePriority{}
 	}
-	return internal.NullRacePriority{RacePriority: internal.RacePriority(p), Valid: true}
+	return gen.NullRacePriority{RacePriority: gen.RacePriority(p), Valid: true}
 }
 
-func raceFromDB(r *internal.Race) *Race {
+func raceFromDB(r *gen.Race) *Race {
 	race := &Race{
 		ID:                  r.ID,
 		UserID:              r.UserID,

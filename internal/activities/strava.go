@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities/internal"
+	"github.com/catzkorn/trail-tools/internal/activities/internal/gen"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -47,7 +47,7 @@ type StravaConnection struct {
 
 // UpsertStravaConnection creates or replaces the user's Strava connection.
 func (r *Repository) UpsertStravaConnection(ctx context.Context, conn *StravaConnection) (*StravaConnection, error) {
-	dbConn, err := r.q.UpsertStravaConnection(ctx, &internal.UpsertStravaConnectionParams{
+	dbConn, err := r.q.UpsertStravaConnection(ctx, &gen.UpsertStravaConnectionParams{
 		UserID:       conn.UserID,
 		AthleteID:    conn.AthleteID,
 		AthleteName:  conn.AthleteName,
@@ -102,7 +102,7 @@ func (r *Repository) ListStravaConnectionsByAthlete(ctx context.Context, athlete
 
 // UpdateStravaTokens stores refreshed Strava tokens.
 func (r *Repository) UpdateStravaTokens(ctx context.Context, userID pgtype.UUID, accessToken, refreshToken string, expiry time.Time) error {
-	if err := r.q.UpdateStravaTokens(ctx, &internal.UpdateStravaTokensParams{
+	if err := r.q.UpdateStravaTokens(ctx, &gen.UpdateStravaTokensParams{
 		UserID:       userID,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -116,9 +116,9 @@ func (r *Repository) UpdateStravaTokens(ctx context.Context, userID pgtype.UUID,
 // UpdateStravaSyncState records the state of the user's sync. lastSyncTime
 // and resumeTime may be zero; a zero lastSyncTime leaves it unchanged.
 func (r *Repository) UpdateStravaSyncState(ctx context.Context, userID pgtype.UUID, state SyncState, message string, resumeTime, lastSyncTime time.Time) error {
-	if err := r.q.UpdateStravaSyncState(ctx, &internal.UpdateStravaSyncStateParams{
+	if err := r.q.UpdateStravaSyncState(ctx, &gen.UpdateStravaSyncStateParams{
 		UserID:       userID,
-		SyncState:    internal.StravaSyncState(state),
+		SyncState:    gen.StravaSyncState(state),
 		SyncMessage:  message,
 		ResumeTime:   pgtype.Timestamptz{Time: resumeTime, Valid: !resumeTime.IsZero()},
 		LastSyncTime: pgtype.Timestamptz{Time: lastSyncTime, Valid: !lastSyncTime.IsZero()},
@@ -132,7 +132,7 @@ func (r *Repository) UpdateStravaSyncState(ctx context.Context, userID pgtype.UU
 // user's activities got: the activities that started before listBefore
 // remain to be listed. A zero listBefore records that the listing finished.
 func (r *Repository) UpdateStravaListBefore(ctx context.Context, userID pgtype.UUID, listBefore time.Time) error {
-	if err := r.q.UpdateStravaListBefore(ctx, &internal.UpdateStravaListBeforeParams{
+	if err := r.q.UpdateStravaListBefore(ctx, &gen.UpdateStravaListBeforeParams{
 		UserID:     userID,
 		ListBefore: pgtype.Timestamptz{Time: listBefore, Valid: !listBefore.IsZero()},
 	}); err != nil {
@@ -156,13 +156,13 @@ func (r *Repository) DeleteStravaConnection(ctx context.Context, userID pgtype.U
 // DeleteActivityByStravaID deletes one of the user's activities by its
 // Strava ID, if it exists.
 func (r *Repository) DeleteActivityByStravaID(ctx context.Context, userID pgtype.UUID, stravaID int64) error {
-	if err := r.q.DeleteActivityByStravaID(ctx, &internal.DeleteActivityByStravaIDParams{UserID: userID, StravaID: stravaID}); err != nil {
+	if err := r.q.DeleteActivityByStravaID(ctx, &gen.DeleteActivityByStravaIDParams{UserID: userID, StravaID: stravaID}); err != nil {
 		return fmt.Errorf("failed to delete activity: %w", err)
 	}
 	return nil
 }
 
-func connectionFromDB(c *internal.StravaConnection) *StravaConnection {
+func connectionFromDB(c *gen.StravaConnection) *StravaConnection {
 	return &StravaConnection{
 		UserID:        c.UserID,
 		AthleteID:     c.AthleteID,

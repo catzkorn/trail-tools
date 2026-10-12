@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/trips/internal"
+	"github.com/catzkorn/trail-tools/internal/trips/internal/gen"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -34,7 +34,7 @@ var (
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB
-	q   *internal.Queries
+	q   *gen.Queries
 }
 
 // NewRepository creates a new Repository from the provided logger and database.
@@ -42,7 +42,7 @@ func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
 	return &Repository{
 		log: log,
 		db:  db,
-		q:   internal.New(db),
+		q:   gen.New(db),
 	}, nil
 }
 
@@ -147,7 +147,7 @@ func (r *Repository) GetProfileByHandle(ctx context.Context, handle string) (*Pr
 // UpsertProfile creates or updates the user's public profile. It returns
 // ErrHandleTaken if another user has the handle.
 func (r *Repository) UpsertProfile(ctx context.Context, p *Profile) (*Profile, error) {
-	row, err := r.q.UpsertProfile(ctx, &internal.UpsertProfileParams{
+	row, err := r.q.UpsertProfile(ctx, &gen.UpsertProfileParams{
 		UserID:      p.UserID,
 		Handle:      p.Handle,
 		DisplayName: p.DisplayName,
@@ -176,7 +176,7 @@ func (r *Repository) GetUserName(ctx context.Context, userID pgtype.UUID) (strin
 // CreateReport creates a trip report. It returns ErrSlugTaken if another of
 // the user's reports has the slug.
 func (r *Repository) CreateReport(ctx context.Context, report *Report) (*Report, error) {
-	row, err := r.q.CreateReport(ctx, &internal.CreateReportParams{
+	row, err := r.q.CreateReport(ctx, &gen.CreateReportParams{
 		UserID:              report.UserID,
 		ActivityID:          report.ActivityID,
 		Title:               report.Title,
@@ -203,7 +203,7 @@ func (r *Repository) CreateReport(ctx context.Context, report *Report) (*Report,
 
 // GetReport gets one of the user's reports, with its track.
 func (r *Repository) GetReport(ctx context.Context, userID, reportID pgtype.UUID) (*Report, error) {
-	row, err := r.q.GetReport(ctx, &internal.GetReportParams{ID: reportID, UserID: userID})
+	row, err := r.q.GetReport(ctx, &gen.GetReportParams{ID: reportID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -216,7 +216,7 @@ func (r *Repository) GetReport(ctx context.Context, userID, reportID pgtype.UUID
 // GetReportBySlug gets one of the user's reports by its slug, with its
 // track.
 func (r *Repository) GetReportBySlug(ctx context.Context, userID pgtype.UUID, slug string) (*Report, error) {
-	row, err := r.q.GetReportBySlug(ctx, &internal.GetReportBySlugParams{UserID: userID, Slug: slug})
+	row, err := r.q.GetReportBySlug(ctx, &gen.GetReportBySlugParams{UserID: userID, Slug: slug})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -237,7 +237,7 @@ type ListReportsFilter struct {
 // ListReports lists the user's reports without their tracks, most recent
 // trip first.
 func (r *Repository) ListReports(ctx context.Context, userID pgtype.UUID, filter ListReportsFilter) ([]*Report, error) {
-	rows, err := r.q.ListReports(ctx, &internal.ListReportsParams{
+	rows, err := r.q.ListReports(ctx, &gen.ListReportsParams{
 		UserID:        userID,
 		ActivityID:    filter.ActivityID,
 		PublishedOnly: filter.PublishedOnly,
@@ -283,7 +283,7 @@ type ReportUpdate struct {
 // UpdateReport updates one of the user's reports. It returns ErrSlugTaken if
 // another of the user's reports has the slug.
 func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report, error) {
-	params := &internal.UpdateReportParams{ID: u.ID, UserID: u.UserID}
+	params := &gen.UpdateReportParams{ID: u.ID, UserID: u.UserID}
 	if u.Title != nil {
 		params.Title = pgtype.Text{String: *u.Title, Valid: true}
 	}
@@ -312,7 +312,7 @@ func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report
 // SetReportPublished publishes or unpublishes one of the user's reports. The
 // publish time is set when it is first published.
 func (r *Repository) SetReportPublished(ctx context.Context, userID, reportID pgtype.UUID, published bool) (*Report, error) {
-	row, err := r.q.SetReportPublished(ctx, &internal.SetReportPublishedParams{
+	row, err := r.q.SetReportPublished(ctx, &gen.SetReportPublishedParams{
 		ID:        reportID,
 		UserID:    userID,
 		Published: published,
@@ -335,7 +335,7 @@ func (r *Repository) DeleteReport(ctx context.Context, userID, reportID pgtype.U
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	exists, err := q.ReportExists(ctx, &internal.ReportExistsParams{ID: reportID, UserID: userID})
+	exists, err := q.ReportExists(ctx, &gen.ReportExistsParams{ID: reportID, UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trip report: %w", err)
 	}
@@ -346,7 +346,7 @@ func (r *Repository) DeleteReport(ctx context.Context, userID, reportID pgtype.U
 	if err != nil {
 		return nil, fmt.Errorf("failed to list photos: %w", err)
 	}
-	if _, err := q.DeleteReport(ctx, &internal.DeleteReportParams{ID: reportID, UserID: userID}); err != nil {
+	if _, err := q.DeleteReport(ctx, &gen.DeleteReportParams{ID: reportID, UserID: userID}); err != nil {
 		return nil, fmt.Errorf("failed to delete trip report: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -363,14 +363,14 @@ func (r *Repository) AddPhoto(ctx context.Context, userID pgtype.UUID, p *Photo)
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	exists, err := q.ReportExists(ctx, &internal.ReportExistsParams{ID: p.ReportID, UserID: userID})
+	exists, err := q.ReportExists(ctx, &gen.ReportExistsParams{ID: p.ReportID, UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trip report: %w", err)
 	}
 	if !exists {
 		return nil, store.ErrNotFound
 	}
-	params := &internal.AddPhotoParams{
+	params := &gen.AddPhotoParams{
 		ReportID:      p.ReportID,
 		ObjectKey:     p.ObjectKey,
 		Width:         p.Width,
@@ -412,7 +412,7 @@ func (r *Repository) ListPhotos(ctx context.Context, reportIDs ...pgtype.UUID) (
 
 // GetPhoto gets a photo of one of the user's reports.
 func (r *Repository) GetPhoto(ctx context.Context, userID, photoID pgtype.UUID) (*Photo, error) {
-	row, err := r.q.GetPhoto(ctx, &internal.GetPhotoParams{ID: photoID, UserID: userID})
+	row, err := r.q.GetPhoto(ctx, &gen.GetPhotoParams{ID: photoID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -453,7 +453,7 @@ func (r *Repository) GetPhotoAccess(ctx context.Context, photoID pgtype.UUID) (*
 // UpdatePhotoCaption sets the caption of a photo of one of the user's
 // reports.
 func (r *Repository) UpdatePhotoCaption(ctx context.Context, userID, photoID pgtype.UUID, caption string) (*Photo, error) {
-	row, err := r.q.UpdatePhotoCaption(ctx, &internal.UpdatePhotoCaptionParams{ID: photoID, UserID: userID, Caption: caption})
+	row, err := r.q.UpdatePhotoCaption(ctx, &gen.UpdatePhotoCaptionParams{ID: photoID, UserID: userID, Caption: caption})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -466,7 +466,7 @@ func (r *Repository) UpdatePhotoCaption(ctx context.Context, userID, photoID pgt
 // UpdatePhotoLocation sets or, with a nil location, clears the location of
 // a photo of one of the user's reports.
 func (r *Repository) UpdatePhotoLocation(ctx context.Context, userID, photoID pgtype.UUID, loc *Location) (*Photo, error) {
-	params := &internal.UpdatePhotoLocationParams{ID: photoID, UserID: userID}
+	params := &gen.UpdatePhotoLocationParams{ID: photoID, UserID: userID}
 	params.Lat, params.Lng, params.LocationSource, params.TrackDistanceMeters = locationToPG(loc)
 	row, err := r.q.UpdatePhotoLocation(ctx, params)
 	if err != nil {
@@ -487,7 +487,7 @@ func (r *Repository) ReorderPhotos(ctx context.Context, userID, reportID pgtype.
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	exists, err := q.ReportExists(ctx, &internal.ReportExistsParams{ID: reportID, UserID: userID})
+	exists, err := q.ReportExists(ctx, &gen.ReportExistsParams{ID: reportID, UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trip report: %w", err)
 	}
@@ -511,7 +511,7 @@ func (r *Repository) ReorderPhotos(ctx context.Context, userID, reportID pgtype.
 	if len(remaining) > 0 {
 		return nil, ErrPhotosMismatch
 	}
-	if err := q.SetPhotoPositions(ctx, &internal.SetPhotoPositionsParams{ReportID: reportID, PhotoIds: photoIDs}); err != nil {
+	if err := q.SetPhotoPositions(ctx, &gen.SetPhotoPositionsParams{ReportID: reportID, PhotoIds: photoIDs}); err != nil {
 		return nil, fmt.Errorf("failed to reorder photos: %w", err)
 	}
 	if err := q.TouchReport(ctx, reportID); err != nil {
@@ -534,7 +534,7 @@ func (r *Repository) ReorderPhotos(ctx context.Context, userID, reportID pgtype.
 // DeletePhoto deletes a photo of one of the user's reports. It returns the
 // photo's object key, whose images should be deleted.
 func (r *Repository) DeletePhoto(ctx context.Context, userID, photoID pgtype.UUID) (string, error) {
-	key, err := r.q.DeletePhoto(ctx, &internal.DeletePhotoParams{ID: photoID, UserID: userID})
+	key, err := r.q.DeletePhoto(ctx, &gen.DeletePhotoParams{ID: photoID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", store.ErrNotFound
@@ -544,7 +544,7 @@ func (r *Repository) DeletePhoto(ctx context.Context, userID, photoID pgtype.UUI
 	return key, nil
 }
 
-func reportFromDB(row *internal.TripReport) *Report {
+func reportFromDB(row *gen.TripReport) *Report {
 	return &Report{
 		ID:                  row.ID,
 		UserID:              row.UserID,
@@ -569,7 +569,7 @@ func reportFromDB(row *internal.TripReport) *Report {
 	}
 }
 
-func photoFromDB(row *internal.TripPhoto) *Photo {
+func photoFromDB(row *gen.TripPhoto) *Photo {
 	p := &Photo{
 		ID:            row.ID,
 		ReportID:      row.ReportID,
@@ -594,13 +594,13 @@ func photoFromDB(row *internal.TripPhoto) *Photo {
 	return p
 }
 
-func locationToPG(loc *Location) (lat, lng pgtype.Float8, source internal.NullPhotoLocationSource, trackDistance pgtype.Float8) {
+func locationToPG(loc *Location) (lat, lng pgtype.Float8, source gen.NullPhotoLocationSource, trackDistance pgtype.Float8) {
 	if loc == nil {
 		return lat, lng, source, trackDistance
 	}
 	lat = pgtype.Float8{Float64: loc.Lat, Valid: true}
 	lng = pgtype.Float8{Float64: loc.Lng, Valid: true}
-	source = internal.NullPhotoLocationSource{PhotoLocationSource: internal.PhotoLocationSource(loc.Source), Valid: true}
+	source = gen.NullPhotoLocationSource{PhotoLocationSource: gen.PhotoLocationSource(loc.Source), Valid: true}
 	if loc.HasTrackDistanceMeters {
 		trackDistance = pgtype.Float8{Float64: loc.TrackDistanceMeters, Valid: true}
 	}

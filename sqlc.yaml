@@ -13,8 +13,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/athletes/internal"
+        package: "gen"
+        out: "./internal/athletes/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -32,8 +32,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/users/internal"
+        package: "gen"
+        out: "./internal/users/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -55,8 +55,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/activities/internal"
+        package: "gen"
+        out: "./internal/activities/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -75,8 +75,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/routes/internal"
+        package: "gen"
+        out: "./internal/routes/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -95,8 +95,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/races/internal"
+        package: "gen"
+        out: "./internal/races/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -115,8 +115,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/plans/internal"
+        package: "gen"
+        out: "./internal/plans/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false
@@ -135,8 +135,8 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        package: "internal"
-        out: "./internal/trips/internal"
+        package: "gen"
+        out: "./internal/trips/internal/gen"
         sql_package: "pgx/v5"
         sql_driver: "github.com/jackc/pgx/v5"
         emit_interface: false

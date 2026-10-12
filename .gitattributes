@@ -8,5 +8,5 @@ web/dist/index.js.map linguist-generated -diff
 web/gen/** linguist-generated
 internal/gen/** linguist-generated
 internal/apidesc/descriptor.binpb linguist-generated
-# sqlc's output, in each store package's internal package.
-internal/*/internal/** linguist-generated
+# sqlc's output, in each store package's internal/gen package.
+internal/*/internal/gen/** linguist-generated

@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities/internal"
+	"github.com/catzkorn/trail-tools/internal/activities/internal/gen"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
@@ -20,7 +20,7 @@ import (
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB
-	q   *internal.Queries
+	q   *gen.Queries
 }
 
 // NewRepository creates a new Repository from the provided logger and database.
@@ -28,7 +28,7 @@ func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
 	return &Repository{
 		log: log,
 		db:  db,
-		q:   internal.New(db),
+		q:   gen.New(db),
 	}, nil
 }
 
@@ -85,7 +85,7 @@ type ActivitySummary struct {
 
 // UpsertActivity creates or updates an activity from Strava.
 func (r *Repository) UpsertActivity(ctx context.Context, userID pgtype.UUID, a *ActivitySummary) (pgtype.UUID, error) {
-	params := &internal.UpsertActivityParams{
+	params := &gen.UpsertActivityParams{
 		UserID:              userID,
 		StravaID:            a.StravaID,
 		Name:                a.Name,
@@ -141,7 +141,7 @@ type PendingStreams struct {
 // ListActivitiesWithoutStreams lists activities whose streams have not been
 // synced yet, most recent first.
 func (r *Repository) ListActivitiesWithoutStreams(ctx context.Context, userID pgtype.UUID, limit int32) ([]PendingStreams, error) {
-	rows, err := r.q.ListActivitiesWithoutStreams(ctx, &internal.ListActivitiesWithoutStreamsParams{UserID: userID, Limit: limit})
+	rows, err := r.q.ListActivitiesWithoutStreams(ctx, &gen.ListActivitiesWithoutStreamsParams{UserID: userID, Limit: limit})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list activities without streams: %w", err)
 	}
@@ -165,7 +165,7 @@ func (r *Repository) CountActivities(ctx context.Context, userID pgtype.UUID) (t
 // SetActivityDetail stores details only available from Strava's detailed
 // activity endpoint.
 func (r *Repository) SetActivityDetail(ctx context.Context, activityID pgtype.UUID, description, deviceName string, rawJSON []byte) error {
-	if err := r.q.SetActivityDetail(ctx, &internal.SetActivityDetailParams{
+	if err := r.q.SetActivityDetail(ctx, &gen.SetActivityDetailParams{
 		ID:          activityID,
 		Description: description,
 		DeviceName:  deviceName,
@@ -185,7 +185,7 @@ func (r *Repository) SetActivityStreams(ctx context.Context, activityID pgtype.U
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	params := &internal.MarkActivityStreamsSyncedParams{ID: activityID}
+	params := &gen.MarkActivityStreamsSyncedParams{ID: activityID}
 	if bounds != nil {
 		params.MinLat, params.MinLng = pgtype.Float8{Float64: bounds.MinLat, Valid: true}, pgtype.Float8{Float64: bounds.MinLng, Valid: true}
 		params.MaxLat, params.MaxLng = pgtype.Float8{Float64: bounds.MaxLat, Valid: true}, pgtype.Float8{Float64: bounds.MaxLng, Valid: true}
@@ -194,7 +194,7 @@ func (r *Repository) SetActivityStreams(ctx context.Context, activityID pgtype.U
 		return fmt.Errorf("failed to mark streams synced: %w", err)
 	}
 	if streams != nil {
-		if err := q.UpsertActivityStreams(ctx, &internal.UpsertActivityStreamsParams{ActivityID: activityID, Streams: streams}); err != nil {
+		if err := q.UpsertActivityStreams(ctx, &gen.UpsertActivityStreamsParams{ActivityID: activityID, Streams: streams}); err != nil {
 			return fmt.Errorf("failed to store streams: %w", err)
 		}
 	}
@@ -220,7 +220,7 @@ func (r *Repository) ListActivities(ctx context.Context, userID pgtype.UUID, fil
 	if sportTypes == nil {
 		sportTypes = []string{}
 	}
-	rows, err := r.q.ListActivities(ctx, &internal.ListActivitiesParams{
+	rows, err := r.q.ListActivities(ctx, &gen.ListActivitiesParams{
 		UserID:     userID,
 		Limit:      filter.Limit,
 		Offset:     filter.Offset,
@@ -240,7 +240,7 @@ func (r *Repository) ListActivities(ctx context.Context, userID pgtype.UUID, fil
 
 // GetActivity gets one of the user's activities.
 func (r *Repository) GetActivity(ctx context.Context, userID, activityID pgtype.UUID) (*Activity, error) {
-	row, err := r.q.GetActivity(ctx, &internal.GetActivityParams{ID: activityID, UserID: userID})
+	row, err := r.q.GetActivity(ctx, &gen.GetActivityParams{ID: activityID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -253,7 +253,7 @@ func (r *Repository) GetActivity(ctx context.Context, userID, activityID pgtype.
 // GetActivityStreams gets the encoded streams of one of the user's
 // activities. It returns store.ErrNotFound if the activity has no streams.
 func (r *Repository) GetActivityStreams(ctx context.Context, userID, activityID pgtype.UUID) ([]byte, error) {
-	streams, err := r.q.GetActivityStreams(ctx, &internal.GetActivityStreamsParams{ActivityID: activityID, UserID: userID})
+	streams, err := r.q.GetActivityStreams(ctx, &gen.GetActivityStreamsParams{ActivityID: activityID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -277,7 +277,7 @@ func (r *Repository) ListActivityTotals(ctx context.Context, userID pgtype.UUID,
 	if sportTypes == nil {
 		sportTypes = []string{}
 	}
-	rows, err := r.q.ListActivityTotals(ctx, &internal.ListActivityTotalsParams{
+	rows, err := r.q.ListActivityTotals(ctx, &gen.ListActivityTotalsParams{
 		UserID:     userID,
 		StartDate:  store.DateToPG(startDate),
 		EndDate:    store.DateToPG(endDate),
@@ -309,7 +309,7 @@ type Track struct {
 // ListTracksInBounds lists the tracks of activities whose bounding box
 // intersects the bounds, optionally within an inclusive date range.
 func (r *Repository) ListTracksInBounds(ctx context.Context, userID pgtype.UUID, bounds geo.Bounds, startDate, endDate time.Time) ([]Track, error) {
-	rows, err := r.q.ListActivityTracksInBounds(ctx, &internal.ListActivityTracksInBoundsParams{
+	rows, err := r.q.ListActivityTracksInBounds(ctx, &gen.ListActivityTracksInBoundsParams{
 		UserID:    userID,
 		North:     bounds.MaxLat,
 		South:     bounds.MinLat,

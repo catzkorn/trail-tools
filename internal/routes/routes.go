@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routes/internal"
+	"github.com/catzkorn/trail-tools/internal/routes/internal/gen"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -148,14 +148,14 @@ func (r *Route) Path() ([]geo.Point, []geo.Terrain) {
 // Repository stores routes.
 type Repository struct {
 	log *slog.Logger
-	q   *internal.Queries
+	q   *gen.Queries
 }
 
 // NewRepository creates a new Repository from the provided logger and database.
 func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
 	return &Repository{
 		log: log,
-		q:   internal.New(db),
+		q:   gen.New(db),
 	}, nil
 }
 
@@ -165,12 +165,12 @@ func (r *Repository) CreateRoute(ctx context.Context, route *Route) (*Route, err
 	if err != nil {
 		return nil, err
 	}
-	dbRoute, err := r.q.CreateRoute(ctx, &internal.CreateRouteParams{
+	dbRoute, err := r.q.CreateRoute(ctx, &gen.CreateRouteParams{
 		UserID:      route.UserID,
 		Name:        route.Name,
 		Description: route.Description,
-		Profile:     internal.RoutingProfile(route.Profile),
-		Source:      internal.RouteSource(route.Source),
+		Profile:     gen.RoutingProfile(route.Profile),
+		Source:      gen.RouteSource(route.Source),
 		Waypoints:   waypoints,
 		Legs:        legs,
 		Stats:       stats,
@@ -184,7 +184,7 @@ func (r *Repository) CreateRoute(ctx context.Context, route *Route) (*Route, err
 
 // GetRoute gets one of the user's routes, including its legs.
 func (r *Repository) GetRoute(ctx context.Context, userID, routeID pgtype.UUID) (*Route, error) {
-	dbRoute, err := r.q.GetRoute(ctx, &internal.GetRouteParams{ID: routeID, UserID: userID})
+	dbRoute, err := r.q.GetRoute(ctx, &gen.GetRouteParams{ID: routeID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -220,12 +220,12 @@ func (r *Repository) UpdateRoute(ctx context.Context, route *Route) (*Route, err
 	if err != nil {
 		return nil, err
 	}
-	dbRoute, err := r.q.UpdateRoute(ctx, &internal.UpdateRouteParams{
+	dbRoute, err := r.q.UpdateRoute(ctx, &gen.UpdateRouteParams{
 		ID:          route.ID,
 		UserID:      route.UserID,
 		Name:        route.Name,
 		Description: route.Description,
-		Profile:     internal.RoutingProfile(route.Profile),
+		Profile:     gen.RoutingProfile(route.Profile),
 		Waypoints:   waypoints,
 		Legs:        legs,
 		Stats:       stats,
@@ -242,7 +242,7 @@ func (r *Repository) UpdateRoute(ctx context.Context, route *Route) (*Route, err
 
 // DeleteRoute deletes one of the user's routes.
 func (r *Repository) DeleteRoute(ctx context.Context, userID, routeID pgtype.UUID) error {
-	n, err := r.q.DeleteRoute(ctx, &internal.DeleteRouteParams{ID: routeID, UserID: userID})
+	n, err := r.q.DeleteRoute(ctx, &gen.DeleteRouteParams{ID: routeID, UserID: userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete route: %w", err)
 	}
@@ -271,8 +271,8 @@ func marshalRoute(route *Route) (waypoints, legs, stats []byte, err error) {
 func routeFromDB(
 	id, userID pgtype.UUID,
 	name, description string,
-	profile internal.RoutingProfile,
-	source internal.RouteSource,
+	profile gen.RoutingProfile,
+	source gen.RouteSource,
 	waypoints, legs, stats []byte,
 	createTime, updateTime pgtype.Timestamptz,
 ) (*Route, error) {

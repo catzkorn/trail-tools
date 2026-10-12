@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/catzkorn/trail-tools/internal/users/internal/gen"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -42,7 +42,7 @@ type OAuthTokens struct {
 
 // OAuthGrant is a user's authorization of an OAuth client.
 type OAuthGrant struct {
-	*internal.ListOAuthGrantsRow
+	*gen.ListOAuthGrantsRow
 }
 
 // CreateOAuthAuthorizationCode stores the authorization and returns an
@@ -55,7 +55,7 @@ func (r *Repository) CreateOAuthAuthorizationCode(ctx context.Context, authz *OA
 	if err := r.querier.DeleteExpiredOAuthAuthorizationCodes(ctx); err != nil {
 		return "", fmt.Errorf("failed to delete expired authorization codes: %w", err)
 	}
-	err := r.querier.CreateOAuthAuthorizationCode(ctx, &internal.CreateOAuthAuthorizationCodeParams{
+	err := r.querier.CreateOAuthAuthorizationCode(ctx, &gen.CreateOAuthAuthorizationCodeParams{
 		CodeSHA256:    hash[:],
 		UserID:        authz.UserID,
 		ClientID:      authz.ClientID,
@@ -106,7 +106,7 @@ func (r *Repository) CreateOAuthGrant(ctx context.Context, authz *OAuthAuthoriza
 	}
 	refreshToken := oauthRefreshTokenPrefix + rand.Text()
 	refreshHash := sha256.Sum256([]byte(refreshToken))
-	grant, err := querier.CreateOAuthGrant(ctx, &internal.CreateOAuthGrantParams{
+	grant, err := querier.CreateOAuthGrant(ctx, &gen.CreateOAuthGrantParams{
 		UserID:             authz.UserID,
 		ClientID:           authz.ClientID,
 		ClientName:         authz.ClientName,
@@ -155,7 +155,7 @@ func (r *Repository) RefreshOAuthGrant(ctx context.Context, refreshToken, client
 	}
 	newRefreshToken := oauthRefreshTokenPrefix + rand.Text()
 	newHash := sha256.Sum256([]byte(newRefreshToken))
-	err = querier.RotateOAuthRefreshToken(ctx, &internal.RotateOAuthRefreshTokenParams{
+	err = querier.RotateOAuthRefreshToken(ctx, &gen.RotateOAuthRefreshTokenParams{
 		ID:                 grant.ID,
 		RefreshTokenSHA256: newHash[:],
 		RefreshExpireTime:  pgtype.Timestamptz{Time: refreshExpiry, Valid: true},
@@ -182,10 +182,10 @@ func (r *Repository) RefreshOAuthGrant(ctx context.Context, refreshToken, client
 
 // createOAuthAccessToken creates an API token belonging to the grant, which
 // expires.
-func createOAuthAccessToken(ctx context.Context, querier *internal.Queries, grant *internal.OAuthGrant, expiry time.Time) (string, error) {
+func createOAuthAccessToken(ctx context.Context, querier *gen.Queries, grant *gen.OAuthGrant, expiry time.Time) (string, error) {
 	secret := apiTokenPrefix + rand.Text()
 	hash := sha256.Sum256([]byte(secret))
-	_, err := querier.CreateOAuthAccessToken(ctx, &internal.CreateOAuthAccessTokenParams{
+	_, err := querier.CreateOAuthAccessToken(ctx, &gen.CreateOAuthAccessTokenParams{
 		UserID:       grant.UserID,
 		Name:         grant.ClientName,
 		SecretSHA256: hash[:],
@@ -214,7 +214,7 @@ func (r *Repository) ListOAuthGrants(ctx context.Context, userID pgtype.UUID) ([
 // DeleteOAuthGrant deletes one of the user's OAuth grants, revoking its
 // tokens.
 func (r *Repository) DeleteOAuthGrant(ctx context.Context, userID pgtype.UUID, grantID pgtype.UUID) error {
-	n, err := r.querier.DeleteOAuthGrant(ctx, &internal.DeleteOAuthGrantParams{
+	n, err := r.querier.DeleteOAuthGrant(ctx, &gen.DeleteOAuthGrantParams{
 		ID:     grantID,
 		UserID: userID,
 	})

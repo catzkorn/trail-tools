@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/catzkorn/trail-tools/internal/users/internal/gen"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,7 +18,7 @@ type User interface {
 // Repository allows storing and querying of users and related data.
 type Repository struct {
 	log     *slog.Logger
-	querier *internal.Queries
+	querier *gen.Queries
 	db      *store.DB
 }
 
@@ -26,7 +26,7 @@ type Repository struct {
 func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
 	return &Repository{
 		log:     log,
-		querier: internal.New(db),
+		querier: gen.New(db),
 		db:      db,
 	}, nil
 }

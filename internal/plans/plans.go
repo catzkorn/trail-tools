@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/plans/internal"
+	"github.com/catzkorn/trail-tools/internal/plans/internal/gen"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -20,7 +20,7 @@ import (
 type Repository struct {
 	log *slog.Logger
 	db  *store.DB
-	q   *internal.Queries
+	q   *gen.Queries
 }
 
 // NewRepository creates a new Repository from the provided logger and database.
@@ -28,7 +28,7 @@ func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
 	return &Repository{
 		log: log,
 		db:  db,
-		q:   internal.New(db),
+		q:   gen.New(db),
 	}, nil
 }
 
@@ -107,7 +107,7 @@ type Workout struct {
 
 // CreateTrainingPlan stores a new training plan.
 func (r *Repository) CreateTrainingPlan(ctx context.Context, plan *TrainingPlan) (*TrainingPlan, error) {
-	dbPlan, err := r.q.CreateTrainingPlan(ctx, &internal.CreateTrainingPlanParams{
+	dbPlan, err := r.q.CreateTrainingPlan(ctx, &gen.CreateTrainingPlanParams{
 		UserID:      plan.UserID,
 		Name:        plan.Name,
 		Description: plan.Description,
@@ -123,7 +123,7 @@ func (r *Repository) CreateTrainingPlan(ctx context.Context, plan *TrainingPlan)
 
 // GetTrainingPlan gets one of the user's training plans.
 func (r *Repository) GetTrainingPlan(ctx context.Context, userID, planID pgtype.UUID) (*TrainingPlan, error) {
-	dbPlan, err := r.q.GetTrainingPlan(ctx, &internal.GetTrainingPlanParams{ID: planID, UserID: userID})
+	dbPlan, err := r.q.GetTrainingPlan(ctx, &gen.GetTrainingPlanParams{ID: planID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -149,7 +149,7 @@ func (r *Repository) ListTrainingPlans(ctx context.Context, userID pgtype.UUID) 
 
 // UpdateTrainingPlan replaces a training plan's details.
 func (r *Repository) UpdateTrainingPlan(ctx context.Context, plan *TrainingPlan) (*TrainingPlan, error) {
-	dbPlan, err := r.q.UpdateTrainingPlan(ctx, &internal.UpdateTrainingPlanParams{
+	dbPlan, err := r.q.UpdateTrainingPlan(ctx, &gen.UpdateTrainingPlanParams{
 		ID:          plan.ID,
 		UserID:      plan.UserID,
 		Name:        plan.Name,
@@ -169,7 +169,7 @@ func (r *Repository) UpdateTrainingPlan(ctx context.Context, plan *TrainingPlan)
 
 // DeleteTrainingPlan deletes a training plan with its periods and workouts.
 func (r *Repository) DeleteTrainingPlan(ctx context.Context, userID, planID pgtype.UUID) error {
-	n, err := r.q.DeleteTrainingPlan(ctx, &internal.DeleteTrainingPlanParams{ID: planID, UserID: userID})
+	n, err := r.q.DeleteTrainingPlan(ctx, &gen.DeleteTrainingPlanParams{ID: planID, UserID: userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete training plan: %w", err)
 	}
@@ -191,9 +191,9 @@ func (r *Repository) SetPeriods(ctx context.Context, planID pgtype.UUID, periods
 	q := r.q.WithTx(tx)
 	result := make([]*Period, len(periods))
 	for i, p := range periods {
-		dbPeriod, err := q.UpsertPlanPeriod(ctx, &internal.UpsertPlanPeriodParams{
+		dbPeriod, err := q.UpsertPlanPeriod(ctx, &gen.UpsertPlanPeriodParams{
 			PlanID:                    planID,
-			Granularity:               internal.PeriodGranularity(p.Granularity),
+			Granularity:               gen.PeriodGranularity(p.Granularity),
 			StartDate:                 store.DateToPG(p.StartDate),
 			Title:                     p.Title,
 			Notes:                     p.Notes,
@@ -229,7 +229,7 @@ func (r *Repository) ListPeriods(ctx context.Context, planID pgtype.UUID) ([]*Pe
 // DeletePeriods deletes periods of a plan. The caller must check the plan
 // belongs to the user.
 func (r *Repository) DeletePeriods(ctx context.Context, planID pgtype.UUID, ids []pgtype.UUID) error {
-	if _, err := r.q.DeletePlanPeriods(ctx, &internal.DeletePlanPeriodsParams{PlanID: planID, Ids: ids}); err != nil {
+	if _, err := r.q.DeletePlanPeriods(ctx, &gen.DeletePlanPeriodsParams{PlanID: planID, Ids: ids}); err != nil {
 		return fmt.Errorf("failed to delete periods: %w", err)
 	}
 	return nil
@@ -246,10 +246,10 @@ func (r *Repository) CreateWorkouts(ctx context.Context, planID pgtype.UUID, wor
 	q := r.q.WithTx(tx)
 	result := make([]*Workout, len(workouts))
 	for i, w := range workouts {
-		dbWorkout, err := q.CreateWorkout(ctx, &internal.CreateWorkoutParams{
+		dbWorkout, err := q.CreateWorkout(ctx, &gen.CreateWorkoutParams{
 			PlanID:                    planID,
 			Date:                      store.DateToPG(w.Date),
-			Type:                      internal.WorkoutType(w.Type),
+			Type:                      gen.WorkoutType(w.Type),
 			Title:                     w.Title,
 			Description:               w.Description,
 			TargetDistanceMeters:      w.TargetDistanceMeters,
@@ -274,7 +274,7 @@ func (r *Repository) CreateWorkouts(ctx context.Context, planID pgtype.UUID, wor
 // order. Zero dates are unbounded. The caller must check the plan belongs to
 // the user.
 func (r *Repository) ListWorkouts(ctx context.Context, planID pgtype.UUID, startDate, endDate time.Time) ([]*Workout, error) {
-	dbWorkouts, err := r.q.ListWorkouts(ctx, &internal.ListWorkoutsParams{
+	dbWorkouts, err := r.q.ListWorkouts(ctx, &gen.ListWorkoutsParams{
 		PlanID:    planID,
 		StartDate: store.DateToPG(startDate),
 		EndDate:   store.DateToPG(endDate),
@@ -291,7 +291,7 @@ func (r *Repository) ListWorkouts(ctx context.Context, planID pgtype.UUID, start
 
 // GetWorkout gets one of the user's workouts.
 func (r *Repository) GetWorkout(ctx context.Context, userID, workoutID pgtype.UUID) (*Workout, error) {
-	w, err := r.q.GetWorkout(ctx, &internal.GetWorkoutParams{ID: workoutID, UserID: userID})
+	w, err := r.q.GetWorkout(ctx, &gen.GetWorkoutParams{ID: workoutID, UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -304,10 +304,10 @@ func (r *Repository) GetWorkout(ctx context.Context, userID, workoutID pgtype.UU
 // UpdateWorkout replaces a workout. The caller must check the workout belongs
 // to the user.
 func (r *Repository) UpdateWorkout(ctx context.Context, w *Workout) (*Workout, error) {
-	dbWorkout, err := r.q.UpdateWorkout(ctx, &internal.UpdateWorkoutParams{
+	dbWorkout, err := r.q.UpdateWorkout(ctx, &gen.UpdateWorkoutParams{
 		ID:                        w.ID,
 		Date:                      store.DateToPG(w.Date),
-		Type:                      internal.WorkoutType(w.Type),
+		Type:                      gen.WorkoutType(w.Type),
 		Title:                     w.Title,
 		Description:               w.Description,
 		TargetDistanceMeters:      w.TargetDistanceMeters,
@@ -329,7 +329,7 @@ func (r *Repository) UpdateWorkout(ctx context.Context, w *Workout) (*Workout, e
 // DeleteWorkouts deletes workouts of a plan. The caller must check the plan
 // belongs to the user.
 func (r *Repository) DeleteWorkouts(ctx context.Context, planID pgtype.UUID, ids []pgtype.UUID) error {
-	if _, err := r.q.DeleteWorkouts(ctx, &internal.DeleteWorkoutsParams{PlanID: planID, Ids: ids}); err != nil {
+	if _, err := r.q.DeleteWorkouts(ctx, &gen.DeleteWorkoutsParams{PlanID: planID, Ids: ids}); err != nil {
 		return fmt.Errorf("failed to delete workouts: %w", err)
 	}
 	return nil
@@ -337,7 +337,7 @@ func (r *Repository) DeleteWorkouts(ctx context.Context, planID pgtype.UUID, ids
 
 // RouteExists checks whether a route exists and belongs to the user.
 func (r *Repository) RouteExists(ctx context.Context, userID, routeID pgtype.UUID) (bool, error) {
-	exists, err := r.q.RouteExists(ctx, &internal.RouteExistsParams{ID: routeID, UserID: userID})
+	exists, err := r.q.RouteExists(ctx, &gen.RouteExistsParams{ID: routeID, UserID: userID})
 	if err != nil {
 		return false, fmt.Errorf("failed to check route: %w", err)
 	}
@@ -346,7 +346,7 @@ func (r *Repository) RouteExists(ctx context.Context, userID, routeID pgtype.UUI
 
 // ActivityExists checks whether an activity exists and belongs to the user.
 func (r *Repository) ActivityExists(ctx context.Context, userID, activityID pgtype.UUID) (bool, error) {
-	exists, err := r.q.ActivityExists(ctx, &internal.ActivityExistsParams{ID: activityID, UserID: userID})
+	exists, err := r.q.ActivityExists(ctx, &gen.ActivityExistsParams{ID: activityID, UserID: userID})
 	if err != nil {
 		return false, fmt.Errorf("failed to check activity: %w", err)
 	}
@@ -358,7 +358,7 @@ func (r *Repository) RacesExist(ctx context.Context, userID pgtype.UUID, raceIDs
 	if len(raceIDs) == 0 {
 		return true, nil
 	}
-	n, err := r.q.CountRaces(ctx, &internal.CountRacesParams{UserID: userID, Ids: raceIDs})
+	n, err := r.q.CountRaces(ctx, &gen.CountRacesParams{UserID: userID, Ids: raceIDs})
 	if err != nil {
 		return false, fmt.Errorf("failed to check races: %w", err)
 	}
@@ -376,14 +376,14 @@ func nonNil(ids []pgtype.UUID) []pgtype.UUID {
 	return ids
 }
 
-func terrainToDB(t geo.Terrain) internal.NullTerrain {
+func terrainToDB(t geo.Terrain) gen.NullTerrain {
 	if t == geo.TerrainUnknown {
-		return internal.NullTerrain{}
+		return gen.NullTerrain{}
 	}
-	return internal.NullTerrain{Terrain: internal.Terrain(t), Valid: true}
+	return gen.NullTerrain{Terrain: gen.Terrain(t), Valid: true}
 }
 
-func planFromDB(p *internal.TrainingPlan) *TrainingPlan {
+func planFromDB(p *gen.TrainingPlan) *TrainingPlan {
 	return &TrainingPlan{
 		ID:          p.ID,
 		UserID:      p.UserID,
@@ -397,7 +397,7 @@ func planFromDB(p *internal.TrainingPlan) *TrainingPlan {
 	}
 }
 
-func periodFromDB(p *internal.PlanPeriod) *Period {
+func periodFromDB(p *gen.PlanPeriod) *Period {
 	return &Period{
 		ID:                        p.ID,
 		PlanID:                    p.PlanID,
@@ -411,7 +411,7 @@ func periodFromDB(p *internal.PlanPeriod) *Period {
 	}
 }
 
-func workoutFromDB(w *internal.Workout) *Workout {
+func workoutFromDB(w *gen.Workout) *Workout {
 	workout := &Workout{
 		ID:                        w.ID,
 		PlanID:                    w.PlanID,
