@@ -113,9 +113,10 @@ const WorkoutLegend: React.FC = () => (
 interface PlanDetailProps {
   plan: TrainingPlan;
   periods: PlanPeriod[];
+  races: Race[];
 }
 
-const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods }) => {
+const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods, races }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -141,7 +142,6 @@ const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods }) => {
     setSearchParams({ month: value }, { replace: true });
   };
 
-  const races = useQuery(listRaces);
   const monthSummaries = useQuery(summarizeActivities, {
     endDate: plan.endDate,
     interval: SummaryInterval.MONTH,
@@ -171,9 +171,7 @@ const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods }) => {
     },
   });
 
-  const goalRaces: Race[] = (races.data?.races ?? []).filter((race) =>
-    plan.goalRaceIds.includes(race.id)
-  );
+  const goalRaces = races.filter((race) => plan.goalRaceIds.includes(race.id));
   const goalRacesByDate = racesByDate(goalRaces, plan.goalRaceIds);
   const monthPeriodMap = monthPeriods(periods);
   const weekPeriodMap = weekPeriods(periods);
@@ -473,6 +471,8 @@ const PlanPage: React.FC = () => {
     getTrainingPlan,
     { id }
   );
+  // The races don't depend on the plan, so they load alongside it.
+  const races = useQuery(listRaces);
   if (isPending) {
     return <Loading />;
   }
@@ -489,7 +489,13 @@ const PlanPage: React.FC = () => {
   if (data.plan === undefined) {
     return <p>Plan not found.</p>;
   }
-  return <PlanDetail plan={data.plan} periods={data.periods} />;
+  return (
+    <PlanDetail
+      plan={data.plan}
+      periods={data.periods}
+      races={races.data?.races ?? []}
+    />
+  );
 };
 
 export default PlanPage;
