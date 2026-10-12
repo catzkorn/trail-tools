@@ -78,6 +78,8 @@ interface ElevationProfileProps {
   height?: number;
   // Called with the index of the hovered point, or null when not hovering.
   onHover?: (index: number | null) => void;
+  // Called with the distance clicked, e.g. to split a section there.
+  onSelectDistance?: ((distanceMeters: number) => void) | undefined;
 }
 
 const NO_MARKERS: ProfileMarker[] = [];
@@ -238,6 +240,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   positionLabel = "",
   height = 200,
   onHover,
+  onSelectDistance,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // The ID of the clip path of the active range, without React's symbols.
@@ -432,9 +435,15 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
         <svg
           width={width}
           height={height}
-          className="block touch-pan-y"
+          className={`block touch-pan-y ${onSelectDistance === undefined ? "" : "cursor-crosshair"}`}
           onPointerMove={handlePointer}
           onPointerDown={handlePointer}
+          onPointerUp={(event) => {
+            const distance = distanceAt(event);
+            if (distance !== undefined) {
+              onSelectDistance?.(distance);
+            }
+          }}
           onPointerLeave={() => {
             setHoverIndex(null);
             onHover?.(null);
