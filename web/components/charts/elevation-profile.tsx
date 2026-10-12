@@ -1,6 +1,6 @@
 import { useElementWidth } from "helpers/hooks";
 import type { PointerEvent } from "react";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useId, useMemo, useRef, useState } from "react";
 
 export interface ProfilePoint {
   distanceMeters: number;
@@ -10,6 +10,16 @@ export interface ProfilePoint {
 export interface ProfileMarker {
   distanceMeters: number;
   label: string;
+}
+
+// ProfileRange is a stretch of the profile, e.g. a section of a story.
+export interface ProfileRange {
+  startMeters: number;
+  endMeters: number;
+  // A short label drawn in the stretch, if it fits.
+  label?: string;
+  // Active stretches are highlighted.
+  active?: boolean;
 }
 
 // MAX_LABEL_ROWS is the number of rows marker labels are spread over.
@@ -54,6 +64,8 @@ interface ElevationProfileProps {
   secondary?: number[];
   secondaryLabel?: string;
   markers?: ProfileMarker[];
+  // Stretches shaded behind the profile, e.g. the sections of a story.
+  ranges?: ProfileRange[];
   /**
    * An optional reference line in meters of elevation, e.g. the freezing
    * level along the route. Parts far above the profile are not drawn.
@@ -69,9 +81,27 @@ interface ElevationProfileProps {
 }
 
 const NO_MARKERS: ProfileMarker[] = [];
+const NO_RANGES: ProfileRange[] = [];
 const NO_LEVELS: ProfilePoint[] = [];
 
 const NO_POINT: ProfilePoint = { distanceMeters: 0, elevationMeters: 0 };
+
+// BandFill is the color of a range: active ranges stand out, others alternate.
+const bandFill = (range: ProfileRange, index: number): string => {
+  if (range.active === true) {
+    return "#d1fae5";
+  }
+  return index % 2 === 0 ? "#f8fafc" : "#f1f5f9";
+};
+
+// FitLabel shortens a label to about the width in pixels, with an ellipsis.
+const fitLabel = (label: string, width: number): string => {
+  const characters = Math.floor(width / 5.5);
+  if (label.length <= characters) {
+    return label;
+  }
+  return `${label.slice(0, Math.max(characters - 1, 1)).trimEnd()}…`;
+};
 
 // PointAt returns the point at an index that callers keep within range.
 const pointAt = (points: ProfilePoint[], index: number): ProfilePoint =>
@@ -201,6 +231,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   secondary,
   secondaryLabel = "",
   markers = NO_MARKERS,
+  ranges = NO_RANGES,
   levelLine = NO_LEVELS,
   levelLabel = "",
   positionMeters,
@@ -209,6 +240,8 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   onHover,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  // The ID of the clip path of the active range, without React's symbols.
+  const clipId = `profile-${useId().replaceAll(/[^\w-]/gu, "")}`;
   const width = useElementWidth(containerRef);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const smoothed = useMemo(() => smoothProfile(points), [points]);
@@ -359,23 +392,37 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   );
   const elevationTicks = ticksFor(yMin, yMax, elevationStep);
 
-  const handlePointer = (event: PointerEvent<SVGSVGElement>) => {
+  // DistanceAt returns the distance under the pointer, if it's over the plot.
+  const distanceAt = (event: PointerEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const xPosition = event.clientX - rect.left;
     if (xPosition < marginLeft || xPosition > marginLeft + plotWidth) {
+      return undefined;
+    }
+    return (
+      minDistance +
+      ((xPosition - marginLeft) / plotWidth) * (maxDistance - minDistance)
+    );
+  };
+  const handlePointer = (event: PointerEvent<SVGSVGElement>) => {
+    const distance = distanceAt(event);
+    if (distance === undefined) {
       setHoverIndex(null);
       onHover?.(null);
       return;
     }
-    const distance =
-      minDistance +
-      ((xPosition - marginLeft) / plotWidth) * (maxDistance - minDistance);
     const index = nearestIndex(points, distance);
     setHoverIndex(index);
     onHover?.(index);
   };
 
   const hovered = hoverIndex === null ? undefined : points.at(hoverIndex);
+  const bands = ranges.map((range) => ({
+    ...range,
+    x1: xFor(Math.max(range.startMeters, minDistance)),
+    x2: xFor(Math.min(range.endMeters, maxDistance)),
+  }));
+  const active = bands.find((band) => band.active === true);
   const hoveredSecondary =
     hoverIndex !== null && hasSecondary ? (secondary[hoverIndex] ?? 0) : 0;
 
@@ -393,6 +440,27 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
             onHover?.(null);
           }}
         >
+          {bands.map((band, index) => (
+            <g key={`band-${band.startMeters}-${band.endMeters}`}>
+              <rect
+                x={band.x1}
+                y={marginTop}
+                width={Math.max(band.x2 - band.x1, 0)}
+                height={plotHeight}
+                fill={bandFill(band, index)}
+              />
+              {index > 0 && (
+                <line
+                  x1={band.x1}
+                  x2={band.x1}
+                  y1={marginTop}
+                  y2={baseline}
+                  stroke="#94a3b8"
+                  strokeWidth={1}
+                />
+              )}
+            </g>
+          ))}
           {elevationTicks.map((tick) => (
             <g key={`y-${tick}`}>
               <line
@@ -421,6 +489,42 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
             strokeWidth={1.5}
             strokeLinejoin="round"
           />
+          {active !== undefined && (
+            <>
+              <clipPath id={clipId}>
+                <rect
+                  x={active.x1}
+                  y={0}
+                  width={Math.max(active.x2 - active.x1, 0)}
+                  height={height}
+                />
+              </clipPath>
+              <g clipPath={`url(#${clipId})`}>
+                <path d={area} fill="#6ee7b7" opacity={0.7} stroke="none" />
+                <polyline
+                  points={outline.join(" ")}
+                  fill="none"
+                  stroke="#047857"
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                />
+              </g>
+            </>
+          )}
+          {bands.map(
+            (band) =>
+              band.label !== undefined &&
+              band.x2 - band.x1 > 48 && (
+                <text
+                  key={`label-${band.startMeters}-${band.endMeters}`}
+                  x={band.x1 + 4}
+                  y={marginTop + 11}
+                  className={`text-[10px] ${band.active === true ? "fill-emerald-900 font-semibold" : "fill-gray-500"}`}
+                >
+                  {fitLabel(band.label, band.x2 - band.x1 - 8)}
+                </text>
+              )
+          )}
           {secondaryPath !== "" && (
             <path
               d={secondaryPath}

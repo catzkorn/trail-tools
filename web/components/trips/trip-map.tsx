@@ -12,7 +12,7 @@ import PhotoMarkers from "@components/map/photo-markers";
 import type { MapPhoto } from "@components/map/photo-markers";
 import type { LatLng, LatLngTuple } from "leaflet";
 import * as leaflet from "leaflet";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface TripMapProps {
   track: LatLngTuple[];
@@ -29,6 +29,13 @@ interface TripMapProps {
   onMapClick?: ((position: LatLng) => void) | undefined;
   // Zooms the map to a position, e.g. of a photo shown on the map.
   focus?: MapFocus | null;
+  // A stretch of the track to highlight, e.g. the section being read.
+  highlight?: LatLngTuple[];
+  /**
+   * The map moves to fit the highlight, or the whole track without one, when
+   * the key changes.
+   */
+  highlightKey?: string;
   fitKey: string;
   className?: string;
 }
@@ -60,6 +67,36 @@ const HiddenArea: React.FC<HiddenAreaProps> = ({ center, radiusMeters }) => {
   return null;
 };
 
+interface FitHighlightProps {
+  positions: LatLngTuple[];
+  highlightKey: string;
+}
+
+// FitHighlight moves the map to fit positions when the key changes.
+const FitHighlight: React.FC<FitHighlightProps> = ({
+  positions,
+  highlightKey,
+}) => {
+  const map = useMap();
+  const fittedKey = useRef(highlightKey);
+  useEffect(() => {
+    if (fittedKey.current === highlightKey || positions.length < 2) {
+      return;
+    }
+    fittedKey.current = highlightKey;
+    const bounds = leaflet.latLngBounds(positions);
+    const options = { maxZoom: 15, padding: [32, 32] as [number, number] };
+    if (globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      map.fitBounds(bounds, options);
+    } else {
+      map.flyToBounds(bounds, { ...options, duration: 0.8 });
+    }
+  }, [map, positions, highlightKey]);
+  return null;
+};
+
+const NO_HIGHLIGHT: LatLngTuple[] = [];
+
 /**
  * TripMap shows a trip's track with its photos. Without a track, it fits the
  * photos.
@@ -74,6 +111,8 @@ const TripMap: React.FC<TripMapProps> = ({
   onMapClick,
   hiddenEndsMeters = 0,
   focus = null,
+  highlight = NO_HIGHLIGHT,
+  highlightKey,
   fitKey,
   className = "h-96",
 }) => {
@@ -84,7 +123,20 @@ const TripMap: React.FC<TripMapProps> = ({
   return (
     <MapView className={className}>
       {track.length > 1 && (
-        <PolylineLayer positions={track} color="#ea580c" weight={4} />
+        <PolylineLayer
+          positions={track}
+          color="#ea580c"
+          weight={4}
+          opacity={highlight.length > 1 ? 0.35 : 0.9}
+        />
+      )}
+      {highlight.length > 1 && (
+        <PolylineLayer
+          positions={highlight}
+          color="#c2410c"
+          weight={6}
+          opacity={1}
+        />
       )}
       {start !== undefined && (
         <PointMarker position={start} color="#16a34a" tooltip="Start" />
@@ -108,6 +160,12 @@ const TripMap: React.FC<TripMapProps> = ({
       {onMapClick !== undefined && <MapClick onClick={onMapClick} />}
       <FitBounds positions={fitPositions} fitKey={fitKey} />
       <FlyTo focus={focus} />
+      {highlightKey !== undefined && (
+        <FitHighlight
+          positions={highlight.length > 1 ? highlight : fitPositions}
+          highlightKey={highlightKey}
+        />
+      )}
     </MapView>
   );
 };

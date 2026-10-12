@@ -1,6 +1,13 @@
 import ElevationProfile from "@components/charts/elevation-profile";
+import type { ProfileRange } from "@components/charts/elevation-profile";
 import Loading from "@components/loading";
 import type { MapFocus } from "@components/map/layers";
+import {
+  photoGroups,
+  sectionRange,
+  sectionSummary,
+  trackSlice,
+} from "@components/trips/sections";
 import {
   Story,
   TripStatsRow,
@@ -16,8 +23,9 @@ import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
 import { MapPinIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
+import type { RoutePoint } from "gen/routes/v1/routes_pb";
 import { getPublicTripReport } from "gen/trips/v1/trips-TripReportService_connectquery";
-import type { TripPhoto } from "gen/trips/v1/trips_pb";
+import type { TripPhoto, TripSection } from "gen/trips/v1/trips_pb";
 import type { LatLngTuple } from "leaflet";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
@@ -31,13 +39,22 @@ const NotAvailable: React.FC = () => (
   </div>
 );
 
+// How a photo is framed.
+type PhotoLayout = "hero" | "single" | "grid";
+
+const imageClasses: Record<PhotoLayout, string> = {
+  grid: "aspect-[4/3] w-full rounded-xl bg-gray-200 object-cover shadow-sm",
+  hero: "max-h-[70vh] w-full rounded-2xl bg-gray-200 object-cover shadow-sm",
+  single:
+    "mx-auto h-auto max-h-[85vh] w-auto max-w-full rounded-2xl bg-gray-200 shadow-sm",
+};
+
 interface PhotoFigureProps {
   photo: TripPhoto;
   // The photo's number, as on the map.
   number: number;
   selected: boolean;
-  // Hero photos are cropped to a wide frame.
-  hero?: boolean;
+  layout: PhotoLayout;
   onOpen: () => void;
   onHover: (id: string | null) => void;
   onShowOnMap: (photo: TripPhoto) => void;
@@ -48,7 +65,7 @@ const PhotoFigure: React.FC<PhotoFigureProps> = ({
   photo,
   number,
   selected,
-  hero = false,
+  layout,
   onOpen,
   onHover,
   onShowOnMap,
@@ -67,21 +84,17 @@ const PhotoFigure: React.FC<PhotoFigureProps> = ({
   >
     <button
       type="button"
-      className={`block cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${hero ? "w-full" : "mx-auto w-fit"}`}
+      className={`block cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${layout === "single" ? "mx-auto w-fit" : "w-full"}`}
       onClick={onOpen}
       aria-label={`Open photo ${number}`}
     >
       <img
-        src={photo.url}
+        src={layout === "grid" ? photo.thumbnailUrl : photo.url}
         alt={photo.caption}
         width={photo.width}
         height={photo.height}
-        loading={hero ? "eager" : "lazy"}
-        className={
-          hero
-            ? "max-h-[70vh] w-full rounded-2xl bg-gray-200 object-cover shadow-sm"
-            : "mx-auto h-auto max-h-[85vh] w-auto max-w-full rounded-2xl bg-gray-200 shadow-sm"
-        }
+        loading={layout === "hero" ? "eager" : "lazy"}
+        className={imageClasses[layout]}
       />
     </button>
     <figcaption className="mt-2 flex items-start gap-2 px-1 text-sm text-gray-600">
@@ -105,9 +118,151 @@ const PhotoFigure: React.FC<PhotoFigureProps> = ({
   </figure>
 );
 
+// The columns of a group of photos shown side by side.
+const gridClasses: Record<number, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-2 sm:grid-cols-3",
+  4: "grid-cols-2",
+};
+
+interface SectionViewProps {
+  section: TripSection;
+  // The section's photos, with their index in the report.
+  photos: { photo: TripPhoto; index: number }[];
+  track: RoutePoint[];
+  selectedId: string | null;
+  onOpen: (index: number) => void;
+  onHover: (id: string | null) => void;
+  onShowOnMap: (photo: TripPhoto) => void;
+}
+
+/**
+ * SectionView shows a section of the story: its heading, text, and photos,
+ * with photos taken close together side by side.
+ */
+const SectionView: React.FC<SectionViewProps> = ({
+  section,
+  photos,
+  track,
+  selectedId,
+  onOpen,
+  onHover,
+  onShowOnMap,
+}) => {
+  const range = sectionRange(section);
+  const indexes = new Map(photos.map(({ photo, index }) => [photo.id, index]));
+  const groups = photoGroups(photos.map(({ photo }) => photo));
+  const figure = (photo: TripPhoto, layout: PhotoLayout) => {
+    const index = indexes.get(photo.id) ?? 0;
+    return (
+      <PhotoFigure
+        key={photo.id}
+        photo={photo}
+        number={index + 1}
+        selected={photo.id === selectedId}
+        layout={layout}
+        onOpen={() => {
+          onOpen(index);
+        }}
+        onHover={onHover}
+        onShowOnMap={onShowOnMap}
+      />
+    );
+  };
+  return (
+    <section
+      id={`section-${section.id}`}
+      data-section={section.id}
+      className="flex scroll-mt-4 flex-col gap-6"
+    >
+      {section.title !== "" && (
+        <header className="flex flex-col gap-1">
+          <h2 className="text-2xl font-bold tracking-tight text-balance text-gray-900 sm:text-3xl">
+            {section.title}
+          </h2>
+          {range !== undefined && (
+            <p className="text-sm font-medium text-emerald-700 tabular-nums">
+              {sectionSummary(track, range)}
+            </p>
+          )}
+        </header>
+      )}
+      <Story body={section.body} />
+      {groups.map((group) => {
+        const [first] = group;
+        if (first === undefined) {
+          return null;
+        }
+        if (group.length === 1) {
+          return figure(first, "single");
+        }
+        return (
+          <div
+            key={first.id}
+            className={`grid gap-3 ${gridClasses[group.length] ?? "grid-cols-2"}`}
+          >
+            {group.map((photo) => figure(photo, "grid"))}
+          </div>
+        );
+      })}
+    </section>
+  );
+};
+
+/**
+ * UseActiveSection returns the ID of the section being read: the one
+ * crossing a line a little above the middle of the window. Above the first
+ * section it's null; between sections the last one stays active.
+ */
+const useActiveSection = (ids: string[]): string | null => {
+  const [active, setActive] = useState<string | null>(null);
+  const key = ids.join(",");
+  useEffect(() => {
+    const elements = key
+      .split(",")
+      .map((id) => document.querySelector(`[data-section="${CSS.escape(id)}"]`))
+      .filter((element) => element !== null);
+    if (elements.length === 0) {
+      return undefined;
+    }
+    const crossing = new Set<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            crossing.add(entry.target);
+          } else {
+            crossing.delete(entry.target);
+          }
+        }
+        const current = elements.find((element) => crossing.has(element));
+        if (current !== undefined) {
+          setActive(current.getAttribute("data-section"));
+        } else if (
+          (elements[0]?.getBoundingClientRect().top ?? 0) >
+          globalThis.innerHeight * 0.4
+        ) {
+          setActive(null);
+        }
+      },
+      { rootMargin: "-38% 0px -60% 0px" }
+    );
+    for (const element of elements) {
+      observer.observe(element);
+    }
+    return () => {
+      observer.disconnect();
+    };
+  }, [key]);
+  return active;
+};
+
+const NO_SECTIONS: TripSection[] = [];
+
 /**
  * PublicTripReportPage is the public, blog style page of a published trip
- * report, at /u/<handle>/<slug>. It works without signing in.
+ * report, at /u/<handle>/<slug>. It works without signing in. The story is
+ * told section by section, and the map and elevation profile follow along.
  */
 const PublicTripReportPage: React.FC = () => {
   const { handle = "", slug = "" } = useParams();
@@ -127,14 +282,38 @@ const PublicTripReportPage: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
 
   const report = data?.report;
-  const track = useMemo(() => trackPositions(data?.track ?? []), [data?.track]);
-  const profile = useMemo(
-    () => profilePoints(data?.track ?? []),
-    [data?.track]
-  );
+  const routePoints = useMemo(() => data?.track ?? [], [data?.track]);
+  const track = useMemo(() => trackPositions(routePoints), [routePoints]);
+  const profile = useMemo(() => profilePoints(routePoints), [routePoints]);
   const photos = useMemo(() => report?.photos ?? [], [report?.photos]);
+  const sections = report?.sections ?? NO_SECTIONS;
   const markers = useMemo(() => mapPhotos(photos), [photos]);
   const photoMarkers = useMemo(() => profileMarkers(photos), [photos]);
+  const sectionIds = useMemo(
+    () => sections.map((section) => section.id),
+    [sections]
+  );
+  const activeId = useActiveSection(sectionIds);
+  // The stretch of the track of the section being read, if it has one.
+  const highlight = useMemo(() => {
+    const section = sections.find((candidate) => candidate.id === activeId);
+    const range = section === undefined ? undefined : sectionRange(section);
+    return range === undefined ? [] : trackSlice(routePoints, range);
+  }, [routePoints, sections, activeId]);
+  const ranges = useMemo(() => {
+    const result: ProfileRange[] = [];
+    for (const section of sections) {
+      const range = sectionRange(section);
+      if (range !== undefined) {
+        result.push({
+          ...range,
+          active: section.id === activeId,
+          label: section.title,
+        });
+      }
+    }
+    return result;
+  }, [sections, activeId]);
 
   useEffect(() => {
     if (report === undefined || data?.author === undefined) {
@@ -206,6 +385,17 @@ const PublicTripReportPage: React.FC = () => {
   }
   const hasMap = track.length > 1 || markers.length > 0;
   const [cover] = photos;
+  // The photos of each section, without the cover photo shown on top.
+  const photoIndexes = new Map(photos.map((photo, index) => [photo.id, index]));
+  const sectionPhotos = (section: TripSection) =>
+    section.photoIds.flatMap((id) => {
+      const index = photoIndexes.get(id);
+      if (index === undefined || index === 0) {
+        return [];
+      }
+      const photo = photos[index];
+      return photo === undefined ? [] : [{ index, photo }];
+    });
 
   return (
     <article className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-16">
@@ -247,7 +437,7 @@ const PublicTripReportPage: React.FC = () => {
           photo={cover}
           number={1}
           selected={cover.id === selectedId}
-          hero
+          layout="hero"
           onOpen={() => {
             openPhoto(0);
           }}
@@ -273,6 +463,8 @@ const PublicTripReportPage: React.FC = () => {
                   hoverPosition={hoverPosition}
                   onSelectPhoto={selectFromMap}
                   focus={mapFocus}
+                  highlight={highlight}
+                  highlightKey={highlight.length > 1 ? (activeId ?? "") : ""}
                   fitKey={report.id}
                   className="h-80 sm:h-96 lg:h-[50vh]"
                 />
@@ -282,6 +474,7 @@ const PublicTripReportPage: React.FC = () => {
                   <ElevationProfile
                     points={profile}
                     markers={photoMarkers}
+                    ranges={ranges}
                     height={160}
                     onHover={setHoverIndex}
                   />
@@ -290,27 +483,19 @@ const PublicTripReportPage: React.FC = () => {
             </div>
           </aside>
         )}
-        <div className="flex min-w-0 flex-col gap-10 lg:col-start-1 lg:row-start-1">
-          <Story
-            body={report.sections.map((section) => section.body).join("\n\n")}
-          />
-          {photos.length > 1 && (
-            <div className="flex flex-col gap-8">
-              {photos.slice(1).map((photo, index) => (
-                <PhotoFigure
-                  key={photo.id}
-                  photo={photo}
-                  number={index + 2}
-                  selected={photo.id === selectedId}
-                  onOpen={() => {
-                    openPhoto(index + 1);
-                  }}
-                  onHover={setHoveredId}
-                  onShowOnMap={showOnMap}
-                />
-              ))}
-            </div>
-          )}
+        <div className="flex min-w-0 flex-col gap-14 lg:col-start-1 lg:row-start-1">
+          {sections.map((section) => (
+            <SectionView
+              key={section.id}
+              section={section}
+              photos={sectionPhotos(section)}
+              track={routePoints}
+              selectedId={selectedId}
+              onOpen={openPhoto}
+              onHover={setHoveredId}
+              onShowOnMap={showOnMap}
+            />
+          ))}
         </div>
       </div>
       <footer className="border-t border-gray-200 pt-6 text-center text-sm text-gray-500">
