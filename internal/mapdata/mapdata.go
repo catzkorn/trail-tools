@@ -12,6 +12,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/catzkorn/trail-tools/internal/elevation"
 )
 
 // UserAgent identifies the application to the public map data services, as
@@ -25,8 +27,8 @@ type Config struct {
 	OverpassURLs []string
 	// The Nominatim base URL, e.g. https://nominatim.openstreetmap.org.
 	NominatimURL string
-	// The Open-Meteo elevation API URL.
-	ElevationURL string
+	// Looks up ground elevations. Defaults to the public elevation tiles.
+	Elevation Elevation
 	// The Open-Meteo forecast API URL.
 	ForecastURL string
 	// The HTTP client to use. Defaults to a client with a 60 second timeout.
@@ -47,8 +49,8 @@ func (c Config) withDefaults() Config {
 	if c.NominatimURL == "" {
 		c.NominatimURL = "https://nominatim.openstreetmap.org"
 	}
-	if c.ElevationURL == "" {
-		c.ElevationURL = "https://api.open-meteo.com/v1/elevation"
+	if c.Elevation == nil {
+		c.Elevation = elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir)
 	}
 	if c.ForecastURL == "" {
 		c.ForecastURL = "https://api.open-meteo.com/v1/forecast"

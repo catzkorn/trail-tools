@@ -245,8 +245,10 @@ extract, which Cloud Run keeps in memory.
 
 ### Map data services
 
-Trails, points of interest, place search, elevations of straight legs and
-weather come from public services that are fine for personal use:
+Trails, points of interest, place search and weather come from public
+services that are fine for personal use. Elevations, e.g. of straight legs
+and routes from GPX files, come from the same elevation tiles as imports,
+downloaded as needed and cached, so they don't depend on a rate limited API:
 
 | Flag             | Default                         | Used for                        |
 | ---------------- | ------------------------------- | ------------------------------- |

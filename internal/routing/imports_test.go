@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -44,7 +45,7 @@ func TestRunImport(t *testing.T) {
 	db := storetest.New(t)
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dem := routing.NewDEM("http://localhost:0", t.TempDir())
+	dem := elevation.NewDEM("http://localhost:0", t.TempDir())
 
 	// Only one import is queued or running at a time.
 	r := createImport(t, db)
