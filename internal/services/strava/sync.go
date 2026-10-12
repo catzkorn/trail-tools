@@ -37,7 +37,7 @@ type SyncRepository interface {
 // StravaClient is the Strava API.
 type StravaClient interface {
 	Refresh(ctx context.Context, refreshToken string) (*strava.Token, error)
-	ListActivities(ctx context.Context, accessToken string, after time.Time, page, perPage int) ([]*strava.Activity, error)
+	ListActivities(ctx context.Context, accessToken string, page, perPage int) ([]*strava.Activity, error)
 	GetActivity(ctx context.Context, accessToken string, id int64) (*strava.Activity, error)
 	GetStreams(ctx context.Context, accessToken string, id int64) (*strava.Streams, error)
 	GetActivityPhotos(ctx context.Context, accessToken string, id int64) ([]*strava.Photo, error)
@@ -45,7 +45,7 @@ type StravaClient interface {
 
 const (
 	// recentOverlap is how far before the latest synced activity an
-	// incremental sync starts, to pick up recent edits.
+	// incremental sync stops, to pick up recent edits.
 	recentOverlap = 7 * 24 * time.Hour
 	// autoSyncAge is the age of the last sync after which a background sync
 	// starts automatically.
@@ -259,37 +259,40 @@ func (s *Syncer) runSync(ctx context.Context, log *slog.Logger, userID pgtype.UU
 		return err
 	}
 
-	// Fetch activity summaries.
-	var after time.Time
+	// Fetch activity summaries, newest first, so recent activities show up
+	// first. An incremental sync stops at the ones synced before.
+	var since time.Time
 	if !full {
 		latest, err := s.repo.LatestActivityStartTime(ctx, userID)
 		if err != nil {
 			return err
 		}
 		if !latest.IsZero() {
-			after = latest.Add(-recentOverlap)
+			since = latest.Add(-recentOverlap)
 		}
 	}
 	fetched := 0
-	for page := 1; ; page++ {
+	for page, done := 1, false; !done; page++ {
 		var list []*strava.Activity
 		err := s.withToken(ctx, conn, wait, func(token string) error {
 			var err error
-			list, err = s.client.ListActivities(ctx, token, after, page, strava.MaxActivitiesPerPage)
+			list, err = s.client.ListActivities(ctx, token, page, strava.MaxActivitiesPerPage)
 			return err
 		})
 		if err != nil {
 			return fmt.Errorf("failed to list activities: %w", err)
 		}
-		if len(list) == 0 {
-			break
-		}
+		done = len(list) == 0
 		for _, a := range list {
+			if a.StartDate.Before(since) {
+				done = true
+				break
+			}
 			if _, err := s.repo.UpsertActivity(ctx, userID, summaryFromStrava(a)); err != nil {
 				return err
 			}
+			fetched++
 		}
-		fetched += len(list)
 		if err := s.setState(ctx, userID, activities.SyncStateRunning, fmt.Sprintf("Fetched %d activities", fetched), time.Time{}); err != nil {
 			return err
 		}
