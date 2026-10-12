@@ -47,7 +47,11 @@
   transition: transform 120ms ease-out;
 }
 
-.photo-marker img {
+/*
+ * Leaflet sizes images in the marker pane with width: auto, which keeps the
+ * photo's aspect ratio, so it needs a more specific selector.
+ */
+.leaflet-container .leaflet-marker-pane .photo-marker img {
   display: block;
   width: 100%;
   height: 100%;
