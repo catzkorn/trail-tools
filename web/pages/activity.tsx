@@ -22,6 +22,7 @@ import QueryError, { ErrorText } from "@components/ui/query-error";
 import { primaryButton, secondaryButton } from "@components/ui/styles";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
+  ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   MapIcon,
   PencilSquareIcon,
@@ -191,8 +192,14 @@ const ActivityPage: React.FC = () => {
                 writeReport.mutate({ activityId: activity.id });
               }}
             >
-              <PencilSquareIcon className="size-4" />
-              Write trip report
+              {writeReport.isPending ? (
+                <ArrowPathIcon className="size-4 animate-spin" />
+              ) : (
+                <PencilSquareIcon className="size-4" />
+              )}
+              {writeReport.isPending && activity.photoCount > 0
+                ? "Adding photos from Strava…"
+                : "Write trip report"}
             </button>
           ) : (
             <Link

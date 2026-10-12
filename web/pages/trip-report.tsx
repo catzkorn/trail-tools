@@ -1,7 +1,6 @@
 import ElevationProfile from "@components/charts/elevation-profile";
 import Loading from "@components/loading";
 import PhotoUploader from "@components/trips/photo-uploader";
-import StravaImport from "@components/trips/strava-import";
 import {
   TripStatsRow,
   locationSourceLabel,
@@ -54,7 +53,7 @@ import { LocationSource, TripReportService } from "gen/trips/v1/trips_pb";
 import { invalidateServices } from "helpers/query";
 import { isValidSlug, slugify } from "helpers/slug";
 import type { LatLng, LatLngTuple } from "leaflet";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 interface ReportFormProps {
@@ -227,6 +226,7 @@ const PhotoRow: React.FC<PhotoRowProps> = ({
 
   return (
     <li
+      data-photo-row
       className={`flex gap-3 rounded-lg p-2 ${selected ? "bg-amber-50 ring-2 ring-amber-300" : ""}`}
     >
       <button
@@ -343,6 +343,32 @@ const TripReportPage: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [placingId, setPlacingId] = useState<string | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  // Clicking anywhere but a photo, or pressing Escape, clears the selection.
+  useEffect(() => {
+    if (selectedId === null || placingId !== null) {
+      return undefined;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest("[data-photo-row], .photo-marker") === null
+      ) {
+        setSelectedId(null);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedId(null);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [selectedId, placingId]);
 
   const invalidate = async () => {
     await invalidateServices(queryClient, [TripReportService]);
@@ -529,9 +555,6 @@ const TripReportPage: React.FC = () => {
           <Card title={`Photos (${photos.length})`}>
             <div className="flex flex-col gap-4">
               <PhotoUploader reportId={report.id} onUploaded={invalidate} />
-              {report.activityId !== "" && (
-                <StravaImport reportId={report.id} onImported={invalidate} />
-              )}
               {photos.length > 0 && (
                 <ul className="flex flex-col gap-2">
                   {photos.map((photo, index) => (
