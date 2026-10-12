@@ -71,30 +71,6 @@ interface ElevationProfileProps {
 const NO_MARKERS: ProfileMarker[] = [];
 const NO_LEVELS: ProfilePoint[] = [];
 
-interface GradeBand {
-  maxPercent: number;
-  color: string;
-  label: string;
-}
-
-const GRADE_BANDS: GradeBand[] = [
-  { color: "#86efac", label: "< 3%", maxPercent: 3 },
-  { color: "#fde047", label: "3–8%", maxPercent: 8 },
-  { color: "#fb923c", label: "8–15%", maxPercent: 15 },
-  { color: "#ef4444", label: "15–25%", maxPercent: 25 },
-  { color: "#991b1b", label: "> 25%", maxPercent: Infinity },
-];
-
-const gradeColor = (gradePercent: number): string => {
-  const steepness = Math.abs(gradePercent);
-  for (const band of GRADE_BANDS) {
-    if (steepness < band.maxPercent) {
-      return band.color;
-    }
-  }
-  return "#991b1b";
-};
-
 const NO_POINT: ProfilePoint = { distanceMeters: 0, elevationMeters: 0 };
 
 // PointAt returns the point at an index that callers keep within range.
@@ -159,8 +135,6 @@ const gradeAt = (
   return ((after - before) / (half * 2)) * 100;
 };
 
-// Grade colors are computed over bins of at least this length.
-const GRADE_BIN_METERS = 100;
 const SMOOTHING_HALF_WINDOW_METERS = 50;
 
 /**
@@ -218,16 +192,9 @@ const ticksFor = (min: number, max: number, step: number): number[] => {
   return ticks;
 };
 
-interface Band {
-  // The start of the band in meters, unique within a chart.
-  start: number;
-  color: string;
-  path: string;
-}
-
 /**
- * ElevationProfile draws an elevation profile as an SVG area chart colored
- * by grade, with a hover crosshair.
+ * ElevationProfile draws an elevation profile as an SVG area chart, with a
+ * hover crosshair.
  */
 const ElevationProfile: React.FC<ElevationProfileProps> = ({
   points,
@@ -322,76 +289,8 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   // The outline and the area use at most about one point per pixel.
   const stride = Math.max(1, Math.floor(points.length / plotWidth));
 
-  /**
-   * Color the area by sustained grade: split the profile into bins of at
-   * least 100 meters, compute each bin's grade on the smoothed profile and
-   * merge neighbouring bins of the same color into one polygon. The polygons
-   * follow the raw profile so they line up with the outline.
-   */
-  const bands: Band[] = [];
-  const binMeters = Math.max(
-    GRADE_BIN_METERS,
-    (maxDistance - minDistance) / Math.max(plotWidth / 2, 1)
-  );
-  const binCount = Math.max(
-    Math.ceil((maxDistance - minDistance) / binMeters),
-    1
-  );
-  let bandColor = "";
-  let bandPoints: string[] = [];
-  let bandStartX = marginLeft;
-  let bandStart = minDistance;
-  const closeBand = (endX: number) => {
-    if (bandPoints.length > 0) {
-      bands.push({
-        color: bandColor,
-        path: `M${bandStartX},${baseline} L${bandPoints.join(" L")} L${endX},${baseline} Z`,
-        start: bandStart,
-      });
-    }
-  };
   const pointString = (distance: number, elevation: number): string =>
     `${xFor(distance).toFixed(1)},${yFor(elevation).toFixed(1)}`;
-  let pointIndex = 0;
-  for (let bin = 0; bin < binCount; bin++) {
-    const start = minDistance + bin * binMeters;
-    const end = Math.min(start + binMeters, maxDistance);
-    if (end <= start) {
-      continue;
-    }
-    const grade =
-      ((elevationAt(smoothed, end) - elevationAt(smoothed, start)) /
-        (end - start)) *
-      100;
-    const color = gradeColor(grade);
-    if (color !== bandColor) {
-      closeBand(xFor(start));
-      bandColor = color;
-      bandStart = start;
-      bandStartX = xFor(start);
-      bandPoints = [pointString(start, elevationAt(points, start))];
-    }
-    while (
-      pointIndex < points.length &&
-      pointAt(points, pointIndex).distanceMeters <= start
-    ) {
-      pointIndex++;
-    }
-    while (
-      pointIndex < points.length &&
-      pointAt(points, pointIndex).distanceMeters < end
-    ) {
-      if (pointIndex % stride === 0) {
-        const point = pointAt(points, pointIndex);
-        bandPoints.push(
-          pointString(point.distanceMeters, point.elevationMeters)
-        );
-      }
-      pointIndex++;
-    }
-    bandPoints.push(pointString(end, elevationAt(points, end)));
-  }
-  closeBand(xFor(maxDistance));
 
   const outline: string[] = [];
   for (let index = 0; index < points.length; index += stride) {
@@ -399,6 +298,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
     outline.push(pointString(point.distanceMeters, point.elevationMeters));
   }
   outline.push(pointString(last.distanceMeters, last.elevationMeters));
+  const area = `M${xFor(minDistance)},${baseline} L${outline.join(" L")} L${xFor(last.distanceMeters)},${baseline} Z`;
 
   let secondaryPath = "";
   let secondaryMin = 0;
@@ -513,19 +413,13 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
               </text>
             </g>
           ))}
-          {bands.map((band) => (
-            <path
-              key={`band-${band.start}`}
-              d={band.path}
-              fill={band.color}
-              stroke="none"
-            />
-          ))}
+          <path d={area} fill="#e2e8f0" stroke="none" />
           <polyline
             points={outline.join(" ")}
             fill="none"
-            stroke="#374151"
-            strokeWidth={1.25}
+            stroke="#475569"
+            strokeWidth={1.5}
+            strokeLinejoin="round"
           />
           {secondaryPath !== "" && (
             <path
@@ -672,30 +566,22 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
             ` · ${Math.round(hoveredSecondary)} ${secondaryLabel}`}
         </div>
       )}
-      <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
-        <span>Grade:</span>
-        {GRADE_BANDS.map((band) => (
-          <span key={band.label} className="inline-flex items-center gap-1">
-            <span
-              className="inline-block size-2.5 rounded-sm"
-              style={{ backgroundColor: band.color }}
-            />
-            {band.label}
-          </span>
-        ))}
-        {levelLine.length > 0 && (
-          <span className="inline-flex items-center gap-1">
-            <span className="inline-block w-3 border-t-2 border-dashed border-blue-600" />
-            {levelPath === "" ? `${levelLabel} (above chart)` : levelLabel}
-          </span>
-        )}
-        {hasSecondary && (
-          <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-0.5 w-3 bg-red-600" />
-            {secondaryLabel === "" ? "Secondary" : secondaryLabel}
-          </span>
-        )}
-      </div>
+      {(levelLine.length > 0 || hasSecondary) && (
+        <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
+          {levelLine.length > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block w-3 border-t-2 border-dashed border-blue-600" />
+              {levelPath === "" ? `${levelLabel} (above chart)` : levelLabel}
+            </span>
+          )}
+          {hasSecondary && (
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-0.5 w-3 bg-red-600" />
+              {secondaryLabel === "" ? "Secondary" : secondaryLabel}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
