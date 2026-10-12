@@ -580,7 +580,17 @@ func run(
 	if serveDir != "" {
 		webFs = os.DirFS(serveDir)
 	}
-	fileServer := http.FileServerFS(webFs)
+	var fileServer http.Handler = http.FileServerFS(webFs)
+	if serveDir != "" {
+		// The watched bundle can be rebuilt within the second the browser
+		// cached it, which Last-Modified can't tell apart, so browsers
+		// mustn't keep it at all.
+		next := fileServer
+		fileServer = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "no-store")
+			next.ServeHTTP(w, r)
+		})
+	}
 
 	// Serve index.js, index.js.map, index.css, favicon.ico and img/ directly
 	mux.Handle("/index.js", fileServer)
