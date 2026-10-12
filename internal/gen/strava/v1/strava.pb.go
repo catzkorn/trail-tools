@@ -90,6 +90,7 @@ type StravaConnection struct {
 	xxx_hidden_ActivityCount      int32                  `protobuf:"varint,8,opt,name=activity_count,json=activityCount,proto3"`
 	xxx_hidden_PendingStreamCount int32                  `protobuf:"varint,9,opt,name=pending_stream_count,json=pendingStreamCount,proto3"`
 	xxx_hidden_Configured         bool                   `protobuf:"varint,10,opt,name=configured,proto3"`
+	xxx_hidden_AthleteUrl         string                 `protobuf:"bytes,11,opt,name=athlete_url,json=athleteUrl,proto3"`
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
@@ -189,6 +190,13 @@ func (x *StravaConnection) GetConfigured() bool {
 	return false
 }
 
+func (x *StravaConnection) GetAthleteUrl() string {
+	if x != nil {
+		return x.xxx_hidden_AthleteUrl
+	}
+	return ""
+}
+
 func (x *StravaConnection) SetConnected(v bool) {
 	x.xxx_hidden_Connected = v
 }
@@ -227,6 +235,10 @@ func (x *StravaConnection) SetPendingStreamCount(v int32) {
 
 func (x *StravaConnection) SetConfigured(v bool) {
 	x.xxx_hidden_Configured = v
+}
+
+func (x *StravaConnection) SetAthleteUrl(v string) {
+	x.xxx_hidden_AthleteUrl = v
 }
 
 func (x *StravaConnection) HasLastSyncTime() bool {
@@ -274,6 +286,8 @@ type StravaConnection_builder struct {
 	PendingStreamCount int32
 	// Whether the server is configured with Strava API credentials.
 	Configured bool
+	// The page of the connected Strava athlete on Strava.
+	AthleteUrl string
 }
 
 func (b0 StravaConnection_builder) Build() *StravaConnection {
@@ -290,6 +304,7 @@ func (b0 StravaConnection_builder) Build() *StravaConnection {
 	x.xxx_hidden_ActivityCount = b.ActivityCount
 	x.xxx_hidden_PendingStreamCount = b.PendingStreamCount
 	x.xxx_hidden_Configured = b.Configured
+	x.xxx_hidden_AthleteUrl = b.AthleteUrl
 	return m0
 }
 
@@ -623,7 +638,7 @@ var File_strava_v1_strava_proto protoreflect.FileDescriptor
 
 const file_strava_v1_strava_proto_rawDesc = "" +
 	"\n" +
-	"\x16strava/v1/strava.proto\x12\tstrava.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xc2\x03\n" +
+	"\x16strava/v1/strava.proto\x12\tstrava.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xe3\x03\n" +
 	"\x10StravaConnection\x12\x1c\n" +
 	"\tconnected\x18\x01 \x01(\bR\tconnected\x12!\n" +
 	"\fathlete_name\x18\x02 \x01(\tR\vathleteName\x12\x1d\n" +
@@ -640,7 +655,9 @@ const file_strava_v1_strava_proto_rawDesc = "" +
 	"\n" +
 	"configured\x18\n" +
 	" \x01(\bR\n" +
-	"configured\"\x1c\n" +
+	"configured\x12\x1f\n" +
+	"\vathlete_url\x18\v \x01(\tR\n" +
+	"athleteUrl\"\x1c\n" +
 	"\x1aGetStravaConnectionRequest\"Z\n" +
 	"\x1bGetStravaConnectionResponse\x12;\n" +
 	"\n" +

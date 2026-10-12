@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"flag"
@@ -26,7 +27,9 @@ import (
 	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/cloudrun"
 	"github.com/catzkorn/trail-tools/internal/cloudscheduler"
+	"github.com/catzkorn/trail-tools/internal/demo"
 	"github.com/catzkorn/trail-tools/internal/elevation"
+	"github.com/catzkorn/trail-tools/internal/fakestrava"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
@@ -141,6 +144,12 @@ var (
 		"",
 		"The client secret of the Strava API application",
 	)
+	fakeStrava = flag.Bool(
+		"fake-strava",
+		false,
+		"Connect to a fake Strava served at "+fakestrava.Path+" instead, with a made-up athlete and months of"+
+			" generated activities, for running locally without a Strava API application. Ignores -strava-client-id",
+	)
 	stravaSyncMode = flag.String(
 		"strava-sync-mode",
 		"background",
@@ -230,6 +239,7 @@ func main() {
 		*publicURL,
 		*stravaClientID,
 		*stravaClientSecret,
+		*fakeStrava,
 		*adminBootstrapToken,
 		*stravaSyncMode,
 		*stravaWebhookVerifyToken,
@@ -260,6 +270,7 @@ func run(
 	publicURL string,
 	stravaClientID string,
 	stravaClientSecret string,
+	fakeStrava bool,
 	adminBootstrapToken string,
 	stravaSyncMode string,
 	stravaWebhookVerifyToken string,
@@ -364,12 +375,39 @@ func run(
 	var stravaSyncer *stravasvc.Syncer
 	var stravaOAuth *stravasvc.OAuth
 	var stravaWebhook *stravasvc.Webhook
+	var fakeStravaServer *fakestrava.Server
+	// Links to activities and athletes go to Strava's website, or the fake's.
+	stravaWebURL := strava.WebURL
+	if fakeStrava {
+		// The fake Strava is served by this server, and its API is called
+		// without going through the network.
+		fakeStravaServer = fakestrava.New(baseURL, fakestrava.NewRouter(routing.NewRouter(db)), fakestrava.DefaultCacheDir)
+		stravaClientID, stravaClientSecret, stravaWebhookVerifyToken = "fake", rand.Text(), ""
+		stravaWebURL = fakeStravaServer.WebURL()
+		log.InfoContext(ctx, "Using a fake Strava with generated activities", slog.String("url", baseURL+fakestrava.Path))
+		// The fake athlete's trails and elevations are embedded, so the
+		// activities follow trails without importing or downloading map data.
+		go func() {
+			if err := demo.Load(ctx, log, db, dem); err != nil && ctx.Err() == nil {
+				log.ErrorContext(ctx, "Failed to load the map data of Squamish", slogor.Err(err))
+			}
+			if err := fakeStravaServer.Prepare(ctx); err != nil && ctx.Err() == nil {
+				log.ErrorContext(ctx, "Failed to generate the fake Strava's activities", slogor.Err(err))
+			}
+		}()
+	}
 	if stravaClientID != "" {
-		stravaClient := strava.New(strava.Config{
+		conf := strava.Config{
 			ClientID:     stravaClientID,
 			ClientSecret: stravaClientSecret,
 			RedirectURL:  baseURL + stravasvc.CallbackPath,
-		})
+		}
+		if fakeStravaServer != nil {
+			conf.BaseURL = fakeStravaServer.APIURL()
+			conf.OAuthBaseURL = fakeStravaServer.OAuthURL()
+			conf.HTTPClient = fakeStravaServer.Client()
+		}
+		stravaClient := strava.New(conf)
 		background := stravaSyncMode == "background"
 		var trigger stravasvc.Trigger
 		if !background && stravaSyncJob != "" {
@@ -398,8 +436,8 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
 	}
-	activityService := activity.NewService(log, activityRepo)
-	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	activityService := activity.NewService(log, activityRepo, stravaWebURL)
+	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
 	planService := plan.NewService(log, planRepo)
@@ -535,7 +573,12 @@ func run(
 	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
 	indexHandler := html.ServeIndexHTML(serveDir != "")
-	mux.Handle("/", indexHandler)
+	// A local server without an administrator sends its first visitor to
+	// the invitation to create one.
+	mux.Handle("/", authService.BootstrapHandler(indexHandler))
+	if fakeStravaServer != nil {
+		mux.Handle(fakestrava.Path, fakeStravaServer)
+	}
 	// Serve the OAuth endpoints, with the frontend's consent page for valid
 	// authorization requests.
 	oauthServer.RegisterHandlers(mux, indexHandler)

@@ -216,7 +216,7 @@ const ActivityPage: React.FC = () => {
           )}
           {activity.stravaId !== "" && (
             <a
-              href={`https://www.strava.com/activities/${activity.stravaId}`}
+              href={activity.stravaUrl}
               target="_blank"
               rel="noreferrer"
               className={secondaryButton}

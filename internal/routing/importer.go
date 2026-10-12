@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math"
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -35,7 +33,6 @@ type ImportConfig struct {
 // Import loads the foot accessible ways of OpenStreetMap extracts into the
 // routing graph, and returns the number of edges imported.
 func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConfig) (int, error) {
-	start := time.Now()
 	if len(conf.Sources) == 0 {
 		return 0, errors.New("no OpenStreetMap extract to import")
 	}
@@ -51,28 +48,10 @@ func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConf
 		log.InfoContext(ctx, "Read the OpenStreetMap extract", slog.String("source", source), slog.Int("ways", len(moreWays)), slog.Int("nodes", len(moreNodes.IDs)))
 		ways, nodes = MergeExtracts(ways, nodes, moreWays, moreNodes)
 	}
-	elevations, err := conf.DEM.Elevations(ctx, nodes.Lats, nodes.Lngs)
-	if err != nil {
-		return 0, fmt.Errorf("failed to look up elevations: %w", err)
-	}
-	bounds := conf.Bounds
-	if bounds == (geo.Bounds{}) {
-		bounds = geo.Bounds{MinLat: 90, MinLng: 180, MaxLat: -90, MaxLng: -180}
-		for i := range nodes.IDs {
-			if !math.IsNaN(nodes.Lats[i]) {
-				bounds.MinLat, bounds.MaxLat = math.Min(bounds.MinLat, nodes.Lats[i]), math.Max(bounds.MaxLat, nodes.Lats[i])
-				bounds.MinLng, bounds.MaxLng = math.Min(bounds.MinLng, nodes.Lngs[i]), math.Max(bounds.MaxLng, nodes.Lngs[i])
-			}
-		}
-	}
-	count, err := SaveRegion(ctx, db, conf.Region, bounds, BuildEdges(ways, nodes, elevations, bounds))
+	count, err := ImportWays(ctx, log, db, conf.Region, conf.Bounds, ways, nodes, conf.DEM)
 	if err != nil {
 		return 0, err
 	}
-	if count == 0 {
-		return 0, fmt.Errorf("the extracts have no foot accessible ways within the bounds")
-	}
-	log.InfoContext(ctx, "Imported the region", slog.String("region", conf.Region), slog.Int("edges", count), slog.Duration("duration", time.Since(start)))
 	return count, nil
 }
 

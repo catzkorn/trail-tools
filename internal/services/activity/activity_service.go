@@ -37,13 +37,17 @@ type ActivityRepository interface {
 type Service struct {
 	log        *slog.Logger
 	activities ActivityRepository
+	// The URL of Strava's website, for links to activities.
+	stravaWebURL string
 }
 
-// NewService creates a new Service.
-func NewService(log *slog.Logger, activities ActivityRepository) *Service {
+// NewService creates a new Service. stravaWebURL is the URL of Strava's
+// website, usually strava.WebURL, for links to activities.
+func NewService(log *slog.Logger, activities ActivityRepository, stravaWebURL string) *Service {
 	return &Service{
-		log:        log,
-		activities: activities,
+		log:          log,
+		activities:   activities,
+		stravaWebURL: stravaWebURL,
 	}
 }
 
@@ -91,7 +95,7 @@ func (s *Service) ListActivities(ctx context.Context, req *activitiesv1.ListActi
 	}
 	protoActivities := make([]*activitiesv1.Activity, len(list))
 	for i, a := range list {
-		protoActivities[i] = activityToProto(a)
+		protoActivities[i] = s.activityToProto(a)
 	}
 	return activitiesv1.ListActivitiesResponse_builder{
 		Activities:    protoActivities,
@@ -115,7 +119,7 @@ func (s *Service) GetActivity(ctx context.Context, req *activitiesv1.GetActivity
 		}
 		return nil, s.internalError(ctx, "failed to get activity", err)
 	}
-	resp := activitiesv1.GetActivityResponse_builder{Activity: activityToProto(activity)}
+	resp := activitiesv1.GetActivityResponse_builder{Activity: s.activityToProto(activity)}
 	if req.GetIncludeStreams() && activity.StreamsSynced {
 		data, err := s.activities.GetActivityStreams(ctx, userID, activityID)
 		switch {
@@ -257,10 +261,12 @@ func photoToProto(p activities.Photo) *activitiesv1.ActivityPhoto {
 	return b.Build()
 }
 
-func activityToProto(a *activities.Activity) *activitiesv1.Activity {
+func (s *Service) activityToProto(a *activities.Activity) *activitiesv1.Activity {
+	stravaID := strconv.FormatInt(a.StravaID, 10)
 	return activitiesv1.Activity_builder{
 		Id:                  store.UUIDToString(a.ID),
-		StravaId:            strconv.FormatInt(a.StravaID, 10),
+		StravaId:            stravaID,
+		StravaUrl:           s.stravaWebURL + "/activities/" + stravaID,
 		Name:                a.Name,
 		Description:         a.Description,
 		SportType:           a.SportType,

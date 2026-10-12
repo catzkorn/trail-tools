@@ -24,6 +24,10 @@ const Scope = "read,activity:read_all"
 // DefaultBaseURL is the base URL of the Strava API.
 const DefaultBaseURL = "https://www.strava.com/api/v3"
 
+// WebURL is the URL of Strava's website, where activities are at
+// /activities/<id> and athletes at /athletes/<id>.
+const WebURL = "https://www.strava.com"
+
 // ErrUnauthorized is returned when Strava rejects the access token, for
 // example because the user revoked access.
 var ErrUnauthorized = errors.New("strava authorization was revoked or expired, reconnect Strava")

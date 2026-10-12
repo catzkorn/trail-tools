@@ -1,0 +1,72 @@
+package demo_test
+
+import (
+	"context"
+	"io"
+	"log/slog"
+	"math"
+	"testing"
+
+	"github.com/catzkorn/trail-tools/internal/demo"
+	"github.com/catzkorn/trail-tools/internal/elevation"
+	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/routing"
+	"github.com/catzkorn/trail-tools/internal/store/storetest"
+)
+
+// chief is the first peak of the Stawamus Chief, about 600 m above the sea.
+var chief = geo.Point{Lat: 49.6836, Lng: -123.1384}
+
+func TestData(t *testing.T) {
+	patch, err := demo.Elevation()
+	if err != nil {
+		t.Fatalf("Elevation: %v", err)
+	}
+	if b := patch.Bounds(); b.MinLat > demo.Bounds.MinLat || b.MaxLat < demo.Bounds.MaxLat ||
+		b.MinLng > demo.Bounds.MinLng || b.MaxLng < demo.Bounds.MaxLng {
+		t.Errorf("the elevations cover %+v, want all of %+v", b, demo.Bounds)
+	}
+	ways, nodes, err := demo.Trails()
+	if err != nil {
+		t.Fatalf("Trails: %v", err)
+	}
+	if len(ways) < 1000 || len(nodes.IDs) < 10_000 {
+		t.Errorf("got %d ways and %d nodes, want the trails of Squamish", len(ways), len(nodes.IDs))
+	}
+}
+
+func TestLoad(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	db := storetest.New(t)
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	// No elevation tiles are downloaded for Squamish.
+	dem := elevation.NewDEM("http://invalid.test", t.TempDir())
+	if err := demo.Load(ctx, log, db, dem); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	elevations, err := dem.Points(ctx, []geo.Point{chief})
+	if err != nil {
+		t.Fatalf("Points: %v", err)
+	}
+	if math.Abs(elevations[0]-600) > 150 {
+		t.Errorf("the Chief is at %.0f m, want about 600 m", elevations[0])
+	}
+	// The trails can be routed on: up the Chief from its trailhead.
+	router := routing.NewRouter(db)
+	path, err := router.Route(ctx, routing.Request{From: geo.Point{Lat: 49.6806, Lng: -123.1483}, To: chief})
+	if err != nil {
+		t.Fatalf("Route: %v", err)
+	}
+	if last := path.Points[len(path.Points)-1]; geo.Distance(last, chief) > 300 || last.Ele < 400 {
+		t.Errorf("the route ends at %+v, want the summit", last)
+	}
+	// Loading again keeps the region.
+	if err := demo.Load(ctx, log, db, dem); err != nil {
+		t.Fatalf("Load again: %v", err)
+	}
+	regions, err := router.Regions(ctx)
+	if err != nil || len(regions) != 1 {
+		t.Errorf("Regions = %v, %v, want the one region", regions, err)
+	}
+}
