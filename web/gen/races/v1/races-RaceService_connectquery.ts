@@ -40,3 +40,40 @@ export const updateRace = RaceService.method.updateRace;
  * @generated from rpc races.v1.RaceService.DeleteRace
  */
 export const deleteRace = RaceService.method.deleteRace;
+
+/**
+ * Create a race event, to group races that belong together, e.g. a 50 mile
+ * race on the Saturday and a 50K on the Sunday. Add races to the event by
+ * setting their event_id.
+ *
+ * @generated from rpc races.v1.RaceService.CreateRaceEvent
+ */
+export const createRaceEvent = RaceService.method.createRaceEvent;
+
+/**
+ * Get a race event by ID.
+ *
+ * @generated from rpc races.v1.RaceService.GetRaceEvent
+ */
+export const getRaceEvent = RaceService.method.getRaceEvent;
+
+/**
+ * List the user's race events, in the order of their first race.
+ *
+ * @generated from rpc races.v1.RaceService.ListRaceEvents
+ */
+export const listRaceEvents = RaceService.method.listRaceEvents;
+
+/**
+ * Update a race event.
+ *
+ * @generated from rpc races.v1.RaceService.UpdateRaceEvent
+ */
+export const updateRaceEvent = RaceService.method.updateRaceEvent;
+
+/**
+ * Delete a race event. Its races are kept, outside any event.
+ *
+ * @generated from rpc races.v1.RaceService.DeleteRaceEvent
+ */
+export const deleteRaceEvent = RaceService.method.deleteRaceEvent;
