@@ -814,6 +814,7 @@ type Race struct {
 	Notes               string
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
+	OnCalendar          bool
 }
 
 type RacePlan struct {

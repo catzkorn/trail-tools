@@ -60,7 +60,8 @@ export type TrainingPlan = Message<"plans.v1.TrainingPlan"> & {
   endDate: string;
 
   /**
-   * The IDs of the goal races the plan builds towards. See RaceService.
+   * The IDs of the goal races the plan builds towards. See RaceService. They
+   * are added to the user's calendar.
    *
    * @generated from field: repeated string goal_race_ids = 6;
    */
@@ -541,7 +542,8 @@ export const DeletePlanPeriodsResponseSchema: GenMessage<DeletePlanPeriodsRespon
  */
 export type ListWorkoutsRequest = Message<"plans.v1.ListWorkoutsRequest"> & {
   /**
-   * The ID of the plan.
+   * The ID of the plan. If empty, the workouts of all the user's plans are
+   * listed.
    *
    * @generated from field: string plan_id = 1;
    */
@@ -982,7 +984,8 @@ export const TrainingPlanService: GenService<{
     output: typeof DeletePlanPeriodsResponseSchema;
   },
   /**
-   * List a plan's workouts in date order, optionally within a date range.
+   * List a plan's workouts, or those of all the user's plans, in date order,
+   * optionally within a date range.
    *
    * @generated from rpc plans.v1.TrainingPlanService.ListWorkouts
    */

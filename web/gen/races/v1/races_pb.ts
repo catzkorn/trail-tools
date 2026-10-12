@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file races/v1/races.proto.
  */
 export const file_races_v1_races: GenFile = /*@__PURE__*/
-  fileDesc("ChRyYWNlcy92MS9yYWNlcy5wcm90bxIIcmFjZXMudjEi/QIKBFJhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRkYXRlGAMgASgJEhIKCnN0YXJ0X3RpbWUYBCABKAkSEAoIbG9jYXRpb24YBSABKAkSEwoLd2Vic2l0ZV91cmwYBiABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGAcgASgBEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgIIAEoARIWCg5jdXRvZmZfc2Vjb25kcxgJIAEoBRIoCghwcmlvcml0eRgKIAEoDjIWLnJhY2VzLnYxLlJhY2VQcmlvcml0eRIXCg9jb3Vyc2Vfcm91dGVfaWQYCyABKAkSDQoFbm90ZXMYDCABKAkSNwoLY3JlYXRlX3RpbWUYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLdXBkYXRlX3RpbWUYDiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEiMQoRQ3JlYXRlUmFjZVJlcXVlc3QSHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiMgoSQ3JlYXRlUmFjZVJlc3BvbnNlEhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlIhwKDkdldFJhY2VSZXF1ZXN0EgoKAmlkGAEgASgJIi8KD0dldFJhY2VSZXNwb25zZRIcCgRyYWNlGAEgASgLMg4ucmFjZXMudjEuUmFjZSISChBMaXN0UmFjZXNSZXF1ZXN0IjIKEUxpc3RSYWNlc1Jlc3BvbnNlEh0KBXJhY2VzGAEgAygLMg4ucmFjZXMudjEuUmFjZSJiChFVcGRhdGVSYWNlUmVxdWVzdBIcCgRyYWNlGAEgASgLMg4ucmFjZXMudjEuUmFjZRIvCgt1cGRhdGVfbWFzaxgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5GaWVsZE1hc2siMgoSVXBkYXRlUmFjZVJlc3BvbnNlEhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlIh8KEURlbGV0ZVJhY2VSZXF1ZXN0EgoKAmlkGAEgASgJIhQKEkRlbGV0ZVJhY2VSZXNwb25zZSpsCgxSYWNlUHJpb3JpdHkSHQoZUkFDRV9QUklPUklUWV9VTlNQRUNJRklFRBAAEhMKD1JBQ0VfUFJJT1JJVFlfQRABEhMKD1JBQ0VfUFJJT1JJVFlfQhACEhMKD1JBQ0VfUFJJT1JJVFlfQxADMu4CCgtSYWNlU2VydmljZRJHCgpDcmVhdGVSYWNlEhsucmFjZXMudjEuQ3JlYXRlUmFjZVJlcXVlc3QaHC5yYWNlcy52MS5DcmVhdGVSYWNlUmVzcG9uc2USPgoHR2V0UmFjZRIYLnJhY2VzLnYxLkdldFJhY2VSZXF1ZXN0GhkucmFjZXMudjEuR2V0UmFjZVJlc3BvbnNlEkQKCUxpc3RSYWNlcxIaLnJhY2VzLnYxLkxpc3RSYWNlc1JlcXVlc3QaGy5yYWNlcy52MS5MaXN0UmFjZXNSZXNwb25zZRJHCgpVcGRhdGVSYWNlEhsucmFjZXMudjEuVXBkYXRlUmFjZVJlcXVlc3QaHC5yYWNlcy52MS5VcGRhdGVSYWNlUmVzcG9uc2USRwoKRGVsZXRlUmFjZRIbLnJhY2VzLnYxLkRlbGV0ZVJhY2VSZXF1ZXN0GhwucmFjZXMudjEuRGVsZXRlUmFjZVJlc3BvbnNlQpoBCgxjb20ucmFjZXMudjFCClJhY2VzUHJvdG9QAVo9Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcmFjZXMvdjE7cmFjZXN2MaICA1JYWKoCCFJhY2VzLlYxygIIUmFjZXNcVjHiAhRSYWNlc1xWMVxHUEJNZXRhZGF0YeoCCVJhY2VzOjpWMWIGcHJvdG8z", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChRyYWNlcy92MS9yYWNlcy5wcm90bxIIcmFjZXMudjEikgMKBFJhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRkYXRlGAMgASgJEhIKCnN0YXJ0X3RpbWUYBCABKAkSEAoIbG9jYXRpb24YBSABKAkSEwoLd2Vic2l0ZV91cmwYBiABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGAcgASgBEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgIIAEoARIWCg5jdXRvZmZfc2Vjb25kcxgJIAEoBRIoCghwcmlvcml0eRgKIAEoDjIWLnJhY2VzLnYxLlJhY2VQcmlvcml0eRIXCg9jb3Vyc2Vfcm91dGVfaWQYCyABKAkSDQoFbm90ZXMYDCABKAkSEwoLb25fY2FsZW5kYXIYDyABKAgSNwoLY3JlYXRlX3RpbWUYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLdXBkYXRlX3RpbWUYDiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEiMQoRQ3JlYXRlUmFjZVJlcXVlc3QSHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiMgoSQ3JlYXRlUmFjZVJlc3BvbnNlEhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlIhwKDkdldFJhY2VSZXF1ZXN0EgoKAmlkGAEgASgJIi8KD0dldFJhY2VSZXNwb25zZRIcCgRyYWNlGAEgASgLMg4ucmFjZXMudjEuUmFjZSIsChBMaXN0UmFjZXNSZXF1ZXN0EhgKEG9uX2NhbGVuZGFyX29ubHkYASABKAgiMgoRTGlzdFJhY2VzUmVzcG9uc2USHQoFcmFjZXMYASADKAsyDi5yYWNlcy52MS5SYWNlImIKEVVwZGF0ZVJhY2VSZXF1ZXN0EhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayIyChJVcGRhdGVSYWNlUmVzcG9uc2USHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiHwoRRGVsZXRlUmFjZVJlcXVlc3QSCgoCaWQYASABKAkiFAoSRGVsZXRlUmFjZVJlc3BvbnNlKmwKDFJhY2VQcmlvcml0eRIdChlSQUNFX1BSSU9SSVRZX1VOU1BFQ0lGSUVEEAASEwoPUkFDRV9QUklPUklUWV9BEAESEwoPUkFDRV9QUklPUklUWV9CEAISEwoPUkFDRV9QUklPUklUWV9DEAMy7gIKC1JhY2VTZXJ2aWNlEkcKCkNyZWF0ZVJhY2USGy5yYWNlcy52MS5DcmVhdGVSYWNlUmVxdWVzdBocLnJhY2VzLnYxLkNyZWF0ZVJhY2VSZXNwb25zZRI+CgdHZXRSYWNlEhgucmFjZXMudjEuR2V0UmFjZVJlcXVlc3QaGS5yYWNlcy52MS5HZXRSYWNlUmVzcG9uc2USRAoJTGlzdFJhY2VzEhoucmFjZXMudjEuTGlzdFJhY2VzUmVxdWVzdBobLnJhY2VzLnYxLkxpc3RSYWNlc1Jlc3BvbnNlEkcKClVwZGF0ZVJhY2USGy5yYWNlcy52MS5VcGRhdGVSYWNlUmVxdWVzdBocLnJhY2VzLnYxLlVwZGF0ZVJhY2VSZXNwb25zZRJHCgpEZWxldGVSYWNlEhsucmFjZXMudjEuRGVsZXRlUmFjZVJlcXVlc3QaHC5yYWNlcy52MS5EZWxldGVSYWNlUmVzcG9uc2VCmgEKDGNvbS5yYWNlcy52MUIKUmFjZXNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9yYWNlcy92MTtyYWNlc3YxogIDUlhYqgIIUmFjZXMuVjHKAghSYWNlc1xWMeICFFJhY2VzXFYxXEdQQk1ldGFkYXRh6gIJUmFjZXM6OlYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * A race.
@@ -105,6 +105,15 @@ export type Race = Message<"races.v1.Race"> & {
    * @generated from field: string notes = 12;
    */
   notes: string;
+
+  /**
+   * Whether the race is on the user's calendar: the user is running it,
+   * rather than considering it. Only races on the calendar can have race
+   * plans. Making a race a goal race of a training plan adds it.
+   *
+   * @generated from field: bool on_calendar = 15;
+   */
+  onCalendar: boolean;
 
   /**
    * When the race was created.
@@ -208,6 +217,12 @@ export const GetRaceResponseSchema: GenMessage<GetRaceResponse> = /*@__PURE__*/
  * @generated from message races.v1.ListRacesRequest
  */
 export type ListRacesRequest = Message<"races.v1.ListRacesRequest"> & {
+  /**
+   * Only list the races on the user's calendar.
+   *
+   * @generated from field: bool on_calendar_only = 1;
+   */
+  onCalendarOnly: boolean;
 };
 
 /**
@@ -354,14 +369,16 @@ export const RacePrioritySchema: GenEnum<RacePriority> = /*@__PURE__*/
   enumDesc(file_races_v1_races, 0);
 
 /**
- * RaceService manages the races the user is targeting. Races are used as goal
- * races in training plans and as the subject of race plans.
+ * RaceService manages the races the user could run, and which of them are on
+ * the user's calendar: the races the user is running. Races on the calendar
+ * can have race plans. Goal races of training plans are on the calendar.
  *
  * @generated from service races.v1.RaceService
  */
 export const RaceService: GenService<{
   /**
-   * Create a race.
+   * Create a race. Races start off the user's calendar: only set on_calendar
+   * when the user says they are running the race.
    *
    * @generated from rpc races.v1.RaceService.CreateRace
    */
@@ -381,7 +398,8 @@ export const RaceService: GenService<{
     output: typeof GetRaceResponseSchema;
   },
   /**
-   * List the user's races in date order.
+   * List the user's races in date order, or only those on the user's
+   * calendar.
    *
    * @generated from rpc races.v1.RaceService.ListRaces
    */

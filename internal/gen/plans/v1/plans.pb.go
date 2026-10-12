@@ -322,7 +322,8 @@ type TrainingPlan_builder struct {
 	StartDate string
 	// The last day of the plan (YYYY-MM-DD). At most 366 days after the start.
 	EndDate string
-	// The IDs of the goal races the plan builds towards. See RaceService.
+	// The IDs of the goal races the plan builds towards. See RaceService. They
+	// are added to the user's calendar.
 	GoalRaceIds []string
 	// When the plan was created.
 	CreateTime *timestamppb.Timestamp
@@ -1708,7 +1709,8 @@ func (x *ListWorkoutsRequest) SetEndDate(v string) {
 type ListWorkoutsRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The ID of the plan.
+	// The ID of the plan. If empty, the workouts of all the user's plans are
+	// listed.
 	PlanId string
 	// Only include workouts on or after this date (YYYY-MM-DD).
 	StartDate string

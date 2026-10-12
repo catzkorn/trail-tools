@@ -107,18 +107,47 @@ type Workout struct {
 
 // CreateTrainingPlan stores a new training plan.
 func (r *Repository) CreateTrainingPlan(ctx context.Context, plan *TrainingPlan) (*TrainingPlan, error) {
-	dbPlan, err := r.q.CreateTrainingPlan(ctx, &gen.CreateTrainingPlanParams{
-		UserID:      plan.UserID,
-		Name:        plan.Name,
-		Description: plan.Description,
-		StartDate:   store.DateToPG(plan.StartDate),
-		EndDate:     store.DateToPG(plan.EndDate),
-		GoalRaceIds: nonNil(plan.GoalRaceIDs),
+	var created *TrainingPlan
+	err := r.withGoalRacesOnCalendar(ctx, plan, func(q *gen.Queries) error {
+		dbPlan, err := q.CreateTrainingPlan(ctx, &gen.CreateTrainingPlanParams{
+			UserID:      plan.UserID,
+			Name:        plan.Name,
+			Description: plan.Description,
+			StartDate:   store.DateToPG(plan.StartDate),
+			EndDate:     store.DateToPG(plan.EndDate),
+			GoalRaceIds: nonNil(plan.GoalRaceIDs),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create training plan: %w", err)
+		}
+		created = planFromDB(dbPlan)
+		return nil
 	})
+	return created, err
+}
+
+// withGoalRacesOnCalendar runs fn, which stores the plan, in a transaction
+// that also adds the plan's goal races to the user's calendar, as the user
+// is training to run them.
+func (r *Repository) withGoalRacesOnCalendar(ctx context.Context, plan *TrainingPlan, fn func(q *gen.Queries) error) error {
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create training plan: %w", err)
+		return fmt.Errorf("failed to start transaction: %w", err)
 	}
-	return planFromDB(dbPlan), nil
+	defer tx.Rollback(context.Background())
+	q := r.q.WithTx(tx)
+	if err := fn(q); err != nil {
+		return err
+	}
+	if len(plan.GoalRaceIDs) > 0 {
+		if err := q.AddRacesToCalendar(ctx, &gen.AddRacesToCalendarParams{UserID: plan.UserID, Ids: plan.GoalRaceIDs}); err != nil {
+			return fmt.Errorf("failed to add goal races to the calendar: %w", err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 // GetTrainingPlan gets one of the user's training plans.
@@ -149,22 +178,27 @@ func (r *Repository) ListTrainingPlans(ctx context.Context, userID pgtype.UUID) 
 
 // UpdateTrainingPlan replaces a training plan's details.
 func (r *Repository) UpdateTrainingPlan(ctx context.Context, plan *TrainingPlan) (*TrainingPlan, error) {
-	dbPlan, err := r.q.UpdateTrainingPlan(ctx, &gen.UpdateTrainingPlanParams{
-		ID:          plan.ID,
-		UserID:      plan.UserID,
-		Name:        plan.Name,
-		Description: plan.Description,
-		StartDate:   store.DateToPG(plan.StartDate),
-		EndDate:     store.DateToPG(plan.EndDate),
-		GoalRaceIds: nonNil(plan.GoalRaceIDs),
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, store.ErrNotFound
+	var updated *TrainingPlan
+	err := r.withGoalRacesOnCalendar(ctx, plan, func(q *gen.Queries) error {
+		dbPlan, err := q.UpdateTrainingPlan(ctx, &gen.UpdateTrainingPlanParams{
+			ID:          plan.ID,
+			UserID:      plan.UserID,
+			Name:        plan.Name,
+			Description: plan.Description,
+			StartDate:   store.DateToPG(plan.StartDate),
+			EndDate:     store.DateToPG(plan.EndDate),
+			GoalRaceIds: nonNil(plan.GoalRaceIDs),
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return store.ErrNotFound
+			}
+			return fmt.Errorf("failed to update training plan: %w", err)
 		}
-		return nil, fmt.Errorf("failed to update training plan: %w", err)
-	}
-	return planFromDB(dbPlan), nil
+		updated = planFromDB(dbPlan)
+		return nil
+	})
+	return updated, err
 }
 
 // DeleteTrainingPlan deletes a training plan with its periods and workouts.
@@ -276,6 +310,24 @@ func (r *Repository) CreateWorkouts(ctx context.Context, planID pgtype.UUID, wor
 func (r *Repository) ListWorkouts(ctx context.Context, planID pgtype.UUID, startDate, endDate time.Time) ([]*Workout, error) {
 	dbWorkouts, err := r.q.ListWorkouts(ctx, &gen.ListWorkoutsParams{
 		PlanID:    planID,
+		StartDate: store.DateToPG(startDate),
+		EndDate:   store.DateToPG(endDate),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list workouts: %w", err)
+	}
+	result := make([]*Workout, len(dbWorkouts))
+	for i, w := range dbWorkouts {
+		result[i] = workoutFromDB(w)
+	}
+	return result, nil
+}
+
+// ListUserWorkouts lists the workouts of all the user's plans in date
+// order, optionally limited to a date range.
+func (r *Repository) ListUserWorkouts(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*Workout, error) {
+	dbWorkouts, err := r.q.ListUserWorkouts(ctx, &gen.ListUserWorkoutsParams{
+		UserID:    userID,
 		StartDate: store.DateToPG(startDate),
 		EndDate:   store.DateToPG(endDate),
 	})

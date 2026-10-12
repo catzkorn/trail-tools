@@ -38,7 +38,8 @@ service TrainingPlanService {
   rpc SetPlanPeriods(SetPlanPeriodsRequest) returns (SetPlanPeriodsResponse);
   // Delete month or week periods.
   rpc DeletePlanPeriods(DeletePlanPeriodsRequest) returns (DeletePlanPeriodsResponse);
-  // List a plan's workouts in date order, optionally within a date range.
+  // List a plan's workouts, or those of all the user's plans, in date order,
+  // optionally within a date range.
   rpc ListWorkouts(ListWorkoutsRequest) returns (ListWorkoutsResponse);
   // Get a workout by ID.
   rpc GetWorkout(GetWorkoutRequest) returns (GetWorkoutResponse);
@@ -63,7 +64,8 @@ message TrainingPlan {
   string start_date = 4;
   // The last day of the plan (YYYY-MM-DD). At most 366 days after the start.
   string end_date = 5;
-  // The IDs of the goal races the plan builds towards. See RaceService.
+  // The IDs of the goal races the plan builds towards. See RaceService. They
+  // are added to the user's calendar.
   repeated string goal_race_ids = 6;
   // When the plan was created.
   google.protobuf.Timestamp create_time = 7 [(mcp.v1.field).output_only = true];
@@ -231,7 +233,8 @@ message DeletePlanPeriodsRequest {
 message DeletePlanPeriodsResponse {}
 
 message ListWorkoutsRequest {
-  // The ID of the plan.
+  // The ID of the plan. If empty, the workouts of all the user's plans are
+  // listed.
   string plan_id = 1;
   // Only include workouts on or after this date (YYYY-MM-DD).
   string start_date = 2;

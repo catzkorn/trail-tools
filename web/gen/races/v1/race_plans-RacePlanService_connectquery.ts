@@ -5,8 +5,9 @@
 import { RacePlanService } from "./race_plans_pb";
 
 /**
- * Create a race plan for a race. The plan is seeded with the race's
- * details and empty entries for the core contingency scenarios.
+ * Create a race plan for a race on the user's calendar. The plan is seeded
+ * with the race's details and empty entries for the core contingency
+ * scenarios.
  *
  * @generated from rpc races.v1.RacePlanService.CreateRacePlan
  */

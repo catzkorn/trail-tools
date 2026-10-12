@@ -28,7 +28,7 @@ func TestRaceDay(t *testing.T) {
 		t.Fatal(err)
 	}
 	race, err := e.races.CreateRace(ctx, racesv1.CreateRaceRequest_builder{
-		Race: racesv1.Race_builder{Name: "Race", Date: "2026-10-11", DistanceMeters: 22239, CourseRouteId: course.GetRoute().GetId()}.Build(),
+		Race: racesv1.Race_builder{Name: "Race", Date: "2026-10-11", DistanceMeters: 22239, CourseRouteId: course.GetRoute().GetId(), OnCalendar: true}.Build(),
 	}.Build())
 	if err != nil {
 		t.Fatal(err)
@@ -192,7 +192,7 @@ func TestRaceDaySplits(t *testing.T) {
 	ctx := context.Background()
 
 	race, err := e.races.CreateRace(ctx, racesv1.CreateRaceRequest_builder{
-		Race: racesv1.Race_builder{Name: "Race", Date: "2026-10-11", DistanceMeters: 40000}.Build(),
+		Race: racesv1.Race_builder{Name: "Race", Date: "2026-10-11", DistanceMeters: 40000, OnCalendar: true}.Build(),
 	}.Build())
 	if err != nil {
 		t.Fatal(err)

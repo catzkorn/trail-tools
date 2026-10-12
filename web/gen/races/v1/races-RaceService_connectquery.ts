@@ -5,7 +5,8 @@
 import { RaceService } from "./races_pb";
 
 /**
- * Create a race.
+ * Create a race. Races start off the user's calendar: only set on_calendar
+ * when the user says they are running the race.
  *
  * @generated from rpc races.v1.RaceService.CreateRace
  */
@@ -19,7 +20,8 @@ export const createRace = RaceService.method.createRace;
 export const getRace = RaceService.method.getRace;
 
 /**
- * List the user's races in date order.
+ * List the user's races in date order, or only those on the user's
+ * calendar.
  *
  * @generated from rpc races.v1.RaceService.ListRaces
  */

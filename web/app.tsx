@@ -8,6 +8,7 @@ import type { User } from "gen/users/v1/users_pb";
 import ActivitiesPage from "pages/activities";
 import ActivityPage from "pages/activity";
 import AthletesPage from "pages/athletes";
+import CalendarPage from "pages/calendar";
 import DashboardPage from "pages/dashboard";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
@@ -120,6 +121,7 @@ const App: React.FC = () => {
               path="/routes/:id"
               element={protectedPage(<RoutePage isNew={false} />)}
             />
+            <Route path="/calendar" element={protectedPage(<CalendarPage />)} />
             <Route path="/races" element={protectedPage(<RacesPage />)} />
             <Route
               path="/race-plans/:id"

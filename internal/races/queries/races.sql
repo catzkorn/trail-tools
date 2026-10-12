@@ -11,9 +11,10 @@ insert into races (
   cutoff_seconds,
   priority,
   course_route_id,
-  notes
+  notes,
+  on_calendar
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
 returning *;
 
@@ -24,6 +25,7 @@ where id = $1 and user_id = $2;
 -- name: ListRaces :many
 select * from races
 where user_id = $1
+  and (not sqlc.arg(on_calendar_only)::boolean or on_calendar)
 order by date, name;
 
 -- name: UpdateRace :one
@@ -39,6 +41,7 @@ update races set
   priority = $11,
   course_route_id = $12,
   notes = $13,
+  on_calendar = $14,
   update_time = now()
 where id = $1 and user_id = $2
 returning *;

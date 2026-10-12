@@ -36,6 +36,7 @@ type PlanRepository interface {
 	DeletePeriods(ctx context.Context, planID pgtype.UUID, ids []pgtype.UUID) error
 	CreateWorkouts(ctx context.Context, planID pgtype.UUID, workouts []*plans.Workout) ([]*plans.Workout, error)
 	ListWorkouts(ctx context.Context, planID pgtype.UUID, startDate, endDate time.Time) ([]*plans.Workout, error)
+	ListUserWorkouts(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*plans.Workout, error)
 	GetWorkout(ctx context.Context, userID, workoutID pgtype.UUID) (*plans.Workout, error)
 	UpdateWorkout(ctx context.Context, w *plans.Workout) (*plans.Workout, error)
 	DeleteWorkouts(ctx context.Context, planID pgtype.UUID, ids []pgtype.UUID) error
@@ -194,11 +195,10 @@ func (s *Service) DeletePlanPeriods(ctx context.Context, req *plansv1.DeletePlan
 }
 
 func (s *Service) ListWorkouts(ctx context.Context, req *plansv1.ListWorkoutsRequest) (*plansv1.ListWorkoutsResponse, error) {
-	plan, err := s.getPlan(ctx, req.GetPlanId())
-	if err != nil {
-		return nil, err
-	}
-	var startDate, endDate time.Time
+	var (
+		startDate, endDate time.Time
+		err                error
+	)
 	if req.GetStartDate() != "" {
 		if startDate, err = store.ParseDate(req.GetStartDate()); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
@@ -209,7 +209,20 @@ func (s *Service) ListWorkouts(ctx context.Context, req *plansv1.ListWorkoutsReq
 			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 		}
 	}
-	workouts, err := s.plans.ListWorkouts(ctx, plan.ID, startDate, endDate)
+	var workouts []*plans.Workout
+	if req.GetPlanId() == "" {
+		userID, ok := authn.GetUserID(ctx)
+		if !ok {
+			return nil, connect.NewError(connect.CodeUnauthenticated, "")
+		}
+		workouts, err = s.plans.ListUserWorkouts(ctx, userID, startDate, endDate)
+	} else {
+		plan, planErr := s.getPlan(ctx, req.GetPlanId())
+		if planErr != nil {
+			return nil, planErr
+		}
+		workouts, err = s.plans.ListWorkouts(ctx, plan.ID, startDate, endDate)
+	}
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list workouts")
 	}

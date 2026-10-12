@@ -27,6 +27,23 @@ func (q *Queries) ActivityExists(ctx context.Context, arg *ActivityExistsParams)
 	return exists, err
 }
 
+const addRacesToCalendar = `-- name: AddRacesToCalendar :exec
+update races set
+  on_calendar = true,
+  update_time = now()
+where user_id = $1 and id = any($2::uuid[]) and not on_calendar
+`
+
+type AddRacesToCalendarParams struct {
+	UserID pgtype.UUID
+	Ids    []pgtype.UUID
+}
+
+func (q *Queries) AddRacesToCalendar(ctx context.Context, arg *AddRacesToCalendarParams) error {
+	_, err := q.db.Exec(ctx, addRacesToCalendar, arg.UserID, arg.Ids)
+	return err
+}
+
 const countRaces = `-- name: CountRaces :one
 select count(*) from races
 where user_id = $1 and id = any($2::uuid[])
@@ -331,6 +348,55 @@ func (q *Queries) ListTrainingPlans(ctx context.Context, userID pgtype.UUID) ([]
 			&i.GoalRaceIds,
 			&i.CreateTime,
 			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUserWorkouts = `-- name: ListUserWorkouts :many
+select w.id, w.plan_id, w.date, w.type, w.title, w.description, w.target_distance_meters, w.target_elevation_gain_meters, w.target_duration_seconds, w.target_terrain, w.route_id, w.completed_activity_id, w.create_time from workouts w
+join training_plans p on p.id = w.plan_id
+where p.user_id = $1
+  and ($2::date is null or w.date >= $2::date)
+  and ($3::date is null or w.date <= $3::date)
+order by w.date, w.create_time
+`
+
+type ListUserWorkoutsParams struct {
+	UserID    pgtype.UUID
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+}
+
+func (q *Queries) ListUserWorkouts(ctx context.Context, arg *ListUserWorkoutsParams) ([]*Workout, error) {
+	rows, err := q.db.Query(ctx, listUserWorkouts, arg.UserID, arg.StartDate, arg.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*Workout
+	for rows.Next() {
+		var i Workout
+		if err := rows.Scan(
+			&i.ID,
+			&i.PlanID,
+			&i.Date,
+			&i.Type,
+			&i.Title,
+			&i.Description,
+			&i.TargetDistanceMeters,
+			&i.TargetElevationGainMeters,
+			&i.TargetDurationSeconds,
+			&i.TargetTerrain,
+			&i.RouteID,
+			&i.CompletedActivityID,
+			&i.CreateTime,
 		); err != nil {
 			return nil, err
 		}

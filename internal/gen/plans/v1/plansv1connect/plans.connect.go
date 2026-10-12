@@ -169,7 +169,8 @@ type TrainingPlanServiceClient interface {
 	SetPlanPeriods(context.Context, *v1.SetPlanPeriodsRequest) (*v1.SetPlanPeriodsResponse, error)
 	// Delete month or week periods.
 	DeletePlanPeriods(context.Context, *v1.DeletePlanPeriodsRequest) (*v1.DeletePlanPeriodsResponse, error)
-	// List a plan's workouts in date order, optionally within a date range.
+	// List a plan's workouts, or those of all the user's plans, in date order,
+	// optionally within a date range.
 	ListWorkouts(context.Context, *v1.ListWorkoutsRequest) (*v1.ListWorkoutsResponse, error)
 	// Get a workout by ID.
 	GetWorkout(context.Context, *v1.GetWorkoutRequest) (*v1.GetWorkoutResponse, error)
@@ -207,7 +208,8 @@ type TrainingPlanServiceHandler interface {
 	SetPlanPeriods(context.Context, *v1.SetPlanPeriodsRequest) (*v1.SetPlanPeriodsResponse, error)
 	// Delete month or week periods.
 	DeletePlanPeriods(context.Context, *v1.DeletePlanPeriodsRequest) (*v1.DeletePlanPeriodsResponse, error)
-	// List a plan's workouts in date order, optionally within a date range.
+	// List a plan's workouts, or those of all the user's plans, in date order,
+	// optionally within a date range.
 	ListWorkouts(context.Context, *v1.ListWorkoutsRequest) (*v1.ListWorkoutsResponse, error)
 	// Get a workout by ID.
 	GetWorkout(context.Context, *v1.GetWorkoutRequest) (*v1.GetWorkoutResponse, error)

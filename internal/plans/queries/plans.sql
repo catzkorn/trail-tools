@@ -90,6 +90,20 @@ where plan_id = $1
   and (sqlc.narg(end_date)::date is null or date <= sqlc.narg(end_date)::date)
 order by date, create_time;
 
+-- name: ListUserWorkouts :many
+select w.* from workouts w
+join training_plans p on p.id = w.plan_id
+where p.user_id = $1
+  and (sqlc.narg(start_date)::date is null or w.date >= sqlc.narg(start_date)::date)
+  and (sqlc.narg(end_date)::date is null or w.date <= sqlc.narg(end_date)::date)
+order by w.date, w.create_time;
+
+-- name: AddRacesToCalendar :exec
+update races set
+  on_calendar = true,
+  update_time = now()
+where user_id = $1 and id = any(sqlc.arg(ids)::uuid[]) and not on_calendar;
+
 -- name: GetWorkout :one
 select w.* from workouts w
 join training_plans p on p.id = w.plan_id

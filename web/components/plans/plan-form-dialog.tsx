@@ -18,6 +18,7 @@ import {
 import type { TrainingPlan } from "gen/plans/v1/plans_pb";
 import { TrainingPlanService } from "gen/plans/v1/plans_pb";
 import { listRaces } from "gen/races/v1/races-RaceService_connectquery";
+import { RaceService } from "gen/races/v1/races_pb";
 import { addDays, daysBetween, isDateString, today } from "helpers/dates";
 import { formatDate } from "helpers/format";
 import { invalidateServices } from "helpers/query";
@@ -49,7 +50,8 @@ const PlanFormDialog: React.FC<PlanFormDialogProps> = ({ plan, onClose }) => {
 
   const create = useMutation(createTrainingPlan, {
     onSuccess: async (response) => {
-      await invalidateServices(queryClient, [TrainingPlanService]);
+      // Goal races are added to the calendar.
+      await invalidateServices(queryClient, [TrainingPlanService, RaceService]);
       onClose();
       if (response.plan !== undefined) {
         void navigate(`/plans/${response.plan.id}`);
@@ -58,7 +60,8 @@ const PlanFormDialog: React.FC<PlanFormDialogProps> = ({ plan, onClose }) => {
   });
   const update = useMutation(updateTrainingPlan, {
     onSuccess: async () => {
-      await invalidateServices(queryClient, [TrainingPlanService]);
+      // Goal races are added to the calendar.
+      await invalidateServices(queryClient, [TrainingPlanService, RaceService]);
       onClose();
     },
   });
@@ -193,6 +196,7 @@ const PlanFormDialog: React.FC<PlanFormDialogProps> = ({ plan, onClose }) => {
                       {race.name}{" "}
                       <span className="text-gray-500">
                         {formatDate(race.date)}
+                        {race.onCalendar && " · on calendar"}
                       </span>
                     </>
                   }
@@ -200,6 +204,9 @@ const PlanFormDialog: React.FC<PlanFormDialogProps> = ({ plan, onClose }) => {
               ))}
             </div>
           )}
+          <p className="text-xs text-gray-500">
+            Goal races are added to your calendar.
+          </p>
         </div>
         {validation !== "" && (
           <p className="text-sm text-red-700">{validation}</p>
@@ -221,6 +228,7 @@ const PlanFormDialog: React.FC<PlanFormDialogProps> = ({ plan, onClose }) => {
       {addingRace && (
         <RaceDialog
           race={undefined}
+          defaultOnCalendar
           onClose={() => {
             setAddingRace(false);
           }}

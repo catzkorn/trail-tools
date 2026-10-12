@@ -25,8 +25,9 @@ import "routes/v1/routes.proto";
 // server re-estimates the arrival times at the remaining checkpoints from the
 // runner's pace relative to the plan.
 service RacePlanService {
-  // Create a race plan for a race. The plan is seeded with the race's
-  // details and empty entries for the core contingency scenarios.
+  // Create a race plan for a race on the user's calendar. The plan is seeded
+  // with the race's details and empty entries for the core contingency
+  // scenarios.
   rpc CreateRacePlan(CreateRacePlanRequest) returns (CreateRacePlanResponse);
   // Get a race plan with its race and analysis.
   rpc GetRacePlan(GetRacePlanRequest) returns (GetRacePlanResponse);

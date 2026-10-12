@@ -51,6 +51,10 @@ func TestTrainingPlans(t *testing.T) {
 		t.Fatalf("CreateTrainingPlan: %v", err)
 	}
 	planID := created.GetPlan().GetId()
+	// The goal race is on the calendar, as the plan trains for it.
+	if goal, err := e.races.GetRace(ctx, racesv1.GetRaceRequest_builder{Id: raceID}.Build()); err != nil || !goal.GetRace().GetOnCalendar() {
+		t.Errorf("the goal race isn't on the calendar (%v)", err)
+	}
 
 	// Periods are normalised to the start of the month or week.
 	periods, err := e.plans.SetPlanPeriods(ctx, plansv1.SetPlanPeriodsRequest_builder{
@@ -149,6 +153,18 @@ func TestTrainingPlans(t *testing.T) {
 	}
 	if len(list.GetWorkouts()) != 2 || list.GetWorkouts()[0].GetTitle() != "Easy 8k" {
 		t.Errorf("unexpected workouts %v", list.GetWorkouts())
+	}
+	// Without a plan, the workouts of all the user's plans are listed, and
+	// no one else's.
+	all, err := e.plans.ListWorkouts(ctx, plansv1.ListWorkoutsRequest_builder{
+		StartDate: "2026-11-02", EndDate: "2026-11-08",
+	}.Build())
+	if err != nil || len(all.GetWorkouts()) != 2 {
+		t.Errorf("got %d workouts of all plans (%v), want 2", len(all.GetWorkouts()), err)
+	}
+	others, err := e.otherTraining.ListWorkouts(ctx, plansv1.ListWorkoutsRequest_builder{}.Build())
+	if err != nil || len(others.GetWorkouts()) != 0 {
+		t.Errorf("another user listed %d workouts (%v), want none", len(others.GetWorkouts()), err)
 	}
 
 	// Move the long run a day and unassign its route.
