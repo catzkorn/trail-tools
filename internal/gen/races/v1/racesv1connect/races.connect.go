@@ -34,6 +34,19 @@ const (
 	RaceServiceUpdateRaceProcedure = "/races.v1.RaceService/UpdateRace"
 	// RaceServiceDeleteRaceProcedure is the procedure name of the RaceService's DeleteRace RPC.
 	RaceServiceDeleteRaceProcedure = "/races.v1.RaceService/DeleteRace"
+	// RaceServiceCreateRaceEventProcedure is the procedure name of the RaceService's CreateRaceEvent
+	// RPC.
+	RaceServiceCreateRaceEventProcedure = "/races.v1.RaceService/CreateRaceEvent"
+	// RaceServiceGetRaceEventProcedure is the procedure name of the RaceService's GetRaceEvent RPC.
+	RaceServiceGetRaceEventProcedure = "/races.v1.RaceService/GetRaceEvent"
+	// RaceServiceListRaceEventsProcedure is the procedure name of the RaceService's ListRaceEvents RPC.
+	RaceServiceListRaceEventsProcedure = "/races.v1.RaceService/ListRaceEvents"
+	// RaceServiceUpdateRaceEventProcedure is the procedure name of the RaceService's UpdateRaceEvent
+	// RPC.
+	RaceServiceUpdateRaceEventProcedure = "/races.v1.RaceService/UpdateRaceEvent"
+	// RaceServiceDeleteRaceEventProcedure is the procedure name of the RaceService's DeleteRaceEvent
+	// RPC.
+	RaceServiceDeleteRaceEventProcedure = "/races.v1.RaceService/DeleteRaceEvent"
 )
 
 var (
@@ -72,6 +85,41 @@ var (
 			Procedure:  RaceServiceDeleteRaceProcedure,
 		}
 	})
+	raceServiceCreateRaceEventSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_races_proto.Services().ByName("RaceService").Methods().ByName("CreateRaceEvent"),
+			Procedure:  RaceServiceCreateRaceEventProcedure,
+		}
+	})
+	raceServiceGetRaceEventSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_races_proto.Services().ByName("RaceService").Methods().ByName("GetRaceEvent"),
+			Procedure:  RaceServiceGetRaceEventProcedure,
+		}
+	})
+	raceServiceListRaceEventsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_races_proto.Services().ByName("RaceService").Methods().ByName("ListRaceEvents"),
+			Procedure:  RaceServiceListRaceEventsProcedure,
+		}
+	})
+	raceServiceUpdateRaceEventSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_races_proto.Services().ByName("RaceService").Methods().ByName("UpdateRaceEvent"),
+			Procedure:  RaceServiceUpdateRaceEventProcedure,
+		}
+	})
+	raceServiceDeleteRaceEventSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_races_proto.Services().ByName("RaceService").Methods().ByName("DeleteRaceEvent"),
+			Procedure:  RaceServiceDeleteRaceEventProcedure,
+		}
+	})
 )
 
 // RaceServiceClient is a client for the races.v1.RaceService service.
@@ -88,6 +136,18 @@ type RaceServiceClient interface {
 	UpdateRace(context.Context, *v1.UpdateRaceRequest) (*v1.UpdateRaceResponse, error)
 	// Delete a race. Its race plans are deleted too.
 	DeleteRace(context.Context, *v1.DeleteRaceRequest) (*v1.DeleteRaceResponse, error)
+	// Create a race event, to group races that belong together, e.g. a 50 mile
+	// race on the Saturday and a 50K on the Sunday. Add races to the event by
+	// setting their event_id.
+	CreateRaceEvent(context.Context, *v1.CreateRaceEventRequest) (*v1.CreateRaceEventResponse, error)
+	// Get a race event by ID.
+	GetRaceEvent(context.Context, *v1.GetRaceEventRequest) (*v1.GetRaceEventResponse, error)
+	// List the user's race events, in the order of their first race.
+	ListRaceEvents(context.Context, *v1.ListRaceEventsRequest) (*v1.ListRaceEventsResponse, error)
+	// Update a race event.
+	UpdateRaceEvent(context.Context, *v1.UpdateRaceEventRequest) (*v1.UpdateRaceEventResponse, error)
+	// Delete a race event. Its races are kept, outside any event.
+	DeleteRaceEvent(context.Context, *v1.DeleteRaceEventRequest) (*v1.DeleteRaceEventResponse, error)
 }
 
 // NewRaceServiceClient constructs a client for the races.v1.RaceService service. Multiple service
@@ -110,6 +170,18 @@ type RaceServiceHandler interface {
 	UpdateRace(context.Context, *v1.UpdateRaceRequest) (*v1.UpdateRaceResponse, error)
 	// Delete a race. Its race plans are deleted too.
 	DeleteRace(context.Context, *v1.DeleteRaceRequest) (*v1.DeleteRaceResponse, error)
+	// Create a race event, to group races that belong together, e.g. a 50 mile
+	// race on the Saturday and a 50K on the Sunday. Add races to the event by
+	// setting their event_id.
+	CreateRaceEvent(context.Context, *v1.CreateRaceEventRequest) (*v1.CreateRaceEventResponse, error)
+	// Get a race event by ID.
+	GetRaceEvent(context.Context, *v1.GetRaceEventRequest) (*v1.GetRaceEventResponse, error)
+	// List the user's race events, in the order of their first race.
+	ListRaceEvents(context.Context, *v1.ListRaceEventsRequest) (*v1.ListRaceEventsResponse, error)
+	// Update a race event.
+	UpdateRaceEvent(context.Context, *v1.UpdateRaceEventRequest) (*v1.UpdateRaceEventResponse, error)
+	// Delete a race event. Its races are kept, outside any event.
+	DeleteRaceEvent(context.Context, *v1.DeleteRaceEventRequest) (*v1.DeleteRaceEventResponse, error)
 }
 
 // RegisterRaceServiceHandler registers svc as the races.v1.RaceService implementation on server.
@@ -121,6 +193,11 @@ func RegisterRaceServiceHandler(server *connect.Server, svc RaceServiceHandler) 
 		connect.Method{Spec: raceServiceListRacesSpec(), Handler: adapter.listRaces},
 		connect.Method{Spec: raceServiceUpdateRaceSpec(), Handler: adapter.updateRace},
 		connect.Method{Spec: raceServiceDeleteRaceSpec(), Handler: adapter.deleteRace},
+		connect.Method{Spec: raceServiceCreateRaceEventSpec(), Handler: adapter.createRaceEvent},
+		connect.Method{Spec: raceServiceGetRaceEventSpec(), Handler: adapter.getRaceEvent},
+		connect.Method{Spec: raceServiceListRaceEventsSpec(), Handler: adapter.listRaceEvents},
+		connect.Method{Spec: raceServiceUpdateRaceEventSpec(), Handler: adapter.updateRaceEvent},
+		connect.Method{Spec: raceServiceDeleteRaceEventSpec(), Handler: adapter.deleteRaceEvent},
 	)
 }
 
@@ -145,6 +222,26 @@ func (UnimplementedRaceServiceHandler) UpdateRace(context.Context, *v1.UpdateRac
 
 func (UnimplementedRaceServiceHandler) DeleteRace(context.Context, *v1.DeleteRaceRequest) (*v1.DeleteRaceResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceService.DeleteRace is not implemented")
+}
+
+func (UnimplementedRaceServiceHandler) CreateRaceEvent(context.Context, *v1.CreateRaceEventRequest) (*v1.CreateRaceEventResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceService.CreateRaceEvent is not implemented")
+}
+
+func (UnimplementedRaceServiceHandler) GetRaceEvent(context.Context, *v1.GetRaceEventRequest) (*v1.GetRaceEventResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceService.GetRaceEvent is not implemented")
+}
+
+func (UnimplementedRaceServiceHandler) ListRaceEvents(context.Context, *v1.ListRaceEventsRequest) (*v1.ListRaceEventsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceService.ListRaceEvents is not implemented")
+}
+
+func (UnimplementedRaceServiceHandler) UpdateRaceEvent(context.Context, *v1.UpdateRaceEventRequest) (*v1.UpdateRaceEventResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceService.UpdateRaceEvent is not implemented")
+}
+
+func (UnimplementedRaceServiceHandler) DeleteRaceEvent(context.Context, *v1.DeleteRaceEventRequest) (*v1.DeleteRaceEventResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceService.DeleteRaceEvent is not implemented")
 }
 
 type raceServiceClient struct {
@@ -186,6 +283,46 @@ func (c *raceServiceClient) UpdateRace(ctx context.Context, req *v1.UpdateRaceRe
 func (c *raceServiceClient) DeleteRace(ctx context.Context, req *v1.DeleteRaceRequest) (*v1.DeleteRaceResponse, error) {
 	var res v1.DeleteRaceResponse
 	if err := c.client.CallUnary(ctx, raceServiceDeleteRaceSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceServiceClient) CreateRaceEvent(ctx context.Context, req *v1.CreateRaceEventRequest) (*v1.CreateRaceEventResponse, error) {
+	var res v1.CreateRaceEventResponse
+	if err := c.client.CallUnary(ctx, raceServiceCreateRaceEventSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceServiceClient) GetRaceEvent(ctx context.Context, req *v1.GetRaceEventRequest) (*v1.GetRaceEventResponse, error) {
+	var res v1.GetRaceEventResponse
+	if err := c.client.CallUnary(ctx, raceServiceGetRaceEventSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceServiceClient) ListRaceEvents(ctx context.Context, req *v1.ListRaceEventsRequest) (*v1.ListRaceEventsResponse, error) {
+	var res v1.ListRaceEventsResponse
+	if err := c.client.CallUnary(ctx, raceServiceListRaceEventsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceServiceClient) UpdateRaceEvent(ctx context.Context, req *v1.UpdateRaceEventRequest) (*v1.UpdateRaceEventResponse, error) {
+	var res v1.UpdateRaceEventResponse
+	if err := c.client.CallUnary(ctx, raceServiceUpdateRaceEventSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceServiceClient) DeleteRaceEvent(ctx context.Context, req *v1.DeleteRaceEventRequest) (*v1.DeleteRaceEventResponse, error) {
+	var res v1.DeleteRaceEventResponse
+	if err := c.client.CallUnary(ctx, raceServiceDeleteRaceEventSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -247,6 +384,66 @@ func (h raceServiceHandler) deleteRace(ctx context.Context, _ connect.Spec, stre
 		return err
 	}
 	res, err := h.svc.DeleteRace(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceServiceHandler) createRaceEvent(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateRaceEventRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateRaceEvent(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceServiceHandler) getRaceEvent(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetRaceEventRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetRaceEvent(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceServiceHandler) listRaceEvents(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListRaceEventsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListRaceEvents(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceServiceHandler) updateRaceEvent(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateRaceEventRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateRaceEvent(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceServiceHandler) deleteRaceEvent(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteRaceEventRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteRaceEvent(ctx, &req)
 	if err != nil {
 		return err
 	}

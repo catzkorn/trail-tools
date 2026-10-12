@@ -29,6 +29,11 @@ type RaceRepository interface {
 	ListRaces(ctx context.Context, userID pgtype.UUID, onCalendarOnly bool) ([]*races.Race, error)
 	UpdateRace(ctx context.Context, race *races.Race) (*races.Race, error)
 	DeleteRace(ctx context.Context, userID, raceID pgtype.UUID) error
+	CreateEvent(ctx context.Context, event *races.Event) (*races.Event, error)
+	GetEvent(ctx context.Context, userID, eventID pgtype.UUID) (*races.Event, error)
+	ListEvents(ctx context.Context, userID pgtype.UUID) ([]*races.Event, error)
+	UpdateEvent(ctx context.Context, event *races.Event) (*races.Event, error)
+	DeleteEvent(ctx context.Context, userID, eventID pgtype.UUID) error
 }
 
 type RouteRepository interface {
@@ -187,6 +192,17 @@ func (s *Service) raceFromProto(ctx context.Context, userID pgtype.UUID, r *race
 			return nil, s.toConnectError(ctx, err, "failed to get route")
 		}
 	}
+	if r.GetEventId() != "" {
+		if race.EventID, err = store.StringToUUID(r.GetEventId()); err != nil {
+			return nil, invalid("invalid event_id: %v", err)
+		}
+		if _, err := s.races.GetEvent(ctx, userID, race.EventID); err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				return nil, invalid("race event %s does not exist", r.GetEventId())
+			}
+			return nil, s.toConnectError(ctx, err, "failed to get race event")
+		}
+	}
 	return race, nil
 }
 
@@ -232,6 +248,7 @@ func RaceToProto(r *races.Race) *racesv1.Race {
 		CourseRouteId:       store.UUIDToString(r.CourseRouteID),
 		Notes:               r.Notes,
 		OnCalendar:          r.OnCalendar,
+		EventId:             store.UUIDToString(r.EventID),
 		CreateTime:          timestamppb.New(r.CreateTime),
 		UpdateTime:          timestamppb.New(r.UpdateTime),
 	}.Build()

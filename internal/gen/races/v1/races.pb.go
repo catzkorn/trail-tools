@@ -90,6 +90,7 @@ type Race struct {
 	xxx_hidden_CourseRouteId       string                 `protobuf:"bytes,11,opt,name=course_route_id,json=courseRouteId,proto3"`
 	xxx_hidden_Notes               string                 `protobuf:"bytes,12,opt,name=notes,proto3"`
 	xxx_hidden_OnCalendar          bool                   `protobuf:"varint,15,opt,name=on_calendar,json=onCalendar,proto3"`
+	xxx_hidden_EventId             string                 `protobuf:"bytes,16,opt,name=event_id,json=eventId,proto3"`
 	xxx_hidden_CreateTime          *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=create_time,json=createTime,proto3"`
 	xxx_hidden_UpdateTime          *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=update_time,json=updateTime,proto3"`
 	unknownFields                  protoimpl.UnknownFields
@@ -212,6 +213,13 @@ func (x *Race) GetOnCalendar() bool {
 	return false
 }
 
+func (x *Race) GetEventId() string {
+	if x != nil {
+		return x.xxx_hidden_EventId
+	}
+	return ""
+}
+
 func (x *Race) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_CreateTime
@@ -278,6 +286,10 @@ func (x *Race) SetOnCalendar(v bool) {
 	x.xxx_hidden_OnCalendar = v
 }
 
+func (x *Race) SetEventId(v string) {
+	x.xxx_hidden_EventId = v
+}
+
 func (x *Race) SetCreateTime(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreateTime = v
 }
@@ -340,6 +352,10 @@ type Race_builder struct {
 	// rather than considering it. Only races on the calendar can have race
 	// plans. Making a race a goal race of a training plan adds it.
 	OnCalendar bool
+	// The ID of the race event the race is part of, if any. Races that belong
+	// together, like the days of a multi-day event, share an event. Name each
+	// race in full, e.g. "Squamish 50 Mile" and "Squamish 50K".
+	EventId string
 	// When the race was created.
 	CreateTime *timestamppb.Timestamp
 	// When the race was last updated.
@@ -363,6 +379,7 @@ func (b0 Race_builder) Build() *Race {
 	x.xxx_hidden_CourseRouteId = b.CourseRouteId
 	x.xxx_hidden_Notes = b.Notes
 	x.xxx_hidden_OnCalendar = b.OnCalendar
+	x.xxx_hidden_EventId = b.EventId
 	x.xxx_hidden_CreateTime = b.CreateTime
 	x.xxx_hidden_UpdateTime = b.UpdateTime
 	return m0
@@ -1017,11 +1034,863 @@ func (b0 DeleteRaceResponse_builder) Build() *DeleteRaceResponse {
 	return m0
 }
 
+// A race event groups races that belong together, e.g. a 50 mile race on the
+// Saturday and a 50K on the Sunday, or the races of a festival weekend.
+type RaceEvent struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name       string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Location   string                 `protobuf:"bytes,3,opt,name=location,proto3"`
+	xxx_hidden_WebsiteUrl string                 `protobuf:"bytes,4,opt,name=website_url,json=websiteUrl,proto3"`
+	xxx_hidden_Notes      string                 `protobuf:"bytes,5,opt,name=notes,proto3"`
+	xxx_hidden_RaceIds    []string               `protobuf:"bytes,6,rep,name=race_ids,json=raceIds,proto3"`
+	xxx_hidden_StartDate  string                 `protobuf:"bytes,7,opt,name=start_date,json=startDate,proto3"`
+	xxx_hidden_EndDate    string                 `protobuf:"bytes,8,opt,name=end_date,json=endDate,proto3"`
+	xxx_hidden_CreateTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=create_time,json=createTime,proto3"`
+	xxx_hidden_UpdateTime *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=update_time,json=updateTime,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *RaceEvent) Reset() {
+	*x = RaceEvent{}
+	mi := &file_races_v1_races_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RaceEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RaceEvent) ProtoMessage() {}
+
+func (x *RaceEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RaceEvent) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetLocation() string {
+	if x != nil {
+		return x.xxx_hidden_Location
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetWebsiteUrl() string {
+	if x != nil {
+		return x.xxx_hidden_WebsiteUrl
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetNotes() string {
+	if x != nil {
+		return x.xxx_hidden_Notes
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetRaceIds() []string {
+	if x != nil {
+		return x.xxx_hidden_RaceIds
+	}
+	return nil
+}
+
+func (x *RaceEvent) GetStartDate() string {
+	if x != nil {
+		return x.xxx_hidden_StartDate
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetEndDate() string {
+	if x != nil {
+		return x.xxx_hidden_EndDate
+	}
+	return ""
+}
+
+func (x *RaceEvent) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CreateTime
+	}
+	return nil
+}
+
+func (x *RaceEvent) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_UpdateTime
+	}
+	return nil
+}
+
+func (x *RaceEvent) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *RaceEvent) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *RaceEvent) SetLocation(v string) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *RaceEvent) SetWebsiteUrl(v string) {
+	x.xxx_hidden_WebsiteUrl = v
+}
+
+func (x *RaceEvent) SetNotes(v string) {
+	x.xxx_hidden_Notes = v
+}
+
+func (x *RaceEvent) SetRaceIds(v []string) {
+	x.xxx_hidden_RaceIds = v
+}
+
+func (x *RaceEvent) SetStartDate(v string) {
+	x.xxx_hidden_StartDate = v
+}
+
+func (x *RaceEvent) SetEndDate(v string) {
+	x.xxx_hidden_EndDate = v
+}
+
+func (x *RaceEvent) SetCreateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreateTime = v
+}
+
+func (x *RaceEvent) SetUpdateTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_UpdateTime = v
+}
+
+func (x *RaceEvent) HasCreateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreateTime != nil
+}
+
+func (x *RaceEvent) HasUpdateTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_UpdateTime != nil
+}
+
+func (x *RaceEvent) ClearCreateTime() {
+	x.xxx_hidden_CreateTime = nil
+}
+
+func (x *RaceEvent) ClearUpdateTime() {
+	x.xxx_hidden_UpdateTime = nil
+}
+
+type RaceEvent_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the event. Ignored when creating an event.
+	Id string
+	// The name of the event, e.g. "Squamish 50/50".
+	Name string
+	// Where the event takes place.
+	Location string
+	// The event website.
+	WebsiteUrl string
+	// Free text notes, e.g. the combined results of a multi-day event.
+	Notes string
+	// The IDs of the event's races, in date order.
+	RaceIds []string
+	// The date of the event's first race (YYYY-MM-DD). Empty if it has none.
+	StartDate string
+	// The date of the event's last race (YYYY-MM-DD). Empty if it has none.
+	EndDate string
+	// When the event was created.
+	CreateTime *timestamppb.Timestamp
+	// When the event was last updated.
+	UpdateTime *timestamppb.Timestamp
+}
+
+func (b0 RaceEvent_builder) Build() *RaceEvent {
+	m0 := &RaceEvent{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_WebsiteUrl = b.WebsiteUrl
+	x.xxx_hidden_Notes = b.Notes
+	x.xxx_hidden_RaceIds = b.RaceIds
+	x.xxx_hidden_StartDate = b.StartDate
+	x.xxx_hidden_EndDate = b.EndDate
+	x.xxx_hidden_CreateTime = b.CreateTime
+	x.xxx_hidden_UpdateTime = b.UpdateTime
+	return m0
+}
+
+type CreateRaceEventRequest struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event *RaceEvent             `protobuf:"bytes,1,opt,name=event,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CreateRaceEventRequest) Reset() {
+	*x = CreateRaceEventRequest{}
+	mi := &file_races_v1_races_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRaceEventRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRaceEventRequest) ProtoMessage() {}
+
+func (x *CreateRaceEventRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateRaceEventRequest) GetEvent() *RaceEvent {
+	if x != nil {
+		return x.xxx_hidden_Event
+	}
+	return nil
+}
+
+func (x *CreateRaceEventRequest) SetEvent(v *RaceEvent) {
+	x.xxx_hidden_Event = v
+}
+
+func (x *CreateRaceEventRequest) HasEvent() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Event != nil
+}
+
+func (x *CreateRaceEventRequest) ClearEvent() {
+	x.xxx_hidden_Event = nil
+}
+
+type CreateRaceEventRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The event to create.
+	Event *RaceEvent
+}
+
+func (b0 CreateRaceEventRequest_builder) Build() *CreateRaceEventRequest {
+	m0 := &CreateRaceEventRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Event = b.Event
+	return m0
+}
+
+type CreateRaceEventResponse struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event *RaceEvent             `protobuf:"bytes,1,opt,name=event,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CreateRaceEventResponse) Reset() {
+	*x = CreateRaceEventResponse{}
+	mi := &file_races_v1_races_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRaceEventResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRaceEventResponse) ProtoMessage() {}
+
+func (x *CreateRaceEventResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateRaceEventResponse) GetEvent() *RaceEvent {
+	if x != nil {
+		return x.xxx_hidden_Event
+	}
+	return nil
+}
+
+func (x *CreateRaceEventResponse) SetEvent(v *RaceEvent) {
+	x.xxx_hidden_Event = v
+}
+
+func (x *CreateRaceEventResponse) HasEvent() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Event != nil
+}
+
+func (x *CreateRaceEventResponse) ClearEvent() {
+	x.xxx_hidden_Event = nil
+}
+
+type CreateRaceEventResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The created event.
+	Event *RaceEvent
+}
+
+func (b0 CreateRaceEventResponse_builder) Build() *CreateRaceEventResponse {
+	m0 := &CreateRaceEventResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Event = b.Event
+	return m0
+}
+
+type GetRaceEventRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRaceEventRequest) Reset() {
+	*x = GetRaceEventRequest{}
+	mi := &file_races_v1_races_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRaceEventRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRaceEventRequest) ProtoMessage() {}
+
+func (x *GetRaceEventRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetRaceEventRequest) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *GetRaceEventRequest) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+type GetRaceEventRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the event.
+	Id string
+}
+
+func (b0 GetRaceEventRequest_builder) Build() *GetRaceEventRequest {
+	m0 := &GetRaceEventRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
+type GetRaceEventResponse struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event *RaceEvent             `protobuf:"bytes,1,opt,name=event,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetRaceEventResponse) Reset() {
+	*x = GetRaceEventResponse{}
+	mi := &file_races_v1_races_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRaceEventResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRaceEventResponse) ProtoMessage() {}
+
+func (x *GetRaceEventResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetRaceEventResponse) GetEvent() *RaceEvent {
+	if x != nil {
+		return x.xxx_hidden_Event
+	}
+	return nil
+}
+
+func (x *GetRaceEventResponse) SetEvent(v *RaceEvent) {
+	x.xxx_hidden_Event = v
+}
+
+func (x *GetRaceEventResponse) HasEvent() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Event != nil
+}
+
+func (x *GetRaceEventResponse) ClearEvent() {
+	x.xxx_hidden_Event = nil
+}
+
+type GetRaceEventResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The event.
+	Event *RaceEvent
+}
+
+func (b0 GetRaceEventResponse_builder) Build() *GetRaceEventResponse {
+	m0 := &GetRaceEventResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Event = b.Event
+	return m0
+}
+
+type ListRaceEventsRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListRaceEventsRequest) Reset() {
+	*x = ListRaceEventsRequest{}
+	mi := &file_races_v1_races_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListRaceEventsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListRaceEventsRequest) ProtoMessage() {}
+
+func (x *ListRaceEventsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type ListRaceEventsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 ListRaceEventsRequest_builder) Build() *ListRaceEventsRequest {
+	m0 := &ListRaceEventsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type ListRaceEventsResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Events *[]*RaceEvent          `protobuf:"bytes,1,rep,name=events,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ListRaceEventsResponse) Reset() {
+	*x = ListRaceEventsResponse{}
+	mi := &file_races_v1_races_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListRaceEventsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListRaceEventsResponse) ProtoMessage() {}
+
+func (x *ListRaceEventsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ListRaceEventsResponse) GetEvents() []*RaceEvent {
+	if x != nil {
+		if x.xxx_hidden_Events != nil {
+			return *x.xxx_hidden_Events
+		}
+	}
+	return nil
+}
+
+func (x *ListRaceEventsResponse) SetEvents(v []*RaceEvent) {
+	x.xxx_hidden_Events = &v
+}
+
+type ListRaceEventsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The user's events, in the order of their first race. Events without
+	// races come last.
+	Events []*RaceEvent
+}
+
+func (b0 ListRaceEventsResponse_builder) Build() *ListRaceEventsResponse {
+	m0 := &ListRaceEventsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Events = &b.Events
+	return m0
+}
+
+type UpdateRaceEventRequest struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event      *RaceEvent             `protobuf:"bytes,1,opt,name=event,proto3"`
+	xxx_hidden_UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *UpdateRaceEventRequest) Reset() {
+	*x = UpdateRaceEventRequest{}
+	mi := &file_races_v1_races_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRaceEventRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRaceEventRequest) ProtoMessage() {}
+
+func (x *UpdateRaceEventRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateRaceEventRequest) GetEvent() *RaceEvent {
+	if x != nil {
+		return x.xxx_hidden_Event
+	}
+	return nil
+}
+
+func (x *UpdateRaceEventRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.xxx_hidden_UpdateMask
+	}
+	return nil
+}
+
+func (x *UpdateRaceEventRequest) SetEvent(v *RaceEvent) {
+	x.xxx_hidden_Event = v
+}
+
+func (x *UpdateRaceEventRequest) SetUpdateMask(v *fieldmaskpb.FieldMask) {
+	x.xxx_hidden_UpdateMask = v
+}
+
+func (x *UpdateRaceEventRequest) HasEvent() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Event != nil
+}
+
+func (x *UpdateRaceEventRequest) HasUpdateMask() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_UpdateMask != nil
+}
+
+func (x *UpdateRaceEventRequest) ClearEvent() {
+	x.xxx_hidden_Event = nil
+}
+
+func (x *UpdateRaceEventRequest) ClearUpdateMask() {
+	x.xxx_hidden_UpdateMask = nil
+}
+
+type UpdateRaceEventRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The event to update. The ID must be set.
+	Event *RaceEvent
+	// The fields to update, e.g. "name,website_url". If empty, all fields are
+	// replaced.
+	UpdateMask *fieldmaskpb.FieldMask
+}
+
+func (b0 UpdateRaceEventRequest_builder) Build() *UpdateRaceEventRequest {
+	m0 := &UpdateRaceEventRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Event = b.Event
+	x.xxx_hidden_UpdateMask = b.UpdateMask
+	return m0
+}
+
+type UpdateRaceEventResponse struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Event *RaceEvent             `protobuf:"bytes,1,opt,name=event,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *UpdateRaceEventResponse) Reset() {
+	*x = UpdateRaceEventResponse{}
+	mi := &file_races_v1_races_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRaceEventResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRaceEventResponse) ProtoMessage() {}
+
+func (x *UpdateRaceEventResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateRaceEventResponse) GetEvent() *RaceEvent {
+	if x != nil {
+		return x.xxx_hidden_Event
+	}
+	return nil
+}
+
+func (x *UpdateRaceEventResponse) SetEvent(v *RaceEvent) {
+	x.xxx_hidden_Event = v
+}
+
+func (x *UpdateRaceEventResponse) HasEvent() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Event != nil
+}
+
+func (x *UpdateRaceEventResponse) ClearEvent() {
+	x.xxx_hidden_Event = nil
+}
+
+type UpdateRaceEventResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The updated event.
+	Event *RaceEvent
+}
+
+func (b0 UpdateRaceEventResponse_builder) Build() *UpdateRaceEventResponse {
+	m0 := &UpdateRaceEventResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Event = b.Event
+	return m0
+}
+
+type DeleteRaceEventRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRaceEventRequest) Reset() {
+	*x = DeleteRaceEventRequest{}
+	mi := &file_races_v1_races_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRaceEventRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRaceEventRequest) ProtoMessage() {}
+
+func (x *DeleteRaceEventRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DeleteRaceEventRequest) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *DeleteRaceEventRequest) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+type DeleteRaceEventRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the event to delete.
+	Id string
+}
+
+func (b0 DeleteRaceEventRequest_builder) Build() *DeleteRaceEventRequest {
+	m0 := &DeleteRaceEventRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
+type DeleteRaceEventResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRaceEventResponse) Reset() {
+	*x = DeleteRaceEventResponse{}
+	mi := &file_races_v1_races_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRaceEventResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRaceEventResponse) ProtoMessage() {}
+
+func (x *DeleteRaceEventResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_races_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type DeleteRaceEventResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 DeleteRaceEventResponse_builder) Build() *DeleteRaceEventResponse {
+	m0 := &DeleteRaceEventResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
 var File_races_v1_races_proto protoreflect.FileDescriptor
 
 const file_races_v1_races_proto_rawDesc = "" +
 	"\n" +
-	"\x14races/v1/races.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xbb\x04\n" +
+	"\x14races/v1/races.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xd6\x04\n" +
 	"\x04Race\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1039,7 +1908,8 @@ const file_races_v1_races_proto_rawDesc = "" +
 	"\x0fcourse_route_id\x18\v \x01(\tR\rcourseRouteId\x12\x14\n" +
 	"\x05notes\x18\f \x01(\tR\x05notes\x12\x1f\n" +
 	"\von_calendar\x18\x0f \x01(\bR\n" +
-	"onCalendar\x12C\n" +
+	"onCalendar\x12\x19\n" +
+	"\bevent_id\x18\x10 \x01(\tR\aeventId\x12C\n" +
 	"\vcreate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"createTime\x12C\n" +
 	"\vupdate_time\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
@@ -1064,12 +1934,48 @@ const file_races_v1_races_proto_rawDesc = "" +
 	"\x04race\x18\x01 \x01(\v2\x0e.races.v1.RaceR\x04race\"#\n" +
 	"\x11DeleteRaceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x14\n" +
-	"\x12DeleteRaceResponse*l\n" +
+	"\x12DeleteRaceResponse\"\xf9\x02\n" +
+	"\tRaceEvent\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
+	"\blocation\x18\x03 \x01(\tR\blocation\x12\x1f\n" +
+	"\vwebsite_url\x18\x04 \x01(\tR\n" +
+	"websiteUrl\x12\x14\n" +
+	"\x05notes\x18\x05 \x01(\tR\x05notes\x12!\n" +
+	"\brace_ids\x18\x06 \x03(\tB\x06\xaa\x9f\x19\x02\b\x01R\araceIds\x12%\n" +
+	"\n" +
+	"start_date\x18\a \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\tstartDate\x12!\n" +
+	"\bend_date\x18\b \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\aendDate\x12C\n" +
+	"\vcreate_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"createTime\x12C\n" +
+	"\vupdate_time\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
+	"updateTime\"C\n" +
+	"\x16CreateRaceEventRequest\x12)\n" +
+	"\x05event\x18\x01 \x01(\v2\x13.races.v1.RaceEventR\x05event\"D\n" +
+	"\x17CreateRaceEventResponse\x12)\n" +
+	"\x05event\x18\x01 \x01(\v2\x13.races.v1.RaceEventR\x05event\"%\n" +
+	"\x13GetRaceEventRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"A\n" +
+	"\x14GetRaceEventResponse\x12)\n" +
+	"\x05event\x18\x01 \x01(\v2\x13.races.v1.RaceEventR\x05event\"\x17\n" +
+	"\x15ListRaceEventsRequest\"E\n" +
+	"\x16ListRaceEventsResponse\x12+\n" +
+	"\x06events\x18\x01 \x03(\v2\x13.races.v1.RaceEventR\x06events\"\x80\x01\n" +
+	"\x16UpdateRaceEventRequest\x12)\n" +
+	"\x05event\x18\x01 \x01(\v2\x13.races.v1.RaceEventR\x05event\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\"D\n" +
+	"\x17UpdateRaceEventResponse\x12)\n" +
+	"\x05event\x18\x01 \x01(\v2\x13.races.v1.RaceEventR\x05event\"(\n" +
+	"\x16DeleteRaceEventRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x19\n" +
+	"\x17DeleteRaceEventResponse*l\n" +
 	"\fRacePriority\x12\x1d\n" +
 	"\x19RACE_PRIORITY_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fRACE_PRIORITY_A\x10\x01\x12\x13\n" +
 	"\x0fRACE_PRIORITY_B\x10\x02\x12\x13\n" +
-	"\x0fRACE_PRIORITY_C\x10\x032\xee\x02\n" +
+	"\x0fRACE_PRIORITY_C\x10\x032\x9a\x06\n" +
 	"\vRaceService\x12G\n" +
 	"\n" +
 	"CreateRace\x12\x1b.races.v1.CreateRaceRequest\x1a\x1c.races.v1.CreateRaceResponse\x12>\n" +
@@ -1078,54 +1984,89 @@ const file_races_v1_races_proto_rawDesc = "" +
 	"\n" +
 	"UpdateRace\x12\x1b.races.v1.UpdateRaceRequest\x1a\x1c.races.v1.UpdateRaceResponse\x12G\n" +
 	"\n" +
-	"DeleteRace\x12\x1b.races.v1.DeleteRaceRequest\x1a\x1c.races.v1.DeleteRaceResponseB\x9a\x01\n" +
+	"DeleteRace\x12\x1b.races.v1.DeleteRaceRequest\x1a\x1c.races.v1.DeleteRaceResponse\x12V\n" +
+	"\x0fCreateRaceEvent\x12 .races.v1.CreateRaceEventRequest\x1a!.races.v1.CreateRaceEventResponse\x12M\n" +
+	"\fGetRaceEvent\x12\x1d.races.v1.GetRaceEventRequest\x1a\x1e.races.v1.GetRaceEventResponse\x12S\n" +
+	"\x0eListRaceEvents\x12\x1f.races.v1.ListRaceEventsRequest\x1a .races.v1.ListRaceEventsResponse\x12V\n" +
+	"\x0fUpdateRaceEvent\x12 .races.v1.UpdateRaceEventRequest\x1a!.races.v1.UpdateRaceEventResponse\x12V\n" +
+	"\x0fDeleteRaceEvent\x12 .races.v1.DeleteRaceEventRequest\x1a!.races.v1.DeleteRaceEventResponseB\x9a\x01\n" +
 	"\fcom.races.v1B\n" +
 	"RacesProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/races/v1;racesv1\xa2\x02\x03RXX\xaa\x02\bRaces.V1\xca\x02\bRaces\\V1\xe2\x02\x14Races\\V1\\GPBMetadata\xea\x02\tRaces::V1b\x06proto3"
 
 var file_races_v1_races_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_races_v1_races_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_races_v1_races_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_races_v1_races_proto_goTypes = []any{
-	(RacePriority)(0),             // 0: races.v1.RacePriority
-	(*Race)(nil),                  // 1: races.v1.Race
-	(*CreateRaceRequest)(nil),     // 2: races.v1.CreateRaceRequest
-	(*CreateRaceResponse)(nil),    // 3: races.v1.CreateRaceResponse
-	(*GetRaceRequest)(nil),        // 4: races.v1.GetRaceRequest
-	(*GetRaceResponse)(nil),       // 5: races.v1.GetRaceResponse
-	(*ListRacesRequest)(nil),      // 6: races.v1.ListRacesRequest
-	(*ListRacesResponse)(nil),     // 7: races.v1.ListRacesResponse
-	(*UpdateRaceRequest)(nil),     // 8: races.v1.UpdateRaceRequest
-	(*UpdateRaceResponse)(nil),    // 9: races.v1.UpdateRaceResponse
-	(*DeleteRaceRequest)(nil),     // 10: races.v1.DeleteRaceRequest
-	(*DeleteRaceResponse)(nil),    // 11: races.v1.DeleteRaceResponse
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 13: google.protobuf.FieldMask
+	(RacePriority)(0),               // 0: races.v1.RacePriority
+	(*Race)(nil),                    // 1: races.v1.Race
+	(*CreateRaceRequest)(nil),       // 2: races.v1.CreateRaceRequest
+	(*CreateRaceResponse)(nil),      // 3: races.v1.CreateRaceResponse
+	(*GetRaceRequest)(nil),          // 4: races.v1.GetRaceRequest
+	(*GetRaceResponse)(nil),         // 5: races.v1.GetRaceResponse
+	(*ListRacesRequest)(nil),        // 6: races.v1.ListRacesRequest
+	(*ListRacesResponse)(nil),       // 7: races.v1.ListRacesResponse
+	(*UpdateRaceRequest)(nil),       // 8: races.v1.UpdateRaceRequest
+	(*UpdateRaceResponse)(nil),      // 9: races.v1.UpdateRaceResponse
+	(*DeleteRaceRequest)(nil),       // 10: races.v1.DeleteRaceRequest
+	(*DeleteRaceResponse)(nil),      // 11: races.v1.DeleteRaceResponse
+	(*RaceEvent)(nil),               // 12: races.v1.RaceEvent
+	(*CreateRaceEventRequest)(nil),  // 13: races.v1.CreateRaceEventRequest
+	(*CreateRaceEventResponse)(nil), // 14: races.v1.CreateRaceEventResponse
+	(*GetRaceEventRequest)(nil),     // 15: races.v1.GetRaceEventRequest
+	(*GetRaceEventResponse)(nil),    // 16: races.v1.GetRaceEventResponse
+	(*ListRaceEventsRequest)(nil),   // 17: races.v1.ListRaceEventsRequest
+	(*ListRaceEventsResponse)(nil),  // 18: races.v1.ListRaceEventsResponse
+	(*UpdateRaceEventRequest)(nil),  // 19: races.v1.UpdateRaceEventRequest
+	(*UpdateRaceEventResponse)(nil), // 20: races.v1.UpdateRaceEventResponse
+	(*DeleteRaceEventRequest)(nil),  // 21: races.v1.DeleteRaceEventRequest
+	(*DeleteRaceEventResponse)(nil), // 22: races.v1.DeleteRaceEventResponse
+	(*timestamppb.Timestamp)(nil),   // 23: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),   // 24: google.protobuf.FieldMask
 }
 var file_races_v1_races_proto_depIdxs = []int32{
 	0,  // 0: races.v1.Race.priority:type_name -> races.v1.RacePriority
-	12, // 1: races.v1.Race.create_time:type_name -> google.protobuf.Timestamp
-	12, // 2: races.v1.Race.update_time:type_name -> google.protobuf.Timestamp
+	23, // 1: races.v1.Race.create_time:type_name -> google.protobuf.Timestamp
+	23, // 2: races.v1.Race.update_time:type_name -> google.protobuf.Timestamp
 	1,  // 3: races.v1.CreateRaceRequest.race:type_name -> races.v1.Race
 	1,  // 4: races.v1.CreateRaceResponse.race:type_name -> races.v1.Race
 	1,  // 5: races.v1.GetRaceResponse.race:type_name -> races.v1.Race
 	1,  // 6: races.v1.ListRacesResponse.races:type_name -> races.v1.Race
 	1,  // 7: races.v1.UpdateRaceRequest.race:type_name -> races.v1.Race
-	13, // 8: races.v1.UpdateRaceRequest.update_mask:type_name -> google.protobuf.FieldMask
+	24, // 8: races.v1.UpdateRaceRequest.update_mask:type_name -> google.protobuf.FieldMask
 	1,  // 9: races.v1.UpdateRaceResponse.race:type_name -> races.v1.Race
-	2,  // 10: races.v1.RaceService.CreateRace:input_type -> races.v1.CreateRaceRequest
-	4,  // 11: races.v1.RaceService.GetRace:input_type -> races.v1.GetRaceRequest
-	6,  // 12: races.v1.RaceService.ListRaces:input_type -> races.v1.ListRacesRequest
-	8,  // 13: races.v1.RaceService.UpdateRace:input_type -> races.v1.UpdateRaceRequest
-	10, // 14: races.v1.RaceService.DeleteRace:input_type -> races.v1.DeleteRaceRequest
-	3,  // 15: races.v1.RaceService.CreateRace:output_type -> races.v1.CreateRaceResponse
-	5,  // 16: races.v1.RaceService.GetRace:output_type -> races.v1.GetRaceResponse
-	7,  // 17: races.v1.RaceService.ListRaces:output_type -> races.v1.ListRacesResponse
-	9,  // 18: races.v1.RaceService.UpdateRace:output_type -> races.v1.UpdateRaceResponse
-	11, // 19: races.v1.RaceService.DeleteRace:output_type -> races.v1.DeleteRaceResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	23, // 10: races.v1.RaceEvent.create_time:type_name -> google.protobuf.Timestamp
+	23, // 11: races.v1.RaceEvent.update_time:type_name -> google.protobuf.Timestamp
+	12, // 12: races.v1.CreateRaceEventRequest.event:type_name -> races.v1.RaceEvent
+	12, // 13: races.v1.CreateRaceEventResponse.event:type_name -> races.v1.RaceEvent
+	12, // 14: races.v1.GetRaceEventResponse.event:type_name -> races.v1.RaceEvent
+	12, // 15: races.v1.ListRaceEventsResponse.events:type_name -> races.v1.RaceEvent
+	12, // 16: races.v1.UpdateRaceEventRequest.event:type_name -> races.v1.RaceEvent
+	24, // 17: races.v1.UpdateRaceEventRequest.update_mask:type_name -> google.protobuf.FieldMask
+	12, // 18: races.v1.UpdateRaceEventResponse.event:type_name -> races.v1.RaceEvent
+	2,  // 19: races.v1.RaceService.CreateRace:input_type -> races.v1.CreateRaceRequest
+	4,  // 20: races.v1.RaceService.GetRace:input_type -> races.v1.GetRaceRequest
+	6,  // 21: races.v1.RaceService.ListRaces:input_type -> races.v1.ListRacesRequest
+	8,  // 22: races.v1.RaceService.UpdateRace:input_type -> races.v1.UpdateRaceRequest
+	10, // 23: races.v1.RaceService.DeleteRace:input_type -> races.v1.DeleteRaceRequest
+	13, // 24: races.v1.RaceService.CreateRaceEvent:input_type -> races.v1.CreateRaceEventRequest
+	15, // 25: races.v1.RaceService.GetRaceEvent:input_type -> races.v1.GetRaceEventRequest
+	17, // 26: races.v1.RaceService.ListRaceEvents:input_type -> races.v1.ListRaceEventsRequest
+	19, // 27: races.v1.RaceService.UpdateRaceEvent:input_type -> races.v1.UpdateRaceEventRequest
+	21, // 28: races.v1.RaceService.DeleteRaceEvent:input_type -> races.v1.DeleteRaceEventRequest
+	3,  // 29: races.v1.RaceService.CreateRace:output_type -> races.v1.CreateRaceResponse
+	5,  // 30: races.v1.RaceService.GetRace:output_type -> races.v1.GetRaceResponse
+	7,  // 31: races.v1.RaceService.ListRaces:output_type -> races.v1.ListRacesResponse
+	9,  // 32: races.v1.RaceService.UpdateRace:output_type -> races.v1.UpdateRaceResponse
+	11, // 33: races.v1.RaceService.DeleteRace:output_type -> races.v1.DeleteRaceResponse
+	14, // 34: races.v1.RaceService.CreateRaceEvent:output_type -> races.v1.CreateRaceEventResponse
+	16, // 35: races.v1.RaceService.GetRaceEvent:output_type -> races.v1.GetRaceEventResponse
+	18, // 36: races.v1.RaceService.ListRaceEvents:output_type -> races.v1.ListRaceEventsResponse
+	20, // 37: races.v1.RaceService.UpdateRaceEvent:output_type -> races.v1.UpdateRaceEventResponse
+	22, // 38: races.v1.RaceService.DeleteRaceEvent:output_type -> races.v1.DeleteRaceEventResponse
+	29, // [29:39] is the sub-list for method output_type
+	19, // [19:29] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_races_v1_races_proto_init() }
@@ -1139,7 +2080,7 @@ func file_races_v1_races_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_races_v1_races_proto_rawDesc), len(file_races_v1_races_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

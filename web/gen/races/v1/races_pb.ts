@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file races/v1/races.proto.
  */
 export const file_races_v1_races: GenFile = /*@__PURE__*/
-  fileDesc("ChRyYWNlcy92MS9yYWNlcy5wcm90bxIIcmFjZXMudjEikgMKBFJhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRkYXRlGAMgASgJEhIKCnN0YXJ0X3RpbWUYBCABKAkSEAoIbG9jYXRpb24YBSABKAkSEwoLd2Vic2l0ZV91cmwYBiABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGAcgASgBEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgIIAEoARIWCg5jdXRvZmZfc2Vjb25kcxgJIAEoBRIoCghwcmlvcml0eRgKIAEoDjIWLnJhY2VzLnYxLlJhY2VQcmlvcml0eRIXCg9jb3Vyc2Vfcm91dGVfaWQYCyABKAkSDQoFbm90ZXMYDCABKAkSEwoLb25fY2FsZW5kYXIYDyABKAgSNwoLY3JlYXRlX3RpbWUYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLdXBkYXRlX3RpbWUYDiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEiMQoRQ3JlYXRlUmFjZVJlcXVlc3QSHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiMgoSQ3JlYXRlUmFjZVJlc3BvbnNlEhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlIhwKDkdldFJhY2VSZXF1ZXN0EgoKAmlkGAEgASgJIi8KD0dldFJhY2VSZXNwb25zZRIcCgRyYWNlGAEgASgLMg4ucmFjZXMudjEuUmFjZSIsChBMaXN0UmFjZXNSZXF1ZXN0EhgKEG9uX2NhbGVuZGFyX29ubHkYASABKAgiMgoRTGlzdFJhY2VzUmVzcG9uc2USHQoFcmFjZXMYASADKAsyDi5yYWNlcy52MS5SYWNlImIKEVVwZGF0ZVJhY2VSZXF1ZXN0EhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayIyChJVcGRhdGVSYWNlUmVzcG9uc2USHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiHwoRRGVsZXRlUmFjZVJlcXVlc3QSCgoCaWQYASABKAkiFAoSRGVsZXRlUmFjZVJlc3BvbnNlKmwKDFJhY2VQcmlvcml0eRIdChlSQUNFX1BSSU9SSVRZX1VOU1BFQ0lGSUVEEAASEwoPUkFDRV9QUklPUklUWV9BEAESEwoPUkFDRV9QUklPUklUWV9CEAISEwoPUkFDRV9QUklPUklUWV9DEAMy7gIKC1JhY2VTZXJ2aWNlEkcKCkNyZWF0ZVJhY2USGy5yYWNlcy52MS5DcmVhdGVSYWNlUmVxdWVzdBocLnJhY2VzLnYxLkNyZWF0ZVJhY2VSZXNwb25zZRI+CgdHZXRSYWNlEhgucmFjZXMudjEuR2V0UmFjZVJlcXVlc3QaGS5yYWNlcy52MS5HZXRSYWNlUmVzcG9uc2USRAoJTGlzdFJhY2VzEhoucmFjZXMudjEuTGlzdFJhY2VzUmVxdWVzdBobLnJhY2VzLnYxLkxpc3RSYWNlc1Jlc3BvbnNlEkcKClVwZGF0ZVJhY2USGy5yYWNlcy52MS5VcGRhdGVSYWNlUmVxdWVzdBocLnJhY2VzLnYxLlVwZGF0ZVJhY2VSZXNwb25zZRJHCgpEZWxldGVSYWNlEhsucmFjZXMudjEuRGVsZXRlUmFjZVJlcXVlc3QaHC5yYWNlcy52MS5EZWxldGVSYWNlUmVzcG9uc2VCmgEKDGNvbS5yYWNlcy52MUIKUmFjZXNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9yYWNlcy92MTtyYWNlc3YxogIDUlhYqgIIUmFjZXMuVjHKAghSYWNlc1xWMeICFFJhY2VzXFYxXEdQQk1ldGFkYXRh6gIJUmFjZXM6OlYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChRyYWNlcy92MS9yYWNlcy5wcm90bxIIcmFjZXMudjEipAMKBFJhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRkYXRlGAMgASgJEhIKCnN0YXJ0X3RpbWUYBCABKAkSEAoIbG9jYXRpb24YBSABKAkSEwoLd2Vic2l0ZV91cmwYBiABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGAcgASgBEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgIIAEoARIWCg5jdXRvZmZfc2Vjb25kcxgJIAEoBRIoCghwcmlvcml0eRgKIAEoDjIWLnJhY2VzLnYxLlJhY2VQcmlvcml0eRIXCg9jb3Vyc2Vfcm91dGVfaWQYCyABKAkSDQoFbm90ZXMYDCABKAkSEwoLb25fY2FsZW5kYXIYDyABKAgSEAoIZXZlbnRfaWQYECABKAkSNwoLY3JlYXRlX3RpbWUYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLdXBkYXRlX3RpbWUYDiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEiMQoRQ3JlYXRlUmFjZVJlcXVlc3QSHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiMgoSQ3JlYXRlUmFjZVJlc3BvbnNlEhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlIhwKDkdldFJhY2VSZXF1ZXN0EgoKAmlkGAEgASgJIi8KD0dldFJhY2VSZXNwb25zZRIcCgRyYWNlGAEgASgLMg4ucmFjZXMudjEuUmFjZSIsChBMaXN0UmFjZXNSZXF1ZXN0EhgKEG9uX2NhbGVuZGFyX29ubHkYASABKAgiMgoRTGlzdFJhY2VzUmVzcG9uc2USHQoFcmFjZXMYASADKAsyDi5yYWNlcy52MS5SYWNlImIKEVVwZGF0ZVJhY2VSZXF1ZXN0EhwKBHJhY2UYASABKAsyDi5yYWNlcy52MS5SYWNlEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayIyChJVcGRhdGVSYWNlUmVzcG9uc2USHAoEcmFjZRgBIAEoCzIOLnJhY2VzLnYxLlJhY2UiHwoRRGVsZXRlUmFjZVJlcXVlc3QSCgoCaWQYASABKAkiFAoSRGVsZXRlUmFjZVJlc3BvbnNlIp0CCglSYWNlRXZlbnQSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIQCghsb2NhdGlvbhgDIAEoCRITCgt3ZWJzaXRlX3VybBgEIAEoCRINCgVub3RlcxgFIAEoCRIYCghyYWNlX2lkcxgGIAMoCUIGqp8ZAggBEhoKCnN0YXJ0X2RhdGUYByABKAlCBqqfGQIIARIYCghlbmRfZGF0ZRgIIAEoCUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBIjwKFkNyZWF0ZVJhY2VFdmVudFJlcXVlc3QSIgoFZXZlbnQYASABKAsyEy5yYWNlcy52MS5SYWNlRXZlbnQiPQoXQ3JlYXRlUmFjZUV2ZW50UmVzcG9uc2USIgoFZXZlbnQYASABKAsyEy5yYWNlcy52MS5SYWNlRXZlbnQiIQoTR2V0UmFjZUV2ZW50UmVxdWVzdBIKCgJpZBgBIAEoCSI6ChRHZXRSYWNlRXZlbnRSZXNwb25zZRIiCgVldmVudBgBIAEoCzITLnJhY2VzLnYxLlJhY2VFdmVudCIXChVMaXN0UmFjZUV2ZW50c1JlcXVlc3QiPQoWTGlzdFJhY2VFdmVudHNSZXNwb25zZRIjCgZldmVudHMYASADKAsyEy5yYWNlcy52MS5SYWNlRXZlbnQibQoWVXBkYXRlUmFjZUV2ZW50UmVxdWVzdBIiCgVldmVudBgBIAEoCzITLnJhY2VzLnYxLlJhY2VFdmVudBIvCgt1cGRhdGVfbWFzaxgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5GaWVsZE1hc2siPQoXVXBkYXRlUmFjZUV2ZW50UmVzcG9uc2USIgoFZXZlbnQYASABKAsyEy5yYWNlcy52MS5SYWNlRXZlbnQiJAoWRGVsZXRlUmFjZUV2ZW50UmVxdWVzdBIKCgJpZBgBIAEoCSIZChdEZWxldGVSYWNlRXZlbnRSZXNwb25zZSpsCgxSYWNlUHJpb3JpdHkSHQoZUkFDRV9QUklPUklUWV9VTlNQRUNJRklFRBAAEhMKD1JBQ0VfUFJJT1JJVFlfQRABEhMKD1JBQ0VfUFJJT1JJVFlfQhACEhMKD1JBQ0VfUFJJT1JJVFlfQxADMpoGCgtSYWNlU2VydmljZRJHCgpDcmVhdGVSYWNlEhsucmFjZXMudjEuQ3JlYXRlUmFjZVJlcXVlc3QaHC5yYWNlcy52MS5DcmVhdGVSYWNlUmVzcG9uc2USPgoHR2V0UmFjZRIYLnJhY2VzLnYxLkdldFJhY2VSZXF1ZXN0GhkucmFjZXMudjEuR2V0UmFjZVJlc3BvbnNlEkQKCUxpc3RSYWNlcxIaLnJhY2VzLnYxLkxpc3RSYWNlc1JlcXVlc3QaGy5yYWNlcy52MS5MaXN0UmFjZXNSZXNwb25zZRJHCgpVcGRhdGVSYWNlEhsucmFjZXMudjEuVXBkYXRlUmFjZVJlcXVlc3QaHC5yYWNlcy52MS5VcGRhdGVSYWNlUmVzcG9uc2USRwoKRGVsZXRlUmFjZRIbLnJhY2VzLnYxLkRlbGV0ZVJhY2VSZXF1ZXN0GhwucmFjZXMudjEuRGVsZXRlUmFjZVJlc3BvbnNlElYKD0NyZWF0ZVJhY2VFdmVudBIgLnJhY2VzLnYxLkNyZWF0ZVJhY2VFdmVudFJlcXVlc3QaIS5yYWNlcy52MS5DcmVhdGVSYWNlRXZlbnRSZXNwb25zZRJNCgxHZXRSYWNlRXZlbnQSHS5yYWNlcy52MS5HZXRSYWNlRXZlbnRSZXF1ZXN0Gh4ucmFjZXMudjEuR2V0UmFjZUV2ZW50UmVzcG9uc2USUwoOTGlzdFJhY2VFdmVudHMSHy5yYWNlcy52MS5MaXN0UmFjZUV2ZW50c1JlcXVlc3QaIC5yYWNlcy52MS5MaXN0UmFjZUV2ZW50c1Jlc3BvbnNlElYKD1VwZGF0ZVJhY2VFdmVudBIgLnJhY2VzLnYxLlVwZGF0ZVJhY2VFdmVudFJlcXVlc3QaIS5yYWNlcy52MS5VcGRhdGVSYWNlRXZlbnRSZXNwb25zZRJWCg9EZWxldGVSYWNlRXZlbnQSIC5yYWNlcy52MS5EZWxldGVSYWNlRXZlbnRSZXF1ZXN0GiEucmFjZXMudjEuRGVsZXRlUmFjZUV2ZW50UmVzcG9uc2VCmgEKDGNvbS5yYWNlcy52MUIKUmFjZXNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9yYWNlcy92MTtyYWNlc3YxogIDUlhYqgIIUmFjZXMuVjHKAghSYWNlc1xWMeICFFJhY2VzXFYxXEdQQk1ldGFkYXRh6gIJUmFjZXM6OlYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * A race.
@@ -114,6 +114,15 @@ export type Race = Message<"races.v1.Race"> & {
    * @generated from field: bool on_calendar = 15;
    */
   onCalendar: boolean;
+
+  /**
+   * The ID of the race event the race is part of, if any. Races that belong
+   * together, like the days of a multi-day event, share an event. Name each
+   * race in full, e.g. "Squamish 50 Mile" and "Squamish 50K".
+   *
+   * @generated from field: string event_id = 16;
+   */
+  eventId: string;
 
   /**
    * When the race was created.
@@ -330,6 +339,278 @@ export const DeleteRaceResponseSchema: GenMessage<DeleteRaceResponse> = /*@__PUR
   messageDesc(file_races_v1_races, 10);
 
 /**
+ * A race event groups races that belong together, e.g. a 50 mile race on the
+ * Saturday and a 50K on the Sunday, or the races of a festival weekend.
+ *
+ * @generated from message races.v1.RaceEvent
+ */
+export type RaceEvent = Message<"races.v1.RaceEvent"> & {
+  /**
+   * The ID of the event. Ignored when creating an event.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The name of the event, e.g. "Squamish 50/50".
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * Where the event takes place.
+   *
+   * @generated from field: string location = 3;
+   */
+  location: string;
+
+  /**
+   * The event website.
+   *
+   * @generated from field: string website_url = 4;
+   */
+  websiteUrl: string;
+
+  /**
+   * Free text notes, e.g. the combined results of a multi-day event.
+   *
+   * @generated from field: string notes = 5;
+   */
+  notes: string;
+
+  /**
+   * The IDs of the event's races, in date order.
+   *
+   * @generated from field: repeated string race_ids = 6;
+   */
+  raceIds: string[];
+
+  /**
+   * The date of the event's first race (YYYY-MM-DD). Empty if it has none.
+   *
+   * @generated from field: string start_date = 7;
+   */
+  startDate: string;
+
+  /**
+   * The date of the event's last race (YYYY-MM-DD). Empty if it has none.
+   *
+   * @generated from field: string end_date = 8;
+   */
+  endDate: string;
+
+  /**
+   * When the event was created.
+   *
+   * @generated from field: google.protobuf.Timestamp create_time = 9;
+   */
+  createTime?: Timestamp | undefined;
+
+  /**
+   * When the event was last updated.
+   *
+   * @generated from field: google.protobuf.Timestamp update_time = 10;
+   */
+  updateTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message races.v1.RaceEvent.
+ * Use `create(RaceEventSchema)` to create a new message.
+ */
+export const RaceEventSchema: GenMessage<RaceEvent> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 11);
+
+/**
+ * @generated from message races.v1.CreateRaceEventRequest
+ */
+export type CreateRaceEventRequest = Message<"races.v1.CreateRaceEventRequest"> & {
+  /**
+   * The event to create.
+   *
+   * @generated from field: races.v1.RaceEvent event = 1;
+   */
+  event?: RaceEvent | undefined;
+};
+
+/**
+ * Describes the message races.v1.CreateRaceEventRequest.
+ * Use `create(CreateRaceEventRequestSchema)` to create a new message.
+ */
+export const CreateRaceEventRequestSchema: GenMessage<CreateRaceEventRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 12);
+
+/**
+ * @generated from message races.v1.CreateRaceEventResponse
+ */
+export type CreateRaceEventResponse = Message<"races.v1.CreateRaceEventResponse"> & {
+  /**
+   * The created event.
+   *
+   * @generated from field: races.v1.RaceEvent event = 1;
+   */
+  event?: RaceEvent | undefined;
+};
+
+/**
+ * Describes the message races.v1.CreateRaceEventResponse.
+ * Use `create(CreateRaceEventResponseSchema)` to create a new message.
+ */
+export const CreateRaceEventResponseSchema: GenMessage<CreateRaceEventResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 13);
+
+/**
+ * @generated from message races.v1.GetRaceEventRequest
+ */
+export type GetRaceEventRequest = Message<"races.v1.GetRaceEventRequest"> & {
+  /**
+   * The ID of the event.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message races.v1.GetRaceEventRequest.
+ * Use `create(GetRaceEventRequestSchema)` to create a new message.
+ */
+export const GetRaceEventRequestSchema: GenMessage<GetRaceEventRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 14);
+
+/**
+ * @generated from message races.v1.GetRaceEventResponse
+ */
+export type GetRaceEventResponse = Message<"races.v1.GetRaceEventResponse"> & {
+  /**
+   * The event.
+   *
+   * @generated from field: races.v1.RaceEvent event = 1;
+   */
+  event?: RaceEvent | undefined;
+};
+
+/**
+ * Describes the message races.v1.GetRaceEventResponse.
+ * Use `create(GetRaceEventResponseSchema)` to create a new message.
+ */
+export const GetRaceEventResponseSchema: GenMessage<GetRaceEventResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 15);
+
+/**
+ * @generated from message races.v1.ListRaceEventsRequest
+ */
+export type ListRaceEventsRequest = Message<"races.v1.ListRaceEventsRequest"> & {
+};
+
+/**
+ * Describes the message races.v1.ListRaceEventsRequest.
+ * Use `create(ListRaceEventsRequestSchema)` to create a new message.
+ */
+export const ListRaceEventsRequestSchema: GenMessage<ListRaceEventsRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 16);
+
+/**
+ * @generated from message races.v1.ListRaceEventsResponse
+ */
+export type ListRaceEventsResponse = Message<"races.v1.ListRaceEventsResponse"> & {
+  /**
+   * The user's events, in the order of their first race. Events without
+   * races come last.
+   *
+   * @generated from field: repeated races.v1.RaceEvent events = 1;
+   */
+  events: RaceEvent[];
+};
+
+/**
+ * Describes the message races.v1.ListRaceEventsResponse.
+ * Use `create(ListRaceEventsResponseSchema)` to create a new message.
+ */
+export const ListRaceEventsResponseSchema: GenMessage<ListRaceEventsResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 17);
+
+/**
+ * @generated from message races.v1.UpdateRaceEventRequest
+ */
+export type UpdateRaceEventRequest = Message<"races.v1.UpdateRaceEventRequest"> & {
+  /**
+   * The event to update. The ID must be set.
+   *
+   * @generated from field: races.v1.RaceEvent event = 1;
+   */
+  event?: RaceEvent | undefined;
+
+  /**
+   * The fields to update, e.g. "name,website_url". If empty, all fields are
+   * replaced.
+   *
+   * @generated from field: google.protobuf.FieldMask update_mask = 2;
+   */
+  updateMask?: FieldMask | undefined;
+};
+
+/**
+ * Describes the message races.v1.UpdateRaceEventRequest.
+ * Use `create(UpdateRaceEventRequestSchema)` to create a new message.
+ */
+export const UpdateRaceEventRequestSchema: GenMessage<UpdateRaceEventRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 18);
+
+/**
+ * @generated from message races.v1.UpdateRaceEventResponse
+ */
+export type UpdateRaceEventResponse = Message<"races.v1.UpdateRaceEventResponse"> & {
+  /**
+   * The updated event.
+   *
+   * @generated from field: races.v1.RaceEvent event = 1;
+   */
+  event?: RaceEvent | undefined;
+};
+
+/**
+ * Describes the message races.v1.UpdateRaceEventResponse.
+ * Use `create(UpdateRaceEventResponseSchema)` to create a new message.
+ */
+export const UpdateRaceEventResponseSchema: GenMessage<UpdateRaceEventResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 19);
+
+/**
+ * @generated from message races.v1.DeleteRaceEventRequest
+ */
+export type DeleteRaceEventRequest = Message<"races.v1.DeleteRaceEventRequest"> & {
+  /**
+   * The ID of the event to delete.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message races.v1.DeleteRaceEventRequest.
+ * Use `create(DeleteRaceEventRequestSchema)` to create a new message.
+ */
+export const DeleteRaceEventRequestSchema: GenMessage<DeleteRaceEventRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 20);
+
+/**
+ * @generated from message races.v1.DeleteRaceEventResponse
+ */
+export type DeleteRaceEventResponse = Message<"races.v1.DeleteRaceEventResponse"> & {
+};
+
+/**
+ * Describes the message races.v1.DeleteRaceEventResponse.
+ * Use `create(DeleteRaceEventResponseSchema)` to create a new message.
+ */
+export const DeleteRaceEventResponseSchema: GenMessage<DeleteRaceEventResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_races, 21);
+
+/**
  * RacePriority is how important a race is to the season.
  *
  * @generated from enum races.v1.RacePriority
@@ -372,6 +653,10 @@ export const RacePrioritySchema: GenEnum<RacePriority> = /*@__PURE__*/
  * RaceService manages the races the user could run, and which of them are on
  * the user's calendar: the races the user is running. Races on the calendar
  * can have race plans. Goal races of training plans are on the calendar.
+ *
+ * Races that belong together, like the races of a multi-day event, are
+ * grouped in a race event. Each race of an event keeps its own date, course,
+ * calendar status and race plan.
  *
  * @generated from service races.v1.RaceService
  */
@@ -427,6 +712,58 @@ export const RaceService: GenService<{
     methodKind: "unary";
     input: typeof DeleteRaceRequestSchema;
     output: typeof DeleteRaceResponseSchema;
+  },
+  /**
+   * Create a race event, to group races that belong together, e.g. a 50 mile
+   * race on the Saturday and a 50K on the Sunday. Add races to the event by
+   * setting their event_id.
+   *
+   * @generated from rpc races.v1.RaceService.CreateRaceEvent
+   */
+  createRaceEvent: {
+    methodKind: "unary";
+    input: typeof CreateRaceEventRequestSchema;
+    output: typeof CreateRaceEventResponseSchema;
+  },
+  /**
+   * Get a race event by ID.
+   *
+   * @generated from rpc races.v1.RaceService.GetRaceEvent
+   */
+  getRaceEvent: {
+    methodKind: "unary";
+    input: typeof GetRaceEventRequestSchema;
+    output: typeof GetRaceEventResponseSchema;
+  },
+  /**
+   * List the user's race events, in the order of their first race.
+   *
+   * @generated from rpc races.v1.RaceService.ListRaceEvents
+   */
+  listRaceEvents: {
+    methodKind: "unary";
+    input: typeof ListRaceEventsRequestSchema;
+    output: typeof ListRaceEventsResponseSchema;
+  },
+  /**
+   * Update a race event.
+   *
+   * @generated from rpc races.v1.RaceService.UpdateRaceEvent
+   */
+  updateRaceEvent: {
+    methodKind: "unary";
+    input: typeof UpdateRaceEventRequestSchema;
+    output: typeof UpdateRaceEventResponseSchema;
+  },
+  /**
+   * Delete a race event. Its races are kept, outside any event.
+   *
+   * @generated from rpc races.v1.RaceService.DeleteRaceEvent
+   */
+  deleteRaceEvent: {
+    methodKind: "unary";
+    input: typeof DeleteRaceEventRequestSchema;
+    output: typeof DeleteRaceEventResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_races_v1_races, 0);

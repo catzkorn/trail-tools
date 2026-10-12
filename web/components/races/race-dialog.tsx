@@ -14,9 +14,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RacePlanService } from "gen/races/v1/race_plans_pb";
 import {
   createRace,
+  createRaceEvent,
+  listRaceEvents,
   updateRace,
 } from "gen/races/v1/races-RaceService_connectquery";
-import type { Race } from "gen/races/v1/races_pb";
+import type { Race, RaceEvent } from "gen/races/v1/races_pb";
 import { RacePriority, RaceService } from "gen/races/v1/races_pb";
 import {
   createRoute,
@@ -24,7 +26,7 @@ import {
 } from "gen/routes/v1/routes-RouteService_connectquery";
 import type { Route } from "gen/routes/v1/routes_pb";
 import { RouteService, TrackConversion } from "gen/routes/v1/routes_pb";
-import { isDateString } from "helpers/dates";
+import { addDays, isDateString } from "helpers/dates";
 import { formatKm } from "helpers/format";
 import { PRIORITY_OPTIONS } from "helpers/labels";
 import {
@@ -46,7 +48,12 @@ interface RaceDialogProps {
   onSaved?: (race: Race) => void;
   // Whether a new race starts on the calendar.
   defaultOnCalendar?: boolean;
+  // The event a new race is part of.
+  defaultEventId?: string;
 }
+
+// NEW_EVENT is the event option that creates an event with the race.
+const NEW_EVENT = "new";
 
 const PRIORITY_SELECT: SelectOption[] = PRIORITY_OPTIONS.map((option) => ({
   label: option.label,
@@ -59,14 +66,34 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
   onClose,
   onSaved,
   defaultOnCalendar = false,
+  defaultEventId = "",
 }) => {
   const queryClient = useQueryClient();
   const routes = useQuery(listRoutes);
+  const events = useQuery(listRaceEvents);
+  const [eventId, setEventId] = useState(race?.eventId ?? defaultEventId);
+  const [eventName, setEventName] = useState("");
+  /**
+   * A race added to an event takes the event's location and website, on the
+   * day after the event's last race.
+   */
+  const defaultEvent = events.data?.events.find(
+    (event) => event.id === defaultEventId
+  );
   const [name, setName] = useState(race?.name ?? "");
-  const [date, setDate] = useState(race?.date ?? "");
+  const [date, setDate] = useState(
+    race?.date ??
+      (defaultEvent === undefined || defaultEvent.endDate === ""
+        ? ""
+        : addDays(defaultEvent.endDate, 1))
+  );
   const [startTime, setStartTime] = useState(race?.startTime ?? "");
-  const [location, setLocation] = useState(race?.location ?? "");
-  const [website, setWebsite] = useState(race?.websiteUrl ?? "");
+  const [location, setLocation] = useState(
+    race?.location ?? defaultEvent?.location ?? ""
+  );
+  const [website, setWebsite] = useState(
+    race?.websiteUrl ?? defaultEvent?.websiteUrl ?? ""
+  );
   const [distance, setDistance] = useState(kmInput(race?.distanceMeters ?? 0));
   const [vert, setVert] = useState(numberInput(race?.elevationGainMeters ?? 0));
   const [cutoff, setCutoff] = useState(
@@ -95,6 +122,31 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
   const update = useMutation(updateRace, {
     onSuccess: async (response) => onSuccess(response.race),
   });
+  const createEvent = useMutation(createRaceEvent);
+
+  const eventOptions: SelectOption[] = [
+    { label: "Not part of an event", value: "" },
+  ];
+  for (const event of events.data?.events ?? []) {
+    eventOptions.push({ label: event.name, value: event.id });
+  }
+  eventOptions.push({ label: "New event…", value: NEW_EVENT });
+
+  // A new race in an event takes the event's location and website.
+  const chooseEvent = (id: string) => {
+    setEventId(id);
+    const event: RaceEvent | undefined = events.data?.events.find(
+      (candidate) => candidate.id === id
+    );
+    if (race === undefined && event !== undefined) {
+      if (location === "") {
+        setLocation(event.location);
+      }
+      if (website === "") {
+        setWebsite(event.websiteUrl);
+      }
+    }
+  };
 
   // Fills in the distance and gain from the course, unless they're set.
   const fillCourseStats = (route: Route | undefined, overwrite: boolean) => {
@@ -140,7 +192,7 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
     );
   };
 
-  const submit = () => {
+  const submit = async () => {
     const distanceMeters = parseKm(distance);
     const vertMeters = parseNumber(vert);
     const cutoffSeconds = parseDuration(cutoff);
@@ -156,13 +208,30 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
       setValidation("The time limit must be in the format h:mm.");
       return;
     }
+    if (eventId === NEW_EVENT && eventName.trim() === "") {
+      setValidation("Name the new event.");
+      return;
+    }
     setValidation("");
+    let raceEventId = eventId;
+    if (eventId === NEW_EVENT) {
+      const created = await createEvent.mutateAsync({
+        event: {
+          location: location.trim(),
+          name: eventName.trim(),
+          websiteUrl: website.trim(),
+        },
+      });
+      raceEventId = created.event?.id ?? "";
+      setEventId(raceEventId);
+    }
     const fields = {
       courseRouteId,
       cutoffSeconds,
       date,
       distanceMeters,
       elevationGainMeters: Math.round(vertMeters),
+      eventId: raceEventId,
       location,
       name: name.trim(),
       notes,
@@ -189,7 +258,9 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
         className="flex flex-col gap-3"
         onSubmit={(event) => {
           event.preventDefault();
-          submit();
+          submit().catch(() => {
+            // The error is shown from the mutation.
+          });
         }}
       >
         <TextField
@@ -200,6 +271,29 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
           autoFocus
           required
         />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <SelectField
+            label="Event"
+            value={eventId}
+            onChange={chooseEvent}
+            options={eventOptions}
+          />
+          {eventId === NEW_EVENT && (
+            <TextField
+              label="Event name"
+              value={eventName}
+              onChange={setEventName}
+              placeholder="e.g. Squamish 50/50"
+            />
+          )}
+        </div>
+        {eventId !== "" && (
+          <p className="-mt-1 text-xs text-gray-500">
+            For a multi-day event, add a race for each day, and name each race
+            in full, e.g. &ldquo;Squamish 50 Mile&rdquo; and &ldquo;Squamish
+            50K&rdquo;.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <TextField
             label="Date"
@@ -322,7 +416,7 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
         {validation !== "" && (
           <p className="text-sm text-red-700">{validation}</p>
         )}
-        <ErrorText error={create.error ?? update.error} />
+        <ErrorText error={createEvent.error ?? create.error ?? update.error} />
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" className={secondaryButton} onClick={onClose}>
             Cancel
@@ -330,7 +424,9 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
           <button
             type="submit"
             className={primaryButton}
-            disabled={create.isPending || update.isPending}
+            disabled={
+              createEvent.isPending || create.isPending || update.isPending
+            }
           >
             Save
           </button>
