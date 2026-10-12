@@ -26,6 +26,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/cloudrun"
 	"github.com/catzkorn/trail-tools/internal/cloudscheduler"
+	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
@@ -352,6 +353,10 @@ func run(
 		}
 		log.InfoContext(ctx, "Storing photos in a local directory", slog.String("dir", photoDir))
 	}
+	// Elevations come from public elevation tiles, for routes and for imports
+	// run in the server.
+	dem := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir)
+	mapConfig.Elevation = dem
 	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
@@ -420,7 +425,7 @@ func run(
 		}
 		importRunner = jobImportRunner{job: job}
 	} else {
-		localRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, routing.DefaultDEMCache))
+		localRunner := routing.NewLocalRunner(ctx, log, db, dem)
 		defer localRunner.Wait()
 		importRunner = localRunner
 	}
