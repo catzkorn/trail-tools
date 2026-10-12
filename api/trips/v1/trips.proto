@@ -119,6 +119,13 @@ message TripReport {
   google.protobuf.Timestamp update_time = 13 [(mcp.v1.field).output_only = true];
   // Whether the report has a GPS track.
   bool has_track = 14 [(mcp.v1.field).output_only = true];
+  // How far in meters around the start and finish of the track is hidden on
+  // the public page, e.g. so that it doesn't show where the author lives:
+  // the track starts where it first leaves the circle around its start, and
+  // ends where it last enters the circle around its finish, and photos in
+  // either circle aren't shown on the map. 0 to show the whole track.
+  // Defaults to 500.
+  int32 hidden_ends_meters = 15;
 }
 
 // The statistics of a trip.
@@ -235,6 +242,9 @@ message UpdateTripReportRequest {
   optional string body = 4;
   // The new date (YYYY-MM-DD), if set.
   optional string date = 5;
+  // How far in meters around the start and finish of the track to hide on
+  // the public page, from 0 to 2000, if set.
+  optional int32 hidden_ends_meters = 6;
 }
 
 message UpdateTripReportResponse {

@@ -23,17 +23,18 @@ func (s *Service) reportToProto(r *trips.Report, photos []*trips.Photo, profile 
 		stats.StartTime = timestamppb.New(r.StartTime)
 	}
 	b := tripsv1.TripReport_builder{
-		Id:         store.UUIDToString(r.ID),
-		ActivityId: store.UUIDToString(r.ActivityID),
-		Title:      r.Title,
-		Slug:       r.Slug,
-		Body:       r.Body,
-		Date:       store.FormatDate(r.Date),
-		Stats:      stats.Build(),
-		Published:  r.Published,
-		HasTrack:   r.HasTrack,
-		CreateTime: timestamppb.New(r.CreateTime),
-		UpdateTime: timestamppb.New(r.UpdateTime),
+		Id:               store.UUIDToString(r.ID),
+		ActivityId:       store.UUIDToString(r.ActivityID),
+		Title:            r.Title,
+		Slug:             r.Slug,
+		Body:             r.Body,
+		Date:             store.FormatDate(r.Date),
+		Stats:            stats.Build(),
+		Published:        r.Published,
+		HasTrack:         r.HasTrack,
+		HiddenEndsMeters: r.HiddenEndsMeters,
+		CreateTime:       timestamppb.New(r.CreateTime),
+		UpdateTime:       timestamppb.New(r.UpdateTime),
 	}
 	if !r.PublishTime.IsZero() {
 		b.PublishTime = timestamppb.New(r.PublishTime)

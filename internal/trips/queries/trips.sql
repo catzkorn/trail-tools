@@ -70,6 +70,7 @@ update trip_reports set
   slug = coalesce(sqlc.narg(slug), slug),
   body = coalesce(sqlc.narg(body), body),
   date = coalesce(sqlc.narg(date), date),
+  hidden_ends_meters = coalesce(sqlc.narg(hidden_ends_meters), hidden_ends_meters),
   update_time = now()
 where id = sqlc.arg(id) and user_id = sqlc.arg(user_id)
 returning *;

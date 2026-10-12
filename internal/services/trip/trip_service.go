@@ -105,8 +105,11 @@ const (
 	// /photos/<id>/<size>.jpg.
 	PhotoPath = "/photos/"
 
-	maxTitleLength       = 200
-	maxBodyLength        = 100_000
+	maxTitleLength = 200
+	maxBodyLength  = 100_000
+	// maxHiddenEndsMeters is the largest radius hidden around the ends of a
+	// public track.
+	maxHiddenEndsMeters  = 2000
 	maxCaptionLength     = 2000
 	maxDisplayNameLength = 80
 	maxPhotosPerReport   = 200
@@ -318,6 +321,13 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 		}
 		update.Date = &date
+	}
+	if req.HasHiddenEndsMeters() {
+		hidden := req.GetHiddenEndsMeters()
+		if hidden < 0 || hidden > maxHiddenEndsMeters {
+			return nil, connect.Errorf(connect.CodeInvalidArgument, "hidden_ends_meters must be from 0 to %d", maxHiddenEndsMeters)
+		}
+		update.HiddenEndsMeters = &hidden
 	}
 	report, err := s.repo.UpdateReport(ctx, update)
 	if err != nil {
@@ -665,10 +675,27 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
+	// Hide the ends of the track, and the photos taken there.
+	radius := float64(report.HiddenEndsMeters)
+	points := t.routePoints()
+	if from, to, ok := t.visibleRange(radius); ok {
+		points = points[from : to+1]
+	} else {
+		points = nil
+	}
+	visible := make([]*trips.Photo, len(photos[report.ID]))
+	for i, p := range photos[report.ID] {
+		visible[i] = p
+		if p.Location != nil && t.nearEnds(geo.Point{Lat: p.Location.Lat, Lng: p.Location.Lng}, radius) {
+			hidden := *p
+			hidden.Location = nil
+			visible[i] = &hidden
+		}
+	}
 	return tripsv1.GetPublicTripReportResponse_builder{
-		Report: s.reportToProto(report, photos[report.ID], profile),
+		Report: s.reportToProto(report, visible, profile),
 		Author: s.profileToProto(profile),
-		Track:  t.routePoints(),
+		Track:  points,
 	}.Build(), nil
 }
 

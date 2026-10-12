@@ -263,9 +263,44 @@ func TestTripReports(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPublicTripReport: %v", err)
 	}
-	if public.GetReport().GetTitle() != "Up the ridge" || public.GetAuthor().GetHandle() != "jane-doe" || len(public.GetTrack()) != 101 {
+	if public.GetReport().GetTitle() != "Up the ridge" || public.GetAuthor().GetHandle() != "jane-doe" {
 		t.Errorf("unexpected public report %v", public.GetReport())
 	}
+	// By default the track is hidden within 500 m of its start and finish:
+	// of 101 points 100 m apart, the first and last 5.
+	if track := public.GetTrack(); len(track) != 91 || track[0].GetDistanceMeters() != 500 {
+		t.Errorf("got %d public track points from %v m, want 91 from 500 m", len(track), track[0].GetDistanceMeters())
+	}
+	// A photo near the start is shown without its place on the map.
+	photo, err := e.trips.UploadTripPhoto(ctx, tripsv1.UploadTripPhotoRequest_builder{
+		ReportId: report.GetId(),
+		Data:     testJPEG(t, 300, 200),
+		Location: geov1.LatLng_builder{Lat: 0.001, Lng: 0}.Build(),
+	}.Build())
+	if err != nil {
+		t.Fatalf("UploadTripPhoto: %v", err)
+	}
+	if public, err = e.anonTrips.GetPublicTripReport(ctx, publicReq); err != nil {
+		t.Fatal(err)
+	}
+	if photos := public.GetReport().GetPhotos(); len(photos) != 1 || photos[0].HasLocation() || photos[0].HasTrackDistanceMeters() {
+		t.Errorf("got public photos %v, want the photo near the start without its location", photos)
+	}
+	// Hiding can be turned off.
+	if _, err := e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), HiddenEndsMeters: new(int32(0))}.Build()); err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
+	if public, err = e.anonTrips.GetPublicTripReport(ctx, publicReq); err != nil {
+		t.Fatal(err)
+	}
+	if len(public.GetTrack()) != 101 || !public.GetReport().GetPhotos()[0].HasLocation() {
+		t.Errorf("got %d public track points and photos %v, want the whole track and the photo's location", len(public.GetTrack()), public.GetReport().GetPhotos())
+	}
+	if _, err := e.trips.DeleteTripPhoto(ctx, tripsv1.DeleteTripPhotoRequest_builder{Id: photo.GetPhoto().GetId()}.Build()); err != nil {
+		t.Fatal(err)
+	}
+	_, err = e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), HiddenEndsMeters: new(int32(5000))}.Build())
+	wantCode(t, err, connect.CodeInvalidArgument)
 	publicProfile, err = e.anonTrips.GetPublicProfile(ctx, tripsv1.GetPublicProfileRequest_builder{Handle: "jane-doe"}.Build())
 	if err != nil || len(publicProfile.GetReports()) != 1 || publicProfile.GetReports()[0].GetSlug() != "ridge-run" {
 		t.Fatalf("GetPublicProfile = %v, %v", publicProfile, err)

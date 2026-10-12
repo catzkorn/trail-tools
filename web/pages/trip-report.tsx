@@ -13,7 +13,8 @@ import {
 import TripMap from "@components/trips/trip-map";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
-import { TextField } from "@components/ui/fields";
+import { SelectField, TextField } from "@components/ui/fields";
+import type { SelectOption } from "@components/ui/fields";
 import { Badge } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import {
@@ -57,6 +58,15 @@ import type { LatLng, LatLngTuple } from "leaflet";
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
+// How much of the track around its start and finish to hide publicly.
+const HIDDEN_ENDS_OPTIONS: SelectOption[] = [
+  { label: "Nothing: show the whole track", value: "0" },
+  { label: "250 m around the start and finish", value: "250" },
+  { label: "500 m around the start and finish", value: "500" },
+  { label: "1 km around the start and finish", value: "1000" },
+  { label: "2 km around the start and finish", value: "2000" },
+];
+
 interface ReportFormProps {
   report: TripReport;
   handle: string | undefined;
@@ -76,6 +86,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
   );
   const [date, setDate] = useState(report.date);
   const [body, setBody] = useState(report.body);
+  const [hiddenEnds, setHiddenEnds] = useState(String(report.hiddenEndsMeters));
   const update = useMutation(updateTripReport, { onSuccess: onSaved });
 
   const trimmedTitle = title.trim();
@@ -83,12 +94,17 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
     trimmedTitle !== report.title ||
     slug !== report.slug ||
     date !== report.date ||
-    body !== report.body;
+    body !== report.body ||
+    Number(hiddenEnds) !== report.hiddenEndsMeters;
   const slugValid = isValidSlug(slug);
   const save = () => {
     update.mutate({
       body: body === report.body ? undefined : body,
       date: date === report.date ? undefined : date,
+      hiddenEndsMeters:
+        Number(hiddenEnds) === report.hiddenEndsMeters
+          ? undefined
+          : Number(hiddenEnds),
       id: report.id,
       slug: slug === report.slug ? undefined : slug,
       title: trimmedTitle === report.title ? undefined : trimmedTitle,
@@ -167,6 +183,15 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
           }}
         />
       </label>
+      {report.hasTrack && (
+        <SelectField
+          label="Hide on the public map"
+          value={hiddenEnds}
+          onChange={setHiddenEnds}
+          options={HIDDEN_ENDS_OPTIONS}
+          className="sm:max-w-sm"
+        />
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
@@ -569,6 +594,7 @@ const TripReportPage: React.FC = () => {
               hoverPosition={hoverPosition}
               onSelectPhoto={setSelectedId}
               onMovePhoto={place}
+              hiddenEndsMeters={report.hiddenEndsMeters}
               onMapClick={
                 placing === undefined
                   ? undefined
