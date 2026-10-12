@@ -98,9 +98,15 @@ const MapView: React.FC<MapViewProps> = ({
      * Only zoom with the scroll wheel once the map has been clicked, so that
      * scrolling the page over a map scrolls the page.
      */
-    instance.on("click focus", () => {
+    /**
+     * Any press in the map counts, including on markers, which don't pass
+     * their clicks on to the map.
+     */
+    const enableWheelZoom = () => {
       instance.scrollWheelZoom.enable();
-    });
+    };
+    instance.on("focus", enableWheelZoom);
+    container.addEventListener("pointerdown", enableWheelZoom);
     const disableWheelZoom = () => {
       instance.scrollWheelZoom.disable();
     };
@@ -124,6 +130,7 @@ const MapView: React.FC<MapViewProps> = ({
     setMap(instance);
     return () => {
       container.removeEventListener("mouseleave", disableWheelZoom);
+      container.removeEventListener("pointerdown", enableWheelZoom);
       instance.remove();
       setMap(null);
     };
