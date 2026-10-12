@@ -49,6 +49,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
+	"github.com/catzkorn/trail-tools/internal/services/racereport"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/trip"
@@ -87,9 +88,13 @@ type env struct {
 	plans      plansv1connect.TrainingPlanServiceClient
 	races      racesv1connect.RaceServiceClient
 	racePlans  racesv1connect.RacePlanServiceClient
-	anonPlans  racesv1connect.RacePlanServiceClient
-	otherRaces racesv1connect.RaceServiceClient
-	otherPlans racesv1connect.RacePlanServiceClient
+	// Race reports of the user, anyone and another user.
+	raceReports      racesv1connect.RaceReportServiceClient
+	anonRaceReports  racesv1connect.RaceReportServiceClient
+	otherRaceReports racesv1connect.RaceReportServiceClient
+	anonPlans        racesv1connect.RacePlanServiceClient
+	otherRaces       racesv1connect.RaceServiceClient
+	otherPlans       racesv1connect.RacePlanServiceClient
 	// Another user's training plans.
 	otherTraining plansv1connect.TrainingPlanServiceClient
 	oauth         oauthv1connect.OAuthServiceClient
@@ -169,6 +174,7 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	tripService := trip.NewService(log, tripRepo, activityRepo, e.syncer, photos, "https://trail.example")
+	raceReportService := racereport.NewService(log, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
 
 	// Start listening before creating the handler, as the OAuth server needs
 	// the URL of the server.
@@ -195,9 +201,10 @@ func newEnv(t *testing.T) *env {
 	racesv1connect.RegisterRaceServiceHandler(srv2, raceService)
 	racesv1connect.RegisterRacePlanServiceHandler(srv2, racePlanService)
 	tripsv1connect.RegisterTripReportServiceHandler(srv2, tripService)
+	racesv1connect.RegisterRaceReportServiceHandler(srv2, raceReportService)
 	connecthttp.Mount(mux, srv2)
 	mux.Handle(trip.PhotoPath, tripService.PhotoHandler())
-	mux.Handle(trip.ProfilePath, tripService.PageHandler(false))
+	mux.Handle(trip.ProfilePath, raceReportService.PageHandler(false, tripService.PageHandler(false)))
 
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
 	e.imports = &fakeImportRunner{}
@@ -241,6 +248,9 @@ func newEnv(t *testing.T) *env {
 	e.trips = tripsv1connect.NewTripReportServiceClient(authed)
 	e.anonTrips = tripsv1connect.NewTripReportServiceClient(anon)
 	e.otherTrips = tripsv1connect.NewTripReportServiceClient(other)
+	e.raceReports = racesv1connect.NewRaceReportServiceClient(authed)
+	e.anonRaceReports = racesv1connect.NewRaceReportServiceClient(anon)
+	e.otherRaceReports = racesv1connect.NewRaceReportServiceClient(other)
 	return e
 }
 

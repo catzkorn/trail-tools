@@ -310,7 +310,7 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 	}
 	if req.HasSlug() {
 		slug := req.GetSlug()
-		if err := validateSlug(slug); err != nil {
+		if err := ValidateSlug(slug); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 		}
 		current, err := s.repo.GetReport(ctx, userID, reportID)

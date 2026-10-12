@@ -1,0 +1,284 @@
+syntax = "proto3";
+
+package races.v1;
+
+import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
+
+// RaceReportService manages race reports: the story of a race the user ran,
+// focused on how it was prepared for and executed rather than on photos.
+// A report has a result and sections of text: a summary, preparation, race
+// day, nutrition, what went well and badly, and lessons. The server compares
+// the race plan with what happened: the result against the plan's A, B and C
+// goals, and the actual arrival times at the plan's checkpoints, from the
+// activity's recording or the race day splits, against the planned ones.
+//
+// Reports are private drafts until the author publishes them in the app,
+// which requires a public profile (see TripReportService). Help the author
+// by drafting and editing the sections from what they tell you and the
+// comparison.
+service RaceReportService {
+  // Create a draft race report on one of the user's races. The race's name,
+  // date, distance and elevation gain are copied, and the activity, the
+  // user's longest on the race date unless set, gives the finish time.
+  rpc CreateRaceReport(CreateRaceReportRequest) returns (CreateRaceReportResponse);
+  // Get one of the user's race reports, with the comparison with the plan.
+  rpc GetRaceReport(GetRaceReportRequest) returns (GetRaceReportResponse);
+  // List the user's race reports, most recent race first.
+  rpc ListRaceReports(ListRaceReportsRequest) returns (ListRaceReportsResponse);
+  // Update a race report. Only the fields that are set are changed.
+  rpc UpdateRaceReport(UpdateRaceReportRequest) returns (UpdateRaceReportResponse);
+  // Delete a race report.
+  rpc DeleteRaceReport(DeleteRaceReportRequest) returns (DeleteRaceReportResponse);
+  // Publish a race report on the user's public profile.
+  rpc PublishRaceReport(PublishRaceReportRequest) returns (PublishRaceReportResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // Unpublish a race report, making it a private draft again.
+  rpc UnpublishRaceReport(UnpublishRaceReportRequest) returns (UnpublishRaceReportResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // List the published race reports of a public profile. Doesn't require
+  // authentication.
+  rpc ListPublicRaceReports(ListPublicRaceReportsRequest) returns (ListPublicRaceReportsResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // Get a published race report by its author's handle and its slug.
+  // Doesn't require authentication. Authors can also get their drafts.
+  rpc GetPublicRaceReport(GetPublicRaceReportRequest) returns (GetPublicRaceReportResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+}
+
+// A race report.
+message RaceReport {
+  // The ID of the report.
+  string id = 1 [(mcp.v1.field).output_only = true];
+  // The ID of the race, if it still exists. See RaceService.
+  string race_id = 2 [(mcp.v1.field).output_only = true];
+  // The ID of the activity of the race, if any. See ActivityService.
+  string activity_id = 3;
+  // The title.
+  string title = 4;
+  // The last part of the report's URL: lowercase letters, digits and dashes,
+  // unique among the author's race reports. Defaults to the title.
+  string slug = 5;
+  // The name of the race, copied from it.
+  string race_name = 6 [(mcp.v1.field).output_only = true];
+  // The date of the race (YYYY-MM-DD).
+  string race_date = 7 [(mcp.v1.field).output_only = true];
+  // The race distance in meters.
+  double distance_meters = 8 [(mcp.v1.field).output_only = true];
+  // The race's elevation gain in meters.
+  double elevation_gain_meters = 9 [(mcp.v1.field).output_only = true];
+  // The finish time in seconds, 0 if unknown.
+  int32 finish_seconds = 10;
+  // The placement as free text, e.g. "12th of 240, 3rd M40".
+  string placement = 11;
+  // A short summary of the race.
+  string summary = 12;
+  // How the race was prepared for: the training block, taper, recce.
+  string preparation = 13;
+  // How the race went: pacing, the course, conditions, low and high points.
+  string race_day = 14;
+  // Fueling and hydration: what was planned, what was eaten, problems.
+  string nutrition = 15;
+  // What went well.
+  string went_well = 16;
+  // What went badly.
+  string went_badly = 17;
+  // Lessons for the next race.
+  string lessons = 18;
+  // Whether the report is published.
+  bool published = 19 [(mcp.v1.field).output_only = true];
+  // When the report was first published.
+  google.protobuf.Timestamp publish_time = 20 [(mcp.v1.field).output_only = true];
+  // The public URL of the report, if the author has a public profile. Only
+  // reachable by others once published.
+  string url = 21 [(mcp.v1.field).output_only = true];
+  // When the report was created.
+  google.protobuf.Timestamp create_time = 22 [(mcp.v1.field).output_only = true];
+  // When the report was last updated.
+  google.protobuf.Timestamp update_time = 23 [(mcp.v1.field).output_only = true];
+}
+
+// The comparison of a race plan with what happened.
+message RaceComparison {
+  // Whether the race has a plan to compare with. See RacePlanService.
+  bool has_plan = 1;
+  // The goals of the plan and whether the result met them.
+  repeated GoalResult goals = 2;
+  // The planned finish time in seconds, from the plan's checkpoints. 0 if
+  // the plan has none.
+  int32 planned_finish_seconds = 3;
+  // The plan's checkpoints with the planned and actual arrival times.
+  repeated CheckpointResult checkpoints = 4;
+  // Where the actual times come from.
+  ActualTimesSource actual_times_source = 5;
+}
+
+// Where the actual times of a race come from.
+enum ActualTimesSource {
+  // There are no actual times.
+  ACTUAL_TIMES_SOURCE_UNSPECIFIED = 0;
+  // The recording of the race's activity.
+  ACTUAL_TIMES_SOURCE_ACTIVITY = 1;
+  // The checkpoint splits recorded on race day.
+  ACTUAL_TIMES_SOURCE_RACE_DAY = 2;
+}
+
+// A goal of a race plan and the result against it.
+message GoalResult {
+  // The goal: A, B or C.
+  string goal = 1;
+  // The goal's finish time in seconds.
+  int32 target_seconds = 2;
+  // Whether the finish time met the goal. False without a finish time.
+  bool met = 3;
+  // The finish time minus the goal, in seconds: negative if faster. 0
+  // without a finish time.
+  int32 difference_seconds = 4;
+}
+
+// A checkpoint of a race plan with the planned and actual arrival times.
+message CheckpointResult {
+  // The name of the checkpoint.
+  string name = 1;
+  // The distance from the start in meters.
+  double distance_meters = 2;
+  // The planned elapsed time at arrival in seconds.
+  int32 planned_arrival_seconds = 3;
+  // The actual elapsed time at arrival in seconds, if known.
+  optional int32 actual_arrival_seconds = 4;
+  // The actual minus the planned arrival in seconds: negative if early.
+  // Set with the actual arrival.
+  optional int32 difference_seconds = 5;
+  // The cutoff as elapsed time in seconds, 0 if none.
+  int32 cutoff_seconds = 6;
+}
+
+message CreateRaceReportRequest {
+  // The ID of the race.
+  string race_id = 1;
+  // The ID of the activity of the race. Defaults to the user's longest
+  // activity on the race date, if any.
+  string activity_id = 2;
+}
+
+message CreateRaceReportResponse {
+  // The created report.
+  RaceReport report = 1;
+  // The comparison with the race plan.
+  RaceComparison comparison = 2;
+}
+
+message GetRaceReportRequest {
+  // The ID of the report.
+  string id = 1;
+}
+
+message GetRaceReportResponse {
+  // The report.
+  RaceReport report = 1;
+  // The comparison with the race plan.
+  RaceComparison comparison = 2;
+}
+
+message ListRaceReportsRequest {
+  // Only list the reports on this race, if set.
+  string race_id = 1;
+}
+
+message ListRaceReportsResponse {
+  // The reports, most recent race first.
+  repeated RaceReport reports = 1;
+}
+
+message UpdateRaceReportRequest {
+  // The ID of the report.
+  string id = 1;
+  // The new title, if set.
+  optional string title = 2;
+  // The new slug, if set. Can't be changed while published.
+  optional string slug = 3;
+  // The new activity, if set. Empty to unset it.
+  optional string activity_id = 4;
+  // The new finish time in seconds, if set.
+  optional int32 finish_seconds = 5;
+  // The new placement, if set.
+  optional string placement = 6;
+  // The new summary, if set.
+  optional string summary = 7;
+  // The new preparation section, if set.
+  optional string preparation = 8;
+  // The new race day section, if set.
+  optional string race_day = 9;
+  // The new nutrition section, if set.
+  optional string nutrition = 10;
+  // The new what went well section, if set.
+  optional string went_well = 11;
+  // The new what went badly section, if set.
+  optional string went_badly = 12;
+  // The new lessons section, if set.
+  optional string lessons = 13;
+}
+
+message UpdateRaceReportResponse {
+  // The updated report.
+  RaceReport report = 1;
+  // The comparison with the race plan.
+  RaceComparison comparison = 2;
+}
+
+message DeleteRaceReportRequest {
+  // The ID of the report.
+  string id = 1;
+}
+
+message DeleteRaceReportResponse {}
+
+message PublishRaceReportRequest {
+  // The ID of the report.
+  string id = 1;
+}
+
+message PublishRaceReportResponse {
+  // The published report.
+  RaceReport report = 1;
+}
+
+message UnpublishRaceReportRequest {
+  // The ID of the report.
+  string id = 1;
+}
+
+message UnpublishRaceReportResponse {
+  // The unpublished report.
+  RaceReport report = 1;
+}
+
+message ListPublicRaceReportsRequest {
+  // The handle of the author.
+  string handle = 1;
+}
+
+message ListPublicRaceReportsResponse {
+  // The published reports, most recent race first.
+  repeated RaceReport reports = 1;
+}
+
+message GetPublicRaceReportRequest {
+  // The handle of the author.
+  string handle = 1;
+  // The slug of the report.
+  string slug = 2;
+}
+
+message GetPublicRaceReportResponse {
+  // The report.
+  RaceReport report = 1;
+  // The comparison with the race plan.
+  RaceComparison comparison = 2;
+  // The display name of the author.
+  string author_name = 3;
+}

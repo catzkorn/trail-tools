@@ -916,6 +916,32 @@ type RacePlanSplit struct {
 	DepartureTime      pgtype.Timestamptz
 }
 
+type RaceReport struct {
+	ID                  pgtype.UUID
+	UserID              pgtype.UUID
+	RaceID              pgtype.UUID
+	ActivityID          pgtype.UUID
+	Title               string
+	Slug                string
+	RaceName            string
+	RaceDate            pgtype.Date
+	DistanceMeters      float64
+	ElevationGainMeters float64
+	FinishSeconds       int32
+	Placement           string
+	Summary             string
+	Preparation         string
+	RaceDay             string
+	Nutrition           string
+	WentWell            string
+	WentBadly           string
+	Lessons             string
+	Published           bool
+	PublishTime         pgtype.Timestamptz
+	CreateTime          pgtype.Timestamptz
+	UpdateTime          pgtype.Timestamptz
+}
+
 type Route struct {
 	ID          pgtype.UUID
 	UserID      pgtype.UUID
