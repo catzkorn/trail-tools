@@ -101,6 +101,18 @@ export const updateTripPhoto = TripReportService.method.updateTripPhoto;
 export const setTripSections = TripReportService.method.setTripSections;
 
 /**
+ * Suggest sections for a trip report from its track's elevation profile:
+ * the climbs, descents, and rolling or flat stretches in between, named
+ * e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+ * photos in the section about where they were taken. Nothing is saved;
+ * pass the sections to SetTripSections, with text, to use them. Requires
+ * a track with elevations.
+ *
+ * @generated from rpc trips.v1.TripReportService.SuggestTripSections
+ */
+export const suggestTripSections = TripReportService.method.suggestTripSections;
+
+/**
  * Delete a photo.
  *
  * @generated from rpc trips.v1.TripReportService.DeleteTripPhoto

@@ -57,6 +57,9 @@ const (
 	// TripReportServiceSetTripSectionsProcedure is the procedure name of the TripReportService's
 	// SetTripSections RPC.
 	TripReportServiceSetTripSectionsProcedure = "/trips.v1.TripReportService/SetTripSections"
+	// TripReportServiceSuggestTripSectionsProcedure is the procedure name of the TripReportService's
+	// SuggestTripSections RPC.
+	TripReportServiceSuggestTripSectionsProcedure = "/trips.v1.TripReportService/SuggestTripSections"
 	// TripReportServiceDeleteTripPhotoProcedure is the procedure name of the TripReportService's
 	// DeleteTripPhoto RPC.
 	TripReportServiceDeleteTripPhotoProcedure = "/trips.v1.TripReportService/DeleteTripPhoto"
@@ -152,6 +155,13 @@ var (
 			Procedure:  TripReportServiceSetTripSectionsProcedure,
 		}
 	})
+	tripReportServiceSuggestTripSectionsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_trips_v1_trips_proto.Services().ByName("TripReportService").Methods().ByName("SuggestTripSections"),
+			Procedure:  TripReportServiceSuggestTripSectionsProcedure,
+		}
+	})
 	tripReportServiceDeleteTripPhotoSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -232,6 +242,13 @@ type TripReportServiceClient interface {
 	// order. To change one section, get the report and send all its sections
 	// back with the change.
 	SetTripSections(context.Context, *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error)
+	// Suggest sections for a trip report from its track's elevation profile:
+	// the climbs, descents, and rolling or flat stretches in between, named
+	// e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+	// photos in the section about where they were taken. Nothing is saved;
+	// pass the sections to SetTripSections, with text, to use them. Requires
+	// a track with elevations.
+	SuggestTripSections(context.Context, *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error)
 	// Delete a photo.
 	DeleteTripPhoto(context.Context, *v1.DeleteTripPhotoRequest) (*v1.DeleteTripPhotoResponse, error)
 	// Get the user's public profile. The profile is unset if the user hasn't
@@ -297,6 +314,13 @@ type TripReportServiceHandler interface {
 	// order. To change one section, get the report and send all its sections
 	// back with the change.
 	SetTripSections(context.Context, *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error)
+	// Suggest sections for a trip report from its track's elevation profile:
+	// the climbs, descents, and rolling or flat stretches in between, named
+	// e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+	// photos in the section about where they were taken. Nothing is saved;
+	// pass the sections to SetTripSections, with text, to use them. Requires
+	// a track with elevations.
+	SuggestTripSections(context.Context, *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error)
 	// Delete a photo.
 	DeleteTripPhoto(context.Context, *v1.DeleteTripPhotoRequest) (*v1.DeleteTripPhotoResponse, error)
 	// Get the user's public profile. The profile is unset if the user hasn't
@@ -329,6 +353,7 @@ func RegisterTripReportServiceHandler(server *connect.Server, svc TripReportServ
 		connect.Method{Spec: tripReportServiceImportStravaPhotosSpec(), Handler: adapter.importStravaPhotos},
 		connect.Method{Spec: tripReportServiceUpdateTripPhotoSpec(), Handler: adapter.updateTripPhoto},
 		connect.Method{Spec: tripReportServiceSetTripSectionsSpec(), Handler: adapter.setTripSections},
+		connect.Method{Spec: tripReportServiceSuggestTripSectionsSpec(), Handler: adapter.suggestTripSections},
 		connect.Method{Spec: tripReportServiceDeleteTripPhotoSpec(), Handler: adapter.deleteTripPhoto},
 		connect.Method{Spec: tripReportServiceGetProfileSpec(), Handler: adapter.getProfile},
 		connect.Method{Spec: tripReportServiceUpdateProfileSpec(), Handler: adapter.updateProfile},
@@ -382,6 +407,10 @@ func (UnimplementedTripReportServiceHandler) UpdateTripPhoto(context.Context, *v
 
 func (UnimplementedTripReportServiceHandler) SetTripSections(context.Context, *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "trips.v1.TripReportService.SetTripSections is not implemented")
+}
+
+func (UnimplementedTripReportServiceHandler) SuggestTripSections(context.Context, *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "trips.v1.TripReportService.SuggestTripSections is not implemented")
 }
 
 func (UnimplementedTripReportServiceHandler) DeleteTripPhoto(context.Context, *v1.DeleteTripPhotoRequest) (*v1.DeleteTripPhotoResponse, error) {
@@ -491,6 +520,14 @@ func (c *tripReportServiceClient) UpdateTripPhoto(ctx context.Context, req *v1.U
 func (c *tripReportServiceClient) SetTripSections(ctx context.Context, req *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error) {
 	var res v1.SetTripSectionsResponse
 	if err := c.client.CallUnary(ctx, tripReportServiceSetTripSectionsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *tripReportServiceClient) SuggestTripSections(ctx context.Context, req *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error) {
+	var res v1.SuggestTripSectionsResponse
+	if err := c.client.CallUnary(ctx, tripReportServiceSuggestTripSectionsSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -664,6 +701,18 @@ func (h tripReportServiceHandler) setTripSections(ctx context.Context, _ connect
 		return err
 	}
 	res, err := h.svc.SetTripSections(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h tripReportServiceHandler) suggestTripSections(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SuggestTripSectionsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SuggestTripSections(ctx, &req)
 	if err != nil {
 		return err
 	}

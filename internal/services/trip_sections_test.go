@@ -156,6 +156,49 @@ func TestTripSections(t *testing.T) {
 	wantCode(t, err, connect.CodeNotFound)
 }
 
+func TestSuggestTripSections(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+	reportID, _ := e.createHillReport()
+	at8km := e.uploadPhoto(reportID, timestamppb.New(tripStart.Add(48*time.Minute)))
+	at2km := e.uploadPhoto(reportID, timestamppb.New(tripStart.Add(12*time.Minute)))
+	unplaced := e.uploadPhoto(reportID, nil)
+
+	// Suggestions split the track at the top, with the photos taken along
+	// each part in order.
+	suggested, err := e.trips.SuggestTripSections(ctx, tripsv1.SuggestTripSectionsRequest_builder{ReportId: reportID}.Build())
+	if err != nil {
+		t.Fatalf("SuggestTripSections: %v", err)
+	}
+	sections := suggested.GetSections()
+	if len(sections) != 2 {
+		t.Fatalf("got %d suggested sections, want 2: %v", len(sections), sections)
+	}
+	if s := sections[0]; s.GetTitle() != "Climb to 1,300 m" || s.GetStartDistanceMeters() != 0 ||
+		!approx(s.GetEndDistanceMeters(), 5000, 300) || strings.Join(s.GetPhotoIds(), ",") != unplaced+","+at2km {
+		t.Errorf("unexpected first suggested section %v", s)
+	}
+	if s := sections[1]; s.GetTitle() != "Final descent to 500 m" || s.GetStartDistanceMeters() != sections[0].GetEndDistanceMeters() ||
+		s.GetEndDistanceMeters() != 10000 || strings.Join(s.GetPhotoIds(), ",") != at8km {
+		t.Errorf("unexpected second suggested section %v", s)
+	}
+	// Nothing is saved.
+	resp, err := e.trips.GetTripReport(ctx, tripsv1.GetTripReportRequest_builder{Id: reportID}.Build())
+	if err != nil || len(resp.GetReport().GetSections()) != 1 {
+		t.Errorf("GetTripReport = %v, %v, want the one section", resp, err)
+	}
+
+	_, err = e.otherTrips.SuggestTripSections(ctx, tripsv1.SuggestTripSectionsRequest_builder{ReportId: reportID}.Build())
+	wantCode(t, err, connect.CodeNotFound)
+	standalone, err := e.trips.CreateTripReport(ctx, tripsv1.CreateTripReportRequest_builder{Title: "No track"}.Build())
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = e.trips.SuggestTripSections(ctx, tripsv1.SuggestTripSectionsRequest_builder{ReportId: standalone.GetReport().GetId()}.Build())
+	wantCode(t, err, connect.CodeFailedPrecondition)
+}
+
 // photoIDs returns the IDs of a report's photos, separated by commas.
 func photoIDs(report *tripsv1.TripReport) string {
 	ids := make([]string, len(report.GetPhotos()))
