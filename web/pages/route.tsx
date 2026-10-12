@@ -1,5 +1,10 @@
 import Loading from "@components/loading";
 import CoverageWarning from "@components/routes/coverage-warning";
+import {
+  CreatedRouteWarning,
+  SnapProgress,
+  createdRouteLink,
+} from "@components/routes/route-created";
 import type { RouteDraft } from "@components/routes/route-editor";
 import RouteEditor from "@components/routes/route-editor";
 import { hasEditableGeometry } from "@components/routes/route-edits";
@@ -61,7 +66,7 @@ const useRouteCreated = () => {
   }
   const linkWorkout = useMutation(updateWorkout);
 
-  const onCreated = async (route: Route | undefined) => {
+  const onCreated = async (route: Route | undefined, warning = "") => {
     await invalidateServices(queryClient, [RouteService]);
     if (route === undefined) {
       return;
@@ -79,7 +84,7 @@ const useRouteCreated = () => {
       }
       return;
     }
-    void navigate(`/routes/${route.id}`);
+    void navigate(...createdRouteLink(route.id, warning));
   };
   return {
     linkError: linkWorkout.error ?? workoutQuery.error,
@@ -131,7 +136,7 @@ const ImportGpx: React.FC = () => {
   const [exact, setExact] = useState(false);
   const create = useMutation(createRoute, {
     onSuccess: async (response) => {
-      await onCreated(response.route);
+      await onCreated(response.route, response.warning);
     },
   });
   const source = gpx === "" ? undefined : { case: "gpx" as const, value: gpx };
@@ -173,6 +178,7 @@ const ImportGpx: React.FC = () => {
         placeholder={fileName === "" ? "Route name" : fileName}
       />
       <ExactTrackField exact={exact} onChange={setExact} source={source} />
+      <SnapProgress pending={create.isPending && !exact} />
       <ErrorText error={create.error ?? linkError} />
       <div>
         <button
@@ -195,7 +201,7 @@ const FromActivity: React.FC = () => {
   const [exact, setExact] = useState(false);
   const create = useMutation(createRoute, {
     onSuccess: async (response) => {
-      await onCreated(response.route);
+      await onCreated(response.route, response.warning);
     },
   });
   if (activities.isPending) {
@@ -258,6 +264,7 @@ const FromActivity: React.FC = () => {
         placeholder={selected === undefined ? "Route name" : selected.name}
       />
       <ExactTrackField exact={exact} onChange={setExact} source={source} />
+      <SnapProgress pending={create.isPending && !exact} />
       <ErrorText error={create.error ?? linkError} />
       <div>
         <button
@@ -309,7 +316,7 @@ const NewRoute: React.FC = () => {
   const { onCreated, linkError, workout, workoutId } = useRouteCreated();
   const create = useMutation(createRoute, {
     onSuccess: async (response) => {
-      await onCreated(response.route);
+      await onCreated(response.route, response.warning);
     },
   });
 
@@ -435,6 +442,7 @@ const ExistingRoute: React.FC = () => {
         <Link to="/routes" className="text-sm text-gray-500 hover:underline">
           Routes
         </Link>
+        <CreatedRouteWarning />
         <RouteViewer
           route={route}
           onEdit={() => {

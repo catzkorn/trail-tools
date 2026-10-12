@@ -16,12 +16,17 @@ import {
   CoverageConfirm,
   useCoverageCheck,
 } from "@components/routes/coverage-warning";
+import {
+  SnapProgress,
+  createdRouteLink,
+} from "@components/routes/route-created";
 import Card from "@components/ui/card";
 import { Badge, Stat } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import { primaryButton, secondaryButton } from "@components/ui/styles";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
+  ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   MapIcon,
   PencilSquareIcon,
@@ -110,7 +115,7 @@ const ActivityPage: React.FC = () => {
     onSuccess: async (response) => {
       await invalidateServices(queryClient, [RouteService]);
       if (response.route !== undefined) {
-        void navigate(`/routes/${response.route.id}`);
+        void navigate(...createdRouteLink(response.route.id, response.warning));
       }
     },
   });
@@ -233,14 +238,19 @@ const ActivityPage: React.FC = () => {
                 });
               }}
             >
-              <MapIcon className="size-4" />
+              {makeRoute.isPending ? (
+                <ArrowPathIcon className="size-4 animate-spin" />
+              ) : (
+                <MapIcon className="size-4" />
+              )}
               {makeRoute.isPending
-                ? "Snapping to trails…"
+                ? "Creating route…"
                 : "Create route from this activity"}
             </button>
           )}
         </div>
       </div>
+      <SnapProgress pending={makeRoute.isPending} />
       {track.positions.length > 1 && (
         <CoverageConfirm check={trackCoverageCheck} />
       )}
