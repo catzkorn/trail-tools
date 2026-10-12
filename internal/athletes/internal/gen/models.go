@@ -1095,6 +1095,7 @@ type TripReport struct {
 	PublishTime         pgtype.Timestamptz
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
+	HiddenEndsMeters    int32
 }
 
 type User struct {
