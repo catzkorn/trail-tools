@@ -1,8 +1,10 @@
 # Generated files, which diffs and GitHub collapse and don't count towards
 # the repository's languages. Regenerate them with make gen.
-web/dist/index.css linguist-generated
-web/dist/index.js linguist-generated
-web/dist/index.js.map linguist-generated
+# The bundle is minified into a few long lines, so its diffs are megabytes
+# even for small changes, and unreadable: diffs only say it changed.
+web/dist/index.css linguist-generated -diff
+web/dist/index.js linguist-generated -diff
+web/dist/index.js.map linguist-generated -diff
 web/gen/** linguist-generated
 internal/gen/** linguist-generated
 internal/apidesc/descriptor.binpb linguist-generated
