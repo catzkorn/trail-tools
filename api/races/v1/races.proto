@@ -9,6 +9,10 @@ import "mcp/v1/options.proto";
 // RaceService manages the races the user could run, and which of them are on
 // the user's calendar: the races the user is running. Races on the calendar
 // can have race plans. Goal races of training plans are on the calendar.
+//
+// Races that belong together, like the races of a multi-day event, are
+// grouped in a race event. Each race of an event keeps its own date, course,
+// calendar status and race plan.
 service RaceService {
   // Create a race. Races start off the user's calendar: only set on_calendar
   // when the user says they are running the race.
@@ -22,6 +26,18 @@ service RaceService {
   rpc UpdateRace(UpdateRaceRequest) returns (UpdateRaceResponse);
   // Delete a race. Its race plans are deleted too.
   rpc DeleteRace(DeleteRaceRequest) returns (DeleteRaceResponse);
+  // Create a race event, to group races that belong together, e.g. a 50 mile
+  // race on the Saturday and a 50K on the Sunday. Add races to the event by
+  // setting their event_id.
+  rpc CreateRaceEvent(CreateRaceEventRequest) returns (CreateRaceEventResponse);
+  // Get a race event by ID.
+  rpc GetRaceEvent(GetRaceEventRequest) returns (GetRaceEventResponse);
+  // List the user's race events, in the order of their first race.
+  rpc ListRaceEvents(ListRaceEventsRequest) returns (ListRaceEventsResponse);
+  // Update a race event.
+  rpc UpdateRaceEvent(UpdateRaceEventRequest) returns (UpdateRaceEventResponse);
+  // Delete a race event. Its races are kept, outside any event.
+  rpc DeleteRaceEvent(DeleteRaceEventRequest) returns (DeleteRaceEventResponse);
 }
 
 // RacePriority is how important a race is to the season.
@@ -66,6 +82,10 @@ message Race {
   // rather than considering it. Only races on the calendar can have race
   // plans. Making a race a goal race of a training plan adds it.
   bool on_calendar = 15;
+  // The ID of the race event the race is part of, if any. Races that belong
+  // together, like the days of a multi-day event, share an event. Name each
+  // race in full, e.g. "Squamish 50 Mile" and "Squamish 50K".
+  string event_id = 16;
   // When the race was created.
   google.protobuf.Timestamp create_time = 13 [(mcp.v1.field).output_only = true];
   // When the race was last updated.
@@ -121,3 +141,76 @@ message DeleteRaceRequest {
 }
 
 message DeleteRaceResponse {}
+
+// A race event groups races that belong together, e.g. a 50 mile race on the
+// Saturday and a 50K on the Sunday, or the races of a festival weekend.
+message RaceEvent {
+  // The ID of the event. Ignored when creating an event.
+  string id = 1;
+  // The name of the event, e.g. "Squamish 50/50".
+  string name = 2;
+  // Where the event takes place.
+  string location = 3;
+  // The event website.
+  string website_url = 4;
+  // Free text notes, e.g. the combined results of a multi-day event.
+  string notes = 5;
+  // The IDs of the event's races, in date order.
+  repeated string race_ids = 6 [(mcp.v1.field).output_only = true];
+  // The date of the event's first race (YYYY-MM-DD). Empty if it has none.
+  string start_date = 7 [(mcp.v1.field).output_only = true];
+  // The date of the event's last race (YYYY-MM-DD). Empty if it has none.
+  string end_date = 8 [(mcp.v1.field).output_only = true];
+  // When the event was created.
+  google.protobuf.Timestamp create_time = 9 [(mcp.v1.field).output_only = true];
+  // When the event was last updated.
+  google.protobuf.Timestamp update_time = 10 [(mcp.v1.field).output_only = true];
+}
+
+message CreateRaceEventRequest {
+  // The event to create.
+  RaceEvent event = 1;
+}
+
+message CreateRaceEventResponse {
+  // The created event.
+  RaceEvent event = 1;
+}
+
+message GetRaceEventRequest {
+  // The ID of the event.
+  string id = 1;
+}
+
+message GetRaceEventResponse {
+  // The event.
+  RaceEvent event = 1;
+}
+
+message ListRaceEventsRequest {}
+
+message ListRaceEventsResponse {
+  // The user's events, in the order of their first race. Events without
+  // races come last.
+  repeated RaceEvent events = 1;
+}
+
+message UpdateRaceEventRequest {
+  // The event to update. The ID must be set.
+  RaceEvent event = 1;
+  // The fields to update, e.g. "name,website_url". If empty, all fields are
+  // replaced.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateRaceEventResponse {
+  // The updated event.
+  RaceEvent event = 1;
+}
+
+message DeleteRaceEventRequest {
+  // The ID of the event to delete.
+  string id = 1;
+}
+
+message DeleteRaceEventResponse {}

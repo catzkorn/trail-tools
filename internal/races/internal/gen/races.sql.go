@@ -25,11 +25,12 @@ insert into races (
   priority,
   course_route_id,
   notes,
-  on_calendar
+  on_calendar,
+  event_id
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 )
-returning id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar
+returning id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar, event_id
 `
 
 type CreateRaceParams struct {
@@ -46,6 +47,7 @@ type CreateRaceParams struct {
 	CourseRouteID       pgtype.UUID
 	Notes               string
 	OnCalendar          bool
+	EventID             pgtype.UUID
 }
 
 func (q *Queries) CreateRace(ctx context.Context, arg *CreateRaceParams) (*Race, error) {
@@ -63,6 +65,7 @@ func (q *Queries) CreateRace(ctx context.Context, arg *CreateRaceParams) (*Race,
 		arg.CourseRouteID,
 		arg.Notes,
 		arg.OnCalendar,
+		arg.EventID,
 	)
 	var i Race
 	err := row.Scan(
@@ -82,6 +85,50 @@ func (q *Queries) CreateRace(ctx context.Context, arg *CreateRaceParams) (*Race,
 		&i.CreateTime,
 		&i.UpdateTime,
 		&i.OnCalendar,
+		&i.EventID,
+	)
+	return &i, err
+}
+
+const createRaceEvent = `-- name: CreateRaceEvent :one
+insert into race_events (
+  user_id,
+  name,
+  location,
+  website_url,
+  notes
+) values (
+  $1, $2, $3, $4, $5
+)
+returning id, user_id, name, location, website_url, notes, create_time, update_time
+`
+
+type CreateRaceEventParams struct {
+	UserID     pgtype.UUID
+	Name       string
+	Location   string
+	WebsiteURL string
+	Notes      string
+}
+
+func (q *Queries) CreateRaceEvent(ctx context.Context, arg *CreateRaceEventParams) (*RaceEvent, error) {
+	row := q.db.QueryRow(ctx, createRaceEvent,
+		arg.UserID,
+		arg.Name,
+		arg.Location,
+		arg.WebsiteURL,
+		arg.Notes,
+	)
+	var i RaceEvent
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Location,
+		&i.WebsiteURL,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
 	)
 	return &i, err
 }
@@ -370,6 +417,24 @@ func (q *Queries) DeleteRace(ctx context.Context, arg *DeleteRaceParams) (int64,
 	return result.RowsAffected(), nil
 }
 
+const deleteRaceEvent = `-- name: DeleteRaceEvent :execrows
+delete from race_events
+where id = $1 and user_id = $2
+`
+
+type DeleteRaceEventParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteRaceEvent(ctx context.Context, arg *DeleteRaceEventParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRaceEvent, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteRacePlan = `-- name: DeleteRacePlan :execrows
 delete from race_plans
 where id = $1 and user_id = $2
@@ -479,7 +544,7 @@ func (q *Queries) DeleteRacePlanSplits(ctx context.Context, planID pgtype.UUID) 
 }
 
 const getRace = `-- name: GetRace :one
-select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar from races
+select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar, event_id from races
 where id = $1 and user_id = $2
 `
 
@@ -508,12 +573,13 @@ func (q *Queries) GetRace(ctx context.Context, arg *GetRaceParams) (*Race, error
 		&i.CreateTime,
 		&i.UpdateTime,
 		&i.OnCalendar,
+		&i.EventID,
 	)
 	return &i, err
 }
 
 const getRaceByID = `-- name: GetRaceByID :one
-select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar from races
+select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar, event_id from races
 where id = $1
 `
 
@@ -537,6 +603,33 @@ func (q *Queries) GetRaceByID(ctx context.Context, id pgtype.UUID) (*Race, error
 		&i.CreateTime,
 		&i.UpdateTime,
 		&i.OnCalendar,
+		&i.EventID,
+	)
+	return &i, err
+}
+
+const getRaceEvent = `-- name: GetRaceEvent :one
+select id, user_id, name, location, website_url, notes, create_time, update_time from race_events
+where id = $1 and user_id = $2
+`
+
+type GetRaceEventParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetRaceEvent(ctx context.Context, arg *GetRaceEventParams) (*RaceEvent, error) {
+	row := q.db.QueryRow(ctx, getRaceEvent, arg.ID, arg.UserID)
+	var i RaceEvent
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Location,
+		&i.WebsiteURL,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
 	)
 	return &i, err
 }
@@ -661,6 +754,41 @@ func (q *Queries) GetRacePlanByShareToken(ctx context.Context, shareToken pgtype
 		&i.RaceDayStartTime,
 	)
 	return &i, err
+}
+
+const listRaceEvents = `-- name: ListRaceEvents :many
+select id, user_id, name, location, website_url, notes, create_time, update_time from race_events
+where user_id = $1
+order by name, id
+`
+
+func (q *Queries) ListRaceEvents(ctx context.Context, userID pgtype.UUID) ([]*RaceEvent, error) {
+	rows, err := q.db.Query(ctx, listRaceEvents, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RaceEvent
+	for rows.Next() {
+		var i RaceEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Location,
+			&i.WebsiteURL,
+			&i.Notes,
+			&i.CreateTime,
+			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listRacePlanCheckpoints = `-- name: ListRacePlanCheckpoints :many
@@ -954,7 +1082,7 @@ func (q *Queries) ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*Rac
 }
 
 const listRaces = `-- name: ListRaces :many
-select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar from races
+select id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar, event_id from races
 where user_id = $1
   and (not $2::boolean or on_calendar)
 order by date, name
@@ -991,6 +1119,7 @@ func (q *Queries) ListRaces(ctx context.Context, arg *ListRacesParams) ([]*Race,
 			&i.CreateTime,
 			&i.UpdateTime,
 			&i.OnCalendar,
+			&i.EventID,
 		); err != nil {
 			return nil, err
 		}
@@ -1135,9 +1264,10 @@ update races set
   course_route_id = $12,
   notes = $13,
   on_calendar = $14,
+  event_id = $15,
   update_time = now()
 where id = $1 and user_id = $2
-returning id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar
+returning id, user_id, name, date, start_time, location, website_url, distance_meters, elevation_gain_meters, cutoff_seconds, priority, course_route_id, notes, create_time, update_time, on_calendar, event_id
 `
 
 type UpdateRaceParams struct {
@@ -1155,6 +1285,7 @@ type UpdateRaceParams struct {
 	CourseRouteID       pgtype.UUID
 	Notes               string
 	OnCalendar          bool
+	EventID             pgtype.UUID
 }
 
 func (q *Queries) UpdateRace(ctx context.Context, arg *UpdateRaceParams) (*Race, error) {
@@ -1173,6 +1304,7 @@ func (q *Queries) UpdateRace(ctx context.Context, arg *UpdateRaceParams) (*Race,
 		arg.CourseRouteID,
 		arg.Notes,
 		arg.OnCalendar,
+		arg.EventID,
 	)
 	var i Race
 	err := row.Scan(
@@ -1192,6 +1324,50 @@ func (q *Queries) UpdateRace(ctx context.Context, arg *UpdateRaceParams) (*Race,
 		&i.CreateTime,
 		&i.UpdateTime,
 		&i.OnCalendar,
+		&i.EventID,
+	)
+	return &i, err
+}
+
+const updateRaceEvent = `-- name: UpdateRaceEvent :one
+update race_events set
+  name = $3,
+  location = $4,
+  website_url = $5,
+  notes = $6,
+  update_time = now()
+where id = $1 and user_id = $2
+returning id, user_id, name, location, website_url, notes, create_time, update_time
+`
+
+type UpdateRaceEventParams struct {
+	ID         pgtype.UUID
+	UserID     pgtype.UUID
+	Name       string
+	Location   string
+	WebsiteURL string
+	Notes      string
+}
+
+func (q *Queries) UpdateRaceEvent(ctx context.Context, arg *UpdateRaceEventParams) (*RaceEvent, error) {
+	row := q.db.QueryRow(ctx, updateRaceEvent,
+		arg.ID,
+		arg.UserID,
+		arg.Name,
+		arg.Location,
+		arg.WebsiteURL,
+		arg.Notes,
+	)
+	var i RaceEvent
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Location,
+		&i.WebsiteURL,
+		&i.Notes,
+		&i.CreateTime,
+		&i.UpdateTime,
 	)
 	return &i, err
 }

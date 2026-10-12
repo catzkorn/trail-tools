@@ -12,9 +12,10 @@ insert into races (
   priority,
   course_route_id,
   notes,
-  on_calendar
+  on_calendar,
+  event_id
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 )
 returning *;
 
@@ -42,12 +43,48 @@ update races set
   course_route_id = $12,
   notes = $13,
   on_calendar = $14,
+  event_id = $15,
   update_time = now()
 where id = $1 and user_id = $2
 returning *;
 
 -- name: DeleteRace :execrows
 delete from races
+where id = $1 and user_id = $2;
+
+-- name: CreateRaceEvent :one
+insert into race_events (
+  user_id,
+  name,
+  location,
+  website_url,
+  notes
+) values (
+  $1, $2, $3, $4, $5
+)
+returning *;
+
+-- name: GetRaceEvent :one
+select * from race_events
+where id = $1 and user_id = $2;
+
+-- name: ListRaceEvents :many
+select * from race_events
+where user_id = $1
+order by name, id;
+
+-- name: UpdateRaceEvent :one
+update race_events set
+  name = $3,
+  location = $4,
+  website_url = $5,
+  notes = $6,
+  update_time = now()
+where id = $1 and user_id = $2
+returning *;
+
+-- name: DeleteRaceEvent :execrows
+delete from race_events
 where id = $1 and user_id = $2;
 
 -- name: RemoveGoalRace :exec

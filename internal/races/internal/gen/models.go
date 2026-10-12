@@ -815,6 +815,18 @@ type Race struct {
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
 	OnCalendar          bool
+	EventID             pgtype.UUID
+}
+
+type RaceEvent struct {
+	ID         pgtype.UUID
+	UserID     pgtype.UUID
+	Name       string
+	Location   string
+	WebsiteURL string
+	Notes      string
+	CreateTime pgtype.Timestamptz
+	UpdateTime pgtype.Timestamptz
 }
 
 type RacePlan struct {
