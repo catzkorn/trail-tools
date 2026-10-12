@@ -71,34 +71,55 @@ func (x PeriodGranularity) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// WorkoutType is the type of a workout.
+// WorkoutType is the type of a workout. The workout's title and description
+// say what it is, e.g. "Tempo 3x10 min" or "Long run".
 type WorkoutType int32
 
 const (
 	WorkoutType_WORKOUT_TYPE_UNSPECIFIED WorkoutType = 0
-	// An easy aerobic run.
-	WorkoutType_WORKOUT_TYPE_EASY WorkoutType = 1
-	// The week's long run.
-	WorkoutType_WORKOUT_TYPE_LONG_RUN WorkoutType = 2
-	// A sustained effort at threshold.
-	WorkoutType_WORKOUT_TYPE_TEMPO WorkoutType = 3
-	// Intervals at high intensity.
-	WorkoutType_WORKOUT_TYPE_INTERVALS WorkoutType = 4
-	// Repeated uphill efforts.
-	WorkoutType_WORKOUT_TYPE_HILL_REPEATS WorkoutType = 5
-	// A run or hike focused on elevation gain.
-	WorkoutType_WORKOUT_TYPE_VERT WorkoutType = 6
-	// A very easy recovery run.
-	WorkoutType_WORKOUT_TYPE_RECOVERY WorkoutType = 7
-	// A rest day.
-	WorkoutType_WORKOUT_TYPE_REST WorkoutType = 8
+	// Aerobic running: easy, recovery and long runs, and steady vert.
+	WorkoutType_WORKOUT_TYPE_BASE WorkoutType = 13
+	// Hard running: tempo, intervals and hill repeats.
+	WorkoutType_WORKOUT_TYPE_INTENSITY WorkoutType = 14
 	// Cycling, swimming, skiing or other non-running cardio.
 	WorkoutType_WORKOUT_TYPE_CROSS_TRAINING WorkoutType = 9
 	// Strength and mobility training.
 	WorkoutType_WORKOUT_TYPE_STRENGTH WorkoutType = 10
 	// A race, either a goal race or a tune-up.
 	WorkoutType_WORKOUT_TYPE_RACE WorkoutType = 11
-	// Anything else.
+	// A rest day.
+	WorkoutType_WORKOUT_TYPE_REST WorkoutType = 8
+	// Deprecated: use WORKOUT_TYPE_BASE.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_EASY WorkoutType = 1
+	// Deprecated: use WORKOUT_TYPE_BASE.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_LONG_RUN WorkoutType = 2
+	// Deprecated: use WORKOUT_TYPE_INTENSITY.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_TEMPO WorkoutType = 3
+	// Deprecated: use WORKOUT_TYPE_INTENSITY.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_INTERVALS WorkoutType = 4
+	// Deprecated: use WORKOUT_TYPE_INTENSITY.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_HILL_REPEATS WorkoutType = 5
+	// Deprecated: use WORKOUT_TYPE_BASE.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_VERT WorkoutType = 6
+	// Deprecated: use WORKOUT_TYPE_BASE.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
+	WorkoutType_WORKOUT_TYPE_RECOVERY WorkoutType = 7
+	// Deprecated: use WORKOUT_TYPE_CROSS_TRAINING.
+	//
+	// Deprecated: Marked as deprecated in plans/v1/plans.proto.
 	WorkoutType_WORKOUT_TYPE_OTHER WorkoutType = 12
 )
 
@@ -106,6 +127,12 @@ const (
 var (
 	WorkoutType_name = map[int32]string{
 		0:  "WORKOUT_TYPE_UNSPECIFIED",
+		13: "WORKOUT_TYPE_BASE",
+		14: "WORKOUT_TYPE_INTENSITY",
+		9:  "WORKOUT_TYPE_CROSS_TRAINING",
+		10: "WORKOUT_TYPE_STRENGTH",
+		11: "WORKOUT_TYPE_RACE",
+		8:  "WORKOUT_TYPE_REST",
 		1:  "WORKOUT_TYPE_EASY",
 		2:  "WORKOUT_TYPE_LONG_RUN",
 		3:  "WORKOUT_TYPE_TEMPO",
@@ -113,14 +140,16 @@ var (
 		5:  "WORKOUT_TYPE_HILL_REPEATS",
 		6:  "WORKOUT_TYPE_VERT",
 		7:  "WORKOUT_TYPE_RECOVERY",
-		8:  "WORKOUT_TYPE_REST",
-		9:  "WORKOUT_TYPE_CROSS_TRAINING",
-		10: "WORKOUT_TYPE_STRENGTH",
-		11: "WORKOUT_TYPE_RACE",
 		12: "WORKOUT_TYPE_OTHER",
 	}
 	WorkoutType_value = map[string]int32{
 		"WORKOUT_TYPE_UNSPECIFIED":    0,
+		"WORKOUT_TYPE_BASE":           13,
+		"WORKOUT_TYPE_INTENSITY":      14,
+		"WORKOUT_TYPE_CROSS_TRAINING": 9,
+		"WORKOUT_TYPE_STRENGTH":       10,
+		"WORKOUT_TYPE_RACE":           11,
+		"WORKOUT_TYPE_REST":           8,
 		"WORKOUT_TYPE_EASY":           1,
 		"WORKOUT_TYPE_LONG_RUN":       2,
 		"WORKOUT_TYPE_TEMPO":          3,
@@ -128,10 +157,6 @@ var (
 		"WORKOUT_TYPE_HILL_REPEATS":   5,
 		"WORKOUT_TYPE_VERT":           6,
 		"WORKOUT_TYPE_RECOVERY":       7,
-		"WORKOUT_TYPE_REST":           8,
-		"WORKOUT_TYPE_CROSS_TRAINING": 9,
-		"WORKOUT_TYPE_STRENGTH":       10,
-		"WORKOUT_TYPE_RACE":           11,
 		"WORKOUT_TYPE_OTHER":          12,
 	}
 )
@@ -2432,22 +2457,24 @@ const file_plans_v1_plans_proto_rawDesc = "" +
 	"\x11PeriodGranularity\x12\"\n" +
 	"\x1ePERIOD_GRANULARITY_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18PERIOD_GRANULARITY_MONTH\x10\x01\x12\x1b\n" +
-	"\x17PERIOD_GRANULARITY_WEEK\x10\x02*\xe4\x02\n" +
+	"\x17PERIOD_GRANULARITY_WEEK\x10\x02*\xb7\x03\n" +
 	"\vWorkoutType\x12\x1c\n" +
 	"\x18WORKOUT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
-	"\x11WORKOUT_TYPE_EASY\x10\x01\x12\x19\n" +
-	"\x15WORKOUT_TYPE_LONG_RUN\x10\x02\x12\x16\n" +
-	"\x12WORKOUT_TYPE_TEMPO\x10\x03\x12\x1a\n" +
-	"\x16WORKOUT_TYPE_INTERVALS\x10\x04\x12\x1d\n" +
-	"\x19WORKOUT_TYPE_HILL_REPEATS\x10\x05\x12\x15\n" +
-	"\x11WORKOUT_TYPE_VERT\x10\x06\x12\x19\n" +
-	"\x15WORKOUT_TYPE_RECOVERY\x10\a\x12\x15\n" +
-	"\x11WORKOUT_TYPE_REST\x10\b\x12\x1f\n" +
+	"\x11WORKOUT_TYPE_BASE\x10\r\x12\x1a\n" +
+	"\x16WORKOUT_TYPE_INTENSITY\x10\x0e\x12\x1f\n" +
 	"\x1bWORKOUT_TYPE_CROSS_TRAINING\x10\t\x12\x19\n" +
 	"\x15WORKOUT_TYPE_STRENGTH\x10\n" +
 	"\x12\x15\n" +
-	"\x11WORKOUT_TYPE_RACE\x10\v\x12\x16\n" +
-	"\x12WORKOUT_TYPE_OTHER\x10\f2\xb5\b\n" +
+	"\x11WORKOUT_TYPE_RACE\x10\v\x12\x15\n" +
+	"\x11WORKOUT_TYPE_REST\x10\b\x12\x19\n" +
+	"\x11WORKOUT_TYPE_EASY\x10\x01\x1a\x02\b\x01\x12\x1d\n" +
+	"\x15WORKOUT_TYPE_LONG_RUN\x10\x02\x1a\x02\b\x01\x12\x1a\n" +
+	"\x12WORKOUT_TYPE_TEMPO\x10\x03\x1a\x02\b\x01\x12\x1e\n" +
+	"\x16WORKOUT_TYPE_INTERVALS\x10\x04\x1a\x02\b\x01\x12!\n" +
+	"\x19WORKOUT_TYPE_HILL_REPEATS\x10\x05\x1a\x02\b\x01\x12\x19\n" +
+	"\x11WORKOUT_TYPE_VERT\x10\x06\x1a\x02\b\x01\x12\x1d\n" +
+	"\x15WORKOUT_TYPE_RECOVERY\x10\a\x1a\x02\b\x01\x12\x1a\n" +
+	"\x12WORKOUT_TYPE_OTHER\x10\f\x1a\x02\b\x012\xb5\b\n" +
 	"\x13TrainingPlanService\x12_\n" +
 	"\x12CreateTrainingPlan\x12#.plans.v1.CreateTrainingPlanRequest\x1a$.plans.v1.CreateTrainingPlanResponse\x12V\n" +
 	"\x0fGetTrainingPlan\x12 .plans.v1.GetTrainingPlanRequest\x1a!.plans.v1.GetTrainingPlanResponse\x12\\\n" +

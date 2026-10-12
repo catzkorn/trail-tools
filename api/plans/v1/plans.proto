@@ -104,33 +104,39 @@ message PlanPeriod {
   int32 target_duration_seconds = 8;
 }
 
-// WorkoutType is the type of a workout.
+// WorkoutType is the type of a workout. The workout's title and description
+// say what it is, e.g. "Tempo 3x10 min" or "Long run".
 enum WorkoutType {
   WORKOUT_TYPE_UNSPECIFIED = 0;
-  // An easy aerobic run.
-  WORKOUT_TYPE_EASY = 1;
-  // The week's long run.
-  WORKOUT_TYPE_LONG_RUN = 2;
-  // A sustained effort at threshold.
-  WORKOUT_TYPE_TEMPO = 3;
-  // Intervals at high intensity.
-  WORKOUT_TYPE_INTERVALS = 4;
-  // Repeated uphill efforts.
-  WORKOUT_TYPE_HILL_REPEATS = 5;
-  // A run or hike focused on elevation gain.
-  WORKOUT_TYPE_VERT = 6;
-  // A very easy recovery run.
-  WORKOUT_TYPE_RECOVERY = 7;
-  // A rest day.
-  WORKOUT_TYPE_REST = 8;
+  // Aerobic running: easy, recovery and long runs, and steady vert.
+  WORKOUT_TYPE_BASE = 13;
+  // Hard running: tempo, intervals and hill repeats.
+  WORKOUT_TYPE_INTENSITY = 14;
   // Cycling, swimming, skiing or other non-running cardio.
   WORKOUT_TYPE_CROSS_TRAINING = 9;
   // Strength and mobility training.
   WORKOUT_TYPE_STRENGTH = 10;
   // A race, either a goal race or a tune-up.
   WORKOUT_TYPE_RACE = 11;
-  // Anything else.
-  WORKOUT_TYPE_OTHER = 12;
+  // A rest day.
+  WORKOUT_TYPE_REST = 8;
+
+  // Deprecated: use WORKOUT_TYPE_BASE.
+  WORKOUT_TYPE_EASY = 1 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_BASE.
+  WORKOUT_TYPE_LONG_RUN = 2 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_INTENSITY.
+  WORKOUT_TYPE_TEMPO = 3 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_INTENSITY.
+  WORKOUT_TYPE_INTERVALS = 4 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_INTENSITY.
+  WORKOUT_TYPE_HILL_REPEATS = 5 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_BASE.
+  WORKOUT_TYPE_VERT = 6 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_BASE.
+  WORKOUT_TYPE_RECOVERY = 7 [deprecated = true];
+  // Deprecated: use WORKOUT_TYPE_CROSS_TRAINING.
+  WORKOUT_TYPE_OTHER = 12 [deprecated = true];
 }
 
 // A workout planned for a day.

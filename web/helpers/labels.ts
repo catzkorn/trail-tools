@@ -19,44 +19,14 @@ export const WORKOUT_STYLES: WorkoutStyle[] = [
   {
     cardClass: "bg-emerald-50 border-emerald-300 text-emerald-900",
     dotClass: "bg-emerald-500",
-    label: "Easy",
-    type: WorkoutType.EASY,
-  },
-  {
-    cardClass: "bg-teal-50 border-teal-300 text-teal-900",
-    dotClass: "bg-teal-400",
-    label: "Recovery",
-    type: WorkoutType.RECOVERY,
-  },
-  {
-    cardClass: "bg-blue-50 border-blue-300 text-blue-900",
-    dotClass: "bg-blue-500",
-    label: "Long run",
-    type: WorkoutType.LONG_RUN,
+    label: "Base",
+    type: WorkoutType.BASE,
   },
   {
     cardClass: "bg-amber-50 border-amber-300 text-amber-900",
     dotClass: "bg-amber-500",
-    label: "Tempo",
-    type: WorkoutType.TEMPO,
-  },
-  {
-    cardClass: "bg-red-50 border-red-300 text-red-900",
-    dotClass: "bg-red-500",
-    label: "Intervals",
-    type: WorkoutType.INTERVALS,
-  },
-  {
-    cardClass: "bg-orange-50 border-orange-300 text-orange-900",
-    dotClass: "bg-orange-500",
-    label: "Hill repeats",
-    type: WorkoutType.HILL_REPEATS,
-  },
-  {
-    cardClass: "bg-violet-50 border-violet-300 text-violet-900",
-    dotClass: "bg-violet-500",
-    label: "Vert",
-    type: WorkoutType.VERT,
+    label: "Intensity",
+    type: WorkoutType.INTENSITY,
   },
   {
     cardClass: "bg-sky-50 border-sky-300 text-sky-900",
@@ -81,12 +51,6 @@ export const WORKOUT_STYLES: WorkoutStyle[] = [
     dotClass: "bg-gray-400",
     label: "Rest",
     type: WorkoutType.REST,
-  },
-  {
-    cardClass: "bg-slate-50 border-slate-300 text-slate-800",
-    dotClass: "bg-slate-500",
-    label: "Other",
-    type: WorkoutType.OTHER,
   },
 ];
 

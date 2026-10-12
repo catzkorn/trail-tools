@@ -9,6 +9,7 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -238,6 +239,10 @@ func (b *schemaBuilder) enum(ed protoreflect.EnumDescriptor) (*jsonschema.Schema
 		// The zero value means unset, so it's not useful as input. It may
 		// still appear in output, e.g. in a list of enums.
 		if b.input && v.Number() == 0 {
+			continue
+		}
+		// Deprecated values are still accepted, but not offered as input.
+		if opts, ok := v.Options().(*descriptorpb.EnumValueOptions); b.input && ok && opts.GetDeprecated() {
 			continue
 		}
 		s.Enum = append(s.Enum, string(v.Name()))

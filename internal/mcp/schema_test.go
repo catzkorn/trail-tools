@@ -11,6 +11,7 @@ import (
 	// every API method's schema can be validated.
 	_ "github.com/catzkorn/trail-tools/internal/gen/auth/v1"
 	_ "github.com/catzkorn/trail-tools/internal/gen/oauth/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/plans/v1"
 	_ "github.com/catzkorn/trail-tools/internal/gen/routing/v1"
 
 	"github.com/catzkorn/trail-tools/internal/apidesc"
@@ -18,6 +19,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // findMessage returns the descriptor of a message from the embedded
@@ -161,6 +163,14 @@ func TestOutputSchemaEnumIncludesZero(t *testing.T) {
 	}
 }
 
+func TestSchemaEnumOmitsDeprecated(t *testing.T) {
+	s := newInputSchema(findMessage(t, "plans.v1.CreateWorkoutsRequest"))
+	types := s.Properties["workouts"].Items.Properties["type"].Enum
+	if !slices.Contains(types, any("WORKOUT_TYPE_BASE")) || slices.Contains(types, any("WORKOUT_TYPE_EASY")) {
+		t.Errorf("workout types %v, want only the current ones", types)
+	}
+}
+
 func TestSchemaFieldKinds(t *testing.T) {
 	// descriptor.proto has fields of most kinds, as well as recursive
 	// messages.
@@ -283,7 +293,14 @@ func scalarValue(fd protoreflect.FieldDescriptor, nonFinite bool) protoreflect.V
 		}
 		return protoreflect.ValueOfFloat64(-2.25)
 	case protoreflect.EnumKind:
+		// The last value that isn't deprecated, as input schemas leave
+		// deprecated values out.
 		values := fd.Enum().Values()
+		for i := values.Len() - 1; i > 0; i-- {
+			if opts, ok := values.Get(i).Options().(*descriptorpb.EnumValueOptions); !ok || !opts.GetDeprecated() {
+				return protoreflect.ValueOfEnum(values.Get(i).Number())
+			}
+		}
 		return protoreflect.ValueOfEnum(values.Get(values.Len() - 1).Number())
 	default:
 		panic("unexpected kind " + fd.Kind().String())
