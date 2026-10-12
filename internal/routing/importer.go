@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
 )
@@ -28,7 +29,7 @@ type ImportConfig struct {
 	// is imported if the bounds are zero.
 	Bounds geo.Bounds
 	// The elevation model.
-	DEM *DEM
+	DEM *elevation.DEM
 }
 
 // Import loads the foot accessible ways of OpenStreetMap extracts into the

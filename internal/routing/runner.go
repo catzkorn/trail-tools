@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -16,14 +17,14 @@ type LocalRunner struct {
 	ctx context.Context
 	log *slog.Logger
 	db  *store.DB
-	dem *DEM
+	dem *elevation.DEM
 	mu  sync.Mutex
 	wg  sync.WaitGroup
 }
 
 // NewLocalRunner creates a new LocalRunner. Imports are cancelled when ctx
 // is done, and recorded as failed, including those still waiting to run.
-func NewLocalRunner(ctx context.Context, log *slog.Logger, db *store.DB, dem *DEM) *LocalRunner {
+func NewLocalRunner(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevation.DEM) *LocalRunner {
 	return &LocalRunner{ctx: ctx, log: log, db: db, dem: dem}
 }
 

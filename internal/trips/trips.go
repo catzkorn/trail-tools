@@ -75,6 +75,9 @@ type Report struct {
 	// report has no track, or it wasn't loaded.
 	Track    []byte
 	HasTrack bool
+	// How far around the start and finish of the track is hidden on the
+	// public page.
+	HiddenEndsMeters int32
 	// Whether the report is published, and when it was first published.
 	Published   bool
 	PublishTime time.Time
@@ -278,6 +281,8 @@ type ReportUpdate struct {
 	Title, Slug *string
 	Body        *string
 	Date        *time.Time
+	// How far around the start and finish of the track to hide.
+	HiddenEndsMeters *int32
 }
 
 // UpdateReport updates one of the user's reports. It returns ErrSlugTaken if
@@ -295,6 +300,9 @@ func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report
 	}
 	if u.Date != nil {
 		params.Date = store.DateToPG(*u.Date)
+	}
+	if u.HiddenEndsMeters != nil {
+		params.HiddenEndsMeters = pgtype.Int4{Int32: *u.HiddenEndsMeters, Valid: true}
 	}
 	row, err := r.q.UpdateReport(ctx, params)
 	if err != nil {
@@ -562,6 +570,7 @@ func reportFromDB(row *gen.TripReport) *Report {
 		ElevationGainMeters: row.ElevationGainMeters,
 		Track:               row.Track,
 		HasTrack:            row.Track != nil,
+		HiddenEndsMeters:    row.HiddenEndsMeters,
 		Published:           row.Published,
 		PublishTime:         timestampFromPG(row.PublishTime),
 		CreateTime:          row.CreateTime.Time,

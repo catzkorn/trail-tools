@@ -13,6 +13,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -35,8 +36,8 @@ func importOSM(args []string) int {
 	region := fs.String("region", "", "The name of the region, e.g. switzerland")
 	source := fs.String("pbf", "", "The OpenStreetMap PBF extract: a file path or URL, e.g. https://download.geofabrik.de/europe/switzerland-latest.osm.pbf. Separate neighboring extracts with commas to import them together")
 	bounds := fs.String("bounds", "", "Only import ways within south,west,north,east, e.g. 46.8,8.2,47.6,9.0. Defaults to the whole extract")
-	demURL := fs.String("dem-url", routing.DefaultDEMURL, "The base URL of the HGT elevation tiles")
-	demCache := fs.String("dem-cache", routing.DefaultDEMCache, "The directory to cache elevation tiles in")
+	demURL := fs.String("dem-url", elevation.DefaultURL, "The base URL of the HGT elevation tiles")
+	demCache := fs.String("dem-cache", elevation.DefaultCacheDir, "The directory to cache elevation tiles in")
 	logLevel := fs.String("log-level", "info", "The log level to use")
 	logFormat := fs.String("log-format", "text", "The log format: \"text\" for terminals, or \"json\" for Cloud Logging")
 	_ = fs.Parse(args)
@@ -83,7 +84,7 @@ func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, 
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 	defer db.Close()
-	dem := routing.NewDEM(demURL, demCache)
+	dem := elevation.NewDEM(demURL, demCache)
 	if importID != "" {
 		id, err := store.StringToUUID(importID)
 		if err != nil {

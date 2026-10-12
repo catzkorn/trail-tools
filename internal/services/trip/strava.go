@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
+	"github.com/catzkorn/trail-tools/internal/activities"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -36,6 +37,51 @@ func (s *Service) ImportStravaPhotos(ctx context.Context, req *tripsv1.ImportStr
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get activity")
 	}
+	result, err := s.importPhotos(ctx, report, activity)
+	if err != nil {
+		return nil, err
+	}
+	resp := tripsv1.ImportStravaPhotosResponse_builder{
+		SkippedCount: result.skipped,
+		FailedCount:  result.failed,
+	}
+	for _, p := range result.photos {
+		resp.Photos = append(resp.Photos, s.photoToProto(p))
+	}
+	return resp.Build(), nil
+}
+
+// importStravaPhotos imports the photos of a new report's activity from
+// Strava, if it has any, and returns the imported photos.
+func (s *Service) importStravaPhotos(ctx context.Context, report *trips.Report) ([]*trips.Photo, error) {
+	activity, err := s.activities.GetActivity(ctx, report.UserID, report.ActivityID)
+	if err != nil {
+		return nil, err
+	}
+	if activity.PhotoCount == 0 {
+		// The activity may have photos from an earlier sync anyway.
+		photos, err := s.activities.ListActivityPhotos(ctx, report.UserID, report.ActivityID)
+		if err != nil || len(photos) == 0 {
+			return nil, err
+		}
+	}
+	result, err := s.importPhotos(ctx, report, activity)
+	if err != nil {
+		return nil, err
+	}
+	return result.photos, nil
+}
+
+// importResult is the outcome of importing a report's photos from Strava.
+type importResult struct {
+	photos          []*trips.Photo
+	skipped, failed int32
+}
+
+// importPhotos imports the photos of the report's activity from Strava,
+// skipping the ones it already has. It returns connect errors.
+func (s *Service) importPhotos(ctx context.Context, report *trips.Report, activity *activities.Activity) (*importResult, error) {
+	userID, reportID := report.UserID, report.ID
 	// Photos may have been added on Strava since the activity was synced,
 	// and Strava's image URLs may have expired, so sync the activity first.
 	// Without Strava, the photos from the last sync are imported.
@@ -72,17 +118,17 @@ func (s *Service) ImportStravaPhotos(ctx context.Context, req *tripsv1.ImportStr
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
 
-	resp := tripsv1.ImportStravaPhotosResponse_builder{}
+	result := &importResult{}
 	for _, p := range stravaPhotos {
 		if imported[p.StravaID] {
-			resp.SkippedCount++
+			result.skipped++
 			continue
 		}
 		log := s.log.With(slog.String("strava_photo_id", p.StravaID))
 		data, err := s.downloadPhoto(ctx, p.URL)
 		if err != nil {
 			log.WarnContext(ctx, "Failed to download a photo from Strava", slogor.Err(err))
-			resp.FailedCount++
+			result.failed++
 			continue
 		}
 		photo := &trips.Photo{
@@ -103,17 +149,17 @@ func (s *Service) ImportStravaPhotos(ctx context.Context, req *tripsv1.ImportStr
 		switch {
 		case errors.Is(err, trips.ErrPhotoImported):
 			// Imported meanwhile.
-			resp.SkippedCount++
+			result.skipped++
 		case connect.CodeOf(err) == connect.CodeInvalidArgument:
 			log.WarnContext(ctx, "A photo from Strava isn't a supported image", slogor.Err(err))
-			resp.FailedCount++
+			result.failed++
 		case err != nil:
 			return nil, err
 		default:
-			resp.Photos = append(resp.Photos, s.photoToProto(created))
+			result.photos = append(result.photos, created)
 		}
 	}
-	return resp.Build(), nil
+	return result, nil
 }
 
 // downloadPhoto downloads a photo from Strava's CDN.

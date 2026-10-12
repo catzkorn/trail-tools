@@ -92,7 +92,8 @@ func (s *Service) snapTrack(ctx context.Context, track []geo.Point) ([]routes.La
 	if len(legs)+1 > maxWaypoints {
 		return nil, nil, fmt.Errorf("%w: the track needs more than %d waypoints to follow; import it exactly instead", errInvalidRoute, maxWaypoints)
 	}
-	return t.build(ctx, legs)
+	waypoints, routeLegs := t.build(legs)
+	return waypoints, routeLegs, nil
 }
 
 // fit returns legs that follow the track from points[i] to points[j].
@@ -255,7 +256,7 @@ func (t *trackSnapper) merge(ctx context.Context, legs []snapLeg) ([]snapLeg, er
 
 // build creates the route's waypoints and legs. Waypoints next to a routed
 // leg are moved to where routing snapped them onto the map.
-func (t *trackSnapper) build(ctx context.Context, legs []snapLeg) ([]routes.LatLng, []routes.Leg, error) {
+func (t *trackSnapper) build(legs []snapLeg) ([]routes.LatLng, []routes.Leg) {
 	waypoints := make([]routes.LatLng, len(legs)+1)
 	for k := range waypoints {
 		var p geo.Point
@@ -272,24 +273,22 @@ func (t *trackSnapper) build(ctx context.Context, legs []snapLeg) ([]routes.LatL
 		waypoints[k] = routes.LatLng{Lat: roundCoordinate(p.Lat), Lng: roundCoordinate(p.Lng)}
 	}
 	result := make([]routes.Leg, len(legs))
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(maxConcurrentLegs)
 	for k, leg := range legs {
 		from, to := waypoints[k], waypoints[k+1]
 		if leg.path != nil {
 			result[k] = legFromPath(from, to, leg.profile, leg.path)
 			continue
 		}
-		g.Go(func() error {
-			var err error
-			result[k], err = t.s.routeLeg(ctx, nil, from, to, routes.ProfileStraight)
-			return err
-		})
+		// Straight legs follow the recorded track, which strays little from
+		// the straight line, with its recorded elevations, so they need no
+		// lookups.
+		points := slices.Clone(t.points[leg.from : leg.to+1])
+		points[0].Lat, points[0].Lng = from.Lat, from.Lng
+		last := len(points) - 1
+		points[last].Lat, points[last].Lng = to.Lat, to.Lng
+		result[k] = routes.NewLeg(from, to, routes.ProfileStraight, points, nil)
 	}
-	if err := g.Wait(); err != nil {
-		return nil, nil, err
-	}
-	return waypoints, result, nil
+	return waypoints, result
 }
 
 // roundCoordinate rounds a coordinate to 6 decimals, about 0.1 meters.

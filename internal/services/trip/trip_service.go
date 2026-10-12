@@ -105,8 +105,11 @@ const (
 	// /photos/<id>/<size>.jpg.
 	PhotoPath = "/photos/"
 
-	maxTitleLength       = 200
-	maxBodyLength        = 100_000
+	maxTitleLength = 200
+	maxBodyLength  = 100_000
+	// maxHiddenEndsMeters is the largest radius hidden around the ends of a
+	// public track.
+	maxHiddenEndsMeters  = 2000
 	maxCaptionLength     = 2000
 	maxDisplayNameLength = 80
 	maxPhotosPerReport   = 200
@@ -158,12 +161,20 @@ func (s *Service) CreateTripReport(ctx context.Context, req *tripsv1.CreateTripR
 		if err != nil {
 			return nil, s.toConnectError(ctx, err, "failed to create trip report")
 		}
+		// A report includes the activity's photos on Strava from the start.
+		// Failing to import them doesn't fail creating the report.
+		var photos []*trips.Photo
+		if created.ActivityID.Valid {
+			if photos, err = s.importStravaPhotos(ctx, created); err != nil {
+				s.log.WarnContext(ctx, "Failed to import the activity's photos from Strava", slogor.Err(err))
+			}
+		}
 		profile, err := s.profile(ctx, userID)
 		if err != nil {
 			return nil, err
 		}
 		return tripsv1.CreateTripReportResponse_builder{
-			Report: s.reportToProto(created, nil, profile),
+			Report: s.reportToProto(created, photos, profile),
 		}.Build(), nil
 	}
 	return nil, connect.NewError(connect.CodeAlreadyExists, "too many trip reports have this title; choose another title")
@@ -319,6 +330,13 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 		}
 		update.Date = &date
 	}
+	if req.HasHiddenEndsMeters() {
+		hidden := req.GetHiddenEndsMeters()
+		if hidden < 0 || hidden > maxHiddenEndsMeters {
+			return nil, connect.Errorf(connect.CodeInvalidArgument, "hidden_ends_meters must be from 0 to %d", maxHiddenEndsMeters)
+		}
+		update.HiddenEndsMeters = &hidden
+	}
 	report, err := s.repo.UpdateReport(ctx, update)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to update trip report")
@@ -442,27 +460,27 @@ func (s *Service) UploadTripPhoto(ctx context.Context, req *tripsv1.UploadTripPh
 	return tripsv1.UploadTripPhotoResponse_builder{Photo: s.photoToProto(created)}.Build(), nil
 }
 
-// placePhoto returns where a photo was taken: at its GPS position if it has
-// one, or else on the track at the time it was taken. It returns nil if
+// placePhoto returns where a photo was taken: on the track at the time it
+// was taken if that was during the activity, or else at its GPS position if
+// it has one. Photo GPS positions are often far off, e.g. from a phone in a
+// pocket, while the track records where the activity went. It returns nil if
 // neither is known.
 func placePhoto(report *trips.Report, t *track, gps *geov1.LatLng, takenTime time.Time) (*trips.Location, error) {
+	if !takenTime.IsZero() && !report.StartTime.IsZero() {
+		if p, dist, ok := t.positionAt(takenTime.Sub(report.StartTime).Seconds()); ok {
+			return &trips.Location{
+				Lat:                    p.Lat,
+				Lng:                    p.Lng,
+				Source:                 trips.LocationTrackTime,
+				TrackDistanceMeters:    dist,
+				HasTrackDistanceMeters: true,
+			}, nil
+		}
+	}
 	if gps != nil {
 		return locationFromProto(gps, trips.LocationGPS, t)
 	}
-	if takenTime.IsZero() || report.StartTime.IsZero() {
-		return nil, nil
-	}
-	p, dist, ok := t.positionAt(takenTime.Sub(report.StartTime).Seconds())
-	if !ok {
-		return nil, nil
-	}
-	return &trips.Location{
-		Lat:                    p.Lat,
-		Lng:                    p.Lng,
-		Source:                 trips.LocationTrackTime,
-		TrackDistanceMeters:    dist,
-		HasTrackDistanceMeters: true,
-	}, nil
+	return nil, nil
 }
 
 // storePhoto re-encodes a photo, stores its images and adds it to the end
@@ -665,10 +683,27 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
+	// Hide the ends of the track, and the photos taken there.
+	radius := float64(report.HiddenEndsMeters)
+	points := t.routePoints()
+	if from, to, ok := t.visibleRange(radius); ok {
+		points = points[from : to+1]
+	} else {
+		points = nil
+	}
+	visible := make([]*trips.Photo, len(photos[report.ID]))
+	for i, p := range photos[report.ID] {
+		visible[i] = p
+		if p.Location != nil && t.nearEnds(geo.Point{Lat: p.Location.Lat, Lng: p.Location.Lng}, radius) {
+			hidden := *p
+			hidden.Location = nil
+			visible[i] = &hidden
+		}
+	}
 	return tripsv1.GetPublicTripReportResponse_builder{
-		Report: s.reportToProto(report, photos[report.ID], profile),
+		Report: s.reportToProto(report, visible, profile),
 		Author: s.profileToProto(profile),
-		Track:  t.routePoints(),
+		Track:  points,
 	}.Build(), nil
 }
 

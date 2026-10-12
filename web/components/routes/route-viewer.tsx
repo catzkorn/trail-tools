@@ -9,6 +9,10 @@ import {
 } from "@components/map/layers";
 import MapView from "@components/map/map-view";
 import RoutePath from "@components/map/route-path";
+import {
+  SnapProgress,
+  createdRouteLink,
+} from "@components/routes/route-created";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
 import { ErrorText } from "@components/ui/query-error";
@@ -16,6 +20,7 @@ import { primaryButton, secondaryButton } from "@components/ui/styles";
 import { useMutation } from "@connectrpc/connect-query";
 import {
   ArrowDownTrayIcon,
+  ArrowPathIcon,
   CloudIcon,
   PencilSquareIcon,
   SparklesIcon,
@@ -67,7 +72,7 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
     onSuccess: async (response) => {
       await invalidateServices(queryClient, [RouteService]);
       if (response.route !== undefined) {
-        void navigate(`/routes/${response.route.id}`);
+        void navigate(...createdRouteLink(response.route.id, response.warning));
       }
     },
   });
@@ -174,7 +179,11 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
                     });
                   }}
                 >
-                  <SparklesIcon className="size-4" />
+                  {makeEditable.isPending ? (
+                    <ArrowPathIcon className="size-4 animate-spin" />
+                  ) : (
+                    <SparklesIcon className="size-4" />
+                  )}
                   {makeEditable.isPending ? "Snapping…" : "Make editable"}
                 </button>
               )}
@@ -205,6 +214,7 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
               </ConfirmButton>
             </div>
             {!editable && <CoverageConfirm check={trackCoverageCheck} />}
+            <SnapProgress pending={makeEditable.isPending} />
             <ErrorText error={remove.error ?? makeEditable.error} />
           </div>
         </Card>

@@ -566,7 +566,9 @@ func TestSnapTrack(t *testing.T) {
 		t.Errorf("got %d routing calls, want 2", calls)
 	}
 
-	// Where nothing can be routed, the track is followed with straight legs.
+	// Where nothing can be routed, the track is followed with straight legs,
+	// with its recorded elevations rather than looked up ones.
+	fills := e.mapData.fills
 	offTrail, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
 		Gpx:        new(cornerGPX(85, 0)),
 		Conversion: snap,
@@ -575,6 +577,34 @@ func TestSnapTrack(t *testing.T) {
 		t.Fatalf("CreateRoute: %v", err)
 	}
 	wantLegProfiles(t, offTrail.GetRoute(), straight, straight)
+	if e.mapData.fills != fills || offTrail.GetWarning() != "" {
+		t.Errorf("got %d elevation lookups and warning %q, want none", e.mapData.fills-fills, offTrail.GetWarning())
+	}
+	if gain := offTrail.GetRoute().GetStats().GetElevationGainMeters(); !approx(gain, 10, 1) {
+		t.Errorf("got %v m gain, want the recorded 10 m", gain)
+	}
+
+	// If snapping fails, the track is followed with straight legs that can
+	// be edited, with a warning.
+	unsnapped, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
+		Gpx:        new(cornerGPX(65, 0)),
+		Conversion: snap,
+	}.Build())
+	if err != nil {
+		t.Fatalf("CreateRoute: %v", err)
+	}
+	if unsnapped.GetWarning() == "" || len(unsnapped.GetRoute().GetWaypoints()) < 2 {
+		t.Errorf("got warning %q and %d waypoints, want a warning and the track", unsnapped.GetWarning(), len(unsnapped.GetRoute().GetWaypoints()))
+	}
+	for _, profile := range unsnapped.GetRoute().GetLegProfiles() {
+		if profile != straight {
+			t.Fatalf("unsnapped route has leg profiles %v, want straight legs", unsnapped.GetRoute().GetLegProfiles())
+		}
+	}
+	// The recorded track, with its wobbles, is longer than the snapped one.
+	if !approx(unsnapped.GetRoute().GetStats().GetDistanceMeters(), 2292, 10) {
+		t.Errorf("got %v m, want the recorded track's 2292 m", unsnapped.GetRoute().GetStats().GetDistanceMeters())
+	}
 
 	// By default the track is kept exactly, and the result can be snapped
 	// later.

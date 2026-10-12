@@ -12,23 +12,24 @@ import (
 	"github.com/catzkorn/trail-tools/internal/mapdata"
 )
 
+// fakeElevation returns elevations 1000 times the latitude.
+type fakeElevation struct {
+	lookups int
+}
+
+func (f *fakeElevation) Points(_ context.Context, points []geo.Point) ([]float64, error) {
+	f.lookups += len(points)
+	elevations := make([]float64, len(points))
+	for i, p := range points {
+		elevations[i] = p.Lat * 1000
+	}
+	return elevations, nil
+}
+
 func TestFillElevations(t *testing.T) {
 	t.Parallel()
-	var requests int
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		lats := strings.Split(r.URL.Query().Get("latitude"), ",")
-		// Elevation is 1000 times the latitude.
-		var elevations []string
-		for _, lat := range lats {
-			var v float64
-			fmt.Sscan(lat, &v)
-			elevations = append(elevations, fmt.Sprint(v*1000))
-		}
-		fmt.Fprintf(w, `{"elevation":[%s]}`, strings.Join(elevations, ","))
-	}))
-	t.Cleanup(srv.Close)
-	client := mapdata.New(mapdata.Config{ElevationURL: srv.URL})
+	elevation := &fakeElevation{}
+	client := mapdata.New(mapdata.Config{Elevation: elevation})
 	var points []geo.Point
 	for i := range 250 {
 		points = append(points, geo.Point{Lat: float64(i) * 0.001})
@@ -36,8 +37,8 @@ func TestFillElevations(t *testing.T) {
 	if err := client.FillElevations(context.Background(), points, 150); err != nil {
 		t.Fatalf("FillElevations: %v", err)
 	}
-	if requests != 2 {
-		t.Errorf("got %d requests, want 2", requests)
+	if elevation.lookups > 150 {
+		t.Errorf("looked up %d points, want at most 150", elevation.lookups)
 	}
 	for i, p := range points {
 		if diff := p.Ele - p.Lat*1000; diff > 0.01 || diff < -0.01 {

@@ -78,23 +78,24 @@ func (x LocationSource) Number() protoreflect.EnumNumber {
 
 // A trip report.
 type TripReport struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	xxx_hidden_ActivityId  string                 `protobuf:"bytes,2,opt,name=activity_id,json=activityId,proto3"`
-	xxx_hidden_Title       string                 `protobuf:"bytes,3,opt,name=title,proto3"`
-	xxx_hidden_Slug        string                 `protobuf:"bytes,4,opt,name=slug,proto3"`
-	xxx_hidden_Body        string                 `protobuf:"bytes,5,opt,name=body,proto3"`
-	xxx_hidden_Date        string                 `protobuf:"bytes,6,opt,name=date,proto3"`
-	xxx_hidden_Stats       *TripStats             `protobuf:"bytes,7,opt,name=stats,proto3"`
-	xxx_hidden_Published   bool                   `protobuf:"varint,8,opt,name=published,proto3"`
-	xxx_hidden_PublishTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=publish_time,json=publishTime,proto3"`
-	xxx_hidden_Url         string                 `protobuf:"bytes,10,opt,name=url,proto3"`
-	xxx_hidden_Photos      *[]*TripPhoto          `protobuf:"bytes,11,rep,name=photos,proto3"`
-	xxx_hidden_CreateTime  *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=create_time,json=createTime,proto3"`
-	xxx_hidden_UpdateTime  *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3"`
-	xxx_hidden_HasTrack    bool                   `protobuf:"varint,14,opt,name=has_track,json=hasTrack,proto3"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id               string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_ActivityId       string                 `protobuf:"bytes,2,opt,name=activity_id,json=activityId,proto3"`
+	xxx_hidden_Title            string                 `protobuf:"bytes,3,opt,name=title,proto3"`
+	xxx_hidden_Slug             string                 `protobuf:"bytes,4,opt,name=slug,proto3"`
+	xxx_hidden_Body             string                 `protobuf:"bytes,5,opt,name=body,proto3"`
+	xxx_hidden_Date             string                 `protobuf:"bytes,6,opt,name=date,proto3"`
+	xxx_hidden_Stats            *TripStats             `protobuf:"bytes,7,opt,name=stats,proto3"`
+	xxx_hidden_Published        bool                   `protobuf:"varint,8,opt,name=published,proto3"`
+	xxx_hidden_PublishTime      *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=publish_time,json=publishTime,proto3"`
+	xxx_hidden_Url              string                 `protobuf:"bytes,10,opt,name=url,proto3"`
+	xxx_hidden_Photos           *[]*TripPhoto          `protobuf:"bytes,11,rep,name=photos,proto3"`
+	xxx_hidden_CreateTime       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=create_time,json=createTime,proto3"`
+	xxx_hidden_UpdateTime       *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3"`
+	xxx_hidden_HasTrack         bool                   `protobuf:"varint,14,opt,name=has_track,json=hasTrack,proto3"`
+	xxx_hidden_HiddenEndsMeters int32                  `protobuf:"varint,15,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *TripReport) Reset() {
@@ -222,6 +223,13 @@ func (x *TripReport) GetHasTrack() bool {
 	return false
 }
 
+func (x *TripReport) GetHiddenEndsMeters() int32 {
+	if x != nil {
+		return x.xxx_hidden_HiddenEndsMeters
+	}
+	return 0
+}
+
 func (x *TripReport) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -276,6 +284,10 @@ func (x *TripReport) SetUpdateTime(v *timestamppb.Timestamp) {
 
 func (x *TripReport) SetHasTrack(v bool) {
 	x.xxx_hidden_HasTrack = v
+}
+
+func (x *TripReport) SetHiddenEndsMeters(v int32) {
+	x.xxx_hidden_HiddenEndsMeters = v
 }
 
 func (x *TripReport) HasStats() bool {
@@ -356,6 +368,13 @@ type TripReport_builder struct {
 	UpdateTime *timestamppb.Timestamp
 	// Whether the report has a GPS track.
 	HasTrack bool
+	// How far in meters around the start and finish of the track is hidden on
+	// the public page, e.g. so that it doesn't show where the author lives:
+	// the track starts where it first leaves the circle around its start, and
+	// ends where it last enters the circle around its finish, and photos in
+	// either circle aren't shown on the map. 0 to show the whole track.
+	// Defaults to 500.
+	HiddenEndsMeters int32
 }
 
 func (b0 TripReport_builder) Build() *TripReport {
@@ -376,6 +395,7 @@ func (b0 TripReport_builder) Build() *TripReport {
 	x.xxx_hidden_CreateTime = b.CreateTime
 	x.xxx_hidden_UpdateTime = b.UpdateTime
 	x.xxx_hidden_HasTrack = b.HasTrack
+	x.xxx_hidden_HiddenEndsMeters = b.HiddenEndsMeters
 	return m0
 }
 
@@ -1285,16 +1305,17 @@ func (b0 ListTripReportsResponse_builder) Build() *ListTripReportsResponse {
 }
 
 type UpdateTripReportRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	xxx_hidden_Title       *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof"`
-	xxx_hidden_Slug        *string                `protobuf:"bytes,3,opt,name=slug,proto3,oneof"`
-	xxx_hidden_Body        *string                `protobuf:"bytes,4,opt,name=body,proto3,oneof"`
-	xxx_hidden_Date        *string                `protobuf:"bytes,5,opt,name=date,proto3,oneof"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id               string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Title            *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof"`
+	xxx_hidden_Slug             *string                `protobuf:"bytes,3,opt,name=slug,proto3,oneof"`
+	xxx_hidden_Body             *string                `protobuf:"bytes,4,opt,name=body,proto3,oneof"`
+	xxx_hidden_Date             *string                `protobuf:"bytes,5,opt,name=date,proto3,oneof"`
+	xxx_hidden_HiddenEndsMeters int32                  `protobuf:"varint,6,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3,oneof"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *UpdateTripReportRequest) Reset() {
@@ -1369,28 +1390,40 @@ func (x *UpdateTripReportRequest) GetDate() string {
 	return ""
 }
 
+func (x *UpdateTripReportRequest) GetHiddenEndsMeters() int32 {
+	if x != nil {
+		return x.xxx_hidden_HiddenEndsMeters
+	}
+	return 0
+}
+
 func (x *UpdateTripReportRequest) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
 
 func (x *UpdateTripReportRequest) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *UpdateTripReportRequest) SetSlug(v string) {
 	x.xxx_hidden_Slug = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *UpdateTripReportRequest) SetBody(v string) {
 	x.xxx_hidden_Body = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *UpdateTripReportRequest) SetDate(v string) {
 	x.xxx_hidden_Date = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+}
+
+func (x *UpdateTripReportRequest) SetHiddenEndsMeters(v int32) {
+	x.xxx_hidden_HiddenEndsMeters = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *UpdateTripReportRequest) HasTitle() bool {
@@ -1421,6 +1454,13 @@ func (x *UpdateTripReportRequest) HasDate() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
+func (x *UpdateTripReportRequest) HasHiddenEndsMeters() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
 func (x *UpdateTripReportRequest) ClearTitle() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Title = nil
@@ -1441,6 +1481,11 @@ func (x *UpdateTripReportRequest) ClearDate() {
 	x.xxx_hidden_Date = nil
 }
 
+func (x *UpdateTripReportRequest) ClearHiddenEndsMeters() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_HiddenEndsMeters = 0
+}
+
 type UpdateTripReportRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -1454,6 +1499,9 @@ type UpdateTripReportRequest_builder struct {
 	Body *string
 	// The new date (YYYY-MM-DD), if set.
 	Date *string
+	// How far in meters around the start and finish of the track to hide on
+	// the public page, from 0 to 2000, if set.
+	HiddenEndsMeters *int32
 }
 
 func (b0 UpdateTripReportRequest_builder) Build() *UpdateTripReportRequest {
@@ -1462,20 +1510,24 @@ func (b0 UpdateTripReportRequest_builder) Build() *UpdateTripReportRequest {
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Slug != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_Slug = b.Slug
 	}
 	if b.Body != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
 		x.xxx_hidden_Body = b.Body
 	}
 	if b.Date != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_Date = b.Date
+	}
+	if b.HiddenEndsMeters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_HiddenEndsMeters = *b.HiddenEndsMeters
 	}
 	return m0
 }
@@ -3317,7 +3369,7 @@ var File_trips_v1_trips_proto protoreflect.FileDescriptor
 
 const file_trips_v1_trips_proto_rawDesc = "" +
 	"\n" +
-	"\x14trips/v1/trips.proto\x12\btrips.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xbd\x04\n" +
+	"\x14trips/v1/trips.proto\x12\btrips.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xeb\x04\n" +
 	"\n" +
 	"TripReport\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12'\n" +
@@ -3337,7 +3389,8 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"createTime\x12C\n" +
 	"\vupdate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"updateTime\x12#\n" +
-	"\thas_track\x18\x0e \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\"\xc0\x02\n" +
+	"\thas_track\x18\x0e \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\x12,\n" +
+	"\x12hidden_ends_meters\x18\x0f \x01(\x05R\x10hiddenEndsMeters\"\xc0\x02\n" +
 	"\tTripStats\x12\x1d\n" +
 	"\n" +
 	"sport_type\x18\x01 \x01(\tR\tsportType\x129\n" +
@@ -3382,17 +3435,19 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\vactivity_id\x18\x01 \x01(\tR\n" +
 	"activityId\"I\n" +
 	"\x17ListTripReportsResponse\x12.\n" +
-	"\areports\x18\x01 \x03(\v2\x14.trips.v1.TripReportR\areports\"\xb4\x01\n" +
+	"\areports\x18\x01 \x03(\v2\x14.trips.v1.TripReportR\areports\"\xfe\x01\n" +
 	"\x17UpdateTripReportRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x17\n" +
 	"\x04slug\x18\x03 \x01(\tH\x01R\x04slug\x88\x01\x01\x12\x17\n" +
 	"\x04body\x18\x04 \x01(\tH\x02R\x04body\x88\x01\x01\x12\x17\n" +
-	"\x04date\x18\x05 \x01(\tH\x03R\x04date\x88\x01\x01B\b\n" +
+	"\x04date\x18\x05 \x01(\tH\x03R\x04date\x88\x01\x01\x121\n" +
+	"\x12hidden_ends_meters\x18\x06 \x01(\x05H\x04R\x10hiddenEndsMeters\x88\x01\x01B\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_slugB\a\n" +
 	"\x05_bodyB\a\n" +
-	"\x05_date\"H\n" +
+	"\x05_dateB\x15\n" +
+	"\x13_hidden_ends_meters\"H\n" +
 	"\x18UpdateTripReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.trips.v1.TripReportR\x06report\")\n" +
 	"\x17DeleteTripReportRequest\x12\x0e\n" +

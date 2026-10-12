@@ -1,4 +1,7 @@
-package routing
+// Package elevation looks up ground elevations from a digital elevation model
+// (DEM): public SRTM derived tiles, downloaded and cached as needed, so that
+// lookups don't depend on a rate limited API.
+package elevation
 
 import (
 	"compress/gzip"
@@ -11,29 +14,74 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
+
+	"github.com/catzkorn/trail-tools/internal/geo"
 )
 
-// DefaultDEMURL is the base URL of the elevation tiles: SRTM derived 1x1
-// degree tiles in the HGT format from the AWS Terrain Tiles open dataset.
-const DefaultDEMURL = "https://s3.amazonaws.com/elevation-tiles-prod/skadi"
+// DefaultURL is the base URL of the elevation tiles: SRTM derived 1x1 degree
+// tiles in the HGT format from the AWS Terrain Tiles open dataset.
+const DefaultURL = "https://s3.amazonaws.com/elevation-tiles-prod/skadi"
 
-// DefaultDEMCache is the default directory elevation tiles are cached in.
-var DefaultDEMCache = filepath.Join(os.TempDir(), "trail-tools-dem")
+// DefaultCacheDir is the default directory elevation tiles are cached in.
+var DefaultCacheDir = filepath.Join(os.TempDir(), "trail-tools-dem")
+
+// maxCachedTiles is the number of decoded tiles kept in memory. A tile is up
+// to 26 MB, and most routes cover one or two.
+const maxCachedTiles = 3
 
 // demVoid marks missing data in HGT tiles.
 const demVoid = -32768
 
 // DEM looks up ground elevations from HGT tiles, downloading them to a cache
-// directory as needed.
+// directory as needed, and keeping the most recently used ones decoded in
+// memory. It is safe for concurrent use.
 type DEM struct {
 	baseURL  string
 	cacheDir string
 	client   *http.Client
+
+	// mu serialises loading tiles, so concurrent lookups don't download or
+	// decode the same tile twice, and guards tiles.
+	mu sync.Mutex
+	// The most recently used tiles, most recent first. A nil tile records
+	// that there is no tile, e.g. over the sea.
+	tiles []cachedTile
+}
+
+type cachedTile struct {
+	lat, lng int
+	tile     *hgtTile
 }
 
 // NewDEM creates a DEM that downloads tiles from baseURL into cacheDir.
 func NewDEM(baseURL, cacheDir string) *DEM {
 	return &DEM{baseURL: baseURL, cacheDir: cacheDir, client: http.DefaultClient}
+}
+
+// cachedTile returns the tile with the south west corner lat, lng, loading it
+// if it isn't in memory.
+func (d *DEM) cachedTile(ctx context.Context, lat, lng int) (*hgtTile, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for i, c := range d.tiles {
+		if c.lat == lat && c.lng == lng {
+			// Move it to the front.
+			copy(d.tiles[1:i+1], d.tiles[:i])
+			d.tiles[0] = c
+			return c.tile, nil
+		}
+	}
+	t, err := d.tile(ctx, lat, lng)
+	if err != nil {
+		return nil, err
+	}
+	if len(d.tiles) < maxCachedTiles {
+		d.tiles = append(d.tiles, cachedTile{})
+	}
+	copy(d.tiles[1:], d.tiles)
+	d.tiles[0] = cachedTile{lat: lat, lng: lng, tile: t}
+	return t, nil
 }
 
 // hgtTile is a 1x1 degree tile of elevations in meters, stored row by row
@@ -180,7 +228,7 @@ func (d *DEM) Elevations(ctx context.Context, lats, lngs []float64) ([]float64, 
 	}
 	elevations := make([]float64, len(lats))
 	for k, idxs := range byTile {
-		t, err := d.tile(ctx, k.lat, k.lng)
+		t, err := d.cachedTile(ctx, k.lat, k.lng)
 		if err != nil {
 			return nil, err
 		}
@@ -189,6 +237,26 @@ func (d *DEM) Elevations(ctx context.Context, lats, lngs []float64) ([]float64, 
 			if t != nil {
 				elevations[i] = t.elevation(lats[i], lngs[i])
 			}
+		}
+	}
+	return elevations, nil
+}
+
+// Points returns the elevation of each point. Points without data, e.g. over
+// the sea, are at sea level.
+func (d *DEM) Points(ctx context.Context, points []geo.Point) ([]float64, error) {
+	lats := make([]float64, len(points))
+	lngs := make([]float64, len(points))
+	for i, p := range points {
+		lats[i], lngs[i] = p.Lat, p.Lng
+	}
+	elevations, err := d.Elevations(ctx, lats, lngs)
+	if err != nil {
+		return nil, err
+	}
+	for i, e := range elevations {
+		if math.IsNaN(e) {
+			elevations[i] = 0
 		}
 	}
 	return elevations, nil

@@ -6,7 +6,8 @@ import { TripReportService } from "./trips_pb";
 
 /**
  * Create a draft trip report. With an activity, the report's title, date,
- * statistics and track are copied from the activity.
+ * statistics, track and story are copied from the activity, and its photos
+ * are imported from Strava.
  *
  * @generated from rpc trips.v1.TripReportService.CreateTripReport
  */
@@ -59,18 +60,19 @@ export const unpublishTripReport = TripReportService.method.unpublishTripReport;
 
 /**
  * Upload a photo to a trip report. The image is stored as a JPEG of at most
- * 2048 pixels and a thumbnail, without its metadata.
+ * 2048 pixels and a thumbnail, without its metadata. It's placed on the
+ * track at the time it was taken, if that was during the activity, or else
+ * at its GPS position.
  *
  * @generated from rpc trips.v1.TripReportService.UploadTripPhoto
  */
 export const uploadTripPhoto = TripReportService.method.uploadTripPhoto;
 
 /**
- * Import the photos of the report's activity from Strava, adding them to
- * the report like uploaded photos: placed at their location, or on the
- * track at the time they were taken, with their captions. Photos imported
- * before are skipped. Publishing the report shares the photos, so they're
- * only imported when the author asks in the app.
+ * Import the photos of the report's activity from Strava that it doesn't
+ * have yet, e.g. ones added on Strava after the report was created, like
+ * uploaded photos and with their captions. Photos imported before are
+ * skipped.
  *
  * @generated from rpc trips.v1.TripReportService.ImportStravaPhotos
  */

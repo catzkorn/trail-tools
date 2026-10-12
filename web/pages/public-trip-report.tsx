@@ -1,5 +1,6 @@
 import ElevationProfile from "@components/charts/elevation-profile";
 import Loading from "@components/loading";
+import type { MapFocus } from "@components/map/layers";
 import {
   Story,
   TripStatsRow,
@@ -66,7 +67,7 @@ const PhotoFigure: React.FC<PhotoFigureProps> = ({
   >
     <button
       type="button"
-      className="block w-full cursor-zoom-in focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500"
+      className={`block cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${hero ? "w-full" : "mx-auto w-fit"}`}
       onClick={onOpen}
       aria-label={`Open photo ${number}`}
     >
@@ -122,6 +123,7 @@ const PublicTripReportPage: React.FC = () => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [mapFocus, setMapFocus] = useState<MapFocus | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
 
   const report = data?.report;
@@ -176,6 +178,12 @@ const PublicTripReportPage: React.FC = () => {
   const showOnMap = (photo: TripPhoto) => {
     setLightboxIndex(null);
     setSelectedId(photo.id);
+    if (photo.location !== undefined) {
+      setMapFocus({
+        key: Date.now(),
+        position: [photo.location.lat, photo.location.lng],
+      });
+    }
     // On narrow screens the map is above the story.
     const rect = mapRef.current?.getBoundingClientRect();
     if (
@@ -264,6 +272,7 @@ const PublicTripReportPage: React.FC = () => {
                   selectedId={hoveredId ?? selectedId}
                   hoverPosition={hoverPosition}
                   onSelectPhoto={selectFromMap}
+                  focus={mapFocus}
                   fitKey={report.id}
                   className="h-80 sm:h-96 lg:h-[50vh]"
                 />

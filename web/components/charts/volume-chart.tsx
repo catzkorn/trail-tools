@@ -34,7 +34,7 @@ const axisMax = (value: number, minimum: number): number => {
  */
 const VolumeChart: React.FC<VolumeChartProps> = ({
   summaries,
-  height = 220,
+  height = 236,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const width = useElementWidth(containerRef);
@@ -42,7 +42,8 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
 
   const marginLeft = 40;
   const marginRight = 48;
-  const marginTop = 12;
+  // Room for the axis titles above the top tick labels.
+  const marginTop = 28;
   const marginBottom = 24;
   const plotWidth = Math.max(width - marginLeft - marginRight, 10);
   const plotHeight = height - marginTop - marginBottom;
@@ -111,14 +112,18 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
               </text>
             </g>
           ))}
-          <text x={4} y={8} className="fill-emerald-700 text-[10px]">
+          <text
+            x={marginLeft - 6}
+            y={10}
+            textAnchor="end"
+            className="fill-emerald-700 text-[10px] font-medium"
+          >
             km
           </text>
           <text
-            x={width - 4}
-            y={8}
-            textAnchor="end"
-            className="fill-violet-700 text-[10px]"
+            x={marginLeft + plotWidth + 6}
+            y={10}
+            className="fill-violet-700 text-[10px] font-medium"
           >
             m gain
           </text>

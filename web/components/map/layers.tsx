@@ -206,6 +206,28 @@ export const FitBounds: React.FC<FitBoundsProps> = ({ positions, fitKey }) => {
   return null;
 };
 
+// MapFocus is a position to zoom to, and a key that changes on every request.
+export interface MapFocus {
+  position: LatLngTuple;
+  key: number;
+}
+
+/**
+ * FlyTo zooms the map to a position each time the focus changes, to at
+ * least zoom level 15.
+ */
+export const FlyTo: React.FC<{ focus: MapFocus | null }> = ({ focus }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (focus !== null) {
+      map.flyTo(focus.position, Math.max(map.getZoom(), 15), {
+        duration: 0.6,
+      });
+    }
+  }, [map, focus]);
+  return null;
+};
+
 interface MapClickProps {
   onClick: (position: LatLng) => void;
 }
