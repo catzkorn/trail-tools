@@ -27,6 +27,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/cloudrun"
 	"github.com/catzkorn/trail-tools/internal/cloudscheduler"
+	"github.com/catzkorn/trail-tools/internal/demo"
 	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/fakestrava"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
@@ -381,8 +382,12 @@ func run(
 		fakeStravaServer = fakestrava.New(baseURL, fakestrava.NewRouter(routing.NewRouter(db)), fakestrava.DefaultCacheDir)
 		stravaClientID, stravaClientSecret, stravaWebhookVerifyToken = "fake", rand.Text(), ""
 		log.InfoContext(ctx, "Using a fake Strava with generated activities", slog.String("url", baseURL+fakestrava.Path))
-		// Activities follow the trails of imported map data around Squamish.
+		// The fake athlete's trails and elevations are embedded, so the
+		// activities follow trails without importing or downloading map data.
 		go func() {
+			if err := demo.Load(ctx, log, db, dem); err != nil && ctx.Err() == nil {
+				log.ErrorContext(ctx, "Failed to load the map data of Squamish", slogor.Err(err))
+			}
 			if err := fakeStravaServer.Prepare(ctx); err != nil && ctx.Err() == nil {
 				log.ErrorContext(ctx, "Failed to generate the fake Strava's activities", slogor.Err(err))
 			}

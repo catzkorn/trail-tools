@@ -47,6 +47,8 @@ type DEM struct {
 	// The most recently used tiles, most recent first. A nil tile records
 	// that there is no tile, e.g. over the sea.
 	tiles []cachedTile
+	// Areas looked up without loading tiles.
+	patches []*Patch
 }
 
 type cachedTile struct {
@@ -217,9 +219,39 @@ func (t *hgtTile) elevation(lat, lng float64) float64 {
 	return sum / total
 }
 
-// Elevations returns the elevation of each point, loading one tile at a time
-// to limit memory use. Elevations are NaN where there is no data.
+// Elevations returns the elevation of each point, from the patches or else
+// the tiles, loading one tile at a time to limit memory use. Elevations are
+// NaN where there is no data.
 func (d *DEM) Elevations(ctx context.Context, lats, lngs []float64) ([]float64, error) {
+	elevations := make([]float64, len(lats))
+	var rest []int
+	for i := range lats {
+		e, ok := d.patchElevation(lats[i], lngs[i])
+		if !ok {
+			rest = append(rest, i)
+		}
+		elevations[i] = e
+	}
+	if len(rest) == 0 {
+		return elevations, nil
+	}
+	restLats := make([]float64, len(rest))
+	restLngs := make([]float64, len(rest))
+	for j, i := range rest {
+		restLats[j], restLngs[j] = lats[i], lngs[i]
+	}
+	fromTiles, err := d.tileElevations(ctx, restLats, restLngs)
+	if err != nil {
+		return nil, err
+	}
+	for j, i := range rest {
+		elevations[i] = fromTiles[j]
+	}
+	return elevations, nil
+}
+
+// tileElevations returns the elevation of each point from the tiles.
+func (d *DEM) tileElevations(ctx context.Context, lats, lngs []float64) ([]float64, error) {
 	type key struct{ lat, lng int }
 	byTile := map[key][]int{}
 	for i := range lats {

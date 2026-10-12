@@ -69,6 +69,14 @@ trail runs and the odd race, hikes, ski tours, and road and mountain bike
 rides. They have GPS tracks with elevation, heart rate and cadence, and the
 longer outings have photos, for trip reports.
 
+The tracks follow real trails and roads. The fake Strava comes with the map
+data of Squamish embedded (`internal/demo`): its trails from OpenStreetMap,
+loaded into the routing graph at startup unless an imported region covers
+Squamish already, and its elevations. So routing, snapping activities to
+trails and elevation profiles work around Squamish without importing or
+downloading map data. `go generate ./internal/demo` updates the data from the
+Overpass API and the elevation tiles.
+
 To sync real activities, create a Strava API application at
 https://www.strava.com/settings/api with the "Authorization Callback Domain"
 set to `localhost`, then run the server with its credentials:

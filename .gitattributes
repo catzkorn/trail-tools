@@ -10,3 +10,5 @@ internal/gen/** linguist-generated
 internal/apidesc/descriptor.binpb linguist-generated
 # sqlc's output, in each store package's internal/gen package.
 internal/*/internal/gen/** linguist-generated
+# The embedded map data of Squamish, see internal/demo.
+internal/demo/*.bin.gz linguist-generated -diff
