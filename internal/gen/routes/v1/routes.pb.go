@@ -1480,10 +1480,11 @@ func (*createRouteRequest_ActivityId) isCreateRouteRequest_Source() {}
 func (*createRouteRequest_RouteId) isCreateRouteRequest_Source() {}
 
 type CreateRouteResponse struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Route *Route                 `protobuf:"bytes,1,opt,name=route,proto3"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Route   *Route                 `protobuf:"bytes,1,opt,name=route,proto3"`
+	xxx_hidden_Warning string                 `protobuf:"bytes,2,opt,name=warning,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateRouteResponse) Reset() {
@@ -1518,8 +1519,19 @@ func (x *CreateRouteResponse) GetRoute() *Route {
 	return nil
 }
 
+func (x *CreateRouteResponse) GetWarning() string {
+	if x != nil {
+		return x.xxx_hidden_Warning
+	}
+	return ""
+}
+
 func (x *CreateRouteResponse) SetRoute(v *Route) {
 	x.xxx_hidden_Route = v
+}
+
+func (x *CreateRouteResponse) SetWarning(v string) {
+	x.xxx_hidden_Warning = v
 }
 
 func (x *CreateRouteResponse) HasRoute() bool {
@@ -1538,6 +1550,10 @@ type CreateRouteResponse_builder struct {
 
 	// The created route.
 	Route *Route
+	// Set when the route differs from what was asked for, e.g. when a track
+	// couldn't be snapped to the map and was kept exactly as recorded instead,
+	// to tell the user.
+	Warning string
 }
 
 func (b0 CreateRouteResponse_builder) Build() *CreateRouteResponse {
@@ -1545,6 +1561,7 @@ func (b0 CreateRouteResponse_builder) Build() *CreateRouteResponse {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Route = b.Route
+	x.xxx_hidden_Warning = b.Warning
 	return m0
 }
 
@@ -3336,9 +3353,10 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\n" +
 	"conversion\x18\a \x01(\x0e2\x1a.routes.v1.TrackConversionR\n" +
 	"conversionB\b\n" +
-	"\x06source\"=\n" +
+	"\x06source\"_\n" +
 	"\x13CreateRouteResponse\x12&\n" +
-	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\"H\n" +
+	"\x05route\x18\x01 \x01(\v2\x10.routes.v1.RouteR\x05route\x12 \n" +
+	"\awarning\x18\x02 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\awarning\"H\n" +
 	"\x0fGetRouteRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x0einclude_points\x18\x02 \x01(\bR\rincludePoints\":\n" +

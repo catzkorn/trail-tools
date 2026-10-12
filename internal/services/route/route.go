@@ -64,6 +64,7 @@ func (s *Service) CreateRoute(ctx context.Context, req *routesv1.CreateRouteRequ
 		Description: req.GetDescription(),
 		Profile:     routes.ProfileTrail,
 	}
+	var warning string
 	switch req.WhichSource() {
 	case routesv1.CreateRouteRequest_Waypoints_case:
 		route.Source = routes.SourceWaypoints
@@ -90,7 +91,7 @@ func (s *Service) CreateRoute(ctx context.Context, req *routesv1.CreateRouteRequ
 			return nil, connect.NewError(connect.CodeUnavailable, err.Error()).WithCause(err)
 		}
 		route.Source = track.source
-		if err := s.routeFromTrack(ctx, route, track.points, req.GetConversion()); err != nil {
+		if warning, err = s.routeFromTrack(ctx, route, track.points, req.GetConversion()); err != nil {
 			return nil, err
 		}
 		if route.Name == "" {
@@ -106,7 +107,8 @@ func (s *Service) CreateRoute(ctx context.Context, req *routesv1.CreateRouteRequ
 		return nil, s.toConnectError(err, "failed to create route")
 	}
 	return routesv1.CreateRouteResponse_builder{
-		Route: routeToProto(created, req.GetIncludePoints()),
+		Route:   routeToProto(created, req.GetIncludePoints()),
+		Warning: warning,
 	}.Build(), nil
 }
 
@@ -265,18 +267,34 @@ func (s *Service) recordedTrack(ctx context.Context, userID pgtype.UUID, req tra
 }
 
 // routeFromTrack sets a route's waypoints and legs from a recorded track,
-// keeping the track exactly or snapping it to the map.
-func (s *Service) routeFromTrack(ctx context.Context, route *routes.Route, track []geo.Point, conversion routesv1.TrackConversion) error {
-	if conversion != routesv1.TrackConversion_TRACK_CONVERSION_SNAP {
+// keeping the track exactly or snapping it to the map. If the track can't be
+// snapped, the route follows it with straight legs between waypoints about a
+// kilometer apart instead, which the user can still move or route along
+// trails, and warning says so.
+func (s *Service) routeFromTrack(ctx context.Context, route *routes.Route, track []geo.Point, conversion routesv1.TrackConversion) (warning string, err error) {
+	if conversion == routesv1.TrackConversion_TRACK_CONVERSION_SNAP {
+		waypoints, legs, err := s.snapTrack(ctx, track)
+		switch {
+		case err == nil:
+			route.Waypoints, route.Legs = waypoints, legs
+			return "", nil
+		case ctx.Err() != nil:
+			return "", s.toConnectError(err, "failed to snap the track to the map")
+		}
+		s.log.WarnContext(ctx, "Failed to snap a track to the map, following it with straight legs", slogor.Err(err))
+		reason := ""
+		if errors.Is(err, errInvalidRoute) {
+			reason = fmt.Sprintf(" (%v)", errors.Unwrap(err))
+		}
 		route.Waypoints, route.Legs = legsFromTrack(track)
-		return nil
+		for i := range route.Legs {
+			route.Legs[i].Profile = routes.ProfileStraight
+		}
+		return fmt.Sprintf("The track couldn't be snapped to trails%s, so the route follows it as recorded with straight legs. "+
+			"Move its waypoints, or route legs along trails, to adjust it.", reason), nil
 	}
-	waypoints, legs, err := s.snapTrack(ctx, track)
-	if err != nil {
-		return s.toConnectError(err, "failed to snap the track to the map")
-	}
-	route.Waypoints, route.Legs = waypoints, legs
-	return nil
+	route.Waypoints, route.Legs = legsFromTrack(track)
+	return "", nil
 }
 
 // getRoute gets one of the authenticated user's routes by ID.
