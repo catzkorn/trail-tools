@@ -192,7 +192,8 @@ var (
 // TripReportServiceClient is a client for the trips.v1.TripReportService service.
 type TripReportServiceClient interface {
 	// Create a draft trip report. With an activity, the report's title, date,
-	// statistics and track are copied from the activity.
+	// statistics, track and story are copied from the activity, and its photos
+	// are imported from Strava.
 	CreateTripReport(context.Context, *v1.CreateTripReportRequest) (*v1.CreateTripReportResponse, error)
 	// Get one of the user's trip reports with its photos, and optionally its
 	// track.
@@ -210,13 +211,14 @@ type TripReportServiceClient interface {
 	// Unpublish a trip report, making it a private draft again.
 	UnpublishTripReport(context.Context, *v1.UnpublishTripReportRequest) (*v1.UnpublishTripReportResponse, error)
 	// Upload a photo to a trip report. The image is stored as a JPEG of at most
-	// 2048 pixels and a thumbnail, without its metadata.
+	// 2048 pixels and a thumbnail, without its metadata. It's placed on the
+	// track at the time it was taken, if that was during the activity, or else
+	// at its GPS position.
 	UploadTripPhoto(context.Context, *v1.UploadTripPhotoRequest) (*v1.UploadTripPhotoResponse, error)
-	// Import the photos of the report's activity from Strava, adding them to
-	// the report like uploaded photos: placed at their location, or on the
-	// track at the time they were taken, with their captions. Photos imported
-	// before are skipped. Publishing the report shares the photos, so they're
-	// only imported when the author asks in the app.
+	// Import the photos of the report's activity from Strava that it doesn't
+	// have yet, e.g. ones added on Strava after the report was created, like
+	// uploaded photos and with their captions. Photos imported before are
+	// skipped.
 	ImportStravaPhotos(context.Context, *v1.ImportStravaPhotosRequest) (*v1.ImportStravaPhotosResponse, error)
 	// Update the caption or the location of a photo.
 	UpdateTripPhoto(context.Context, *v1.UpdateTripPhotoRequest) (*v1.UpdateTripPhotoResponse, error)
@@ -247,7 +249,8 @@ func NewTripReportServiceClient(client *connect.Client) TripReportServiceClient 
 // TripReportServiceHandler is an implementation of the trips.v1.TripReportService service.
 type TripReportServiceHandler interface {
 	// Create a draft trip report. With an activity, the report's title, date,
-	// statistics and track are copied from the activity.
+	// statistics, track and story are copied from the activity, and its photos
+	// are imported from Strava.
 	CreateTripReport(context.Context, *v1.CreateTripReportRequest) (*v1.CreateTripReportResponse, error)
 	// Get one of the user's trip reports with its photos, and optionally its
 	// track.
@@ -265,13 +268,14 @@ type TripReportServiceHandler interface {
 	// Unpublish a trip report, making it a private draft again.
 	UnpublishTripReport(context.Context, *v1.UnpublishTripReportRequest) (*v1.UnpublishTripReportResponse, error)
 	// Upload a photo to a trip report. The image is stored as a JPEG of at most
-	// 2048 pixels and a thumbnail, without its metadata.
+	// 2048 pixels and a thumbnail, without its metadata. It's placed on the
+	// track at the time it was taken, if that was during the activity, or else
+	// at its GPS position.
 	UploadTripPhoto(context.Context, *v1.UploadTripPhotoRequest) (*v1.UploadTripPhotoResponse, error)
-	// Import the photos of the report's activity from Strava, adding them to
-	// the report like uploaded photos: placed at their location, or on the
-	// track at the time they were taken, with their captions. Photos imported
-	// before are skipped. Publishing the report shares the photos, so they're
-	// only imported when the author asks in the app.
+	// Import the photos of the report's activity from Strava that it doesn't
+	// have yet, e.g. ones added on Strava after the report was created, like
+	// uploaded photos and with their captions. Photos imported before are
+	// skipped.
 	ImportStravaPhotos(context.Context, *v1.ImportStravaPhotosRequest) (*v1.ImportStravaPhotosResponse, error)
 	// Update the caption or the location of a photo.
 	UpdateTripPhoto(context.Context, *v1.UpdateTripPhotoRequest) (*v1.UpdateTripPhotoResponse, error)
