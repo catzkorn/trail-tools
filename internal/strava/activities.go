@@ -74,10 +74,14 @@ func (a *Activity) IsFootSport() bool {
 // MaxActivitiesPerPage is the maximum page size of ListActivities.
 const MaxActivitiesPerPage = 200
 
-// ListActivities lists the athlete's activities, newest first.
-func (c *Client) ListActivities(ctx context.Context, accessToken string, page, perPage int) ([]*Activity, error) {
+// ListActivities lists up to perPage of the athlete's activities that
+// started before the provided time, or the latest ones if it is zero,
+// newest first.
+func (c *Client) ListActivities(ctx context.Context, accessToken string, before time.Time, perPage int) ([]*Activity, error) {
 	q := url.Values{}
-	q.Set("page", strconv.Itoa(page))
+	if !before.IsZero() {
+		q.Set("before", strconv.FormatInt(before.Unix(), 10))
+	}
 	q.Set("per_page", strconv.Itoa(perPage))
 	body, err := c.get(ctx, accessToken, "/athlete/activities", q)
 	if err != nil {

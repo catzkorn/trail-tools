@@ -312,7 +312,10 @@ aren't stored in the Terraform state:
 - `strava-client-secret`: the Strava API application's client secret. Also
   set `strava_client_id` in [`terraform.tfvars`](infra/terraform.tfvars),
   which enables Strava and an hourly Cloud Scheduler job that syncs
-  activities, and set the Strava app's callback domain.
+  activities, and set the Strava app's callback domain. Cloud Run only runs
+  the server during requests, so syncs run within the job's requests: when
+  you sync from Settings, the service runs the job right away (`-strava-sync-job`),
+  and the hourly runs continue syncs that stop at Strava's rate limit.
 - `strava-webhook-verify-token`: a random secret Strava sends back when the
   server subscribes to its webhook events, at startup. Strava then sends new,
   changed and deleted activities to `/strava/webhook`, and each is synced

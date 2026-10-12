@@ -40,7 +40,7 @@ func (q *Queries) DeleteStravaConnection(ctx context.Context, userID pgtype.UUID
 }
 
 const getStravaConnection = `-- name: GetStravaConnection :one
-select user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time from strava_connections
+select user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time, sync_state_time, list_before from strava_connections
 where user_id = $1
 `
 
@@ -59,12 +59,14 @@ func (q *Queries) GetStravaConnection(ctx context.Context, userID pgtype.UUID) (
 		&i.LastSyncTime,
 		&i.ResumeTime,
 		&i.CreateTime,
+		&i.SyncStateTime,
+		&i.ListBefore,
 	)
 	return &i, err
 }
 
 const listStravaConnections = `-- name: ListStravaConnections :many
-select user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time from strava_connections
+select user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time, sync_state_time, list_before from strava_connections
 `
 
 func (q *Queries) ListStravaConnections(ctx context.Context) ([]*StravaConnection, error) {
@@ -88,6 +90,8 @@ func (q *Queries) ListStravaConnections(ctx context.Context) ([]*StravaConnectio
 			&i.LastSyncTime,
 			&i.ResumeTime,
 			&i.CreateTime,
+			&i.SyncStateTime,
+			&i.ListBefore,
 		); err != nil {
 			return nil, err
 		}
@@ -100,7 +104,7 @@ func (q *Queries) ListStravaConnections(ctx context.Context) ([]*StravaConnectio
 }
 
 const listStravaConnectionsByAthlete = `-- name: ListStravaConnectionsByAthlete :many
-select user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time from strava_connections
+select user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time, sync_state_time, list_before from strava_connections
 where athlete_id = $1
 `
 
@@ -125,6 +129,8 @@ func (q *Queries) ListStravaConnectionsByAthlete(ctx context.Context, athleteID 
 			&i.LastSyncTime,
 			&i.ResumeTime,
 			&i.CreateTime,
+			&i.SyncStateTime,
+			&i.ListBefore,
 		); err != nil {
 			return nil, err
 		}
@@ -136,12 +142,29 @@ func (q *Queries) ListStravaConnectionsByAthlete(ctx context.Context, athleteID 
 	return items, nil
 }
 
+const updateStravaListBefore = `-- name: UpdateStravaListBefore :exec
+update strava_connections set
+  list_before = $2
+where user_id = $1
+`
+
+type UpdateStravaListBeforeParams struct {
+	UserID     pgtype.UUID
+	ListBefore pgtype.Timestamptz
+}
+
+func (q *Queries) UpdateStravaListBefore(ctx context.Context, arg *UpdateStravaListBeforeParams) error {
+	_, err := q.db.Exec(ctx, updateStravaListBefore, arg.UserID, arg.ListBefore)
+	return err
+}
+
 const updateStravaSyncState = `-- name: UpdateStravaSyncState :exec
 update strava_connections set
   sync_state = $2,
   sync_message = $3,
   resume_time = $4,
-  last_sync_time = coalesce($5, last_sync_time)
+  last_sync_time = coalesce($5, last_sync_time),
+  sync_state_time = current_timestamp
 where user_id = $1
 `
 
@@ -211,7 +234,7 @@ on conflict (user_id) do update set
   access_token = excluded.access_token,
   refresh_token = excluded.refresh_token,
   expiry = excluded.expiry
-returning user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time
+returning user_id, athlete_id, athlete_name, access_token, refresh_token, expiry, sync_state, sync_message, last_sync_time, resume_time, create_time, sync_state_time, list_before
 `
 
 type UpsertStravaConnectionParams struct {
@@ -245,6 +268,8 @@ func (q *Queries) UpsertStravaConnection(ctx context.Context, arg *UpsertStravaC
 		&i.LastSyncTime,
 		&i.ResumeTime,
 		&i.CreateTime,
+		&i.SyncStateTime,
+		&i.ListBefore,
 	)
 	return &i, err
 }

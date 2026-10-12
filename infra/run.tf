@@ -45,6 +45,7 @@ resource "google_cloud_run_v2_service" "app" {
           local.strava ? {
             TRAIL_TOOLS_STRAVA_CLIENT_ID          = var.strava_client_id
             TRAIL_TOOLS_STRAVA_SYNC_MODE          = "scheduled"
+            TRAIL_TOOLS_STRAVA_SYNC_JOB           = google_cloud_scheduler_job.strava_sync[0].id
             TRAIL_TOOLS_SCHEDULER_SERVICE_ACCOUNT = google_service_account.scheduler.email
             TRAIL_TOOLS_SCHEDULER_AUDIENCE        = "trail-tools-scheduler"
           } : {},
@@ -171,6 +172,7 @@ resource "google_cloud_run_domain_mapping" "domain" {
 # Syncs Strava activities hourly, as the service doesn't run between
 # requests. New activities usually arrive sooner, from Strava's webhook
 # events; this continues long syncs and catches anything the events missed.
+# The service also runs it when a user asks to sync.
 resource "google_cloud_scheduler_job" "strava_sync" {
   count            = var.service_enabled && local.strava ? 1 : 0
   name             = "strava-sync"
@@ -189,4 +191,12 @@ resource "google_cloud_scheduler_job" "strava_sync" {
   }
 
   depends_on = [google_project_service.services]
+}
+
+# Lets the service run the Strava sync job when a user asks to sync.
+resource "google_project_iam_member" "run_strava_sync" {
+  count   = local.strava ? 1 : 0
+  project = var.project
+  role    = "roles/cloudscheduler.jobRunner"
+  member  = google_service_account.run.member
 }

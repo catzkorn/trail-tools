@@ -41,7 +41,13 @@ update strava_connections set
   sync_state = $2,
   sync_message = $3,
   resume_time = $4,
-  last_sync_time = coalesce(sqlc.narg(last_sync_time), last_sync_time)
+  last_sync_time = coalesce(sqlc.narg(last_sync_time), last_sync_time),
+  sync_state_time = current_timestamp
+where user_id = $1;
+
+-- name: UpdateStravaListBefore :exec
+update strava_connections set
+  list_before = $2
 where user_id = $1;
 
 -- name: DeleteStravaConnection :execrows

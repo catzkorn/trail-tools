@@ -24,6 +24,7 @@ type SyncRepository interface {
 	ListStravaConnections(ctx context.Context) ([]*activities.StravaConnection, error)
 	UpdateStravaTokens(ctx context.Context, userID pgtype.UUID, accessToken, refreshToken string, expiry time.Time) error
 	UpdateStravaSyncState(ctx context.Context, userID pgtype.UUID, state activities.SyncState, message string, resumeTime, lastSyncTime time.Time) error
+	UpdateStravaListBefore(ctx context.Context, userID pgtype.UUID, listBefore time.Time) error
 	UpsertActivity(ctx context.Context, userID pgtype.UUID, a *activities.ActivitySummary) (pgtype.UUID, error)
 	LatestActivityStartTime(ctx context.Context, userID pgtype.UUID) (time.Time, error)
 	ListActivitiesWithoutStreams(ctx context.Context, userID pgtype.UUID, limit int32) ([]activities.PendingStreams, error)
@@ -37,10 +38,16 @@ type SyncRepository interface {
 // StravaClient is the Strava API.
 type StravaClient interface {
 	Refresh(ctx context.Context, refreshToken string) (*strava.Token, error)
-	ListActivities(ctx context.Context, accessToken string, page, perPage int) ([]*strava.Activity, error)
+	ListActivities(ctx context.Context, accessToken string, before time.Time, perPage int) ([]*strava.Activity, error)
 	GetActivity(ctx context.Context, accessToken string, id int64) (*strava.Activity, error)
 	GetStreams(ctx context.Context, accessToken string, id int64) (*strava.Streams, error)
 	GetActivityPhotos(ctx context.Context, accessToken string, id int64) ([]*strava.Photo, error)
+}
+
+// Trigger starts a scheduled sync right away, e.g. by running the Cloud
+// Scheduler job that calls SyncPath.
+type Trigger interface {
+	Run(ctx context.Context) error
 }
 
 const (
@@ -55,6 +62,13 @@ const (
 	// streamBatchSize is the number of activities fetched streams for between
 	// progress updates.
 	streamBatchSize = 25
+	// staleSyncAge is how long a running sync goes without updating its
+	// state before it is considered interrupted. Syncs update it after each
+	// page of activities and each batch of streams.
+	staleSyncAge = 3 * time.Minute
+	// inlineSyncBudget is how long Request syncs for within the request when
+	// syncs neither run in the background nor can be triggered.
+	inlineSyncBudget = 45 * time.Second
 )
 
 // Syncer syncs activities from Strava in the background. At most one sync
@@ -68,6 +82,9 @@ type Syncer struct {
 	// Whether syncs run in background goroutines. Otherwise, syncs only run
 	// within SyncOnce and SyncDue calls.
 	background bool
+	// Starts scheduled syncs when requested, if syncs don't run in the
+	// background. May be nil.
+	trigger Trigger
 
 	mu      sync.Mutex
 	ctx     context.Context
@@ -77,14 +94,16 @@ type Syncer struct {
 
 // NewSyncer creates a new Syncer. Syncs are stopped when ctx is cancelled.
 // If background is false, Start does nothing and syncs must be run with
-// SyncOnce and SyncDue, e.g. from a scheduled job.
-func NewSyncer(ctx context.Context, log *slog.Logger, repo SyncRepository, client StravaClient, background bool) *Syncer {
+// SyncOnce and SyncDue, e.g. from a scheduled job, which trigger, if not
+// nil, runs when a sync is requested.
+func NewSyncer(ctx context.Context, log *slog.Logger, repo SyncRepository, client StravaClient, background bool, trigger Trigger) *Syncer {
 	return &Syncer{
 		log:        log,
 		repo:       repo,
 		client:     client,
 		nowFn:      time.Now,
 		background: background,
+		trigger:    trigger,
 		ctx:        ctx,
 		running:    map[pgtype.UUID]bool{},
 	}
@@ -116,6 +135,53 @@ func (s *Syncer) Start(userID pgtype.UUID, full bool) bool {
 		s.sync(s.ctx, userID, full, true)
 	}()
 	return true
+}
+
+// Request syncs the user's activities soon. In the background, if syncs run
+// there. Otherwise it marks the connection due a sync and runs the trigger,
+// so a scheduled sync runs it right away. Without a trigger, or if it
+// fails, it syncs within the request for a while instead, and scheduled
+// syncs continue from where it stops.
+func (s *Syncer) Request(ctx context.Context, userID pgtype.UUID, full bool) error {
+	if s.background {
+		s.Start(userID, full)
+		return nil
+	}
+	if s.trigger != nil {
+		conn, err := s.repo.GetStravaConnection(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if s.Active(conn) {
+			return nil
+		}
+		if full {
+			// List all activities, as if an earlier listing was interrupted.
+			if err := s.repo.UpdateStravaListBefore(ctx, userID, s.nowFn()); err != nil {
+				return err
+			}
+		}
+		// A running sync is due, so the triggered sync runs it.
+		if err := s.setState(ctx, userID, activities.SyncStateRunning, "Starting", time.Time{}); err != nil {
+			return err
+		}
+		err = s.trigger.Run(ctx)
+		if err == nil {
+			return nil
+		}
+		s.log.ErrorContext(ctx, "Failed to trigger a Strava sync, syncing within the request instead", slogor.Err(err))
+	}
+	syncCtx, cancel := context.WithTimeout(ctx, inlineSyncBudget)
+	defer cancel()
+	s.SyncOnce(syncCtx, userID, full)
+	return nil
+}
+
+// Active returns whether a sync recorded as running is still running,
+// rather than interrupted, e.g. by a restart or the end of its time budget.
+func (s *Syncer) Active(conn *activities.StravaConnection) bool {
+	return conn.SyncState == activities.SyncStateRunning &&
+		(s.Running(conn.UserID) || s.nowFn().Sub(conn.SyncStateTime) < staleSyncAge)
 }
 
 // SyncOnce syncs the user's activities until done, the rate limit is
@@ -260,9 +326,11 @@ func (s *Syncer) runSync(ctx context.Context, log *slog.Logger, userID pgtype.UU
 	}
 
 	// Fetch activity summaries, newest first, so recent activities show up
-	// first. An incremental sync stops at the ones synced before.
-	var since time.Time
-	if !full {
+	// first. An unfinished listing continues where it stopped, to the oldest
+	// activity. Otherwise a full sync lists all activities, and an
+	// incremental sync stops at the ones synced before.
+	before, since := conn.ListBefore, time.Time{}
+	if before.IsZero() && !full {
 		latest, err := s.repo.LatestActivityStartTime(ctx, userID)
 		if err != nil {
 			return err
@@ -272,26 +340,41 @@ func (s *Syncer) runSync(ctx context.Context, log *slog.Logger, userID pgtype.UU
 		}
 	}
 	fetched := 0
-	for page, done := 1, false; !done; page++ {
+	for done := false; !done; {
 		var list []*strava.Activity
 		err := s.withToken(ctx, conn, wait, func(token string) error {
 			var err error
-			list, err = s.client.ListActivities(ctx, token, page, strava.MaxActivitiesPerPage)
+			list, err = s.client.ListActivities(ctx, token, before, strava.MaxActivitiesPerPage)
 			return err
 		})
 		if err != nil {
 			return fmt.Errorf("failed to list activities: %w", err)
 		}
-		done = len(list) == 0
+		progressed, reachedSince := false, false
 		for _, a := range list {
 			if a.StartDate.Before(since) {
-				done = true
+				reachedSince = true
 				break
+			}
+			if !before.IsZero() && !a.StartDate.Before(before) {
+				// Listed already.
+				continue
 			}
 			if _, err := s.repo.UpsertActivity(ctx, userID, summaryFromStrava(a)); err != nil {
 				return err
 			}
+			before, progressed = a.StartDate, true
 			fetched++
+		}
+		// Record how far the listing got, so an interrupted listing
+		// continues from there.
+		done = reachedSince || !progressed
+		listBefore := before
+		if done {
+			listBefore = time.Time{}
+		}
+		if err := s.repo.UpdateStravaListBefore(ctx, userID, listBefore); err != nil {
+			return err
 		}
 		if err := s.setState(ctx, userID, activities.SyncStateRunning, fmt.Sprintf("Fetched %d activities", fetched), time.Time{}); err != nil {
 			return err

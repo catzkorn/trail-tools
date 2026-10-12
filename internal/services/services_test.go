@@ -141,7 +141,7 @@ func newEnv(t *testing.T) *env {
 	}
 
 	syncCtx, cancel := context.WithCancel(ctx)
-	e.syncer = stravasvc.NewSyncer(syncCtx, log, activityRepo, e.strava, true)
+	e.syncer = stravasvc.NewSyncer(syncCtx, log, activityRepo, e.strava, true, nil)
 	t.Cleanup(func() {
 		cancel()
 		e.syncer.Wait()

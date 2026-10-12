@@ -24,8 +24,27 @@ import { formatTimestamp } from "helpers/format";
 import { invalidateServices } from "helpers/query";
 import React, { useEffect, useRef } from "react";
 
+// Whether a sync is in progress, including paused at the rate limit.
 const isSyncing = (state: SyncState | undefined): boolean =>
   state === SyncState.RUNNING || state === SyncState.RATE_LIMITED;
+
+/**
+ * How often to check the sync's progress: often while it runs, rarely while
+ * it waits for the rate limit to reset.
+ */
+const pollInterval = (state: SyncState | undefined): number | false => {
+  switch (state) {
+    case SyncState.RUNNING: {
+      return 3000;
+    }
+    case SyncState.RATE_LIMITED: {
+      return 60_000;
+    }
+    default: {
+      return false;
+    }
+  }
+};
 
 const syncStateLabel = (connection: StravaConnection): string => {
   switch (connection.syncState) {
@@ -70,8 +89,50 @@ interface StravaCardProps {
 }
 
 /**
- * StravaCard shows the Strava connection and sync progress. While a sync is
- * running the status is polled every five seconds.
+ * SyncProgress shows what a sync is doing, and how many activities have
+ * their details synced.
+ */
+const SyncProgress: React.FC<{ connection: StravaConnection }> = ({
+  connection,
+}) => {
+  const running = connection.syncState === SyncState.RUNNING;
+  const total = connection.activityCount;
+  const done = total - connection.pendingStreamCount;
+  return (
+    <div className="flex flex-col gap-2 rounded-md bg-sky-50 p-2 text-xs text-sky-900">
+      <div className="flex items-center gap-2">
+        {running && <ArrowPathIcon className="size-4 shrink-0 animate-spin" />}
+        <span>
+          {connection.syncMessage === "" ? "Syncing…" : connection.syncMessage}
+        </span>
+      </div>
+      {total > 0 && connection.pendingStreamCount > 0 && (
+        <div className="flex items-center gap-2">
+          <div
+            className="h-1.5 flex-1 overflow-hidden rounded-full bg-sky-100"
+            role="progressbar"
+            aria-label="Activities with details synced"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={done}
+          >
+            <div
+              className="h-full rounded-full bg-sky-600 transition-[width]"
+              style={{ width: `${(done / total) * 100}%` }}
+            />
+          </div>
+          <span className="tabular-nums">
+            {done} of {total} activities
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * StravaCard shows the Strava connection and sync progress, polled while a
+ * sync is in progress.
  */
 const StravaCard: React.FC<StravaCardProps> = ({ showDisconnect = false }) => {
   const queryClient = useQueryClient();
@@ -81,7 +142,7 @@ const StravaCard: React.FC<StravaCardProps> = ({ showDisconnect = false }) => {
     {},
     {
       refetchInterval: (query) =>
-        isSyncing(query.state.data?.connection?.syncState) ? 5000 : false,
+        pollInterval(query.state.data?.connection?.syncState),
     }
   );
   const sync = useMutation(syncStrava, {
@@ -164,6 +225,8 @@ const StravaCard: React.FC<StravaCardProps> = ({ showDisconnect = false }) => {
   }
 
   const syncing = isSyncing(connection.syncState);
+  // A sync paused at the rate limit can be restarted once it has reset.
+  const running = connection.syncState === SyncState.RUNNING || sync.isPending;
   return (
     <Card
       title="Strava"
@@ -195,34 +258,38 @@ const StravaCard: React.FC<StravaCardProps> = ({ showDisconnect = false }) => {
         <div className="text-xs text-gray-600">
           Last sync: {formatTimestamp(connection.lastSyncTime)}
         </div>
-        {connection.syncMessage !== "" && (
-          <p
-            className={`rounded-md p-2 text-xs ${connection.syncState === SyncState.FAILED ? "bg-red-50 text-red-800" : "bg-gray-50 text-gray-700"}`}
-          >
-            {connection.syncMessage}
-          </p>
+        {syncing ? (
+          <SyncProgress connection={connection} />
+        ) : (
+          connection.syncMessage !== "" && (
+            <p
+              className={`rounded-md p-2 text-xs ${connection.syncState === SyncState.FAILED ? "bg-red-50 text-red-800" : "bg-gray-50 text-gray-700"}`}
+            >
+              {connection.syncMessage}
+            </p>
+          )
         )}
         <ErrorText error={sync.error ?? disconnect.error} />
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             className={primaryButton}
-            disabled={syncing || sync.isPending}
+            disabled={running}
             onClick={() => {
               sync.mutate({ full: false });
             }}
           >
             <ArrowPathIcon
-              className={`size-4 ${syncing ? "animate-spin" : ""}`}
+              className={`size-4 ${running ? "animate-spin" : ""}`}
             />
-            {syncing ? "Syncing" : "Sync now"}
+            {running ? "Syncing" : "Sync now"}
           </button>
           {showDisconnect && (
             <>
               <button
                 type="button"
                 className={secondaryButton}
-                disabled={syncing || sync.isPending}
+                disabled={running}
                 title="Re-fetch all activities to pick up edits made on Strava"
                 onClick={() => {
                   sync.mutate({ full: true });

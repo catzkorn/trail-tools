@@ -75,14 +75,8 @@ func (s *Service) SyncStrava(ctx context.Context, req *stravav1.SyncStravaReques
 		}
 		return nil, s.internalError(ctx, "failed to get Strava connection", err)
 	}
-	if s.syncer.Background() {
-		s.syncer.Start(userID, req.GetFull())
-	} else {
-		// Without background work, sync for a while within the request.
-		// Scheduled syncs continue from where this one stops.
-		syncCtx, cancel := context.WithTimeout(ctx, inlineSyncBudget)
-		s.syncer.SyncOnce(syncCtx, userID, req.GetFull())
-		cancel()
+	if err := s.syncer.Request(ctx, userID, req.GetFull()); err != nil {
+		return nil, s.internalError(ctx, "failed to start the sync", err)
 	}
 	conn, err := s.connection(ctx, userID)
 	if err != nil {
@@ -127,11 +121,14 @@ func (s *Service) connection(ctx context.Context, userID pgtype.UUID) (*stravav1
 		if !conn.ResumeTime.IsZero() && conn.SyncState == activities.SyncStateRateLimited {
 			b.ResumeTime = timestamppb.New(conn.ResumeTime)
 		}
-		// A sync recorded as running may have been interrupted by a restart
-		// and not resumed yet.
-		if conn.SyncState == activities.SyncStateRunning && (s.syncer == nil || !s.syncer.Running(userID)) {
+		// A sync recorded as running may have been interrupted, e.g. by a
+		// restart or the end of its time budget, and not resumed yet.
+		if conn.SyncState == activities.SyncStateRunning && (s.syncer == nil || !s.syncer.Active(conn)) {
 			b.SyncState = stravav1.SyncState_SYNC_STATE_IDLE
-			b.SyncMessage = "The last sync was interrupted and will resume shortly"
+			b.SyncMessage = "The last sync was interrupted and continues with the next scheduled sync"
+			if s.syncer != nil && s.syncer.Background() {
+				b.SyncMessage = "The last sync was interrupted and resumes shortly"
+			}
 		}
 	}
 	total, pending, err := s.repo.CountActivities(ctx, userID)
@@ -160,10 +157,6 @@ func (s *Service) internalError(ctx context.Context, msg string, err error) erro
 	s.log.ErrorContext(ctx, msg, slogor.Err(err))
 	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }
-
-// inlineSyncBudget is how long SyncStrava syncs for when syncs don't run in
-// the background.
-const inlineSyncBudget = 45 * time.Second
 
 // timeNow is overridden in tests.
 var timeNow = time.Now
