@@ -1,9 +1,11 @@
 package fakestrava
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"sync"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -11,6 +13,10 @@ import (
 
 // historyDays is how many days of activities the athlete has, up to today.
 const historyDays = 120
+
+// firstID is far above the IDs of real Strava activities, so that links to
+// the activities on Strava don't show someone else's.
+const firstID = 9_000_000_000_000
 
 // home is where the athlete lives: Squamish, between Howe Sound and the
 // Coast Mountains, below the Stawamus Chief.
@@ -27,15 +33,40 @@ func mustLoadLocation(name string) *time.Location {
 	return loc
 }
 
+// place is where an activity starts, and what it's called.
+type place struct {
+	name      string
+	trailhead geo.Point
+}
+
+// Trailheads around Squamish.
+var (
+	chief        = geo.Point{Lat: 49.6806, Lng: -123.1483}
+	gondola      = geo.Point{Lat: 49.6764, Lng: -123.1565}
+	smokeBluffs  = geo.Point{Lat: 49.7070, Lng: -123.1430}
+	crumpitWoods = geo.Point{Lat: 49.7140, Lng: -123.1370}
+	aliceLake    = geo.Point{Lat: 49.7770, Lng: -123.1210}
+	diamondHead  = geo.Point{Lat: 49.7654, Lng: -123.0423}
+	rubbleCreek  = geo.Point{Lat: 49.9574, Lng: -123.1200}
+	quest        = geo.Point{Lat: 49.7340, Lng: -123.1004}
+	murrinPark   = geo.Point{Lat: 49.6437, Lng: -123.2060}
+	brohmLake    = geo.Point{Lat: 49.8220, Lng: -123.1330}
+	estuary      = geo.Point{Lat: 49.6985, Lng: -123.1630}
+	dike         = geo.Point{Lat: 49.7550, Lng: -123.1520}
+	highlands    = geo.Point{Lat: 49.7480, Lng: -123.1180}
+	brennanPark  = geo.Point{Lat: 49.7012, Lng: -123.1410}
+)
+
 // sport is a kind of activity the athlete does.
 type sport struct {
 	sportType string
-	names     []string
-	// The distance in km, and the climbing in meters per km.
+	places    []place
+	// The distance in km, and the climbing in meters per km of tracks that
+	// aren't routed along mapped paths.
 	minKm, maxKm                 float64
 	minClimbPerKm, maxClimbPerKm float64
-	// How far from home the activity starts, in km.
-	trailheadKm float64
+	// Whether tracks follow trails, or else take the shortest way.
+	trails bool
 	// The photos taken during the activity: one every so many km, up to a
 	// maximum.
 	kmPerPhoto float64
@@ -55,62 +86,90 @@ func (s sport) within(minKm, maxKm float64) sport {
 var (
 	roadRun = sport{
 		sportType: "Run", minKm: 7, maxKm: 12, minClimbPerKm: 1, maxClimbPerKm: 6, hour: 7,
-		names: []string{"Morning Run", "Easy run along the estuary", "Tempo on the dike", "Mamquam Blind Channel loop", "Recovery run"},
+		places: []place{
+			{"Morning Run", home},
+			{"Easy run along the estuary", estuary},
+			{"Tempo on the dike", dike},
+			{"Mamquam Blind Channel loop", home},
+			{"Recovery run", home},
+		},
 	}
 	trailRun = sport{
-		sportType: "TrailRun", minKm: 9, maxKm: 34, minClimbPerKm: 45, maxClimbPerKm: 75, trailheadKm: 5, hour: 7,
+		sportType: "TrailRun", minKm: 9, maxKm: 34, minClimbPerKm: 45, maxClimbPerKm: 75, trails: true, hour: 7,
 		kmPerPhoto: 5, maxPhotos: 7,
-		names: []string{
-			"Stawamus Chief", "Sea to Summit", "Smoke Bluffs and Crumpit Woods", "Alice Lake loop", "Garibaldi Lake",
-			"Elfin Lakes", "Mount Mulligan", "Petgill Lake", "Quest loop", "Four Lakes and Alice Ridge",
+		places: []place{
+			{"Stawamus Chief", chief},
+			{"Sea to Summit", gondola},
+			{"Smoke Bluffs and Crumpit Woods", smokeBluffs},
+			{"Alice Lake loop", aliceLake},
+			{"Four Lakes and Alice Ridge", aliceLake},
+			{"Elfin Lakes", diamondHead},
+			{"Quest loop", quest},
+			{"Petgill Lake", murrinPark},
+			{"Garibaldi Lake", rubbleCreek},
 		},
 	}
 	hike = sport{
-		sportType: "Hike", minKm: 9, maxKm: 17, minClimbPerKm: 60, maxClimbPerKm: 95, trailheadKm: 10, hour: 9,
+		sportType: "Hike", minKm: 9, maxKm: 17, minClimbPerKm: 60, maxClimbPerKm: 95, trails: true, hour: 9,
 		kmPerPhoto: 3, maxPhotos: 5,
-		names: []string{"Stawamus Chief hike", "Elfin Lakes with friends", "Brohm Lake", "Hike to Garibaldi Lake"},
+		places: []place{
+			{"Stawamus Chief hike", chief},
+			{"Elfin Lakes with friends", diamondHead},
+			{"Brohm Lake", brohmLake},
+			{"Hike to Garibaldi Lake", rubbleCreek},
+		},
 	}
 	ride = sport{
 		sportType: "Ride", minKm: 30, maxKm: 60, minClimbPerKm: 4, maxClimbPerKm: 12, hour: 17,
-		names: []string{"Sea to Sky ride", "Ride to Brackendale and back", "Evening spin"},
+		places: []place{{"Sea to Sky ride", home}, {"Ride to Brackendale and back", home}, {"Evening spin", home}},
 	}
 	mountainBikeRide = sport{
-		sportType: "MountainBikeRide", minKm: 15, maxKm: 35, minClimbPerKm: 25, maxClimbPerKm: 40, trailheadKm: 4, hour: 17,
+		sportType: "MountainBikeRide", minKm: 15, maxKm: 35, minClimbPerKm: 25, maxClimbPerKm: 40, trails: true, hour: 17,
 		kmPerPhoto: 15, maxPhotos: 2,
-		names: []string{"Half Nelson and Pseudo-Tsuga", "Alice Lake trails", "Diamond Head loop", "Crumpit Woods laps"},
+		places: []place{
+			{"Half Nelson and Pseudo-Tsuga", highlands},
+			{"Alice Lake trails", aliceLake},
+			{"Diamond Head loop", quest},
+			{"Crumpit Woods laps", crumpitWoods},
+		},
 	}
 	skiTour = sport{
-		sportType: "BackcountrySki", minKm: 10, maxKm: 20, minClimbPerKm: 70, maxClimbPerKm: 110, trailheadKm: 18, hour: 7,
+		sportType: "BackcountrySki", minKm: 10, maxKm: 20, minClimbPerKm: 70, maxClimbPerKm: 110, trails: true, hour: 7,
 		kmPerPhoto: 4, maxPhotos: 5,
-		names: []string{"Elfin Lakes ski tour", "Brohm Ridge", "Diamond Head tour", "Round Mountain laps"},
+		places: []place{
+			{"Elfin Lakes ski tour", diamondHead},
+			{"Brohm Ridge", brohmLake},
+			{"Diamond Head tour", diamondHead},
+			{"Round Mountain laps", diamondHead},
+		},
 	}
 )
 
 // races are the trail races the athlete runs now and then, with their
 // distance in km and climbing in meters per km.
 var races = []struct {
-	name           string
+	place
 	km, climbPerKm float64
 }{
-	{"Squamish 50 – 50 km", 50, 55},
-	{"Loop the Lakes Trail Race", 11, 30},
-	{"Quest Trail Run", 21, 40},
-	{"Sea to Summit Race", 8, 115},
+	{place{"Squamish 50 – 50 km", brennanPark}, 50, 55},
+	{place{"Loop the Lakes Trail Race", aliceLake}, 11, 30},
+	{place{"Quest Trail Run", quest}, 21, 40},
+	{place{"Sea to Summit Race", gondola}, 8, 115},
 }
+
+// raceEveryWeeks is how often the athlete races, on a Saturday.
+const raceEveryWeeks = 5
 
 // race returns the race on a day as a sport.
 func race(day time.Time) sport {
 	_, week := day.ISOWeek()
 	r := races[week/raceEveryWeeks%len(races)]
 	return sport{
-		sportType: "TrailRun", names: []string{r.name}, minKm: r.km, maxKm: r.km,
-		minClimbPerKm: r.climbPerKm, maxClimbPerKm: r.climbPerKm, trailheadKm: 3, hour: 7,
+		sportType: "TrailRun", places: []place{r.place}, minKm: r.km, maxKm: r.km,
+		minClimbPerKm: r.climbPerKm, maxClimbPerKm: r.climbPerKm, trails: true, hour: 7,
 		kmPerPhoto: 8, maxPhotos: 5, race: true,
 	}
 }
-
-// raceEveryWeeks is how often the athlete races, on a Saturday.
-const raceEveryWeeks = 5
 
 var captions = []string{
 	"Above the clouds", "The Chief from the Sea to Sky", "Howe Sound below", "Lunch with a view", "Along the ridge",
@@ -153,7 +212,8 @@ type activity struct {
 	polyline           string
 	streams            *streams
 	photos             []*photo
-	trailhead          geo.Point
+	// Whether the track follows mapped paths.
+	routed bool
 }
 
 // streams are the recorded data of an activity.
@@ -179,36 +239,69 @@ type photo struct {
 	seed uint64
 }
 
+// outing is a planned activity.
+type outing struct {
+	id     int64
+	sport  sport
+	place  place
+	start  time.Time
+	manual bool
+}
+
 // generate returns the athlete's activities from historyDays ago until now,
-// newest first. Activities are the same for the same day, so their IDs stay
-// stable between syncs.
-func generate(now time.Time) []*activity {
+// newest first, with tracks made by tracer. Activities are the same for the
+// same day, so their IDs stay stable between syncs.
+func generate(ctx context.Context, now time.Time, tracer *tracer) []*activity {
+	outings := plan(now)
+	result := make([]*activity, len(outings))
+	// Tracks are routed a few at a time.
+	sem := make(chan struct{}, 4)
+	var wg sync.WaitGroup
+	for i, o := range outings {
+		wg.Go(func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			if o.manual {
+				result[i] = manualRun(o)
+			} else {
+				result[i] = newActivity(ctx, o, tracer)
+			}
+		})
+	}
+	wg.Wait()
+	return result
+}
+
+// plan returns the outings from historyDays ago until now, newest first:
+// easy runs, and a short trail run or a mountain bike ride during the week,
+// a long trail run or a race on Saturday, and a hike, ski tour or easy run on
+// Sunday.
+func plan(now time.Time) []outing {
 	today := now.In(timezone)
-	var result []*activity
+	var result []outing
 	for back := range historyDays {
 		day := time.Date(today.Year(), today.Month(), today.Day()-back, 0, 0, 0, 0, timezone)
 		dayNumber := day.Unix() / 86400
 		r := rand.New(rand.NewPCG(uint64(dayNumber), 42))
-		for i, s := range plan(day, r) {
-			start := day.Add(time.Duration(s.hour)*time.Hour + time.Duration(r.IntN(50))*time.Minute)
-			if start.After(now) {
+		for i, s := range sports(day, r) {
+			o := outing{
+				id:    firstID + dayNumber*10 + int64(i) + 1,
+				sport: s,
+				place: s.places[r.IntN(len(s.places))],
+				start: day.Add(time.Duration(s.hour)*time.Hour + time.Duration(r.IntN(50))*time.Minute),
+			}
+			if o.start.After(now) {
 				continue
 			}
-			id := dayNumber*10 + int64(i) + 1
-			if s.sportType == "Run" && day.Weekday() == time.Thursday && day.YearDay()%4 == 0 {
-				result = append(result, manualRun(id, start, r))
-				continue
-			}
-			result = append(result, newActivity(id, s, start, r))
+			o.manual = s.sportType == "Run" && day.Weekday() == time.Thursday && day.YearDay()%4 == 0
+			result = append(result, o)
 		}
 	}
 	return result
 }
 
-// plan returns the activities of a day: easy runs, and a short trail run or
-// a mountain bike ride during the week, a long trail run or a race on
-// Saturday, and a hike, ski tour or easy run on Sunday.
-func plan(day time.Time, r *rand.Rand) []sport {
+// sports returns the sports of the activities of a day.
+func sports(day time.Time, r *rand.Rand) []sport {
 	skip := r.Float64() < 0.15
 	switch day.Weekday() {
 	case time.Monday:
@@ -256,15 +349,16 @@ func plan(day time.Time, r *rand.Rand) []sport {
 }
 
 // manualRun returns an activity entered by hand, without a track.
-func manualRun(id int64, start time.Time, r *rand.Rand) *activity {
+func manualRun(o outing) *activity {
+	r := rand.New(rand.NewPCG(uint64(o.id), 42))
 	distance := 8000 + float64(r.IntN(4000))
 	moving := int32(distance / 3.1)
 	return &activity{
-		id:          id,
+		id:          o.id,
 		name:        "Treadmill run",
 		sportType:   "Run",
 		description: "Raining all day, so the treadmill it was.",
-		start:       start,
+		start:       o.start,
 		manual:      true,
 		distance:    distance,
 		movingTime:  moving,
@@ -274,47 +368,40 @@ func manualRun(id int64, start time.Time, r *rand.Rand) *activity {
 	}
 }
 
-// newActivity generates an activity of a sport with its track.
-func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
+// newActivity generates an activity with its track.
+func newActivity(ctx context.Context, o outing, tracer *tracer) *activity {
+	s := o.sport
+	r := rand.New(rand.NewPCG(uint64(o.id), 42))
 	a := &activity{
-		id:          id,
-		name:        s.names[r.IntN(len(s.names))],
+		id:          o.id,
+		name:        o.place.name,
 		sportType:   s.sportType,
 		description: descriptions[r.IntN(len(descriptions))],
-		start:       start,
+		start:       o.start,
 		race:        s.race,
 	}
 	if s.race {
 		a.description = raceDescriptions[r.IntN(len(raceDescriptions))]
 	}
-	targetMeters := (s.minKm + r.Float64()*(s.maxKm-s.minKm)) * 1000
-	climb := (s.minClimbPerKm + r.Float64()*(s.maxClimbPerKm-s.minClimbPerKm)) * targetMeters / 1000
-
-	// The trailhead is some way from home.
-	bearing := r.Float64() * 2 * math.Pi
-	a.trailhead = offset(home, s.trailheadKm*1000*math.Cos(bearing), s.trailheadKm*1000*math.Sin(bearing))
-	points := loop(a.trailhead, targetMeters, r)
+	meters := (s.minKm + r.Float64()*(s.maxKm-s.minKm)) * 1000
+	points, routed := tracer.track(ctx, o, meters, r)
+	a.routed = routed
 	dists := geo.CumulativeDistances(points)
 	total := dists[len(dists)-1]
 
-	// The elevation rises to one or two high points and comes back down.
-	base := 10 + s.trailheadKm*40*r.Float64()
-	profile := elevationProfile(climb, s.sportType, r)
 	st := &streams{}
 	var t, pausedSeconds float64
-	photoAt := photoFractions(s, targetMeters, r)
+	photoAt := photoFractions(s, total, r)
 	var maxSpeed, hrSum, maxHR float64
 	// The heart rate follows the effort with a lag.
 	hr := 0.0
 	for i, p := range points {
 		f := dists[i] / total
-		ele := base + profile(f) + 4*math.Sin(dists[i]/250)
 		grade := 0.0
 		if i > 0 {
 			step := dists[i] - dists[i-1]
-			prevEle := st.altitude[i-1]
 			if step > 0 {
-				grade = (ele - prevEle) / step
+				grade = (p.Ele - points[i-1].Ele) / step
 			}
 			v := speed(s.sportType, grade)
 			if s.race {
@@ -327,11 +414,11 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 				photoAt = photoAt[1:]
 				pause := float64(30 + r.IntN(120))
 				a.photos = append(a.photos, &photo{
-					taken: start.Add(time.Duration(t) * time.Second),
+					taken: o.start.Add(time.Duration(t) * time.Second),
 					seed:  r.Uint64(),
 				})
 				if r.Float64() < 0.8 {
-					loc := p
+					loc := geo.Point{Lat: p.Lat, Lng: p.Lng}
 					a.photos[len(a.photos)-1].location = &loc
 				}
 				t += pause
@@ -351,14 +438,14 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 		st.time = append(st.time, int32(t))
 		st.distance = append(st.distance, math.Round(dists[i]*10)/10)
 		st.latlng = append(st.latlng, [2]float64{round(p.Lat, 6), round(p.Lng, 6)})
-		st.altitude = append(st.altitude, math.Round(ele*10)/10)
+		st.altitude = append(st.altitude, math.Round(p.Ele*10)/10)
 		st.hr = append(st.hr, math.Round(hr))
 		st.cadence = append(st.cadence, cadence(s.sportType, r))
 		st.velocity = append(st.velocity, math.Round(speed(s.sportType, grade)*100)/100)
 		st.grade = append(st.grade, math.Round(grade*1000)/10)
 	}
 	for i, p := range a.photos {
-		p.id = fmt.Sprintf("%d-%d", id, i+1)
+		p.id = fmt.Sprintf("%d-%d", o.id, i+1)
 		p.caption = captions[r.IntN(len(captions))]
 	}
 	a.streams = st
@@ -380,69 +467,6 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 	}
 	a.polyline = geo.EncodePolyline(summary)
 	return a
-}
-
-// loop returns the points of a loop of about the length in meters starting
-// and ending at start, about 10 meters apart.
-func loop(start geo.Point, meters float64, r *rand.Rand) []geo.Point {
-	phase1, phase2 := r.Float64()*2*math.Pi, r.Float64()*2*math.Pi
-	heading := r.Float64() * 2 * math.Pi
-	wobble1, wobble2 := 0.15+0.2*r.Float64(), 0.05+0.1*r.Float64()
-	shape := func(radius float64, n int) []geo.Point {
-		points := make([]geo.Point, n+1)
-		for i := range n + 1 {
-			theta := 2 * math.Pi * float64(i) / float64(n)
-			rad := radius * (1 + wobble1*math.Sin(3*theta+phase1) + wobble2*math.Sin(7*theta+phase2))
-			// The loop passes through start at theta 0.
-			rad0 := radius * (1 + wobble1*math.Sin(phase1) + wobble2*math.Sin(phase2))
-			x := rad*math.Cos(theta) - rad0
-			y := rad * math.Sin(theta)
-			east := x*math.Cos(heading) - y*math.Sin(heading)
-			north := x*math.Sin(heading) + y*math.Cos(heading)
-			points[i] = offset(start, east, north)
-		}
-		points[n] = start
-		return points
-	}
-	n := max(int(meters/10), 50)
-	radius := meters / (2 * math.Pi)
-	dists := geo.CumulativeDistances(shape(radius, n))
-	return shape(radius*meters/dists[len(dists)-1], n)
-}
-
-// elevationProfile returns the elevation above the start at a fraction of
-// the way, with high points adding up to about the climbing in meters.
-func elevationProfile(climb float64, sportType string, r *rand.Rand) func(float64) float64 {
-	if sportType == "Run" || sportType == "Ride" {
-		amplitude := climb / 4
-		phase := r.Float64() * 2 * math.Pi
-		return func(f float64) float64 {
-			return amplitude * (math.Sin(2*math.Pi*f*2+phase) - math.Sin(phase))
-		}
-	}
-	type peak struct{ at, width, height float64 }
-	peaks := []peak{{at: 0.35 + 0.2*r.Float64(), width: 0.18 + 0.1*r.Float64(), height: 1}}
-	if r.Float64() < 0.6 {
-		peaks = append(peaks, peak{at: 0.15 + 0.7*r.Float64(), width: 0.08 + 0.06*r.Float64(), height: 0.3 + 0.4*r.Float64()})
-	}
-	raw := func(f float64) float64 {
-		sum := 0.0
-		for _, p := range peaks {
-			d := (f - p.at) / p.width
-			sum += p.height * math.Exp(-d*d)
-		}
-		// Start and end at the trailhead.
-		return sum * math.Pow(math.Sin(math.Pi*f), 0.6)
-	}
-	// Scale so that the climbing is about right.
-	gain, previous := 0.0, raw(0)
-	for i := 1; i <= 1000; i++ {
-		value := raw(float64(i) / 1000)
-		gain += math.Max(value-previous, 0)
-		previous = value
-	}
-	scale := climb / math.Max(gain, 1e-6)
-	return func(f float64) float64 { return scale * raw(f) }
 }
 
 // speed returns the speed in m/s at a grade.
@@ -548,6 +572,7 @@ func offset(p geo.Point, east, north float64) geo.Point {
 	return geo.Point{
 		Lat: p.Lat + north/111_320,
 		Lng: p.Lng + east/(111_320*math.Cos(p.Lat*math.Pi/180)),
+		Ele: p.Ele,
 	}
 }
 

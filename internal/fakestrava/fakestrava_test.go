@@ -23,7 +23,7 @@ func newClient(t *testing.T) (*Server, *strava.Client, *httptest.Server) {
 	t.Helper()
 	srv := httptest.NewServer(nil)
 	t.Cleanup(srv.Close)
-	fake := New(srv.URL)
+	fake := New(srv.URL, nil, "")
 	srv.Config.Handler = fake
 	client := strava.New(strava.Config{
 		ClientID:     "fake",
@@ -68,7 +68,7 @@ func TestFakeStrava(t *testing.T) {
 		t.Errorf("Refresh = %v, %v", refreshed, err)
 	}
 	// Tokens keep working when the server restarts.
-	restarted := New(srv.URL)
+	restarted := New(srv.URL, nil, "")
 	restartedClient := strava.New(strava.Config{BaseURL: restarted.APIURL(), HTTPClient: restarted.Client()})
 	if _, err := restartedClient.ListActivities(ctx, token.AccessToken, time.Time{}, 1); err != nil {
 		t.Errorf("ListActivities after a restart: %v", err)
@@ -179,7 +179,8 @@ func TestFakeStrava(t *testing.T) {
 
 func TestGenerateIsStable(t *testing.T) {
 	now := time.Date(2026, 10, 12, 20, 0, 0, 0, time.UTC)
-	first, second := generate(now), generate(now.Add(-time.Hour))
+	ctx := context.Background()
+	first, second := generate(ctx, now, nil), generate(ctx, now.Add(-time.Hour), nil)
 	if len(first) == 0 {
 		t.Fatal("no activities")
 	}

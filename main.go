@@ -378,9 +378,15 @@ func run(
 	if fakeStrava {
 		// The fake Strava is served by this server, and its API is called
 		// without going through the network.
-		fakeStravaServer = fakestrava.New(baseURL)
+		fakeStravaServer = fakestrava.New(baseURL, fakestrava.NewRouter(routing.NewRouter(db)), fakestrava.DefaultCacheDir)
 		stravaClientID, stravaClientSecret, stravaWebhookVerifyToken = "fake", rand.Text(), ""
 		log.InfoContext(ctx, "Using a fake Strava with generated activities", slog.String("url", baseURL+fakestrava.Path))
+		// Activities follow the trails of imported map data around Squamish.
+		go func() {
+			if err := fakeStravaServer.Prepare(ctx); err != nil && ctx.Err() == nil {
+				log.ErrorContext(ctx, "Failed to generate the fake Strava's activities", slogor.Err(err))
+			}
+		}()
 	}
 	if stravaClientID != "" {
 		conf := strava.Config{

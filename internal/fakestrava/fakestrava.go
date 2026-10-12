@@ -11,6 +11,7 @@ package fakestrava
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -18,10 +19,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/catzkorn/trail-tools/internal/geo"
 )
 
 const (
@@ -42,21 +47,41 @@ type Server struct {
 	nowFn   func() time.Time
 	mux     *http.ServeMux
 
+	// Routes tracks along mapped paths, nil to make them up.
+	router Router
+	// Where routed tracks are cached.
+	cacheDir string
+
 	mu sync.Mutex
-	// The generated activities, newest first, for the day they were
-	// generated.
-	activities []*activity
-	byID       map[int64]*activity
-	day        string
+	// The latest generation of activities.
+	gen *generation
 }
 
+// generation is a generation of the activities, for a day and the regions
+// of the router.
+type generation struct {
+	key  string
+	done chan struct{}
+	// The activities, newest first, once done.
+	activities []*activity
+	byID       map[int64]*activity
+}
+
+// DefaultCacheDir is where routed tracks are cached by default.
+var DefaultCacheDir = filepath.Join(os.TempDir(), "trail-tools-fake-strava")
+
 // New returns a fake Strava reachable by browsers at the base URL of the
-// application, e.g. http://localhost:8080.
-func New(appURL string) *Server {
+// application, e.g. http://localhost:8080. With a router, the tracks of
+// activities starting in its regions follow mapped paths; they're cached in
+// cacheDir, as routing them takes a while. Without one, or elsewhere, tracks
+// are made up.
+func New(appURL string, router Router, cacheDir string) *Server {
 	s := &Server{
-		baseURL: strings.TrimSuffix(appURL, "/") + strings.TrimSuffix(Path, "/"),
-		nowFn:   time.Now,
-		mux:     http.NewServeMux(),
+		baseURL:  strings.TrimSuffix(appURL, "/") + strings.TrimSuffix(Path, "/"),
+		nowFn:    time.Now,
+		mux:      http.NewServeMux(),
+		router:   router,
+		cacheDir: cacheDir,
 	}
 	p := strings.TrimSuffix(Path, "/")
 	s.mux.HandleFunc("GET "+p+"/oauth/authorize", s.authorize)
@@ -207,31 +232,69 @@ func (s *Server) authenticated(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// load returns the activities, generated for today.
-func (s *Server) load() ([]*activity, map[int64]*activity) {
+// Prepare generates the activities, so that the first requests don't wait
+// for their tracks to be routed.
+func (s *Server) Prepare(ctx context.Context) error {
+	_, _, err := s.load(ctx)
+	return err
+}
+
+// load returns the activities, generated for today and the regions the
+// router covers. A new generation runs in the background until it's done,
+// even if ctx is cancelled, and requests wait for it.
+func (s *Server) load(ctx context.Context) ([]*activity, map[int64]*activity, error) {
 	now := s.nowFn()
-	day := now.In(timezone).Format(time.DateOnly)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.day != day {
-		s.activities = generate(now)
-		s.byID = make(map[int64]*activity, len(s.activities))
-		for _, a := range s.activities {
-			s.byID[a.id] = a
+	var regions []geo.Bounds
+	if s.router != nil {
+		var err error
+		if regions, err = s.router.Regions(ctx); err != nil {
+			return nil, nil, fmt.Errorf("failed to get the routing regions: %w", err)
 		}
-		s.day = day
 	}
-	return s.activities, s.byID
+	key := fmt.Sprint(now.In(timezone).Format(time.DateOnly), regions)
+	s.mu.Lock()
+	g := s.gen
+	if g == nil || g.key != key {
+		g = &generation{key: key, done: make(chan struct{})}
+		s.gen = g
+		t := &tracer{router: s.router, regions: regions, cacheDir: s.cacheDir}
+		go func() {
+			defer close(g.done)
+			g.activities = generate(context.WithoutCancel(ctx), now, t)
+			g.byID = make(map[int64]*activity, len(g.activities))
+			for _, a := range g.activities {
+				g.byID[a.id] = a
+			}
+		}()
+	}
+	s.mu.Unlock()
+	select {
+	case <-g.done:
+		return g.activities, g.byID, nil
+	case <-ctx.Done():
+		return nil, nil, ctx.Err()
+	}
+}
+
+// loadOrFail returns the activities, or writes an error.
+func (s *Server) loadOrFail(w http.ResponseWriter, r *http.Request) ([]*activity, map[int64]*activity, bool) {
+	activities, byID, err := s.load(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"message": err.Error()})
+		return nil, nil, false
+	}
+	return activities, byID, true
 }
 
 // activity returns the activity of a request, or writes a not found error.
 func (s *Server) activity(w http.ResponseWriter, r *http.Request) *activity {
+	_, byID, ok := s.loadOrFail(w, r)
+	if !ok {
+		return nil
+	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err == nil {
-		_, byID := s.load()
-		if a := byID[id]; a != nil {
-			return a
-		}
+	if a := byID[id]; err == nil && a != nil {
+		return a
 	}
 	writeJSON(w, http.StatusNotFound, map[string]any{"message": "Record Not Found"})
 	return nil
@@ -239,7 +302,10 @@ func (s *Server) activity(w http.ResponseWriter, r *http.Request) *activity {
 
 // listActivities lists the activities before a time, newest first.
 func (s *Server) listActivities(w http.ResponseWriter, r *http.Request) {
-	activities, _ := s.load()
+	activities, _, ok := s.loadOrFail(w, r)
+	if !ok {
+		return
+	}
 	q := r.URL.Query()
 	before := s.nowFn().Add(time.Hour)
 	if v, err := strconv.ParseInt(q.Get("before"), 10, 64); err == nil {
@@ -380,7 +446,10 @@ func (s *Server) photoImage(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	_, byID := s.load()
+	_, byID, ok := s.loadOrFail(w, r)
+	if !ok {
+		return
+	}
 	a := byID[id]
 	if a == nil || number < 1 || number > len(a.photos) {
 		http.NotFound(w, r)
