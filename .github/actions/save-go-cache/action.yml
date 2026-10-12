@@ -1,0 +1,23 @@
+name: Save Go caches
+description: Saves the caches restored by the setup-go action.
+inputs:
+  cache-name:
+    description: The name of the job's build cache, as passed to setup-go.
+    required: true
+  modules:
+    description: Whether to save the module cache, from the job that downloads all modules.
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - if: inputs.modules == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ hashFiles('go.sum') }}
+    - uses: actions/cache/save@v6
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/.cache/staticcheck
+        key: go-build-${{ runner.os }}-${{ inputs.cache-name }}-${{ github.sha }}
