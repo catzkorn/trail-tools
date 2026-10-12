@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { end: false, label: "Races", to: "/races" },
   { end: false, label: "Weather", to: "/forecast" },
   { end: false, label: "Activities", to: "/activities" },
+  { end: false, label: "Trip reports", to: "/trip-reports" },
   { end: false, label: "Settings", to: "/settings" },
 ];
 

@@ -15,12 +15,16 @@ import MapDataPage from "pages/map-data";
 import OAuthConsentPage from "pages/oauth-consent";
 import PlanPage from "pages/plan";
 import PlansPage from "pages/plans";
+import PublicProfilePage from "pages/public-profile";
+import PublicTripReportPage from "pages/public-trip-report";
 import RacePlanPage from "pages/race-plan";
 import RacesPage from "pages/races";
 import RoutePage from "pages/route";
 import RoutesPage from "pages/routes";
 import SettingsPage from "pages/settings";
 import SharedRacePlanPage from "pages/shared-race-plan";
+import TripReportPage from "pages/trip-report";
+import TripReportsPage from "pages/trip-reports";
 import type { ReactNode } from "react";
 import React from "react";
 import { Link, Route, Routes } from "react-router";
@@ -134,6 +138,16 @@ const App: React.FC = () => {
               path="/activities/:id"
               element={protectedPage(<ActivityPage />)}
             />
+            <Route
+              path="/trip-reports"
+              element={protectedPage(<TripReportsPage />)}
+            />
+            <Route
+              path="/trip-reports/:id"
+              element={protectedPage(<TripReportPage />)}
+            />
+            <Route path="/u/:handle" element={<PublicProfilePage />} />
+            <Route path="/u/:handle/:slug" element={<PublicTripReportPage />} />
             <Route path="/athletes" element={<AthletesPage user={user} />} />
             <Route
               path="/settings"

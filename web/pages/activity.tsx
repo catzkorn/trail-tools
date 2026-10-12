@@ -24,6 +24,7 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
   ArrowTopRightOnSquareIcon,
   MapIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import { getActivity } from "gen/activities/v1/activities-ActivityService_connectquery";
@@ -33,6 +34,11 @@ import type {
 } from "gen/activities/v1/activities_pb";
 import { createRoute } from "gen/routes/v1/routes-RouteService_connectquery";
 import { RouteService, TrackConversion } from "gen/routes/v1/routes_pb";
+import {
+  createTripReport,
+  listTripReports,
+} from "gen/trips/v1/trips-TripReportService_connectquery";
+import { TripReportService } from "gen/trips/v1/trips_pb";
 import {
   formatDate,
   formatHoursMinutes,
@@ -108,6 +114,16 @@ const ActivityPage: React.FC = () => {
       }
     },
   });
+  const tripReports = useQuery(listTripReports, { activityId: id });
+  const writeReport = useMutation(createTripReport, {
+    onSuccess: async (response) => {
+      await invalidateServices(queryClient, [TripReportService]);
+      if (response.report !== undefined) {
+        void navigate(`/trip-reports/${response.report.id}`);
+      }
+    },
+  });
+  const [existingReport] = tripReports.data?.reports ?? [];
   const track = useMemo(
     () =>
       data?.activity === undefined
@@ -166,6 +182,27 @@ const ActivityPage: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {existingReport === undefined ? (
+            <button
+              type="button"
+              className={secondaryButton}
+              disabled={writeReport.isPending || tripReports.isPending}
+              onClick={() => {
+                writeReport.mutate({ activityId: activity.id });
+              }}
+            >
+              <PencilSquareIcon className="size-4" />
+              Write trip report
+            </button>
+          ) : (
+            <Link
+              to={`/trip-reports/${existingReport.id}`}
+              className={secondaryButton}
+            >
+              <PencilSquareIcon className="size-4" />
+              Edit trip report
+            </Link>
+          )}
           {activity.stravaId !== "" && (
             <a
               href={`https://www.strava.com/activities/${activity.stravaId}`}
@@ -207,7 +244,7 @@ const ActivityPage: React.FC = () => {
       {track.positions.length > 1 && (
         <CoverageConfirm check={trackCoverageCheck} />
       )}
-      <ErrorText error={makeRoute.error} />
+      <ErrorText error={makeRoute.error ?? writeReport.error} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-4">
           {track.positions.length > 1 ? (

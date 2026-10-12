@@ -2,6 +2,7 @@ import Loading from "@components/loading";
 import Connections from "@components/settings/connections";
 import Invitations from "@components/settings/invitations";
 import Passkeys from "@components/settings/passkeys";
+import PublicProfileCard from "@components/settings/public-profile";
 import StravaCard from "@components/strava/strava-card";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
@@ -256,6 +257,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
         <StravaCard showDisconnect />
       </div>
       <div className="flex flex-col gap-4">
+        <PublicProfileCard />
         <ApiTokens />
         <Connections />
         <McpInstructions />
