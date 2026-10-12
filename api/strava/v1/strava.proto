@@ -57,6 +57,8 @@ message StravaConnection {
   int32 pending_stream_count = 9;
   // Whether the server is configured with Strava API credentials.
   bool configured = 10;
+  // The page of the connected Strava athlete on Strava.
+  string athlete_url = 11;
 }
 
 message GetStravaConnectionRequest {}

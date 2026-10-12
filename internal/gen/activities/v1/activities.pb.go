@@ -93,6 +93,7 @@ type Activity struct {
 	xxx_hidden_DeviceName          string                 `protobuf:"bytes,20,opt,name=device_name,json=deviceName,proto3"`
 	xxx_hidden_RelativeEffort      int32                  `protobuf:"varint,21,opt,name=relative_effort,json=relativeEffort,proto3"`
 	xxx_hidden_PhotoCount          int32                  `protobuf:"varint,22,opt,name=photo_count,json=photoCount,proto3"`
+	xxx_hidden_StravaUrl           string                 `protobuf:"bytes,23,opt,name=strava_url,json=stravaUrl,proto3"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -276,6 +277,13 @@ func (x *Activity) GetPhotoCount() int32 {
 	return 0
 }
 
+func (x *Activity) GetStravaUrl() string {
+	if x != nil {
+		return x.xxx_hidden_StravaUrl
+	}
+	return ""
+}
+
 func (x *Activity) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -364,6 +372,10 @@ func (x *Activity) SetPhotoCount(v int32) {
 	x.xxx_hidden_PhotoCount = v
 }
 
+func (x *Activity) SetStravaUrl(v string) {
+	x.xxx_hidden_StravaUrl = v
+}
+
 func (x *Activity) HasStartTime() bool {
 	if x == nil {
 		return false
@@ -422,6 +434,8 @@ type Activity_builder struct {
 	RelativeEffort int32
 	// The number of photos added to the activity on Strava.
 	PhotoCount int32
+	// The page of the activity on Strava.
+	StravaUrl string
 }
 
 func (b0 Activity_builder) Build() *Activity {
@@ -450,6 +464,7 @@ func (b0 Activity_builder) Build() *Activity {
 	x.xxx_hidden_DeviceName = b.DeviceName
 	x.xxx_hidden_RelativeEffort = b.RelativeEffort
 	x.xxx_hidden_PhotoCount = b.PhotoCount
+	x.xxx_hidden_StravaUrl = b.StravaUrl
 	return m0
 }
 
@@ -1593,7 +1608,7 @@ var File_activities_v1_activities_proto protoreflect.FileDescriptor
 
 const file_activities_v1_activities_proto_rawDesc = "" +
 	"\n" +
-	"\x1eactivities/v1/activities.proto\x12\ractivities.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe3\x06\n" +
+	"\x1eactivities/v1/activities.proto\x12\ractivities.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x82\a\n" +
 	"\bActivity\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tstrava_id\x18\x02 \x01(\tR\bstravaId\x12\x12\n" +
@@ -1622,7 +1637,9 @@ const file_activities_v1_activities_proto_rawDesc = "" +
 	"deviceName\x12'\n" +
 	"\x0frelative_effort\x18\x15 \x01(\x05R\x0erelativeEffort\x12\x1f\n" +
 	"\vphoto_count\x18\x16 \x01(\x05R\n" +
-	"photoCount\"\xe7\x01\n" +
+	"photoCount\x12\x1d\n" +
+	"\n" +
+	"strava_url\x18\x17 \x01(\tR\tstravaUrl\"\xe7\x01\n" +
 	"\rActivityPhoto\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\acaption\x18\x02 \x01(\tR\acaption\x121\n" +

@@ -201,7 +201,7 @@ func TestStravaSyncAndActivities(t *testing.T) {
 	if conn.GetSyncState() != stravav1.SyncState_SYNC_STATE_IDLE || conn.GetActivityCount() != 3 || conn.GetPendingStreamCount() != 0 {
 		t.Fatalf("unexpected connection after sync %v", conn)
 	}
-	if conn.GetAthleteName() != "Test Runner" || !conn.HasLastSyncTime() {
+	if conn.GetAthleteName() != "Test Runner" || !conn.HasLastSyncTime() || conn.GetAthleteUrl() != "https://www.strava.com/athletes/7" {
 		t.Errorf("unexpected connection %v", conn)
 	}
 	// The expired token was refreshed, and the rate limited request retried.
@@ -252,6 +252,9 @@ func TestStravaSyncAndActivities(t *testing.T) {
 	}.Build())
 	if err != nil {
 		t.Fatalf("GetActivity: %v", err)
+	}
+	if got := detail.GetActivity().GetStravaUrl(); got != "https://www.strava.com/activities/"+run0.GetStravaId() {
+		t.Errorf("got Strava URL %q", got)
 	}
 	streams := detail.GetStreams()
 	if len(streams.GetLat()) != 11 || streams.GetAltitudeMeters()[10] != 500 || streams.GetCadenceSpm()[0] != 170 {

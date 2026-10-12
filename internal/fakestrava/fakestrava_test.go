@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"html/template"
 	"image/jpeg"
 	"io"
 	"net/http"
@@ -174,6 +176,50 @@ func TestFakeStrava(t *testing.T) {
 	resp.Body.Close()
 	if cfg, err := jpeg.DecodeConfig(bytes.NewReader(data)); err != nil || cfg.Width != photoWidth || cfg.Height != photoHeight {
 		t.Errorf("photo image: %v, %+v", err, cfg)
+	}
+}
+
+func TestPages(t *testing.T) {
+	fake, client, srv := newClient(t)
+	ctx := context.Background()
+	token, _, err := client.Exchange(ctx, "fake-code")
+	if err != nil {
+		t.Fatal(err)
+	}
+	activities, err := client.ListActivities(ctx, token.AccessToken, time.Time{}, 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var long *strava.Activity
+	for _, a := range activities {
+		if a.TotalPhotoCount > 0 {
+			long = a
+			break
+		}
+	}
+	get := func(path string) (int, string) {
+		t.Helper()
+		resp, err := srv.Client().Get(fake.WebURL() + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(body)
+	}
+	status, page := get(fmt.Sprintf("/activities/%d", long.ID))
+	if status != http.StatusOK || !strings.Contains(page, template.HTMLEscapeString(long.Name)) ||
+		!strings.Contains(page, "<path d=\"M") || !strings.Contains(page, fmt.Sprintf("/photos/%d/1.jpg", long.ID)) {
+		t.Errorf("activity page: status %d\n%s", status, page)
+	}
+	status, page = get(fmt.Sprintf("/athletes/%d", athleteID))
+	if status != http.StatusOK || !strings.Contains(page, "Demo Runner") || strings.Count(page, "/activities/") != len(activities) {
+		t.Errorf("athlete page: status %d, %d activities linked, want %d", status, strings.Count(page, "/activities/"), len(activities))
+	}
+	for _, path := range []string{"/activities/1", "/activities/nope", "/athletes/1"} {
+		if status, _ := get(path); status != http.StatusNotFound {
+			t.Errorf("%s: status %d, want 404", path, status)
+		}
 	}
 }
 

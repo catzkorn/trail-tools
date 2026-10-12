@@ -64,6 +64,8 @@ message Activity {
   int32 relative_effort = 21;
   // The number of photos added to the activity on Strava.
   int32 photo_count = 22;
+  // The page of the activity on Strava.
+  string strava_url = 23;
 }
 
 // A photo added to an activity on Strava. The images are hosted by Strava.

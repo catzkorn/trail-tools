@@ -55,6 +55,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/trip"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/catzkorn/trail-tools/internal/store/storetest"
 	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/catzkorn/trail-tools/internal/users"
@@ -160,8 +161,8 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	activityService := activity.NewService(log, activityRepo)
-	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil)
+	activityService := activity.NewService(log, activityRepo, strava.WebURL)
+	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil, strava.WebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, activityRepo)
 	planService := plan.NewService(log, planRepo)

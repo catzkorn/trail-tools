@@ -243,7 +243,7 @@ const StravaCard: React.FC<StravaCardProps> = ({ showDisconnect = false }) => {
         <p className="text-sm text-gray-700">
           Connected as{" "}
           <a
-            href={`https://www.strava.com/athletes/${connection.athleteId}`}
+            href={connection.athleteUrl}
             target="_blank"
             rel="noreferrer"
             className="font-semibold text-orange-700 hover:underline"

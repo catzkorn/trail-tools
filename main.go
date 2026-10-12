@@ -376,11 +376,14 @@ func run(
 	var stravaOAuth *stravasvc.OAuth
 	var stravaWebhook *stravasvc.Webhook
 	var fakeStravaServer *fakestrava.Server
+	// Links to activities and athletes go to Strava's website, or the fake's.
+	stravaWebURL := strava.WebURL
 	if fakeStrava {
 		// The fake Strava is served by this server, and its API is called
 		// without going through the network.
 		fakeStravaServer = fakestrava.New(baseURL, fakestrava.NewRouter(routing.NewRouter(db)), fakestrava.DefaultCacheDir)
 		stravaClientID, stravaClientSecret, stravaWebhookVerifyToken = "fake", rand.Text(), ""
+		stravaWebURL = fakeStravaServer.WebURL()
 		log.InfoContext(ctx, "Using a fake Strava with generated activities", slog.String("url", baseURL+fakestrava.Path))
 		// The fake athlete's trails and elevations are embedded, so the
 		// activities follow trails without importing or downloading map data.
@@ -433,8 +436,8 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
 	}
-	activityService := activity.NewService(log, activityRepo)
-	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	activityService := activity.NewService(log, activityRepo, stravaWebURL)
+	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	geoService := geosvc.NewService(log, mapData, activityRepo)
 	planService := plan.NewService(log, planRepo)

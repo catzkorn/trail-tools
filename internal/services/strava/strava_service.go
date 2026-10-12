@@ -36,16 +36,20 @@ type Service struct {
 	repo   ConnectionRepository
 	syncer *Syncer
 	oauth  *OAuth
+	// The URL of Strava's website.
+	webURL string
 }
 
 // NewService creates a new Service. syncer and oauth may be nil if Strava is
-// not configured.
-func NewService(log *slog.Logger, repo ConnectionRepository, syncer *Syncer, oauth *OAuth) *Service {
+// not configured. webURL is the URL of Strava's website, usually strava.WebURL, for links
+// to athletes.
+func NewService(log *slog.Logger, repo ConnectionRepository, syncer *Syncer, oauth *OAuth, webURL string) *Service {
 	return &Service{
 		log:    log,
 		repo:   repo,
 		syncer: syncer,
 		oauth:  oauth,
+		webURL: webURL,
 	}
 }
 
@@ -113,6 +117,7 @@ func (s *Service) connection(ctx context.Context, userID pgtype.UUID) (*stravav1
 		b.Connected = true
 		b.AthleteName = conn.AthleteName
 		b.AthleteId = fmt.Sprint(conn.AthleteID)
+		b.AthleteUrl = fmt.Sprintf("%s/athletes/%d", s.webURL, conn.AthleteID)
 		b.SyncState = syncStateToProto(conn.SyncState)
 		b.SyncMessage = conn.SyncMessage
 		if !conn.LastSyncTime.IsZero() {
