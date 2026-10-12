@@ -17,12 +17,18 @@ import Card from "@components/ui/card";
 import { Badge, EmptyState } from "@components/ui/misc";
 import QueryError from "@components/ui/query-error";
 import { linkClass } from "@components/ui/styles";
+import type { ConnectError } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
 import { TrophyIcon } from "@heroicons/react/24/outline";
+import type { UseQueryResult } from "@tanstack/react-query";
 import {
   listActivities,
   summarizeActivities,
 } from "gen/activities/v1/activities-ActivityService_connectquery";
+import type {
+  ListActivitiesResponse,
+  SummarizeActivitiesResponse,
+} from "gen/activities/v1/activities_pb";
 import { SummaryInterval } from "gen/activities/v1/activities_pb";
 import {
   getTrainingPlan,
@@ -158,9 +164,20 @@ const UpcomingRacesCard: React.FC = () => {
 interface ThisWeekProps {
   plan: TrainingPlan;
   races: Race[];
+  /**
+   * This week's activities and their summary, which PlanCard loads alongside
+   * the plans as they don't depend on the plan.
+   */
+  activities: UseQueryResult<ListActivitiesResponse, ConnectError>;
+  summaries: UseQueryResult<SummarizeActivitiesResponse, ConnectError>;
 }
 
-const ThisWeek: React.FC<ThisWeekProps> = ({ plan, races }) => {
+const ThisWeek: React.FC<ThisWeekProps> = ({
+  plan,
+  races,
+  activities,
+  summaries,
+}) => {
   const now = today();
   const monday = startOfWeek(now);
   const sunday = endOfWeek(now);
@@ -168,17 +185,6 @@ const ThisWeek: React.FC<ThisWeekProps> = ({ plan, races }) => {
   const workouts = useQuery(listWorkouts, {
     endDate: sunday,
     planId: plan.id,
-    startDate: monday,
-  });
-  const activities = useQuery(listActivities, {
-    endDate: sunday,
-    pageSize: 100,
-    startDate: monday,
-  });
-  const summaries = useQuery(summarizeActivities, {
-    endDate: sunday,
-    interval: SummaryInterval.WEEK,
-    sportTypes: FOOT_SPORT_TYPES,
     startDate: monday,
   });
   if (workouts.isPending || activities.isPending) {
@@ -227,8 +233,22 @@ const ThisWeek: React.FC<ThisWeekProps> = ({ plan, races }) => {
 };
 
 const PlanCard: React.FC = () => {
+  const now = today();
+  const monday = startOfWeek(now);
+  const sunday = endOfWeek(now);
   const plans = useQuery(listTrainingPlans);
   const races = useQuery(listRaces);
+  const activities = useQuery(listActivities, {
+    endDate: sunday,
+    pageSize: 100,
+    startDate: monday,
+  });
+  const summaries = useQuery(summarizeActivities, {
+    endDate: sunday,
+    interval: SummaryInterval.WEEK,
+    sportTypes: FOOT_SPORT_TYPES,
+    startDate: monday,
+  });
   let content: React.ReactNode = null;
   let actions: React.ReactNode = undefined;
   if (plans.isPending) {
@@ -259,7 +279,12 @@ const PlanCard: React.FC = () => {
             {formatDaysUntil(plan.startDate)} ({formatDate(plan.startDate)}).
           </p>
         ) : (
-          <ThisWeek plan={plan} races={races.data?.races ?? []} />
+          <ThisWeek
+            plan={plan}
+            races={races.data?.races ?? []}
+            activities={activities}
+            summaries={summaries}
+          />
         );
     }
   }
@@ -267,8 +292,7 @@ const PlanCard: React.FC = () => {
     <span className="flex items-center gap-2">
       This week
       <span className="text-sm font-normal text-gray-500">
-        {formatShortDate(startOfWeek(today()))} –{" "}
-        {formatShortDate(endOfWeek(today()))}
+        {formatShortDate(monday)} – {formatShortDate(sunday)}
       </span>
     </span>
   );

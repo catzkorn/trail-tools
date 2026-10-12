@@ -1,6 +1,7 @@
 import { create } from "@bufbuild/protobuf";
 import Loading from "@components/loading";
 import RaceDayPanel from "@components/race-day/race-day-panel";
+import { useRaceDay } from "@components/race-day/use-race-day";
 import PlanDocument, {
   RaceHeader,
   RulesPanel,
@@ -114,6 +115,7 @@ const RacePlanPage: React.FC = () => {
   const { isPending, isError, data, error, refetch } = useQuery(getRacePlan, {
     id,
   });
+  const raceDay = useRaceDay({ planId: id, shareToken: "" });
   const courseRouteId = data?.race?.courseRouteId ?? "";
   const course = useQuery(
     getRoute,
@@ -188,7 +190,7 @@ const RacePlanPage: React.FC = () => {
         </Link>
       </RaceHeader>
       <RaceDayPanel
-        planRef={{ planId: plan.id, shareToken: "" }}
+        raceDay={raceDay}
         plan={plan}
         race={race}
         course={course.data?.route?.points ?? NO_POINTS}
