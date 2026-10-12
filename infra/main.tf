@@ -25,6 +25,7 @@ resource "google_project_service" "services" {
     "run.googleapis.com",
     "secretmanager.googleapis.com",
     "serviceusage.googleapis.com",
+    "storage.googleapis.com",
     "sts.googleapis.com",
   ])
   service            = each.value

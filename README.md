@@ -325,6 +325,19 @@ aren't stored in the Terraform state:
   $ openssl rand -hex 24 | gcloud secrets versions add strava-webhook-verify-token --data-file=- --project trail-tools-444904
   ```
 
+### Photos
+
+Trip report photos are stored in the `<project>-trip-photos` Cloud Storage
+bucket, as the file system of a Cloud Run instance doesn't outlive it. The
+bucket is in `us-west1`, within Cloud Storage's free tier, with uniform
+bucket-level access and public access prevention: the app serves the photos
+itself, so only the Cloud Run service account can read and write them
+(`roles/storage.objectUser`). Terraform passes the bucket to the service as
+`TRAIL_TOOLS_PHOTO_BUCKET`, and the server authenticates with the service
+account's application default credentials. Photos of published reports
+are served with long cache lifetimes, so they're mostly fetched once per
+visitor.
+
 ### Custom domain
 
 The app is served on `trailrunn.ing`, set as `domain` in

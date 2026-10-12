@@ -35,11 +35,12 @@ resource "google_cloud_run_v2_service" "app" {
       dynamic "env" {
         for_each = merge(
           {
-            TRAIL_TOOLS_HOSTNAME   = "0.0.0.0"
-            TRAIL_TOOLS_PUBLIC_URL = local.public_url
-            TRAIL_TOOLS_LOG_FORMAT = "json"
-            TRAIL_TOOLS_LOG_LEVEL  = "info"
-            TRAIL_TOOLS_IMPORT_JOB = google_cloud_run_v2_job.import[0].id
+            TRAIL_TOOLS_HOSTNAME     = "0.0.0.0"
+            TRAIL_TOOLS_PUBLIC_URL   = local.public_url
+            TRAIL_TOOLS_LOG_FORMAT   = "json"
+            TRAIL_TOOLS_LOG_LEVEL    = "info"
+            TRAIL_TOOLS_IMPORT_JOB   = google_cloud_run_v2_job.import[0].id
+            TRAIL_TOOLS_PHOTO_BUCKET = google_storage_bucket.photos.name
           },
           local.strava ? {
             TRAIL_TOOLS_STRAVA_CLIENT_ID          = var.strava_client_id
@@ -78,7 +79,10 @@ resource "google_cloud_run_v2_service" "app" {
     }
   }
 
-  depends_on = [google_secret_manager_secret_iam_member.run]
+  depends_on = [
+    google_secret_manager_secret_iam_member.run,
+    google_storage_bucket_iam_member.run_photos,
+  ]
 }
 
 # Imports OpenStreetMap data into the routing graph, started from the map
