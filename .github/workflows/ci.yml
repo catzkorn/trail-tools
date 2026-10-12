@@ -6,6 +6,12 @@ on:
       - main
   pull_request:
 
+# A new push to a pull request cancels its now stale run. Runs on main all
+# complete, so each commit is deployed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   # Keep in sync with the version used locally, as Terraform refuses to read
   # state written by a newer version.
@@ -19,15 +25,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        # Lint and code generation tools must support the Go version, so
+        # use the one in go.mod rather than the latest.
+        uses: ./.github/actions/setup-go
         with:
-          # Lint and code generation tools must support the Go version, so
-          # use the one in go.mod rather than the latest.
-          go-version-file: go.mod
+          cache-name: format
       - name: Run make format
         run: |
           make format
           git diff --exit-code --name-only
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: format
 
   lint:
     name: Run linters
@@ -36,15 +47,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        # Lint and code generation tools must support the Go version, so
+        # use the one in go.mod rather than the latest.
+        uses: ./.github/actions/setup-go
         with:
-          # Lint and code generation tools must support the Go version, so
-          # use the one in go.mod rather than the latest.
-          go-version-file: go.mod
+          cache-name: lint
       - name: Run make lint
         run: |
           make web-deps
           make lint
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: lint
 
   gen:
     name: Check diff after regenerating code
@@ -53,16 +69,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        # Lint and code generation tools must support the Go version, so
+        # use the one in go.mod rather than the latest.
+        uses: ./.github/actions/setup-go
         with:
-          # Lint and code generation tools must support the Go version, so
-          # use the one in go.mod rather than the latest.
-          go-version-file: go.mod
+          cache-name: gen
       - name: Run make gen
         run: |
           make web-deps
           make gen
           git diff --exit-code --name-only
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: gen
 
   build:
     name: Build Go code
@@ -74,11 +95,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: ./.github/actions/setup-go
         with:
           go-version: ${{ matrix.go-version }}
+          cache-name: build-${{ matrix.go-version }}
       - name: Run go build
         run: go build ./...
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: build-${{ matrix.go-version }}
 
   test:
     name: Run Go tests
@@ -102,13 +129,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        # Lint and code generation tools must support the Go version, so
+        # use the one in go.mod rather than the latest.
+        uses: ./.github/actions/setup-go
         with:
-          # Lint and code generation tools must support the Go version, so
-          # use the one in go.mod rather than the latest.
-          go-version-file: go.mod
+          cache-name: test
       - name: Run go test
         run: go test -race ./...
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: test
 
   mod:
     name: Check diff after tidying go.mod and go.sum
@@ -117,15 +149,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        # Lint and code generation tools must support the Go version, so
+        # use the one in go.mod rather than the latest.
+        uses: ./.github/actions/setup-go
         with:
-          # Lint and code generation tools must support the Go version, so
-          # use the one in go.mod rather than the latest.
-          go-version-file: go.mod
+          cache-name: mod
       - run: |
           make web-deps
           go mod tidy
           git diff --exit-code --name-only
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: mod
+          modules: true
 
   terraform:
     name: Check Terraform
@@ -163,9 +201,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
+          cache-name: deploy
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v4
         with:
@@ -181,3 +219,8 @@ jobs:
         run: |
           terraform -chdir=infra init -input=false
           terraform -chdir=infra apply -input=false -auto-approve -var "image=${IMAGE}"
+      - name: Save Go caches
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-name: deploy

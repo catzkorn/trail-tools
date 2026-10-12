@@ -1,0 +1,36 @@
+name: Set up Go
+description: >-
+  Installs Go and restores the module cache and the job's build cache.
+  setup-go's own cache is shared by all jobs and saved by whichever finishes
+  first, usually one that builds little, so each job keeps its own build
+  cache instead. Save them with the save-go-cache action at the end of the
+  job.
+inputs:
+  go-version:
+    description: The Go version, if not the one in go.mod.
+    default: ""
+  cache-name:
+    description: The name of the job's build cache.
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v7
+      with:
+        go-version: ${{ inputs.go-version }}
+        go-version-file: go.mod
+        cache: false
+    - uses: actions/cache/restore@v6
+      with:
+        path: ~/go/pkg/mod
+        key: go-mod-${{ runner.os }}-${{ hashFiles('go.sum') }}
+        restore-keys: go-mod-${{ runner.os }}-
+    # The build cache is keyed by commit, so it's saved after every run,
+    # and restores the latest one. Go only rebuilds what changed.
+    - uses: actions/cache/restore@v6
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/.cache/staticcheck
+        key: go-build-${{ runner.os }}-${{ inputs.cache-name }}-${{ github.sha }}
+        restore-keys: go-build-${{ runner.os }}-${{ inputs.cache-name }}-
