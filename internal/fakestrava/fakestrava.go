@@ -1,8 +1,9 @@
 // Package fakestrava is a stand-in for Strava, for running Trail Tools
 // locally without a Strava API application. It has one athlete, who lives in
-// Interlaken, with about four months of generated runs, trail runs, hikes and
-// rides up to today: tracks with elevation, heart rate and cadence, and
-// photos on the longer outings.
+// Squamish, BC, with about four months of generated runs, trail runs and
+// races, hikes, ski tours, and road and mountain bike rides up to today:
+// tracks with elevation, heart rate and cadence, and photos on the longer
+// outings.
 //
 // It serves the parts of Strava's OAuth flow and API that Trail Tools uses.
 // Authorizing always succeeds, after a click on a page that says it's fake.
@@ -113,7 +114,7 @@ a { border-radius: 6px; padding: 10px 16px; text-decoration: none; font-weight: 
 <body>
 <main>
 <h1>Fake Strava</h1>
-<p>This isn't Strava. It's a stand-in for running Trail Tools locally, with a made-up athlete and about four months of generated activities around Interlaken.</p>
+<p>This isn't Strava. It's a stand-in for running Trail Tools locally, with a made-up athlete and about four months of generated activities around Squamish.</p>
 <p>Trail Tools asks to read your activities.</p>
 <div class="actions">
 <a class="authorize" href="{{.Authorize}}">Authorize</a>
@@ -209,7 +210,7 @@ func (s *Server) authenticated(next http.HandlerFunc) http.HandlerFunc {
 // load returns the activities, generated for today.
 func (s *Server) load() ([]*activity, map[int64]*activity) {
 	now := s.nowFn()
-	day := now.In(zurich).Format(time.DateOnly)
+	day := now.In(timezone).Format(time.DateOnly)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.day != day {
@@ -279,9 +280,14 @@ func (s *Server) getActivity(w http.ResponseWriter, r *http.Request) {
 
 // summary returns an activity as Strava lists it.
 func (s *Server) summary(a *activity) map[string]any {
-	local := a.start.In(zurich)
+	local := a.start.In(timezone)
 	_, offset := local.Zone()
 	hasHR := a.streams != nil
+	// Strava marks races with a workout type: 1 for runs, 11 for rides.
+	workoutType := 0
+	if a.race {
+		workoutType = 1
+	}
 	return map[string]any{
 		"resource_state":       2,
 		"id":                   a.id,
@@ -291,7 +297,8 @@ func (s *Server) summary(a *activity) map[string]any {
 		"sport_type":           a.sportType,
 		"start_date":           a.start.UTC().Format(time.RFC3339),
 		"start_date_local":     local.Format("2006-01-02T15:04:05") + "Z",
-		"timezone":             fmt.Sprintf("(GMT%+03d:%02d) Europe/Zurich", offset/3600, offset%3600/60),
+		"timezone":             fmt.Sprintf("(GMT%+03d:%02d) %s", offset/3600, abs(offset%3600/60), timezone),
+		"workout_type":         workoutType,
 		"utc_offset":           offset,
 		"distance":             a.distance,
 		"moving_time":          a.movingTime,
@@ -398,4 +405,8 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_, _ = w.Write(buf.Bytes())
+}
+
+func abs(n int) int {
+	return max(n, -n)
 }

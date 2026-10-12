@@ -12,17 +12,17 @@ import (
 // historyDays is how many days of activities the athlete has, up to today.
 const historyDays = 120
 
-// home is where the athlete lives: Interlaken, between Lake Thun and Lake
-// Brienz, below the Eiger, Mönch and Jungfrau.
-var home = geo.Point{Lat: 46.6863, Lng: 7.8632}
+// home is where the athlete lives: Squamish, between Howe Sound and the
+// Coast Mountains, below the Stawamus Chief.
+var home = geo.Point{Lat: 49.7016, Lng: -123.1558}
 
-// zurich is the timezone of the athlete.
-var zurich = mustLoadLocation("Europe/Zurich")
+// timezone is the timezone of the athlete.
+var timezone = mustLoadLocation("America/Vancouver")
 
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		return time.FixedZone("CET", 3600)
+		return time.FixedZone("PST", -8*3600)
 	}
 	return loc
 }
@@ -36,44 +36,90 @@ type sport struct {
 	minClimbPerKm, maxClimbPerKm float64
 	// How far from home the activity starts, in km.
 	trailheadKm float64
-	// Photos taken during the activity.
-	minPhotos, maxPhotos int
+	// The photos taken during the activity: one every so many km, up to a
+	// maximum.
+	kmPerPhoto float64
+	maxPhotos  int
 	// The hour of the day it starts.
 	hour int
+	// Whether it's a race.
+	race bool
+}
+
+// within returns the sport with a distance from minKm to maxKm.
+func (s sport) within(minKm, maxKm float64) sport {
+	s.minKm, s.maxKm = minKm, maxKm
+	return s
 }
 
 var (
 	roadRun = sport{
 		sportType: "Run", minKm: 7, maxKm: 12, minClimbPerKm: 1, maxClimbPerKm: 6, hour: 7,
-		names: []string{"Morning Run", "Easy run along the Aare", "Tempo on the Höhematte", "Lakeside loop", "Recovery run"},
+		names: []string{"Morning Run", "Easy run along the estuary", "Tempo on the dike", "Mamquam Blind Channel loop", "Recovery run"},
 	}
-	hillRun = sport{
-		sportType: "TrailRun", minKm: 9, maxKm: 15, minClimbPerKm: 50, maxClimbPerKm: 75, trailheadKm: 1.5, hour: 18,
-		minPhotos: 0, maxPhotos: 1,
-		names: []string{"Harder Kulm repeats", "Hills after work", "Up to Heimwehfluh", "Rugen forest loop"},
-	}
-	longRun = sport{
-		sportType: "TrailRun", minKm: 18, maxKm: 34, minClimbPerKm: 45, maxClimbPerKm: 75, trailheadKm: 8, hour: 7,
-		minPhotos: 3, maxPhotos: 7,
+	trailRun = sport{
+		sportType: "TrailRun", minKm: 9, maxKm: 34, minClimbPerKm: 45, maxClimbPerKm: 75, trailheadKm: 5, hour: 7,
+		kmPerPhoto: 5, maxPhotos: 7,
 		names: []string{
-			"Augstmatthorn ridge", "Schynige Platte to Faulhorn", "Niederhorn and the Gemmenalphorn",
-			"Brienzer Rothorn", "Lauterbrunnen valley and Mürren", "First to Bachalpsee", "Morgenberghorn",
+			"Stawamus Chief", "Sea to Summit", "Smoke Bluffs and Crumpit Woods", "Alice Lake loop", "Garibaldi Lake",
+			"Elfin Lakes", "Mount Mulligan", "Petgill Lake", "Quest loop", "Four Lakes and Alice Ridge",
 		},
 	}
 	hike = sport{
-		sportType: "Hike", minKm: 9, maxKm: 17, minClimbPerKm: 60, maxClimbPerKm: 95, trailheadKm: 12, hour: 9,
-		minPhotos: 2, maxPhotos: 5,
-		names: []string{"Hike to Bachalpsee", "Sulegg with friends", "Hike above Grindelwald", "Saxeten valley hike"},
+		sportType: "Hike", minKm: 9, maxKm: 17, minClimbPerKm: 60, maxClimbPerKm: 95, trailheadKm: 10, hour: 9,
+		kmPerPhoto: 3, maxPhotos: 5,
+		names: []string{"Stawamus Chief hike", "Elfin Lakes with friends", "Brohm Lake", "Hike to Garibaldi Lake"},
 	}
 	ride = sport{
 		sportType: "Ride", minKm: 30, maxKm: 60, minClimbPerKm: 4, maxClimbPerKm: 12, hour: 17,
-		names: []string{"Ride around Lake Thun", "Ride to Brienz and back", "Evening spin"},
+		names: []string{"Sea to Sky ride", "Ride to Brackendale and back", "Evening spin"},
+	}
+	mountainBikeRide = sport{
+		sportType: "MountainBikeRide", minKm: 15, maxKm: 35, minClimbPerKm: 25, maxClimbPerKm: 40, trailheadKm: 4, hour: 17,
+		kmPerPhoto: 15, maxPhotos: 2,
+		names: []string{"Half Nelson and Pseudo-Tsuga", "Alice Lake trails", "Diamond Head loop", "Crumpit Woods laps"},
+	}
+	skiTour = sport{
+		sportType: "BackcountrySki", minKm: 10, maxKm: 20, minClimbPerKm: 70, maxClimbPerKm: 110, trailheadKm: 18, hour: 7,
+		kmPerPhoto: 4, maxPhotos: 5,
+		names: []string{"Elfin Lakes ski tour", "Brohm Ridge", "Diamond Head tour", "Round Mountain laps"},
 	}
 )
 
+// races are the trail races the athlete runs now and then, with their
+// distance in km and climbing in meters per km.
+var races = []struct {
+	name           string
+	km, climbPerKm float64
+}{
+	{"Squamish 50 – 50 km", 50, 55},
+	{"Loop the Lakes Trail Race", 11, 30},
+	{"Quest Trail Run", 21, 40},
+	{"Sea to Summit Race", 8, 115},
+}
+
+// race returns the race on a day as a sport.
+func race(day time.Time) sport {
+	_, week := day.ISOWeek()
+	r := races[week/raceEveryWeeks%len(races)]
+	return sport{
+		sportType: "TrailRun", names: []string{r.name}, minKm: r.km, maxKm: r.km,
+		minClimbPerKm: r.climbPerKm, maxClimbPerKm: r.climbPerKm, trailheadKm: 3, hour: 7,
+		kmPerPhoto: 8, maxPhotos: 5, race: true,
+	}
+}
+
+// raceEveryWeeks is how often the athlete races, on a Saturday.
+const raceEveryWeeks = 5
+
 var captions = []string{
-	"Above the clouds", "Eiger, Mönch and Jungfrau", "Lunch with a view", "Along the ridge", "Almost at the top",
-	"Lake Brienz from above", "Cows on the trail", "The last snow", "Summit selfie", "", "",
+	"Above the clouds", "The Chief from the Sea to Sky", "Howe Sound below", "Lunch with a view", "Along the ridge",
+	"Almost at the top", "Mossy forest", "Garibaldi on the horizon", "Summit selfie", "", "",
+}
+
+var raceDescriptions = []string{
+	"Race day! Went out too fast, hung on at the end.",
+	"Race day. Great crowd at the finish.\n\nThe last climb hurt.",
 }
 
 var descriptions = []string{
@@ -94,6 +140,7 @@ type activity struct {
 	start       time.Time
 	// Manual activities have no streams or map.
 	manual bool
+	race   bool
 
 	distance           float64
 	movingTime         int32
@@ -136,10 +183,10 @@ type photo struct {
 // newest first. Activities are the same for the same day, so their IDs stay
 // stable between syncs.
 func generate(now time.Time) []*activity {
-	today := now.In(zurich)
+	today := now.In(timezone)
 	var result []*activity
 	for back := range historyDays {
-		day := time.Date(today.Year(), today.Month(), today.Day()-back, 0, 0, 0, 0, zurich)
+		day := time.Date(today.Year(), today.Month(), today.Day()-back, 0, 0, 0, 0, timezone)
 		dayNumber := day.Unix() / 86400
 		r := rand.New(rand.NewPCG(uint64(dayNumber), 42))
 		for i, s := range plan(day, r) {
@@ -158,8 +205,9 @@ func generate(now time.Time) []*activity {
 	return result
 }
 
-// plan returns the activities of a day: easy runs and hill sessions during
-// the week, a long trail run on Saturday, and a hike or easy run on Sunday.
+// plan returns the activities of a day: easy runs, and a short trail run or
+// a mountain bike ride during the week, a long trail run or a race on
+// Saturday, and a hike, ski tour or easy run on Sunday.
 func plan(day time.Time, r *rand.Rand) []sport {
 	skip := r.Float64() < 0.15
 	switch day.Weekday() {
@@ -171,22 +219,35 @@ func plan(day time.Time, r *rand.Rand) []sport {
 		}
 		return []sport{roadRun}
 	case time.Wednesday:
-		if skip {
+		switch {
+		case skip:
 			return nil
+		case r.Float64() < 0.3:
+			return []sport{mountainBikeRide}
 		}
+		hillRun := trailRun.within(9, 15)
+		hillRun.hour = 18
 		return []sport{hillRun}
 	case time.Friday:
-		if r.Float64() < 0.35 {
+		switch x := r.Float64(); {
+		case x < 0.3:
+			return []sport{mountainBikeRide}
+		case x < 0.5:
 			return []sport{ride}
 		}
 		return nil
 	case time.Saturday:
-		return []sport{longRun}
-	case time.Sunday:
-		if r.Float64() < 0.5 {
-			return []sport{hike}
+		if _, week := day.ISOWeek(); week%raceEveryWeeks == 0 {
+			return []sport{race(day)}
 		}
-		if skip {
+		return []sport{trailRun.within(18, 34)}
+	case time.Sunday:
+		switch x := r.Float64(); {
+		case x < 0.3:
+			return []sport{hike}
+		case x < 0.6:
+			return []sport{skiTour}
+		case skip:
 			return nil
 		}
 		return []sport{roadRun}
@@ -221,6 +282,10 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 		sportType:   s.sportType,
 		description: descriptions[r.IntN(len(descriptions))],
 		start:       start,
+		race:        s.race,
+	}
+	if s.race {
+		a.description = raceDescriptions[r.IntN(len(raceDescriptions))]
 	}
 	targetMeters := (s.minKm + r.Float64()*(s.maxKm-s.minKm)) * 1000
 	climb := (s.minClimbPerKm + r.Float64()*(s.maxClimbPerKm-s.minClimbPerKm)) * targetMeters / 1000
@@ -233,12 +298,12 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 	total := dists[len(dists)-1]
 
 	// The elevation rises to one or two high points and comes back down.
-	base := 570 + s.trailheadKm*40*r.Float64()
+	base := 10 + s.trailheadKm*40*r.Float64()
 	profile := elevationProfile(climb, s.sportType, r)
 	st := &streams{}
 	var t, pausedSeconds float64
-	photoAt := photoFractions(s, r)
-	var maxSpeed, hrSum float64
+	photoAt := photoFractions(s, targetMeters, r)
+	var maxSpeed, hrSum, maxHR float64
 	// The heart rate follows the effort with a lag.
 	hr := 0.0
 	for i, p := range points {
@@ -252,6 +317,9 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 				grade = (ele - prevEle) / step
 			}
 			v := speed(s.sportType, grade)
+			if s.race {
+				v *= 1.12
+			}
 			t += step / v
 			maxSpeed = math.Max(maxSpeed, v)
 			// Stop for photos.
@@ -271,11 +339,15 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 			}
 		}
 		target := heartRate(s.sportType, grade, f, r)
+		if s.race {
+			target += 10
+		}
 		if i == 0 {
 			hr = target - 25
 		}
 		hr += (target - hr) * 0.04
 		hrSum += hr
+		maxHR = max(maxHR, hr)
 		st.time = append(st.time, int32(t))
 		st.distance = append(st.distance, math.Round(dists[i]*10)/10)
 		st.latlng = append(st.latlng, [2]float64{round(p.Lat, 6), round(p.Lng, 6)})
@@ -298,7 +370,7 @@ func newActivity(id int64, s sport, start time.Time, r *rand.Rand) *activity {
 	a.gain, _ = geo.ElevationGainLoss(st.altitude)
 	a.gain = math.Round(a.gain)
 	a.avgHR = math.Round(hrSum / float64(len(points)))
-	a.maxHR = maxOf(st.hr)
+	a.maxHR = math.Round(maxHR)
 	a.avgCadence = cadence(s.sportType, r)
 	a.sufferScore = math.Round(float64(a.movingTime) / 60 * (a.avgHR - 100) / 40)
 	idxs := geo.Downsample(len(points), 300)
@@ -380,12 +452,31 @@ func speed(sportType string, grade float64) float64 {
 		return math.Max(3.2*(1-4*grade), 2.2)
 	case "Ride":
 		return math.Min(math.Max(8*(1-8*grade), 2.5), 14)
+	case "MountainBikeRide":
+		switch {
+		case grade > 0.04:
+			// About 900 vertical meters an hour.
+			return math.Min(5, 0.25/grade)
+		case grade < -0.05:
+			return 6
+		}
+		return 5
 	case "Hike":
 		if grade > 0.03 {
 			// About 450 vertical meters an hour.
 			return math.Min(1.3, 0.125/grade)
 		}
 		return 1.25
+	case "BackcountrySki":
+		switch {
+		case grade > 0.03:
+			// Skinning up at about 550 vertical meters an hour.
+			return math.Min(1.4, 0.15/grade)
+		case grade < -0.05:
+			// Skiing down.
+			return 7
+		}
+		return 1.4
 	default:
 		if grade > 0.05 {
 			// About 800 vertical meters an hour.
@@ -407,28 +498,39 @@ func heartRate(sportType string, grade, f float64, r *rand.Rand) float64 {
 		base = 115
 	case "Ride":
 		base = 128
+	case "MountainBikeRide":
+		base = 135
+	case "BackcountrySki":
+		base = 125
 	}
 	// Steep climbs are walked, so the effort levels off.
 	hr := base + 140*math.Min(math.Max(grade, -0.06), 0.15) + 10*f + 1.5*(r.Float64()-0.5)
 	return math.Min(math.Max(hr, 95), 186)
 }
 
-// cadence returns a cadence, in steps a minute per leg for foot sports.
+// cadence returns a cadence, in steps a minute per leg for foot sports, or
+// 0 if it isn't recorded.
 func cadence(sportType string, r *rand.Rand) float64 {
 	switch sportType {
 	case "Hike":
 		return math.Round(52 + 4*r.Float64())
 	case "Ride":
 		return math.Round(82 + 8*r.Float64())
+	case "MountainBikeRide":
+		return math.Round(72 + 8*r.Float64())
+	case "BackcountrySki":
+		// Not recorded.
+		return 0
 	}
 	return math.Round(83 + 5*r.Float64())
 }
 
 // photoFractions returns where along the way photos are taken, in order.
-func photoFractions(s sport, r *rand.Rand) []float64 {
-	n := s.minPhotos
-	if s.maxPhotos > s.minPhotos {
-		n += r.IntN(s.maxPhotos - s.minPhotos + 1)
+func photoFractions(s sport, meters float64, r *rand.Rand) []float64 {
+	n := 0
+	if s.kmPerPhoto > 0 {
+		// About one every kmPerPhoto, give or take one.
+		n = min(max(int(math.Round(meters/1000/s.kmPerPhoto))+r.IntN(3)-1, 0), s.maxPhotos)
 	}
 	fractions := make([]float64, n)
 	for i := range fractions {
@@ -452,12 +554,4 @@ func offset(p geo.Point, east, north float64) geo.Point {
 func round(v float64, decimals int) float64 {
 	scale := math.Pow(10, float64(decimals))
 	return math.Round(v*scale) / scale
-}
-
-func maxOf(values []float64) float64 {
-	m := 0.0
-	for _, v := range values {
-		m = math.Max(m, v)
-	}
-	return m
 }

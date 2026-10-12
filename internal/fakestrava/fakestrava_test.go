@@ -100,14 +100,25 @@ func TestFakeStrava(t *testing.T) {
 		if i > 0 && !a.StartDate.Before(all[i-1].StartDate) {
 			t.Errorf("activity %d isn't older than the one before", i)
 		}
-		if a.StartDate.After(time.Now()) || a.TimezoneName() != "Europe/Zurich" || a.Distance <= 0 || a.MovingTime <= 0 {
+		if a.StartDate.After(time.Now()) || a.TimezoneName() != "America/Vancouver" || a.Distance <= 0 || a.MovingTime <= 0 {
 			t.Errorf("unexpected activity %+v", a)
 		}
 	}
-	for _, sport := range []string{"Run", "TrailRun", "Hike"} {
+	for _, sport := range []string{"Run", "TrailRun", "Hike", "Ride", "MountainBikeRide", "BackcountrySki"} {
 		if sports[sport] == 0 {
 			t.Errorf("no %s activities in %v", sport, sports)
 		}
+	}
+
+	// Now and then, a trail run is a race.
+	racing := false
+	for _, a := range all {
+		if a.SportType == "TrailRun" && bytes.Contains(a.Raw, []byte(`"workout_type":1`)) {
+			racing = true
+		}
+	}
+	if !racing {
+		t.Error("no races")
 	}
 
 	var long, manual *strava.Activity

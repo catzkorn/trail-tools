@@ -64,8 +64,9 @@ page.
 Without Strava credentials, `make run` and `make watch` use a fake Strava
 (`-fake-strava`), so every feature can be tried locally. Connecting Strava
 under Settings shows a page that says it's fake, and syncs a made-up athlete
-from Interlaken with about four months of runs, trail runs, hikes and rides up
-to today. They have GPS tracks with elevation, heart rate and cadence, and the
+from Squamish, BC with about four months of activities up to today: runs,
+trail runs and the odd race, hikes, ski tours, and road and mountain bike
+rides. They have GPS tracks with elevation, heart rate and cadence, and the
 longer outings have photos, for trip reports.
 
 To sync real activities, create a Strava API application at
