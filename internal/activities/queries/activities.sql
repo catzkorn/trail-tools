@@ -63,8 +63,13 @@ where user_id = $1;
 -- name: ListActivitiesWithoutStreams :many
 select id, strava_id from strava_activities
 where user_id = $1 and not streams_synced
-order by start_time desc
+order by sync_requested desc, start_time desc
 limit $2;
+
+-- name: RequestActivitySync :exec
+update strava_activities set
+  sync_requested = true
+where id = $1 and user_id = $2 and not streams_synced;
 
 -- name: CountActivities :one
 select
@@ -84,6 +89,7 @@ where id = $1;
 -- name: MarkActivityStreamsSynced :exec
 update strava_activities set
   streams_synced = true,
+  sync_requested = false,
   min_lat = coalesce(sqlc.narg(min_lat)::double precision, strava_activities.min_lat),
   min_lng = coalesce(sqlc.narg(min_lng)::double precision, strava_activities.min_lng),
   max_lat = coalesce(sqlc.narg(max_lat)::double precision, strava_activities.max_lat),

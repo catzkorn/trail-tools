@@ -59,6 +59,82 @@ func TestRateLimit(t *testing.T) {
 	}
 }
 
+func TestRateLimitPriority(t *testing.T) {
+	t.Parallel()
+	var calls int
+	var usage string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("X-ReadRateLimit-Limit", "100,1000")
+		w.Header().Set("X-ReadRateLimit-Usage", usage)
+		fmt.Fprint(w, `[]`)
+	}))
+	t.Cleanup(srv.Close)
+	now := time.Date(2026, 9, 7, 10, 3, 0, 0, time.UTC)
+	newClient := func(reserve float64) *Client {
+		client := New(Config{BaseURL: srv.URL, BackgroundReserve: reserve})
+		client.nowFn = func() time.Time { return now }
+		return client
+	}
+	background := context.Background()
+	interactive := WithPriority(background, PriorityInteractive)
+	list := func(client *Client, ctx context.Context) error {
+		_, err := client.ListActivities(ctx, "token", time.Time{}, 10)
+		return err
+	}
+	wantLimited := func(err error, reset time.Time) {
+		t.Helper()
+		var rateErr *RateLimitError
+		if !errors.As(err, &rateErr) || !rateErr.ResetAt.Equal(reset) {
+			t.Errorf("got %v, want rate limit until %s", err, reset)
+		}
+	}
+	quarterHour, midnight := time.Date(2026, 9, 7, 10, 15, 0, 0, time.UTC), time.Date(2026, 9, 8, 0, 0, 0, 0, time.UTC)
+
+	// 88 of 100 requests in the window used: background requests leave the
+	// remaining 10%, less the margin, to interactive requests.
+	client := newClient(0)
+	usage = "88,500"
+	if err := list(client, background); err != nil {
+		t.Fatal(err)
+	}
+	wantLimited(list(client, background), quarterHour)
+	if calls != 1 {
+		t.Errorf("rate limited request should not reach Strava, got %d calls", calls)
+	}
+	usage = "98,501"
+	if err := list(client, interactive); err != nil {
+		t.Fatalf("interactive request within the reserve: %v", err)
+	}
+	// Interactive requests stop at the margin, which blocks all requests.
+	wantLimited(list(client, interactive), quarterHour)
+	wantLimited(list(client, background), quarterHour)
+	if calls != 2 {
+		t.Errorf("got %d calls, want 2", calls)
+	}
+
+	// The daily reserve applies the same way.
+	now = now.Add(15 * time.Minute)
+	usage = "10,898"
+	if err := list(client, interactive); err != nil {
+		t.Fatal(err)
+	}
+	wantLimited(list(client, background), midnight)
+	if err := list(client, interactive); err != nil {
+		t.Fatalf("interactive request within the daily reserve: %v", err)
+	}
+
+	// The reserve can be disabled.
+	client = newClient(-1)
+	usage = "88,500"
+	if err := list(client, background); err != nil {
+		t.Fatal(err)
+	}
+	if err := list(client, background); err != nil {
+		t.Errorf("without a reserve, background requests continue to the margin: %v", err)
+	}
+}
+
 func TestTooManyRequests(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

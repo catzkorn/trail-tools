@@ -1047,6 +1047,7 @@ type StravaActivity struct {
 	StreamsSynced       bool
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
+	SyncRequested       bool
 }
 
 type StravaActivityPhoto struct {

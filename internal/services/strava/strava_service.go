@@ -15,6 +15,7 @@ import (
 	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
 	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -87,6 +88,46 @@ func (s *Service) SyncStrava(ctx context.Context, req *stravav1.SyncStravaReques
 		return nil, err
 	}
 	return stravav1.SyncStravaResponse_builder{Connection: conn}.Build(), nil
+}
+
+// activitySyncBudget is how long SyncActivity syncs an activity for, before
+// leaving it to the backlog, so the page asking for it isn't kept waiting.
+const activitySyncBudget = 20 * time.Second
+
+func (s *Service) SyncActivity(ctx context.Context, req *stravav1.SyncActivityRequest) (*stravav1.SyncActivityResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	activityID, err := store.StringToUUID(req.GetActivityId())
+	if err != nil {
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
+	}
+	if s.syncer == nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "the server is not configured with Strava API credentials")
+	}
+	if _, err := s.repo.GetStravaConnection(ctx, userID); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, "no Strava account is connected")
+		}
+		return nil, s.internalError(ctx, "failed to get Strava connection", err)
+	}
+	syncCtx, cancel := context.WithTimeout(ctx, activitySyncBudget)
+	defer cancel()
+	synced, resumeTime, err := s.syncer.SyncPending(syncCtx, userID, activityID)
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		return nil, connect.NewError(connect.CodeNotFound, "activity not found")
+	case errors.Is(err, strava.ErrUnauthorized):
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "Strava access was revoked or expired; reconnect Strava")
+	case err != nil:
+		return nil, s.internalError(ctx, "failed to sync the activity", err)
+	}
+	resp := stravav1.SyncActivityResponse_builder{Synced: synced}
+	if !resumeTime.IsZero() {
+		resp.ResumeTime = timestamppb.New(resumeTime)
+	}
+	return resp.Build(), nil
 }
 
 func (s *Service) DisconnectStrava(ctx context.Context, req *stravav1.DisconnectStravaRequest) (*stravav1.DisconnectStravaResponse, error) {

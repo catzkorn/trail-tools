@@ -2,6 +2,7 @@ import ActivityPhotos, {
   ActivityPhotoMarkers,
   placePhotos,
 } from "@components/activities/activity-photos";
+import PendingDetails from "@components/activities/pending-details";
 import ElevationProfile from "@components/charts/elevation-profile";
 import type { ProfilePoint } from "@components/charts/elevation-profile";
 import Loading from "@components/loading";
@@ -299,7 +300,7 @@ const ActivityPage: React.FC = () => {
               This activity has no GPS track.
             </p>
           )}
-          {track.profile.length > 1 ? (
+          {track.profile.length > 1 && (
             <Card title="Elevation and heart rate">
               <ElevationProfile
                 points={track.profile}
@@ -308,13 +309,8 @@ const ActivityPage: React.FC = () => {
                 onHover={setHoverIndex}
               />
             </Card>
-          ) : (
-            !activity.hasStreams && (
-              <p className="text-sm text-gray-500">
-                Detailed data for this activity has not been synced yet.
-              </p>
-            )
           )}
+          {!activity.hasStreams && <PendingDetails activityId={activity.id} />}
           {photos.length > 0 && (
             <ActivityPhotos
               photos={photos}
