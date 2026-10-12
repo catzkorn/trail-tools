@@ -196,8 +196,14 @@ const ActivityPage: React.FC = () => {
                 writeReport.mutate({ activityId: activity.id });
               }}
             >
-              <PencilSquareIcon className="size-4" />
-              Write trip report
+              {writeReport.isPending ? (
+                <ArrowPathIcon className="size-4 animate-spin" />
+              ) : (
+                <PencilSquareIcon className="size-4" />
+              )}
+              {writeReport.isPending && activity.photoCount > 0
+                ? "Adding photos from Strava…"
+                : "Write trip report"}
             </button>
           ) : (
             <Link
