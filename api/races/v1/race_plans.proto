@@ -300,7 +300,8 @@ message CheckpointSplit {
   int32 checkpoint_index = 1;
   // When the runner arrived at the checkpoint, if recorded.
   google.protobuf.Timestamp arrival_time = 2;
-  // When the runner left the checkpoint, if recorded.
+  // When the runner left the checkpoint, if recorded. The finish, the last
+  // checkpoint, has no departure.
   google.protobuf.Timestamp departure_time = 3;
 }
 
@@ -364,7 +365,7 @@ message CheckpointEstimate {
   // Whether the arrival time was recorded rather than estimated.
   bool arrival_recorded = 5;
   // The departure time: recorded if departure_recorded is set, otherwise
-  // estimated.
+  // estimated. Unset for the finish.
   google.protobuf.Timestamp departure_time = 6;
   // Whether the departure time was recorded rather than estimated.
   bool departure_recorded = 7;
@@ -421,10 +422,13 @@ message RaceDayStatus {
   // the latest known progress, otherwise the point on the course at
   // estimated_distance_meters. Unset if unknown.
   geo.v1.LatLng estimated_location = 13;
-  // The estimates for each checkpoint, in course order.
+  // The estimates for each checkpoint, in course order. The last checkpoint
+  // is the finish, which has no departure time.
   repeated CheckpointEstimate checkpoints = 8;
-  // The estimated finish time.
+  // The estimated finish time, or the recorded one once finished.
   google.protobuf.Timestamp estimated_finish_time = 9;
+  // Whether the runner has finished: the arrival at the finish is recorded.
+  bool finished = 14;
   // When the status was computed.
   google.protobuf.Timestamp status_time = 10;
 }

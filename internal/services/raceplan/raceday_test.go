@@ -119,6 +119,32 @@ func TestEstimateRaceDayFromCheckpoints(t *testing.T) {
 	}
 }
 
+func TestEstimateRaceDayFinished(t *testing.T) {
+	t.Parallel()
+	// Finished after 3:30, checked well after.
+	plan := testPlan(split(0, time.Hour, 70*time.Minute), split(1, 130*time.Minute, 140*time.Minute), split(2, 210*time.Minute, 0))
+	status := EstimateRaceDay(plan, raceStart, nil, raceStart.Add(5*time.Hour))
+	if !status.GetFinished() {
+		t.Error("the runner hasn't finished")
+	}
+	finish := status.GetCheckpoints()[2]
+	if finish.HasDepartureTime() || finish.GetDepartureRecorded() {
+		t.Errorf("the finish has a departure: %v", finish)
+	}
+	if got := clock(status.GetEstimatedFinishTime()); got != 210*time.Minute {
+		t.Errorf("got finish time %v, want 3h30m", got)
+	}
+	if got := status.GetEstimatedDistanceMeters(); got != 30000 {
+		t.Errorf("got estimated distance %v, want the finish", got)
+	}
+
+	// Before the finish, it has no departure either.
+	status = EstimateRaceDay(testPlan(), raceStart, nil, raceStart.Add(time.Hour))
+	if status.GetFinished() || status.GetCheckpoints()[2].HasDepartureTime() {
+		t.Errorf("unexpected finish before reaching it: %v", status)
+	}
+}
+
 func TestEstimateRaceDayOverdue(t *testing.T) {
 	t.Parallel()
 	// Nothing recorded 1:30 into the race: CP1 is overdue.

@@ -67,6 +67,8 @@ const toTimestamp = (value: string): Timestamp | undefined | null => {
 
 interface SplitDialogProps {
   name: string;
+  // Whether the checkpoint is the finish, which has no departure.
+  finish: boolean;
   split: CheckpointSplit | undefined;
   saving: boolean;
   error: ConnectError | null;
@@ -80,6 +82,7 @@ interface SplitDialogProps {
 // SplitDialog records or clears the arrival and departure at a checkpoint.
 const SplitDialog: React.FC<SplitDialogProps> = ({
   name,
+  finish,
   split,
   saving,
   error,
@@ -103,7 +106,7 @@ const SplitDialog: React.FC<SplitDialogProps> = ({
         onSubmit={(event) => {
           event.preventDefault();
           const arrivalTime = toTimestamp(arrival);
-          const departureTime = toTimestamp(departure);
+          const departureTime = finish ? undefined : toTimestamp(departure);
           if (arrivalTime === null || departureTime === null) {
             setValidation("Enter a valid date and time.");
             return;
@@ -113,10 +116,13 @@ const SplitDialog: React.FC<SplitDialogProps> = ({
         }}
       >
         <TimeInput label="Arrived" value={arrival} onChange={setArrival} />
-        <TimeInput label="Left" value={departure} onChange={setDeparture} />
+        {!finish && (
+          <TimeInput label="Left" value={departure} onChange={setDeparture} />
+        )}
         <p className="text-xs text-gray-500">
-          Times are in your local time zone. Clear both to remove the
-          checkpoint's times.
+          {finish
+            ? "The time is in your local time zone. Clear it to remove the finish time."
+            : "Times are in your local time zone. Clear both to remove the checkpoint's times."}
         </p>
         {validation !== "" && (
           <p className="text-sm text-red-700">{validation}</p>

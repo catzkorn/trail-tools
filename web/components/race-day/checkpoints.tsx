@@ -49,6 +49,8 @@ const TimeValue: React.FC<TimeValueProps> = ({ estimate, departure, now }) => {
 
 interface NextCheckpointProps {
   estimate: CheckpointEstimate;
+  // Whether the checkpoint is the finish, which has no departure.
+  finish: boolean;
   checkpoint: Checkpoint | undefined;
   now: number;
   saving: boolean;
@@ -62,6 +64,7 @@ interface NextCheckpointProps {
  */
 export const NextCheckpoint: React.FC<NextCheckpointProps> = ({
   estimate,
+  finish,
   checkpoint,
   now,
   saving,
@@ -105,7 +108,7 @@ export const NextCheckpoint: React.FC<NextCheckpointProps> = ({
           </span>
         </div>
       )}
-      {atCheckpoint && estimate.departureTime !== undefined && (
+      {atCheckpoint && !finish && estimate.departureTime !== undefined && (
         <p className="text-sm text-gray-700">
           Expected to leave ~{formatClockTime(estimate.departureTime, now)} (
           {formatRelative(estimate.departureTime, now)})
@@ -124,23 +127,25 @@ export const NextCheckpoint: React.FC<NextCheckpointProps> = ({
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid gap-3 ${finish ? "grid-cols-1" : "grid-cols-2"}`}>
         <button
           type="button"
           disabled={saving || estimate.arrivalRecorded}
           className="h-14 rounded-lg bg-emerald-700 text-lg font-semibold text-white shadow active:bg-emerald-800 disabled:opacity-40"
           onClick={onArrived}
         >
-          Arrived now
+          {finish ? "Finished now" : "Arrived now"}
         </button>
-        <button
-          type="button"
-          disabled={saving || estimate.departureRecorded}
-          className="h-14 rounded-lg bg-gray-800 text-lg font-semibold text-white shadow active:bg-gray-900 disabled:opacity-40"
-          onClick={onLeft}
-        >
-          Left now
-        </button>
+        {!finish && (
+          <button
+            type="button"
+            disabled={saving || estimate.departureRecorded}
+            className="h-14 rounded-lg bg-gray-800 text-lg font-semibold text-white shadow active:bg-gray-900 disabled:opacity-40"
+            onClick={onLeft}
+          >
+            Left now
+          </button>
+        )}
       </div>
 
       {checkpoint !== undefined && (
@@ -202,8 +207,16 @@ export const CheckpointList: React.FC<CheckpointListProps> = ({
               </span>
             </span>
             <span className="justify-self-end md:hidden">
-              <Badge className={statusClass(estimate.status)}>
-                {statusLabel(estimate.status)}
+              <Badge
+                className={statusClass(
+                  estimate.status,
+                  estimate.checkpointIndex === estimates.length - 1
+                )}
+              >
+                {statusLabel(
+                  estimate.status,
+                  estimate.checkpointIndex === estimates.length - 1
+                )}
               </Badge>
               {estimate.overdue && (
                 <Badge className="ml-1 bg-red-600 text-white ring-red-700">
@@ -243,8 +256,16 @@ export const CheckpointList: React.FC<CheckpointListProps> = ({
               )}
             </span>
             <span className="hidden md:block">
-              <Badge className={statusClass(estimate.status)}>
-                {statusLabel(estimate.status)}
+              <Badge
+                className={statusClass(
+                  estimate.status,
+                  estimate.checkpointIndex === estimates.length - 1
+                )}
+              >
+                {statusLabel(
+                  estimate.status,
+                  estimate.checkpointIndex === estimates.length - 1
+                )}
               </Badge>
               {estimate.overdue && (
                 <Badge className="ml-1 bg-red-600 text-white ring-red-700">
