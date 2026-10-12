@@ -24,7 +24,7 @@ UID_GID := $(shell id -u):$(shell id -g)
 # Boilerplate for running a one-off node tool against ./web in a container, as
 # the host user so written files aren't owned by root. Append the command, e.g.
 # `$(NODE_RUN) npx oxlint`.
-NODE_RUN := $(CONTAINER_BIN) run --rm \
+NODE_ARGS := \
 	-v $(CURDIR)/web:/srv \
 	--user $(UID_GID) \
 	-w /srv \
@@ -32,6 +32,7 @@ NODE_RUN := $(CONTAINER_BIN) run --rm \
 	-e NODE_OPTIONS='--disable-warning=ExperimentalWarning' \
 	-e BROWSERSLIST_IGNORE_OLD_DATA=true \
 	node:$(NPM_TAG)
+NODE_RUN := $(CONTAINER_BIN) run --rm $(NODE_ARGS)
 
 # The admin bootstrap token of the local server. Its invitation creates the
 # first administrator, see admin-invitation.
@@ -169,19 +170,24 @@ esbuild:
 tailwindcss:
 	$(TAILWIND_PROD)
 
+# The container rebuilding the CSS in make watch. Killing its `run` client
+# leaves it running, so make watch kills it by name when it exits.
+WATCH_CSS_CONTAINER := $(notdir $(CURDIR))-watch-css
+
 .PHONY: watch
 watch: db ## Run backend + assets with live reload
 	@$(WAIT_DB)
 	@$(MAKE) --no-print-directory admin-invitation &
 	-/usr/bin/env bash -c "\
-		trap 'kill %1 %2' EXIT;\
+		trap 'kill %1 %2; $(CONTAINER_BIN) kill $(WATCH_CSS_CONTAINER) >/dev/null 2>&1' EXIT;\
+		$(CONTAINER_BIN) kill $(WATCH_CSS_CONTAINER) >/dev/null 2>&1;\
 		go tool esbuild web/index.tsx \
 			--bundle \
 			--outdir=web/dist \
 			--sourcemap \
 			--target=es6 \
 			--watch=forever 2> /dev/null & \
-		$(NODE_RUN) npx -s @tailwindcss/cli -i base.css -o dist/index.css --watch & \
+		$(CONTAINER_BIN) run --rm --name $(WATCH_CSS_CONTAINER) $(NODE_ARGS) sh watch-css.sh & \
 		go tool github.com/mitranim/gow -s run . $(SERVER_FLAGS) -serve-dir $(CURDIR)/web/dist \
 	"
 
