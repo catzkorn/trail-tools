@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -45,18 +46,53 @@ func (e *RateLimitError) Error() string {
 	return fmt.Sprintf("strava rate limit reached, resets at %s", e.ResetAt.Format(time.RFC3339))
 }
 
+// Priority is the priority of a request. Strava's rate limits apply to the
+// whole application, so requests for a user waiting on the result must not
+// be starved by syncing the backlog of every user's activities.
+type Priority int
+
+const (
+	// PriorityBackground requests, such as syncing the backlog of
+	// activities, stop a reserve short of the rate limits. This is the
+	// default.
+	PriorityBackground Priority = iota
+	// PriorityInteractive requests, such as syncing an activity a user is
+	// looking at or a webhook event, may use the reserve.
+	PriorityInteractive
+)
+
+type priorityKey struct{}
+
+// WithPriority returns a context whose requests have the priority.
+func WithPriority(ctx context.Context, p Priority) context.Context {
+	return context.WithValue(ctx, priorityKey{}, p)
+}
+
+// PriorityFrom returns the priority of a context's requests.
+func PriorityFrom(ctx context.Context) Priority {
+	p, _ := ctx.Value(priorityKey{}).(Priority)
+	return p
+}
+
+// DefaultBackgroundReserve is the default fraction of each rate limit window
+// that background requests leave for interactive requests.
+const DefaultBackgroundReserve = 0.1
+
 // Client is a Strava API client. It is safe for concurrent use. The client
 // tracks the application's rate limit usage and returns a *RateLimitError
-// without calling the API when the limit is nearly reached.
+// without calling the API when the limit is nearly reached, or, for
+// background requests, when only the reserve for interactive requests is
+// left.
 type Client struct {
 	oauth      *oauth2.Config
 	httpClient *http.Client
 	baseURL    string
 
-	mu     sync.Mutex
-	usage  rateUsage
-	nowFn  func() time.Time
-	margin int
+	mu      sync.Mutex
+	usage   rateUsage
+	nowFn   func() time.Time
+	margin  int
+	reserve float64
 }
 
 // rateUsage is the most recently reported rate limit usage.
@@ -78,6 +114,11 @@ type Config struct {
 	// Defaults to https://www.strava.com/oauth.
 	OAuthBaseURL string
 	HTTPClient   *http.Client
+	// The fraction of each rate limit window, the 15 minute and the daily
+	// one, that background requests leave for interactive requests.
+	// Defaults to DefaultBackgroundReserve. Negative values disable the
+	// reserve.
+	BackgroundReserve float64
 }
 
 // New creates a new Client.
@@ -90,6 +131,12 @@ func New(conf Config) *Client {
 	}
 	if conf.HTTPClient == nil {
 		conf.HTTPClient = &http.Client{Timeout: 60 * time.Second}
+	}
+	switch {
+	case conf.BackgroundReserve == 0:
+		conf.BackgroundReserve = DefaultBackgroundReserve
+	case conf.BackgroundReserve < 0:
+		conf.BackgroundReserve = 0
 	}
 	return &Client{
 		oauth: &oauth2.Config{
@@ -107,7 +154,8 @@ func New(conf Config) *Client {
 		baseURL:    conf.BaseURL,
 		nowFn:      time.Now,
 		// Leave a little headroom below the limit.
-		margin: 2,
+		margin:  2,
+		reserve: conf.BackgroundReserve,
 	}
 }
 
@@ -166,7 +214,7 @@ func (c *Client) Refresh(ctx context.Context, refreshToken string) (*Token, erro
 
 // get performs an authenticated GET request and returns the response body.
 func (c *Client) get(ctx context.Context, accessToken, path string, query url.Values) ([]byte, error) {
-	if err := c.checkRateLimit(); err != nil {
+	if err := c.checkRateLimit(PriorityFrom(ctx)); err != nil {
 		return nil, err
 	}
 	u := c.baseURL + path
@@ -203,8 +251,9 @@ func (c *Client) get(ctx context.Context, accessToken, path string, query url.Va
 }
 
 // checkRateLimit returns a *RateLimitError if the last reported usage is
-// close to the limit in the current window.
-func (c *Client) checkRateLimit() error {
+// close to the limit in the current window. Background requests stop a
+// reserve short of the limit, to leave room for interactive requests.
+func (c *Client) checkRateLimit(p Priority) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	now := c.nowFn()
@@ -214,13 +263,31 @@ func (c *Client) checkRateLimit() error {
 	if c.usage.at.IsZero() {
 		return nil
 	}
-	if c.usage.limitDay > 0 && sameDay(c.usage.at, now) && c.usage.usedDay >= c.usage.limitDay-c.margin {
-		c.usage.blockedUntil = nextDay(now)
-		return &RateLimitError{ResetAt: c.usage.blockedUntil}
+	if c.usage.limitDay > 0 && sameDay(c.usage.at, now) {
+		if err := c.checkWindow(c.usage.usedDay, c.usage.limitDay, p, nextDay(now)); err != nil {
+			return err
+		}
 	}
-	if c.usage.limit15 > 0 && sameWindow(c.usage.at, now) && c.usage.used15 >= c.usage.limit15-c.margin {
-		c.usage.blockedUntil = nextWindow(now)
-		return &RateLimitError{ResetAt: c.usage.blockedUntil}
+	if c.usage.limit15 > 0 && sameWindow(c.usage.at, now) {
+		if err := c.checkWindow(c.usage.used15, c.usage.limit15, p, nextWindow(now)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkWindow returns a *RateLimitError if a request of the priority would
+// use too much of a rate limit window. Reaching the margin below the limit
+// blocks all requests until the window resets, while reaching the reserve
+// only rejects background requests.
+func (c *Client) checkWindow(used, limit int, p Priority, reset time.Time) error {
+	if used >= limit-c.margin {
+		c.usage.blockedUntil = reset
+		return &RateLimitError{ResetAt: reset}
+	}
+	reserve := int(math.Ceil(float64(limit) * c.reserve))
+	if p == PriorityBackground && used >= limit-c.margin-reserve {
+		return &RateLimitError{ResetAt: reset}
 	}
 	return nil
 }

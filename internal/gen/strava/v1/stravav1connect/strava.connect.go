@@ -29,6 +29,8 @@ const (
 	StravaServiceGetStravaConnectionProcedure = "/strava.v1.StravaService/GetStravaConnection"
 	// StravaServiceSyncStravaProcedure is the procedure name of the StravaService's SyncStrava RPC.
 	StravaServiceSyncStravaProcedure = "/strava.v1.StravaService/SyncStrava"
+	// StravaServiceSyncActivityProcedure is the procedure name of the StravaService's SyncActivity RPC.
+	StravaServiceSyncActivityProcedure = "/strava.v1.StravaService/SyncActivity"
 	// StravaServiceDisconnectStravaProcedure is the procedure name of the StravaService's
 	// DisconnectStrava RPC.
 	StravaServiceDisconnectStravaProcedure = "/strava.v1.StravaService/DisconnectStrava"
@@ -49,6 +51,13 @@ var (
 			Procedure:  StravaServiceSyncStravaProcedure,
 		}
 	})
+	stravaServiceSyncActivitySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_strava_v1_strava_proto.Services().ByName("StravaService").Methods().ByName("SyncActivity"),
+			Procedure:  StravaServiceSyncActivityProcedure,
+		}
+	})
 	stravaServiceDisconnectStravaSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -67,6 +76,10 @@ type StravaServiceClient interface {
 	// Strava's API rate limits mean a full history sync can take hours; it
 	// resumes automatically. Use GetStravaConnection to follow progress.
 	SyncStrava(context.Context, *v1.SyncStravaRequest) (*v1.SyncStravaResponse, error)
+	// Sync the details, photos and streams of an activity still waiting for
+	// them right away, ahead of the other activities. If Strava's rate limit
+	// is reached, the activity is synced first once it resets.
+	SyncActivity(context.Context, *v1.SyncActivityRequest) (*v1.SyncActivityResponse, error)
 	// Disconnect the Strava account. Synced activities are kept.
 	DisconnectStrava(context.Context, *v1.DisconnectStravaRequest) (*v1.DisconnectStravaResponse, error)
 }
@@ -86,6 +99,10 @@ type StravaServiceHandler interface {
 	// Strava's API rate limits mean a full history sync can take hours; it
 	// resumes automatically. Use GetStravaConnection to follow progress.
 	SyncStrava(context.Context, *v1.SyncStravaRequest) (*v1.SyncStravaResponse, error)
+	// Sync the details, photos and streams of an activity still waiting for
+	// them right away, ahead of the other activities. If Strava's rate limit
+	// is reached, the activity is synced first once it resets.
+	SyncActivity(context.Context, *v1.SyncActivityRequest) (*v1.SyncActivityResponse, error)
 	// Disconnect the Strava account. Synced activities are kept.
 	DisconnectStrava(context.Context, *v1.DisconnectStravaRequest) (*v1.DisconnectStravaResponse, error)
 }
@@ -97,6 +114,7 @@ func RegisterStravaServiceHandler(server *connect.Server, svc StravaServiceHandl
 	server.Register(
 		connect.Method{Spec: stravaServiceGetStravaConnectionSpec(), Handler: adapter.getStravaConnection},
 		connect.Method{Spec: stravaServiceSyncStravaSpec(), Handler: adapter.syncStrava},
+		connect.Method{Spec: stravaServiceSyncActivitySpec(), Handler: adapter.syncActivity},
 		connect.Method{Spec: stravaServiceDisconnectStravaSpec(), Handler: adapter.disconnectStrava},
 	)
 }
@@ -110,6 +128,10 @@ func (UnimplementedStravaServiceHandler) GetStravaConnection(context.Context, *v
 
 func (UnimplementedStravaServiceHandler) SyncStrava(context.Context, *v1.SyncStravaRequest) (*v1.SyncStravaResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "strava.v1.StravaService.SyncStrava is not implemented")
+}
+
+func (UnimplementedStravaServiceHandler) SyncActivity(context.Context, *v1.SyncActivityRequest) (*v1.SyncActivityResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "strava.v1.StravaService.SyncActivity is not implemented")
 }
 
 func (UnimplementedStravaServiceHandler) DisconnectStrava(context.Context, *v1.DisconnectStravaRequest) (*v1.DisconnectStravaResponse, error) {
@@ -131,6 +153,14 @@ func (c *stravaServiceClient) GetStravaConnection(ctx context.Context, req *v1.G
 func (c *stravaServiceClient) SyncStrava(ctx context.Context, req *v1.SyncStravaRequest) (*v1.SyncStravaResponse, error) {
 	var res v1.SyncStravaResponse
 	if err := c.client.CallUnary(ctx, stravaServiceSyncStravaSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *stravaServiceClient) SyncActivity(ctx context.Context, req *v1.SyncActivityRequest) (*v1.SyncActivityResponse, error) {
+	var res v1.SyncActivityResponse
+	if err := c.client.CallUnary(ctx, stravaServiceSyncActivitySpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -164,6 +194,18 @@ func (h stravaServiceHandler) syncStrava(ctx context.Context, _ connect.Spec, st
 		return err
 	}
 	res, err := h.svc.SyncStrava(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h stravaServiceHandler) syncActivity(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SyncActivityRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SyncActivity(ctx, &req)
 	if err != nil {
 		return err
 	}

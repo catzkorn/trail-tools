@@ -548,6 +548,150 @@ func (b0 SyncStravaResponse_builder) Build() *SyncStravaResponse {
 	return m0
 }
 
+type SyncActivityRequest struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ActivityId string                 `protobuf:"bytes,1,opt,name=activity_id,json=activityId,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *SyncActivityRequest) Reset() {
+	*x = SyncActivityRequest{}
+	mi := &file_strava_v1_strava_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncActivityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncActivityRequest) ProtoMessage() {}
+
+func (x *SyncActivityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_strava_v1_strava_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SyncActivityRequest) GetActivityId() string {
+	if x != nil {
+		return x.xxx_hidden_ActivityId
+	}
+	return ""
+}
+
+func (x *SyncActivityRequest) SetActivityId(v string) {
+	x.xxx_hidden_ActivityId = v
+}
+
+type SyncActivityRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the activity.
+	ActivityId string
+}
+
+func (b0 SyncActivityRequest_builder) Build() *SyncActivityRequest {
+	m0 := &SyncActivityRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ActivityId = b.ActivityId
+	return m0
+}
+
+type SyncActivityResponse struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Synced     bool                   `protobuf:"varint,1,opt,name=synced,proto3"`
+	xxx_hidden_ResumeTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=resume_time,json=resumeTime,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *SyncActivityResponse) Reset() {
+	*x = SyncActivityResponse{}
+	mi := &file_strava_v1_strava_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncActivityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncActivityResponse) ProtoMessage() {}
+
+func (x *SyncActivityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_strava_v1_strava_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SyncActivityResponse) GetSynced() bool {
+	if x != nil {
+		return x.xxx_hidden_Synced
+	}
+	return false
+}
+
+func (x *SyncActivityResponse) GetResumeTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ResumeTime
+	}
+	return nil
+}
+
+func (x *SyncActivityResponse) SetSynced(v bool) {
+	x.xxx_hidden_Synced = v
+}
+
+func (x *SyncActivityResponse) SetResumeTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ResumeTime = v
+}
+
+func (x *SyncActivityResponse) HasResumeTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ResumeTime != nil
+}
+
+func (x *SyncActivityResponse) ClearResumeTime() {
+	x.xxx_hidden_ResumeTime = nil
+}
+
+type SyncActivityResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Whether the activity's details, photos and streams are synced.
+	Synced bool
+	// If the activity isn't synced because Strava's rate limit was reached,
+	// when the limit resets. The activity is synced before the other
+	// activities then.
+	ResumeTime *timestamppb.Timestamp
+}
+
+func (b0 SyncActivityResponse_builder) Build() *SyncActivityResponse {
+	m0 := &SyncActivityResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Synced = b.Synced
+	x.xxx_hidden_ResumeTime = b.ResumeTime
+	return m0
+}
+
 type DisconnectStravaRequest struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -556,7 +700,7 @@ type DisconnectStravaRequest struct {
 
 func (x *DisconnectStravaRequest) Reset() {
 	*x = DisconnectStravaRequest{}
-	mi := &file_strava_v1_strava_proto_msgTypes[5]
+	mi := &file_strava_v1_strava_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -568,7 +712,7 @@ func (x *DisconnectStravaRequest) String() string {
 func (*DisconnectStravaRequest) ProtoMessage() {}
 
 func (x *DisconnectStravaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_strava_v1_strava_proto_msgTypes[5]
+	mi := &file_strava_v1_strava_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -599,7 +743,7 @@ type DisconnectStravaResponse struct {
 
 func (x *DisconnectStravaResponse) Reset() {
 	*x = DisconnectStravaResponse{}
-	mi := &file_strava_v1_strava_proto_msgTypes[6]
+	mi := &file_strava_v1_strava_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -611,7 +755,7 @@ func (x *DisconnectStravaResponse) String() string {
 func (*DisconnectStravaResponse) ProtoMessage() {}
 
 func (x *DisconnectStravaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_strava_v1_strava_proto_msgTypes[6]
+	mi := &file_strava_v1_strava_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -668,7 +812,14 @@ const file_strava_v1_strava_proto_rawDesc = "" +
 	"\x12SyncStravaResponse\x12;\n" +
 	"\n" +
 	"connection\x18\x01 \x01(\v2\x1b.strava.v1.StravaConnectionR\n" +
-	"connection\"\x19\n" +
+	"connection\"6\n" +
+	"\x13SyncActivityRequest\x12\x1f\n" +
+	"\vactivity_id\x18\x01 \x01(\tR\n" +
+	"activityId\"k\n" +
+	"\x14SyncActivityResponse\x12\x16\n" +
+	"\x06synced\x18\x01 \x01(\bR\x06synced\x12;\n" +
+	"\vresume_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"resumeTime\"\x19\n" +
 	"\x17DisconnectStravaRequest\"\x1a\n" +
 	"\x18DisconnectStravaResponse*\x88\x01\n" +
 	"\tSyncState\x12\x1a\n" +
@@ -676,17 +827,18 @@ const file_strava_v1_strava_proto_rawDesc = "" +
 	"\x0fSYNC_STATE_IDLE\x10\x01\x12\x16\n" +
 	"\x12SYNC_STATE_RUNNING\x10\x02\x12\x1b\n" +
 	"\x17SYNC_STATE_RATE_LIMITED\x10\x03\x12\x15\n" +
-	"\x11SYNC_STATE_FAILED\x10\x042\xa5\x02\n" +
+	"\x11SYNC_STATE_FAILED\x10\x042\xfe\x02\n" +
 	"\rStravaService\x12d\n" +
 	"\x13GetStravaConnection\x12%.strava.v1.GetStravaConnectionRequest\x1a&.strava.v1.GetStravaConnectionResponse\x12I\n" +
 	"\n" +
-	"SyncStrava\x12\x1c.strava.v1.SyncStravaRequest\x1a\x1d.strava.v1.SyncStravaResponse\x12c\n" +
+	"SyncStrava\x12\x1c.strava.v1.SyncStravaRequest\x1a\x1d.strava.v1.SyncStravaResponse\x12W\n" +
+	"\fSyncActivity\x12\x1e.strava.v1.SyncActivityRequest\x1a\x1f.strava.v1.SyncActivityResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12c\n" +
 	"\x10DisconnectStrava\x12\".strava.v1.DisconnectStravaRequest\x1a#.strava.v1.DisconnectStravaResponse\"\x06\xa2\x9f\x19\x02\b\x01B\xa2\x01\n" +
 	"\rcom.strava.v1B\vStravaProtoP\x01Z?github.com/catzkorn/trail-tools/internal/gen/strava/v1;stravav1\xa2\x02\x03SXX\xaa\x02\tStrava.V1\xca\x02\tStrava\\V1\xe2\x02\x15Strava\\V1\\GPBMetadata\xea\x02\n" +
 	"Strava::V1b\x06proto3"
 
 var file_strava_v1_strava_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_strava_v1_strava_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_strava_v1_strava_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_strava_v1_strava_proto_goTypes = []any{
 	(SyncState)(0),                      // 0: strava.v1.SyncState
 	(*StravaConnection)(nil),            // 1: strava.v1.StravaConnection
@@ -694,27 +846,32 @@ var file_strava_v1_strava_proto_goTypes = []any{
 	(*GetStravaConnectionResponse)(nil), // 3: strava.v1.GetStravaConnectionResponse
 	(*SyncStravaRequest)(nil),           // 4: strava.v1.SyncStravaRequest
 	(*SyncStravaResponse)(nil),          // 5: strava.v1.SyncStravaResponse
-	(*DisconnectStravaRequest)(nil),     // 6: strava.v1.DisconnectStravaRequest
-	(*DisconnectStravaResponse)(nil),    // 7: strava.v1.DisconnectStravaResponse
-	(*timestamppb.Timestamp)(nil),       // 8: google.protobuf.Timestamp
+	(*SyncActivityRequest)(nil),         // 6: strava.v1.SyncActivityRequest
+	(*SyncActivityResponse)(nil),        // 7: strava.v1.SyncActivityResponse
+	(*DisconnectStravaRequest)(nil),     // 8: strava.v1.DisconnectStravaRequest
+	(*DisconnectStravaResponse)(nil),    // 9: strava.v1.DisconnectStravaResponse
+	(*timestamppb.Timestamp)(nil),       // 10: google.protobuf.Timestamp
 }
 var file_strava_v1_strava_proto_depIdxs = []int32{
-	0, // 0: strava.v1.StravaConnection.sync_state:type_name -> strava.v1.SyncState
-	8, // 1: strava.v1.StravaConnection.last_sync_time:type_name -> google.protobuf.Timestamp
-	8, // 2: strava.v1.StravaConnection.resume_time:type_name -> google.protobuf.Timestamp
-	1, // 3: strava.v1.GetStravaConnectionResponse.connection:type_name -> strava.v1.StravaConnection
-	1, // 4: strava.v1.SyncStravaResponse.connection:type_name -> strava.v1.StravaConnection
-	2, // 5: strava.v1.StravaService.GetStravaConnection:input_type -> strava.v1.GetStravaConnectionRequest
-	4, // 6: strava.v1.StravaService.SyncStrava:input_type -> strava.v1.SyncStravaRequest
-	6, // 7: strava.v1.StravaService.DisconnectStrava:input_type -> strava.v1.DisconnectStravaRequest
-	3, // 8: strava.v1.StravaService.GetStravaConnection:output_type -> strava.v1.GetStravaConnectionResponse
-	5, // 9: strava.v1.StravaService.SyncStrava:output_type -> strava.v1.SyncStravaResponse
-	7, // 10: strava.v1.StravaService.DisconnectStrava:output_type -> strava.v1.DisconnectStravaResponse
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0,  // 0: strava.v1.StravaConnection.sync_state:type_name -> strava.v1.SyncState
+	10, // 1: strava.v1.StravaConnection.last_sync_time:type_name -> google.protobuf.Timestamp
+	10, // 2: strava.v1.StravaConnection.resume_time:type_name -> google.protobuf.Timestamp
+	1,  // 3: strava.v1.GetStravaConnectionResponse.connection:type_name -> strava.v1.StravaConnection
+	1,  // 4: strava.v1.SyncStravaResponse.connection:type_name -> strava.v1.StravaConnection
+	10, // 5: strava.v1.SyncActivityResponse.resume_time:type_name -> google.protobuf.Timestamp
+	2,  // 6: strava.v1.StravaService.GetStravaConnection:input_type -> strava.v1.GetStravaConnectionRequest
+	4,  // 7: strava.v1.StravaService.SyncStrava:input_type -> strava.v1.SyncStravaRequest
+	6,  // 8: strava.v1.StravaService.SyncActivity:input_type -> strava.v1.SyncActivityRequest
+	8,  // 9: strava.v1.StravaService.DisconnectStrava:input_type -> strava.v1.DisconnectStravaRequest
+	3,  // 10: strava.v1.StravaService.GetStravaConnection:output_type -> strava.v1.GetStravaConnectionResponse
+	5,  // 11: strava.v1.StravaService.SyncStrava:output_type -> strava.v1.SyncStravaResponse
+	7,  // 12: strava.v1.StravaService.SyncActivity:output_type -> strava.v1.SyncActivityResponse
+	9,  // 13: strava.v1.StravaService.DisconnectStrava:output_type -> strava.v1.DisconnectStravaResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_strava_v1_strava_proto_init() }
@@ -728,7 +885,7 @@ func file_strava_v1_strava_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_strava_v1_strava_proto_rawDesc), len(file_strava_v1_strava_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

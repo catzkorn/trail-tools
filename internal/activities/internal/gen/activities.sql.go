@@ -233,7 +233,7 @@ func (q *Queries) ListActivities(ctx context.Context, arg *ListActivitiesParams)
 const listActivitiesWithoutStreams = `-- name: ListActivitiesWithoutStreams :many
 select id, strava_id from strava_activities
 where user_id = $1 and not streams_synced
-order by start_time desc
+order by sync_requested desc, start_time desc
 limit $2
 `
 
@@ -381,6 +381,7 @@ func (q *Queries) ListActivityTracksInBounds(ctx context.Context, arg *ListActiv
 const markActivityStreamsSynced = `-- name: MarkActivityStreamsSynced :exec
 update strava_activities set
   streams_synced = true,
+  sync_requested = false,
   min_lat = coalesce($1::double precision, strava_activities.min_lat),
   min_lng = coalesce($2::double precision, strava_activities.min_lng),
   max_lat = coalesce($3::double precision, strava_activities.max_lat),
@@ -405,6 +406,22 @@ func (q *Queries) MarkActivityStreamsSynced(ctx context.Context, arg *MarkActivi
 		arg.MaxLng,
 		arg.ID,
 	)
+	return err
+}
+
+const requestActivitySync = `-- name: RequestActivitySync :exec
+update strava_activities set
+  sync_requested = true
+where id = $1 and user_id = $2 and not streams_synced
+`
+
+type RequestActivitySyncParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) RequestActivitySync(ctx context.Context, arg *RequestActivitySyncParams) error {
+	_, err := q.db.Exec(ctx, requestActivitySync, arg.ID, arg.UserID)
 	return err
 }
 

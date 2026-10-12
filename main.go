@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto/rand"
 	"crypto/tls"
@@ -162,6 +163,12 @@ var (
 		"A secret Strava sends back when validating the webhook. If set, the server subscribes to Strava's webhook events"+
 			" at "+stravasvc.WebhookPath+" on startup, to sync new activities right away. Requires a public URL",
 	)
+	stravaBackgroundReserve = flag.Float64(
+		"strava-background-reserve",
+		strava.DefaultBackgroundReserve,
+		"The fraction of Strava's rate limits, in each 15 minute window and each day, that syncing the backlog of"+
+			" activities leaves for interactive requests, like webhook events and activities users open. 0 disables the reserve",
+	)
 	stravaSyncJob = flag.String(
 		"strava-sync-job",
 		"",
@@ -243,6 +250,7 @@ func main() {
 		*adminBootstrapToken,
 		*stravaSyncMode,
 		*stravaWebhookVerifyToken,
+		*stravaBackgroundReserve,
 		*stravaSyncJob,
 		*schedulerServiceAccount,
 		*schedulerAudience,
@@ -274,6 +282,7 @@ func run(
 	adminBootstrapToken string,
 	stravaSyncMode string,
 	stravaWebhookVerifyToken string,
+	stravaBackgroundReserve float64,
 	stravaSyncJob string,
 	schedulerServiceAccount string,
 	schedulerAudience string,
@@ -295,6 +304,8 @@ func run(
 		return errors.New("strava-client-secret is required when strava-client-id is set")
 	case stravaSyncMode != "background" && stravaSyncMode != "scheduled":
 		return errors.New(`strava-sync-mode must be "background" or "scheduled"`)
+	case stravaBackgroundReserve < 0 || stravaBackgroundReserve >= 1:
+		return errors.New("strava-background-reserve must be at least 0 and less than 1")
 	case stravaSyncMode == "scheduled" && schedulerServiceAccount == "":
 		return errors.New("scheduler-service-account is required with -strava-sync-mode=scheduled")
 	case photoBucket == "" && photoDir == "":
@@ -401,6 +412,8 @@ func run(
 			ClientID:     stravaClientID,
 			ClientSecret: stravaClientSecret,
 			RedirectURL:  baseURL + stravasvc.CallbackPath,
+			// The client treats 0 as the default.
+			BackgroundReserve: cmp.Or(stravaBackgroundReserve, -1),
 		}
 		if fakeStravaServer != nil {
 			conf.BaseURL = fakeStravaServer.APIURL()

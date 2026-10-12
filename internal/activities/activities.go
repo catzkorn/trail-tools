@@ -139,7 +139,8 @@ type PendingStreams struct {
 }
 
 // ListActivitiesWithoutStreams lists activities whose streams have not been
-// synced yet, most recent first.
+// synced yet: those requested with RequestActivitySync first, then the most
+// recent first.
 func (r *Repository) ListActivitiesWithoutStreams(ctx context.Context, userID pgtype.UUID, limit int32) ([]PendingStreams, error) {
 	rows, err := r.q.ListActivitiesWithoutStreams(ctx, &gen.ListActivitiesWithoutStreamsParams{UserID: userID, Limit: limit})
 	if err != nil {
@@ -150,6 +151,16 @@ func (r *Repository) ListActivitiesWithoutStreams(ctx context.Context, userID pg
 		pending[i] = PendingStreams{ID: row.ID, StravaID: row.StravaID}
 	}
 	return pending, nil
+}
+
+// RequestActivitySync marks one of the user's activities as requested, so
+// it's synced before the rest of the activities waiting for streams. The
+// mark is cleared once its streams are synced.
+func (r *Repository) RequestActivitySync(ctx context.Context, userID, activityID pgtype.UUID) error {
+	if err := r.q.RequestActivitySync(ctx, &gen.RequestActivitySyncParams{ID: activityID, UserID: userID}); err != nil {
+		return fmt.Errorf("failed to request an activity sync: %w", err)
+	}
+	return nil
 }
 
 // CountActivities returns the number of activities and the number waiting

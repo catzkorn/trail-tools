@@ -22,6 +22,15 @@ export const getStravaConnection = StravaService.method.getStravaConnection;
 export const syncStrava = StravaService.method.syncStrava;
 
 /**
+ * Sync the details, photos and streams of an activity still waiting for
+ * them right away, ahead of the other activities. If Strava's rate limit
+ * is reached, the activity is synced first once it resets.
+ *
+ * @generated from rpc strava.v1.StravaService.SyncActivity
+ */
+export const syncActivity = StravaService.method.syncActivity;
+
+/**
  * Disconnect the Strava account. Synced activities are kept.
  *
  * @generated from rpc strava.v1.StravaService.DisconnectStrava

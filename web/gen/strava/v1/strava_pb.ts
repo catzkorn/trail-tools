@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file strava/v1/strava.proto.
  */
 export const file_strava_v1_strava: GenFile = /*@__PURE__*/
-  fileDesc("ChZzdHJhdmEvdjEvc3RyYXZhLnByb3RvEglzdHJhdmEudjEi0wIKEFN0cmF2YUNvbm5lY3Rpb24SEQoJY29ubmVjdGVkGAEgASgIEhQKDGF0aGxldGVfbmFtZRgCIAEoCRISCgphdGhsZXRlX2lkGAMgASgJEigKCnN5bmNfc3RhdGUYBCABKA4yFC5zdHJhdmEudjEuU3luY1N0YXRlEhQKDHN5bmNfbWVzc2FnZRgFIAEoCRIyCg5sYXN0X3N5bmNfdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLcmVzdW1lX3RpbWUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhYKDmFjdGl2aXR5X2NvdW50GAggASgFEhwKFHBlbmRpbmdfc3RyZWFtX2NvdW50GAkgASgFEhIKCmNvbmZpZ3VyZWQYCiABKAgSEwoLYXRobGV0ZV91cmwYCyABKAkiHAoaR2V0U3RyYXZhQ29ubmVjdGlvblJlcXVlc3QiTgobR2V0U3RyYXZhQ29ubmVjdGlvblJlc3BvbnNlEi8KCmNvbm5lY3Rpb24YASABKAsyGy5zdHJhdmEudjEuU3RyYXZhQ29ubmVjdGlvbiIhChFTeW5jU3RyYXZhUmVxdWVzdBIMCgRmdWxsGAEgASgIIkUKElN5bmNTdHJhdmFSZXNwb25zZRIvCgpjb25uZWN0aW9uGAEgASgLMhsuc3RyYXZhLnYxLlN0cmF2YUNvbm5lY3Rpb24iGQoXRGlzY29ubmVjdFN0cmF2YVJlcXVlc3QiGgoYRGlzY29ubmVjdFN0cmF2YVJlc3BvbnNlKogBCglTeW5jU3RhdGUSGgoWU1lOQ19TVEFURV9VTlNQRUNJRklFRBAAEhMKD1NZTkNfU1RBVEVfSURMRRABEhYKElNZTkNfU1RBVEVfUlVOTklORxACEhsKF1NZTkNfU1RBVEVfUkFURV9MSU1JVEVEEAMSFQoRU1lOQ19TVEFURV9GQUlMRUQQBDKlAgoNU3RyYXZhU2VydmljZRJkChNHZXRTdHJhdmFDb25uZWN0aW9uEiUuc3RyYXZhLnYxLkdldFN0cmF2YUNvbm5lY3Rpb25SZXF1ZXN0GiYuc3RyYXZhLnYxLkdldFN0cmF2YUNvbm5lY3Rpb25SZXNwb25zZRJJCgpTeW5jU3RyYXZhEhwuc3RyYXZhLnYxLlN5bmNTdHJhdmFSZXF1ZXN0Gh0uc3RyYXZhLnYxLlN5bmNTdHJhdmFSZXNwb25zZRJjChBEaXNjb25uZWN0U3RyYXZhEiIuc3RyYXZhLnYxLkRpc2Nvbm5lY3RTdHJhdmFSZXF1ZXN0GiMuc3RyYXZhLnYxLkRpc2Nvbm5lY3RTdHJhdmFSZXNwb25zZSIGop8ZAggBQqIBCg1jb20uc3RyYXZhLnYxQgtTdHJhdmFQcm90b1ABWj9naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9zdHJhdmEvdjE7c3RyYXZhdjGiAgNTWFiqAglTdHJhdmEuVjHKAglTdHJhdmFcVjHiAhVTdHJhdmFcVjFcR1BCTWV0YWRhdGHqAgpTdHJhdmE6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChZzdHJhdmEvdjEvc3RyYXZhLnByb3RvEglzdHJhdmEudjEi0wIKEFN0cmF2YUNvbm5lY3Rpb24SEQoJY29ubmVjdGVkGAEgASgIEhQKDGF0aGxldGVfbmFtZRgCIAEoCRISCgphdGhsZXRlX2lkGAMgASgJEigKCnN5bmNfc3RhdGUYBCABKA4yFC5zdHJhdmEudjEuU3luY1N0YXRlEhQKDHN5bmNfbWVzc2FnZRgFIAEoCRIyCg5sYXN0X3N5bmNfdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLcmVzdW1lX3RpbWUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhYKDmFjdGl2aXR5X2NvdW50GAggASgFEhwKFHBlbmRpbmdfc3RyZWFtX2NvdW50GAkgASgFEhIKCmNvbmZpZ3VyZWQYCiABKAgSEwoLYXRobGV0ZV91cmwYCyABKAkiHAoaR2V0U3RyYXZhQ29ubmVjdGlvblJlcXVlc3QiTgobR2V0U3RyYXZhQ29ubmVjdGlvblJlc3BvbnNlEi8KCmNvbm5lY3Rpb24YASABKAsyGy5zdHJhdmEudjEuU3RyYXZhQ29ubmVjdGlvbiIhChFTeW5jU3RyYXZhUmVxdWVzdBIMCgRmdWxsGAEgASgIIkUKElN5bmNTdHJhdmFSZXNwb25zZRIvCgpjb25uZWN0aW9uGAEgASgLMhsuc3RyYXZhLnYxLlN0cmF2YUNvbm5lY3Rpb24iKgoTU3luY0FjdGl2aXR5UmVxdWVzdBITCgthY3Rpdml0eV9pZBgBIAEoCSJXChRTeW5jQWN0aXZpdHlSZXNwb25zZRIOCgZzeW5jZWQYASABKAgSLwoLcmVzdW1lX3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIhkKF0Rpc2Nvbm5lY3RTdHJhdmFSZXF1ZXN0IhoKGERpc2Nvbm5lY3RTdHJhdmFSZXNwb25zZSqIAQoJU3luY1N0YXRlEhoKFlNZTkNfU1RBVEVfVU5TUEVDSUZJRUQQABITCg9TWU5DX1NUQVRFX0lETEUQARIWChJTWU5DX1NUQVRFX1JVTk5JTkcQAhIbChdTWU5DX1NUQVRFX1JBVEVfTElNSVRFRBADEhUKEVNZTkNfU1RBVEVfRkFJTEVEEAQy/gIKDVN0cmF2YVNlcnZpY2USZAoTR2V0U3RyYXZhQ29ubmVjdGlvbhIlLnN0cmF2YS52MS5HZXRTdHJhdmFDb25uZWN0aW9uUmVxdWVzdBomLnN0cmF2YS52MS5HZXRTdHJhdmFDb25uZWN0aW9uUmVzcG9uc2USSQoKU3luY1N0cmF2YRIcLnN0cmF2YS52MS5TeW5jU3RyYXZhUmVxdWVzdBodLnN0cmF2YS52MS5TeW5jU3RyYXZhUmVzcG9uc2USVwoMU3luY0FjdGl2aXR5Eh4uc3RyYXZhLnYxLlN5bmNBY3Rpdml0eVJlcXVlc3QaHy5zdHJhdmEudjEuU3luY0FjdGl2aXR5UmVzcG9uc2UiBqKfGQIIARJjChBEaXNjb25uZWN0U3RyYXZhEiIuc3RyYXZhLnYxLkRpc2Nvbm5lY3RTdHJhdmFSZXF1ZXN0GiMuc3RyYXZhLnYxLkRpc2Nvbm5lY3RTdHJhdmFSZXNwb25zZSIGop8ZAggBQqIBCg1jb20uc3RyYXZhLnYxQgtTdHJhdmFQcm90b1ABWj9naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9zdHJhdmEvdjE7c3RyYXZhdjGiAgNTWFiqAglTdHJhdmEuVjHKAglTdHJhdmFcVjHiAhVTdHJhdmFcVjFcR1BCTWV0YWRhdGHqAgpTdHJhdmE6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * The status of the Strava connection.
@@ -178,6 +178,53 @@ export const SyncStravaResponseSchema: GenMessage<SyncStravaResponse> = /*@__PUR
   messageDesc(file_strava_v1_strava, 4);
 
 /**
+ * @generated from message strava.v1.SyncActivityRequest
+ */
+export type SyncActivityRequest = Message<"strava.v1.SyncActivityRequest"> & {
+  /**
+   * The ID of the activity.
+   *
+   * @generated from field: string activity_id = 1;
+   */
+  activityId: string;
+};
+
+/**
+ * Describes the message strava.v1.SyncActivityRequest.
+ * Use `create(SyncActivityRequestSchema)` to create a new message.
+ */
+export const SyncActivityRequestSchema: GenMessage<SyncActivityRequest> = /*@__PURE__*/
+  messageDesc(file_strava_v1_strava, 5);
+
+/**
+ * @generated from message strava.v1.SyncActivityResponse
+ */
+export type SyncActivityResponse = Message<"strava.v1.SyncActivityResponse"> & {
+  /**
+   * Whether the activity's details, photos and streams are synced.
+   *
+   * @generated from field: bool synced = 1;
+   */
+  synced: boolean;
+
+  /**
+   * If the activity isn't synced because Strava's rate limit was reached,
+   * when the limit resets. The activity is synced before the other
+   * activities then.
+   *
+   * @generated from field: google.protobuf.Timestamp resume_time = 2;
+   */
+  resumeTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message strava.v1.SyncActivityResponse.
+ * Use `create(SyncActivityResponseSchema)` to create a new message.
+ */
+export const SyncActivityResponseSchema: GenMessage<SyncActivityResponse> = /*@__PURE__*/
+  messageDesc(file_strava_v1_strava, 6);
+
+/**
  * @generated from message strava.v1.DisconnectStravaRequest
  */
 export type DisconnectStravaRequest = Message<"strava.v1.DisconnectStravaRequest"> & {
@@ -188,7 +235,7 @@ export type DisconnectStravaRequest = Message<"strava.v1.DisconnectStravaRequest
  * Use `create(DisconnectStravaRequestSchema)` to create a new message.
  */
 export const DisconnectStravaRequestSchema: GenMessage<DisconnectStravaRequest> = /*@__PURE__*/
-  messageDesc(file_strava_v1_strava, 5);
+  messageDesc(file_strava_v1_strava, 7);
 
 /**
  * @generated from message strava.v1.DisconnectStravaResponse
@@ -201,7 +248,7 @@ export type DisconnectStravaResponse = Message<"strava.v1.DisconnectStravaRespon
  * Use `create(DisconnectStravaResponseSchema)` to create a new message.
  */
 export const DisconnectStravaResponseSchema: GenMessage<DisconnectStravaResponse> = /*@__PURE__*/
-  messageDesc(file_strava_v1_strava, 6);
+  messageDesc(file_strava_v1_strava, 8);
 
 /**
  * SyncState is the state of a Strava sync.
@@ -279,6 +326,18 @@ export const StravaService: GenService<{
     methodKind: "unary";
     input: typeof SyncStravaRequestSchema;
     output: typeof SyncStravaResponseSchema;
+  },
+  /**
+   * Sync the details, photos and streams of an activity still waiting for
+   * them right away, ahead of the other activities. If Strava's rate limit
+   * is reached, the activity is synced first once it resets.
+   *
+   * @generated from rpc strava.v1.StravaService.SyncActivity
+   */
+  syncActivity: {
+    methodKind: "unary";
+    input: typeof SyncActivityRequestSchema;
+    output: typeof SyncActivityResponseSchema;
   },
   /**
    * Disconnect the Strava account. Synced activities are kept.

@@ -34,6 +34,14 @@ type fakeStrava struct {
 	revoked     bool
 	refreshes   int
 	streamCalls int
+	// The activities streams were fetched for, and the priorities.
+	streamIDs        []int64
+	streamPriorities []strava.Priority
+	// If set, fetching the streams of this activity once signals
+	// streamsBlocked and waits for unblockStreams.
+	blockStreams   int64
+	streamsBlocked chan struct{}
+	unblockStreams chan struct{}
 	// The before times activities were listed with.
 	listed []time.Time
 	// The page size of listed activities, if not zero.
@@ -128,10 +136,19 @@ func (f *fakeStrava) GetActivity(_ context.Context, _ string, id int64) (*strava
 	return nil, strava.ErrNotFound
 }
 
-func (f *fakeStrava) GetStreams(_ context.Context, _ string, id int64) (*strava.Streams, error) {
+func (f *fakeStrava) GetStreams(ctx context.Context, _ string, id int64) (*strava.Streams, error) {
 	f.mu.Lock()
+	if id != 0 && id == f.blockStreams {
+		f.blockStreams = 0
+		f.mu.Unlock()
+		f.streamsBlocked <- struct{}{}
+		<-f.unblockStreams
+		f.mu.Lock()
+	}
 	defer f.mu.Unlock()
 	f.streamCalls++
+	f.streamIDs = append(f.streamIDs, id)
+	f.streamPriorities = append(f.streamPriorities, strava.PriorityFrom(ctx))
 	if !f.rateLimited {
 		f.rateLimited = true
 		return nil, &strava.RateLimitError{ResetAt: time.Now()}

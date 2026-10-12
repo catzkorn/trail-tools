@@ -16,6 +16,12 @@ service StravaService {
   // Strava's API rate limits mean a full history sync can take hours; it
   // resumes automatically. Use GetStravaConnection to follow progress.
   rpc SyncStrava(SyncStravaRequest) returns (SyncStravaResponse);
+  // Sync the details, photos and streams of an activity still waiting for
+  // them right away, ahead of the other activities. If Strava's rate limit
+  // is reached, the activity is synced first once it resets.
+  rpc SyncActivity(SyncActivityRequest) returns (SyncActivityResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
   // Disconnect the Strava account. Synced activities are kept.
   rpc DisconnectStrava(DisconnectStravaRequest) returns (DisconnectStravaResponse) {
     option (mcp.v1.method).exclude = true;
@@ -77,6 +83,20 @@ message SyncStravaRequest {
 message SyncStravaResponse {
   // The connection status after starting the sync.
   StravaConnection connection = 1;
+}
+
+message SyncActivityRequest {
+  // The ID of the activity.
+  string activity_id = 1;
+}
+
+message SyncActivityResponse {
+  // Whether the activity's details, photos and streams are synced.
+  bool synced = 1;
+  // If the activity isn't synced because Strava's rate limit was reached,
+  // when the limit resets. The activity is synced before the other
+  // activities then.
+  google.protobuf.Timestamp resume_time = 2;
 }
 
 message DisconnectStravaRequest {}
