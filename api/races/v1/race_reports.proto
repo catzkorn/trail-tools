@@ -8,10 +8,13 @@ import "mcp/v1/options.proto";
 // RaceReportService manages race reports: the story of a race the user ran,
 // focused on how it was prepared for and executed rather than on photos.
 // A report has a result and sections of text: a summary, preparation, race
-// day, nutrition, what went well and badly, and lessons. The server compares
-// the race plan with what happened: the result against the plan's A, B and C
-// goals, and the actual arrival times at the plan's checkpoints, from the
-// activity's recording or the race day splits, against the planned ones.
+// day, nutrition, what went well and badly, and lessons. The result is a
+// finish time, or, if the runner did not finish (DNF), where and when they
+// stopped. The server compares the race plan with what happened: the result
+// against the plan's A, B and C goals, and the actual arrival times at the
+// plan's checkpoints, from the activity's recording or the race day splits,
+// against the planned ones. A DNF meets no goal, and has no arrival times
+// beyond where the runner stopped.
 //
 // Reports are private drafts until the author publishes them in the app,
 // which requires a public profile (see TripReportService). Help the author
@@ -71,7 +74,7 @@ message RaceReport {
   double distance_meters = 8 [(mcp.v1.field).output_only = true];
   // The race's elevation gain in meters.
   double elevation_gain_meters = 9 [(mcp.v1.field).output_only = true];
-  // The finish time in seconds, 0 if unknown.
+  // The finish time in seconds, 0 if unknown or the runner did not finish.
   int32 finish_seconds = 10;
   // The placement as free text, e.g. "12th of 240, 3rd M40".
   string placement = 11;
@@ -100,6 +103,19 @@ message RaceReport {
   google.protobuf.Timestamp create_time = 22 [(mcp.v1.field).output_only = true];
   // When the report was last updated.
   google.protobuf.Timestamp update_time = 23 [(mcp.v1.field).output_only = true];
+  // Whether the runner did not finish the race (DNF). The result is then
+  // where and when they stopped, and there is no finish time.
+  bool did_not_finish = 24;
+  // Where the runner stopped, as the distance along the course from the
+  // start in meters, 0 if unknown. Only for a DNF.
+  double stop_distance_meters = 25;
+  // The checkpoint or place where the runner stopped, e.g. "Function
+  // Junction", if any. Only for a DNF. If it's one of the race plan's
+  // checkpoints, the runner reached it.
+  string stop_checkpoint = 26;
+  // The elapsed time when the runner stopped in seconds, 0 if unknown. Only
+  // for a DNF.
+  int32 stop_seconds = 27;
 }
 
 // The comparison of a race plan with what happened.
@@ -115,6 +131,11 @@ message RaceComparison {
   repeated CheckpointResult checkpoints = 4;
   // Where the actual times come from.
   ActualTimesSource actual_times_source = 5;
+  // Whether the activity's distances were scaled to the race's, as GPS
+  // distances differ from course distances. They are only scaled when the
+  // activity covers the course, or up to where the runner stopped for a DNF,
+  // so a partial recording is never stretched over the whole course.
+  bool actual_times_scaled = 6;
 }
 
 // Where the actual times of a race come from.
@@ -133,10 +154,11 @@ message GoalResult {
   string goal = 1;
   // The goal's finish time in seconds.
   int32 target_seconds = 2;
-  // Whether the finish time met the goal. False without a finish time.
+  // Whether the finish time met the goal. False without a finish time,
+  // and if the runner did not finish.
   bool met = 3;
   // The finish time minus the goal, in seconds: negative if faster. 0
-  // without a finish time.
+  // without a finish time, and if the runner did not finish.
   int32 difference_seconds = 4;
 }
 
@@ -148,13 +170,18 @@ message CheckpointResult {
   double distance_meters = 2;
   // The planned elapsed time at arrival in seconds.
   int32 planned_arrival_seconds = 3;
-  // The actual elapsed time at arrival in seconds, if known.
+  // The actual elapsed time at arrival in seconds, if known. Never set
+  // beyond the end of the activity's recording, nor beyond where the runner
+  // stopped if they did not finish.
   optional int32 actual_arrival_seconds = 4;
   // The actual minus the planned arrival in seconds: negative if early.
   // Set with the actual arrival.
   optional int32 difference_seconds = 5;
   // The cutoff as elapsed time in seconds, 0 if none.
   int32 cutoff_seconds = 6;
+  // Whether the runner did not reach the checkpoint because they did not
+  // finish: it's beyond where they stopped.
+  bool not_reached = 7;
 }
 
 message CreateRaceReportRequest {
@@ -203,7 +230,7 @@ message UpdateRaceReportRequest {
   optional string slug = 3;
   // The new activity, if set. Empty to unset it.
   optional string activity_id = 4;
-  // The new finish time in seconds, if set.
+  // The new finish time in seconds, if set. Must be 0 for a DNF.
   optional int32 finish_seconds = 5;
   // The new placement, if set.
   optional string placement = 6;
@@ -221,6 +248,21 @@ message UpdateRaceReportRequest {
   optional string went_badly = 12;
   // The new lessons section, if set.
   optional string lessons = 13;
+  // Whether the runner did not finish (DNF), if set. Marking a report as a
+  // DNF moves its finish time, e.g. the activity's elapsed time, to the stop
+  // time, and defaults the stop distance to the activity's distance, unless
+  // they are set. Marking it as finished clears where and when the runner
+  // stopped.
+  optional bool did_not_finish = 14;
+  // The new distance along the course where the runner stopped in meters, if
+  // set. Only for a DNF.
+  optional double stop_distance_meters = 15;
+  // The new checkpoint or place where the runner stopped, if set. Only for a
+  // DNF.
+  optional string stop_checkpoint = 16;
+  // The new elapsed time when the runner stopped in seconds, if set. Only
+  // for a DNF.
+  optional int32 stop_seconds = 17;
 }
 
 message UpdateRaceReportResponse {

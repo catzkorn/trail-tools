@@ -96,6 +96,10 @@ type RaceReport struct {
 	xxx_hidden_Url                 string                 `protobuf:"bytes,21,opt,name=url,proto3"`
 	xxx_hidden_CreateTime          *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=create_time,json=createTime,proto3"`
 	xxx_hidden_UpdateTime          *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=update_time,json=updateTime,proto3"`
+	xxx_hidden_DidNotFinish        bool                   `protobuf:"varint,24,opt,name=did_not_finish,json=didNotFinish,proto3"`
+	xxx_hidden_StopDistanceMeters  float64                `protobuf:"fixed64,25,opt,name=stop_distance_meters,json=stopDistanceMeters,proto3"`
+	xxx_hidden_StopCheckpoint      string                 `protobuf:"bytes,26,opt,name=stop_checkpoint,json=stopCheckpoint,proto3"`
+	xxx_hidden_StopSeconds         int32                  `protobuf:"varint,27,opt,name=stop_seconds,json=stopSeconds,proto3"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -286,6 +290,34 @@ func (x *RaceReport) GetUpdateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *RaceReport) GetDidNotFinish() bool {
+	if x != nil {
+		return x.xxx_hidden_DidNotFinish
+	}
+	return false
+}
+
+func (x *RaceReport) GetStopDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_StopDistanceMeters
+	}
+	return 0
+}
+
+func (x *RaceReport) GetStopCheckpoint() string {
+	if x != nil {
+		return x.xxx_hidden_StopCheckpoint
+	}
+	return ""
+}
+
+func (x *RaceReport) GetStopSeconds() int32 {
+	if x != nil {
+		return x.xxx_hidden_StopSeconds
+	}
+	return 0
+}
+
 func (x *RaceReport) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -378,6 +410,22 @@ func (x *RaceReport) SetUpdateTime(v *timestamppb.Timestamp) {
 	x.xxx_hidden_UpdateTime = v
 }
 
+func (x *RaceReport) SetDidNotFinish(v bool) {
+	x.xxx_hidden_DidNotFinish = v
+}
+
+func (x *RaceReport) SetStopDistanceMeters(v float64) {
+	x.xxx_hidden_StopDistanceMeters = v
+}
+
+func (x *RaceReport) SetStopCheckpoint(v string) {
+	x.xxx_hidden_StopCheckpoint = v
+}
+
+func (x *RaceReport) SetStopSeconds(v int32) {
+	x.xxx_hidden_StopSeconds = v
+}
+
 func (x *RaceReport) HasPublishTime() bool {
 	if x == nil {
 		return false
@@ -433,7 +481,7 @@ type RaceReport_builder struct {
 	DistanceMeters float64
 	// The race's elevation gain in meters.
 	ElevationGainMeters float64
-	// The finish time in seconds, 0 if unknown.
+	// The finish time in seconds, 0 if unknown or the runner did not finish.
 	FinishSeconds int32
 	// The placement as free text, e.g. "12th of 240, 3rd M40".
 	Placement string
@@ -462,6 +510,19 @@ type RaceReport_builder struct {
 	CreateTime *timestamppb.Timestamp
 	// When the report was last updated.
 	UpdateTime *timestamppb.Timestamp
+	// Whether the runner did not finish the race (DNF). The result is then
+	// where and when they stopped, and there is no finish time.
+	DidNotFinish bool
+	// Where the runner stopped, as the distance along the course from the
+	// start in meters, 0 if unknown. Only for a DNF.
+	StopDistanceMeters float64
+	// The checkpoint or place where the runner stopped, e.g. "Function
+	// Junction", if any. Only for a DNF. If it's one of the race plan's
+	// checkpoints, the runner reached it.
+	StopCheckpoint string
+	// The elapsed time when the runner stopped in seconds, 0 if unknown. Only
+	// for a DNF.
+	StopSeconds int32
 }
 
 func (b0 RaceReport_builder) Build() *RaceReport {
@@ -491,6 +552,10 @@ func (b0 RaceReport_builder) Build() *RaceReport {
 	x.xxx_hidden_Url = b.Url
 	x.xxx_hidden_CreateTime = b.CreateTime
 	x.xxx_hidden_UpdateTime = b.UpdateTime
+	x.xxx_hidden_DidNotFinish = b.DidNotFinish
+	x.xxx_hidden_StopDistanceMeters = b.StopDistanceMeters
+	x.xxx_hidden_StopCheckpoint = b.StopCheckpoint
+	x.xxx_hidden_StopSeconds = b.StopSeconds
 	return m0
 }
 
@@ -502,6 +567,7 @@ type RaceComparison struct {
 	xxx_hidden_PlannedFinishSeconds int32                  `protobuf:"varint,3,opt,name=planned_finish_seconds,json=plannedFinishSeconds,proto3"`
 	xxx_hidden_Checkpoints          *[]*CheckpointResult   `protobuf:"bytes,4,rep,name=checkpoints,proto3"`
 	xxx_hidden_ActualTimesSource    ActualTimesSource      `protobuf:"varint,5,opt,name=actual_times_source,json=actualTimesSource,proto3,enum=races.v1.ActualTimesSource"`
+	xxx_hidden_ActualTimesScaled    bool                   `protobuf:"varint,6,opt,name=actual_times_scaled,json=actualTimesScaled,proto3"`
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -570,6 +636,13 @@ func (x *RaceComparison) GetActualTimesSource() ActualTimesSource {
 	return ActualTimesSource_ACTUAL_TIMES_SOURCE_UNSPECIFIED
 }
 
+func (x *RaceComparison) GetActualTimesScaled() bool {
+	if x != nil {
+		return x.xxx_hidden_ActualTimesScaled
+	}
+	return false
+}
+
 func (x *RaceComparison) SetHasPlan(v bool) {
 	x.xxx_hidden_HasPlan = v
 }
@@ -590,6 +663,10 @@ func (x *RaceComparison) SetActualTimesSource(v ActualTimesSource) {
 	x.xxx_hidden_ActualTimesSource = v
 }
 
+func (x *RaceComparison) SetActualTimesScaled(v bool) {
+	x.xxx_hidden_ActualTimesScaled = v
+}
+
 type RaceComparison_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -604,6 +681,11 @@ type RaceComparison_builder struct {
 	Checkpoints []*CheckpointResult
 	// Where the actual times come from.
 	ActualTimesSource ActualTimesSource
+	// Whether the activity's distances were scaled to the race's, as GPS
+	// distances differ from course distances. They are only scaled when the
+	// activity covers the course, or up to where the runner stopped for a DNF,
+	// so a partial recording is never stretched over the whole course.
+	ActualTimesScaled bool
 }
 
 func (b0 RaceComparison_builder) Build() *RaceComparison {
@@ -615,6 +697,7 @@ func (b0 RaceComparison_builder) Build() *RaceComparison {
 	x.xxx_hidden_PlannedFinishSeconds = b.PlannedFinishSeconds
 	x.xxx_hidden_Checkpoints = &b.Checkpoints
 	x.xxx_hidden_ActualTimesSource = b.ActualTimesSource
+	x.xxx_hidden_ActualTimesScaled = b.ActualTimesScaled
 	return m0
 }
 
@@ -705,10 +788,11 @@ type GoalResult_builder struct {
 	Goal string
 	// The goal's finish time in seconds.
 	TargetSeconds int32
-	// Whether the finish time met the goal. False without a finish time.
+	// Whether the finish time met the goal. False without a finish time,
+	// and if the runner did not finish.
 	Met bool
 	// The finish time minus the goal, in seconds: negative if faster. 0
-	// without a finish time.
+	// without a finish time, and if the runner did not finish.
 	DifferenceSeconds int32
 }
 
@@ -732,6 +816,7 @@ type CheckpointResult struct {
 	xxx_hidden_ActualArrivalSeconds  int32                  `protobuf:"varint,4,opt,name=actual_arrival_seconds,json=actualArrivalSeconds,proto3,oneof"`
 	xxx_hidden_DifferenceSeconds     int32                  `protobuf:"varint,5,opt,name=difference_seconds,json=differenceSeconds,proto3,oneof"`
 	xxx_hidden_CutoffSeconds         int32                  `protobuf:"varint,6,opt,name=cutoff_seconds,json=cutoffSeconds,proto3"`
+	xxx_hidden_NotReached            bool                   `protobuf:"varint,7,opt,name=not_reached,json=notReached,proto3"`
 	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
 	XXX_presence                     [1]uint32
 	unknownFields                    protoimpl.UnknownFields
@@ -805,6 +890,13 @@ func (x *CheckpointResult) GetCutoffSeconds() int32 {
 	return 0
 }
 
+func (x *CheckpointResult) GetNotReached() bool {
+	if x != nil {
+		return x.xxx_hidden_NotReached
+	}
+	return false
+}
+
 func (x *CheckpointResult) SetName(v string) {
 	x.xxx_hidden_Name = v
 }
@@ -819,16 +911,20 @@ func (x *CheckpointResult) SetPlannedArrivalSeconds(v int32) {
 
 func (x *CheckpointResult) SetActualArrivalSeconds(v int32) {
 	x.xxx_hidden_ActualArrivalSeconds = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
 }
 
 func (x *CheckpointResult) SetDifferenceSeconds(v int32) {
 	x.xxx_hidden_DifferenceSeconds = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
 }
 
 func (x *CheckpointResult) SetCutoffSeconds(v int32) {
 	x.xxx_hidden_CutoffSeconds = v
+}
+
+func (x *CheckpointResult) SetNotReached(v bool) {
+	x.xxx_hidden_NotReached = v
 }
 
 func (x *CheckpointResult) HasActualArrivalSeconds() bool {
@@ -864,13 +960,18 @@ type CheckpointResult_builder struct {
 	DistanceMeters float64
 	// The planned elapsed time at arrival in seconds.
 	PlannedArrivalSeconds int32
-	// The actual elapsed time at arrival in seconds, if known.
+	// The actual elapsed time at arrival in seconds, if known. Never set
+	// beyond the end of the activity's recording, nor beyond where the runner
+	// stopped if they did not finish.
 	ActualArrivalSeconds *int32
 	// The actual minus the planned arrival in seconds: negative if early.
 	// Set with the actual arrival.
 	DifferenceSeconds *int32
 	// The cutoff as elapsed time in seconds, 0 if none.
 	CutoffSeconds int32
+	// Whether the runner did not reach the checkpoint because they did not
+	// finish: it's beyond where they stopped.
+	NotReached bool
 }
 
 func (b0 CheckpointResult_builder) Build() *CheckpointResult {
@@ -881,14 +982,15 @@ func (b0 CheckpointResult_builder) Build() *CheckpointResult {
 	x.xxx_hidden_DistanceMeters = b.DistanceMeters
 	x.xxx_hidden_PlannedArrivalSeconds = b.PlannedArrivalSeconds
 	if b.ActualArrivalSeconds != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
 		x.xxx_hidden_ActualArrivalSeconds = *b.ActualArrivalSeconds
 	}
 	if b.DifferenceSeconds != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
 		x.xxx_hidden_DifferenceSeconds = *b.DifferenceSeconds
 	}
 	x.xxx_hidden_CutoffSeconds = b.CutoffSeconds
+	x.xxx_hidden_NotReached = b.NotReached
 	return m0
 }
 
@@ -1333,24 +1435,28 @@ func (b0 ListRaceReportsResponse_builder) Build() *ListRaceReportsResponse {
 }
 
 type UpdateRaceReportRequest struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id            string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	xxx_hidden_Title         *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof"`
-	xxx_hidden_Slug          *string                `protobuf:"bytes,3,opt,name=slug,proto3,oneof"`
-	xxx_hidden_ActivityId    *string                `protobuf:"bytes,4,opt,name=activity_id,json=activityId,proto3,oneof"`
-	xxx_hidden_FinishSeconds int32                  `protobuf:"varint,5,opt,name=finish_seconds,json=finishSeconds,proto3,oneof"`
-	xxx_hidden_Placement     *string                `protobuf:"bytes,6,opt,name=placement,proto3,oneof"`
-	xxx_hidden_Summary       *string                `protobuf:"bytes,7,opt,name=summary,proto3,oneof"`
-	xxx_hidden_Preparation   *string                `protobuf:"bytes,8,opt,name=preparation,proto3,oneof"`
-	xxx_hidden_RaceDay       *string                `protobuf:"bytes,9,opt,name=race_day,json=raceDay,proto3,oneof"`
-	xxx_hidden_Nutrition     *string                `protobuf:"bytes,10,opt,name=nutrition,proto3,oneof"`
-	xxx_hidden_WentWell      *string                `protobuf:"bytes,11,opt,name=went_well,json=wentWell,proto3,oneof"`
-	xxx_hidden_WentBadly     *string                `protobuf:"bytes,12,opt,name=went_badly,json=wentBadly,proto3,oneof"`
-	xxx_hidden_Lessons       *string                `protobuf:"bytes,13,opt,name=lessons,proto3,oneof"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Title              *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof"`
+	xxx_hidden_Slug               *string                `protobuf:"bytes,3,opt,name=slug,proto3,oneof"`
+	xxx_hidden_ActivityId         *string                `protobuf:"bytes,4,opt,name=activity_id,json=activityId,proto3,oneof"`
+	xxx_hidden_FinishSeconds      int32                  `protobuf:"varint,5,opt,name=finish_seconds,json=finishSeconds,proto3,oneof"`
+	xxx_hidden_Placement          *string                `protobuf:"bytes,6,opt,name=placement,proto3,oneof"`
+	xxx_hidden_Summary            *string                `protobuf:"bytes,7,opt,name=summary,proto3,oneof"`
+	xxx_hidden_Preparation        *string                `protobuf:"bytes,8,opt,name=preparation,proto3,oneof"`
+	xxx_hidden_RaceDay            *string                `protobuf:"bytes,9,opt,name=race_day,json=raceDay,proto3,oneof"`
+	xxx_hidden_Nutrition          *string                `protobuf:"bytes,10,opt,name=nutrition,proto3,oneof"`
+	xxx_hidden_WentWell           *string                `protobuf:"bytes,11,opt,name=went_well,json=wentWell,proto3,oneof"`
+	xxx_hidden_WentBadly          *string                `protobuf:"bytes,12,opt,name=went_badly,json=wentBadly,proto3,oneof"`
+	xxx_hidden_Lessons            *string                `protobuf:"bytes,13,opt,name=lessons,proto3,oneof"`
+	xxx_hidden_DidNotFinish       bool                   `protobuf:"varint,14,opt,name=did_not_finish,json=didNotFinish,proto3,oneof"`
+	xxx_hidden_StopDistanceMeters float64                `protobuf:"fixed64,15,opt,name=stop_distance_meters,json=stopDistanceMeters,proto3,oneof"`
+	xxx_hidden_StopCheckpoint     *string                `protobuf:"bytes,16,opt,name=stop_checkpoint,json=stopCheckpoint,proto3,oneof"`
+	xxx_hidden_StopSeconds        int32                  `protobuf:"varint,17,opt,name=stop_seconds,json=stopSeconds,proto3,oneof"`
+	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
+	XXX_presence                  [1]uint32
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *UpdateRaceReportRequest) Reset() {
@@ -1502,68 +1608,119 @@ func (x *UpdateRaceReportRequest) GetLessons() string {
 	return ""
 }
 
+func (x *UpdateRaceReportRequest) GetDidNotFinish() bool {
+	if x != nil {
+		return x.xxx_hidden_DidNotFinish
+	}
+	return false
+}
+
+func (x *UpdateRaceReportRequest) GetStopDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_StopDistanceMeters
+	}
+	return 0
+}
+
+func (x *UpdateRaceReportRequest) GetStopCheckpoint() string {
+	if x != nil {
+		if x.xxx_hidden_StopCheckpoint != nil {
+			return *x.xxx_hidden_StopCheckpoint
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *UpdateRaceReportRequest) GetStopSeconds() int32 {
+	if x != nil {
+		return x.xxx_hidden_StopSeconds
+	}
+	return 0
+}
+
 func (x *UpdateRaceReportRequest) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
 
 func (x *UpdateRaceReportRequest) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetSlug(v string) {
 	x.xxx_hidden_Slug = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetActivityId(v string) {
 	x.xxx_hidden_ActivityId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetFinishSeconds(v int32) {
 	x.xxx_hidden_FinishSeconds = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetPlacement(v string) {
 	x.xxx_hidden_Placement = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetSummary(v string) {
 	x.xxx_hidden_Summary = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetPreparation(v string) {
 	x.xxx_hidden_Preparation = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetRaceDay(v string) {
 	x.xxx_hidden_RaceDay = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetNutrition(v string) {
 	x.xxx_hidden_Nutrition = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetWentWell(v string) {
 	x.xxx_hidden_WentWell = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetWentBadly(v string) {
 	x.xxx_hidden_WentBadly = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetLessons(v string) {
 	x.xxx_hidden_Lessons = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 13)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 17)
+}
+
+func (x *UpdateRaceReportRequest) SetDidNotFinish(v bool) {
+	x.xxx_hidden_DidNotFinish = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 17)
+}
+
+func (x *UpdateRaceReportRequest) SetStopDistanceMeters(v float64) {
+	x.xxx_hidden_StopDistanceMeters = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 17)
+}
+
+func (x *UpdateRaceReportRequest) SetStopCheckpoint(v string) {
+	x.xxx_hidden_StopCheckpoint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 17)
+}
+
+func (x *UpdateRaceReportRequest) SetStopSeconds(v int32) {
+	x.xxx_hidden_StopSeconds = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 16, 17)
 }
 
 func (x *UpdateRaceReportRequest) HasTitle() bool {
@@ -1650,6 +1807,34 @@ func (x *UpdateRaceReportRequest) HasLessons() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
 }
 
+func (x *UpdateRaceReportRequest) HasDidNotFinish() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
+}
+
+func (x *UpdateRaceReportRequest) HasStopDistanceMeters() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
+}
+
+func (x *UpdateRaceReportRequest) HasStopCheckpoint() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 15)
+}
+
+func (x *UpdateRaceReportRequest) HasStopSeconds() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 16)
+}
+
 func (x *UpdateRaceReportRequest) ClearTitle() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Title = nil
@@ -1710,6 +1895,26 @@ func (x *UpdateRaceReportRequest) ClearLessons() {
 	x.xxx_hidden_Lessons = nil
 }
 
+func (x *UpdateRaceReportRequest) ClearDidNotFinish() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
+	x.xxx_hidden_DidNotFinish = false
+}
+
+func (x *UpdateRaceReportRequest) ClearStopDistanceMeters() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
+	x.xxx_hidden_StopDistanceMeters = 0
+}
+
+func (x *UpdateRaceReportRequest) ClearStopCheckpoint() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 15)
+	x.xxx_hidden_StopCheckpoint = nil
+}
+
+func (x *UpdateRaceReportRequest) ClearStopSeconds() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 16)
+	x.xxx_hidden_StopSeconds = 0
+}
+
 type UpdateRaceReportRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -1721,7 +1926,7 @@ type UpdateRaceReportRequest_builder struct {
 	Slug *string
 	// The new activity, if set. Empty to unset it.
 	ActivityId *string
-	// The new finish time in seconds, if set.
+	// The new finish time in seconds, if set. Must be 0 for a DNF.
 	FinishSeconds *int32
 	// The new placement, if set.
 	Placement *string
@@ -1739,6 +1944,21 @@ type UpdateRaceReportRequest_builder struct {
 	WentBadly *string
 	// The new lessons section, if set.
 	Lessons *string
+	// Whether the runner did not finish (DNF), if set. Marking a report as a
+	// DNF moves its finish time, e.g. the activity's elapsed time, to the stop
+	// time, and defaults the stop distance to the activity's distance, unless
+	// they are set. Marking it as finished clears where and when the runner
+	// stopped.
+	DidNotFinish *bool
+	// The new distance along the course where the runner stopped in meters, if
+	// set. Only for a DNF.
+	StopDistanceMeters *float64
+	// The new checkpoint or place where the runner stopped, if set. Only for a
+	// DNF.
+	StopCheckpoint *string
+	// The new elapsed time when the runner stopped in seconds, if set. Only
+	// for a DNF.
+	StopSeconds *int32
 }
 
 func (b0 UpdateRaceReportRequest_builder) Build() *UpdateRaceReportRequest {
@@ -1747,52 +1967,68 @@ func (b0 UpdateRaceReportRequest_builder) Build() *UpdateRaceReportRequest {
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 17)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Slug != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 17)
 		x.xxx_hidden_Slug = b.Slug
 	}
 	if b.ActivityId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 17)
 		x.xxx_hidden_ActivityId = b.ActivityId
 	}
 	if b.FinishSeconds != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 17)
 		x.xxx_hidden_FinishSeconds = *b.FinishSeconds
 	}
 	if b.Placement != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 17)
 		x.xxx_hidden_Placement = b.Placement
 	}
 	if b.Summary != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 17)
 		x.xxx_hidden_Summary = b.Summary
 	}
 	if b.Preparation != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 17)
 		x.xxx_hidden_Preparation = b.Preparation
 	}
 	if b.RaceDay != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 17)
 		x.xxx_hidden_RaceDay = b.RaceDay
 	}
 	if b.Nutrition != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 17)
 		x.xxx_hidden_Nutrition = b.Nutrition
 	}
 	if b.WentWell != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 17)
 		x.xxx_hidden_WentWell = b.WentWell
 	}
 	if b.WentBadly != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 17)
 		x.xxx_hidden_WentBadly = b.WentBadly
 	}
 	if b.Lessons != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 13)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 17)
 		x.xxx_hidden_Lessons = b.Lessons
+	}
+	if b.DidNotFinish != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 17)
+		x.xxx_hidden_DidNotFinish = *b.DidNotFinish
+	}
+	if b.StopDistanceMeters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 17)
+		x.xxx_hidden_StopDistanceMeters = *b.StopDistanceMeters
+	}
+	if b.StopCheckpoint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 17)
+		x.xxx_hidden_StopCheckpoint = b.StopCheckpoint
+	}
+	if b.StopSeconds != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 17)
+		x.xxx_hidden_StopSeconds = *b.StopSeconds
 	}
 	return m0
 }
@@ -2552,7 +2788,7 @@ var File_races_v1_race_reports_proto protoreflect.FileDescriptor
 
 const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\n" +
-	"\x1braces/v1/race_reports.proto\x12\braces.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xe8\x06\n" +
+	"\x1braces/v1/race_reports.proto\x12\braces.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\x8c\b\n" +
 	"\n" +
 	"RaceReport\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x1f\n" +
@@ -2582,26 +2818,33 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\vcreate_time\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"createTime\x12C\n" +
 	"\vupdate_time\x18\x17 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
-	"updateTime\"\x98\x02\n" +
+	"updateTime\x12$\n" +
+	"\x0edid_not_finish\x18\x18 \x01(\bR\fdidNotFinish\x120\n" +
+	"\x14stop_distance_meters\x18\x19 \x01(\x01R\x12stopDistanceMeters\x12'\n" +
+	"\x0fstop_checkpoint\x18\x1a \x01(\tR\x0estopCheckpoint\x12!\n" +
+	"\fstop_seconds\x18\x1b \x01(\x05R\vstopSeconds\"\xc8\x02\n" +
 	"\x0eRaceComparison\x12\x19\n" +
 	"\bhas_plan\x18\x01 \x01(\bR\ahasPlan\x12*\n" +
 	"\x05goals\x18\x02 \x03(\v2\x14.races.v1.GoalResultR\x05goals\x124\n" +
 	"\x16planned_finish_seconds\x18\x03 \x01(\x05R\x14plannedFinishSeconds\x12<\n" +
 	"\vcheckpoints\x18\x04 \x03(\v2\x1a.races.v1.CheckpointResultR\vcheckpoints\x12K\n" +
-	"\x13actual_times_source\x18\x05 \x01(\x0e2\x1b.races.v1.ActualTimesSourceR\x11actualTimesSource\"\x88\x01\n" +
+	"\x13actual_times_source\x18\x05 \x01(\x0e2\x1b.races.v1.ActualTimesSourceR\x11actualTimesSource\x12.\n" +
+	"\x13actual_times_scaled\x18\x06 \x01(\bR\x11actualTimesScaled\"\x88\x01\n" +
 	"\n" +
 	"GoalResult\x12\x12\n" +
 	"\x04goal\x18\x01 \x01(\tR\x04goal\x12%\n" +
 	"\x0etarget_seconds\x18\x02 \x01(\x05R\rtargetSeconds\x12\x10\n" +
 	"\x03met\x18\x03 \x01(\bR\x03met\x12-\n" +
-	"\x12difference_seconds\x18\x04 \x01(\x05R\x11differenceSeconds\"\xcf\x02\n" +
+	"\x12difference_seconds\x18\x04 \x01(\x05R\x11differenceSeconds\"\xf0\x02\n" +
 	"\x10CheckpointResult\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12'\n" +
 	"\x0fdistance_meters\x18\x02 \x01(\x01R\x0edistanceMeters\x126\n" +
 	"\x17planned_arrival_seconds\x18\x03 \x01(\x05R\x15plannedArrivalSeconds\x129\n" +
 	"\x16actual_arrival_seconds\x18\x04 \x01(\x05H\x00R\x14actualArrivalSeconds\x88\x01\x01\x122\n" +
 	"\x12difference_seconds\x18\x05 \x01(\x05H\x01R\x11differenceSeconds\x88\x01\x01\x12%\n" +
-	"\x0ecutoff_seconds\x18\x06 \x01(\x05R\rcutoffSecondsB\x19\n" +
+	"\x0ecutoff_seconds\x18\x06 \x01(\x05R\rcutoffSeconds\x12\x1f\n" +
+	"\vnot_reached\x18\a \x01(\bR\n" +
+	"notReachedB\x19\n" +
 	"\x17_actual_arrival_secondsB\x15\n" +
 	"\x13_difference_seconds\"S\n" +
 	"\x17CreateRaceReportRequest\x12\x17\n" +
@@ -2623,7 +2866,7 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x16ListRaceReportsRequest\x12\x17\n" +
 	"\arace_id\x18\x01 \x01(\tR\x06raceId\"I\n" +
 	"\x17ListRaceReportsResponse\x12.\n" +
-	"\areports\x18\x01 \x03(\v2\x14.races.v1.RaceReportR\areports\"\xe4\x04\n" +
+	"\areports\x18\x01 \x03(\v2\x14.races.v1.RaceReportR\areports\"\xed\x06\n" +
 	"\x17UpdateRaceReportRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x17\n" +
@@ -2641,7 +2884,11 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\n" +
 	"went_badly\x18\f \x01(\tH\n" +
 	"R\twentBadly\x88\x01\x01\x12\x1d\n" +
-	"\alessons\x18\r \x01(\tH\vR\alessons\x88\x01\x01B\b\n" +
+	"\alessons\x18\r \x01(\tH\vR\alessons\x88\x01\x01\x12)\n" +
+	"\x0edid_not_finish\x18\x0e \x01(\bH\fR\fdidNotFinish\x88\x01\x01\x125\n" +
+	"\x14stop_distance_meters\x18\x0f \x01(\x01H\rR\x12stopDistanceMeters\x88\x01\x01\x12,\n" +
+	"\x0fstop_checkpoint\x18\x10 \x01(\tH\x0eR\x0estopCheckpoint\x88\x01\x01\x12&\n" +
+	"\fstop_seconds\x18\x11 \x01(\x05H\x0fR\vstopSeconds\x88\x01\x01B\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_slugB\x0e\n" +
 	"\f_activity_idB\x11\n" +
@@ -2658,7 +2905,11 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"_went_wellB\r\n" +
 	"\v_went_badlyB\n" +
 	"\n" +
-	"\b_lessons\"\x82\x01\n" +
+	"\b_lessonsB\x11\n" +
+	"\x0f_did_not_finishB\x17\n" +
+	"\x15_stop_distance_metersB\x12\n" +
+	"\x10_stop_checkpointB\x0f\n" +
+	"\r_stop_seconds\"\x82\x01\n" +
 	"\x18UpdateRaceReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\x128\n" +
 	"\n" +

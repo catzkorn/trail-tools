@@ -952,6 +952,10 @@ type RaceReport struct {
 	PublishTime         pgtype.Timestamptz
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
+	DidNotFinish        bool
+	StopDistanceMeters  float64
+	StopCheckpoint      string
+	StopSeconds         int32
 }
 
 type Route struct {
