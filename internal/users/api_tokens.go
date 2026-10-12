@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/catzkorn/trail-tools/internal/users/internal/gen"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -20,7 +20,7 @@ const apiTokenPrefix = "tt_"
 
 // APIToken is a token used to authenticate API clients, such as MCP clients.
 type APIToken struct {
-	*internal.APIToken
+	*gen.APIToken
 }
 
 // CreateAPIToken creates a new API token for the user. It returns the token
@@ -28,7 +28,7 @@ type APIToken struct {
 func (r *Repository) CreateAPIToken(ctx context.Context, userID pgtype.UUID, name string) (*APIToken, string, error) {
 	secret := apiTokenPrefix + rand.Text()
 	hash := sha256.Sum256([]byte(secret))
-	token, err := r.querier.CreateAPIToken(ctx, &internal.CreateAPITokenParams{
+	token, err := r.querier.CreateAPIToken(ctx, &gen.CreateAPITokenParams{
 		UserID:       userID,
 		Name:         name,
 		SecretSHA256: hash[:],
@@ -54,7 +54,7 @@ func (r *Repository) ListAPITokens(ctx context.Context, userID pgtype.UUID) ([]*
 
 // DeleteAPIToken deletes one of the user's API tokens.
 func (r *Repository) DeleteAPIToken(ctx context.Context, userID pgtype.UUID, tokenID pgtype.UUID) error {
-	n, err := r.querier.DeleteAPIToken(ctx, &internal.DeleteAPITokenParams{
+	n, err := r.querier.DeleteAPIToken(ctx, &gen.DeleteAPITokenParams{
 		ID:     tokenID,
 		UserID: userID,
 	})

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/catzkorn/trail-tools/internal/users/internal/gen"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -141,8 +141,8 @@ func (r *Repository) CreateChallenge(ctx context.Context, c *Challenge, expiry t
 	if err := r.querier.DeleteExpiredPasskeyChallenges(ctx); err != nil {
 		return pgtype.UUID{}, fmt.Errorf("failed to delete expired challenges: %w", err)
 	}
-	id, err := r.querier.CreatePasskeyChallenge(ctx, &internal.CreatePasskeyChallengeParams{
-		Ceremony:     internal.PasskeyCeremony(c.Ceremony),
+	id, err := r.querier.CreatePasskeyChallenge(ctx, &gen.CreatePasskeyChallengeParams{
+		Ceremony:     gen.PasskeyCeremony(c.Ceremony),
 		Challenge:    c.Challenge,
 		UserHandle:   c.UserHandle,
 		InvitationID: c.InvitationID,
@@ -160,7 +160,7 @@ func (r *Repository) CreateChallenge(ctx context.Context, c *Challenge, expiry t
 // once. It returns store.ErrNotFound if the challenge doesn't exist or has
 // expired.
 func (r *Repository) TakeChallenge(ctx context.Context, id pgtype.UUID, ceremony Ceremony) (*Challenge, error) {
-	c, err := r.querier.TakePasskeyChallenge(ctx, &internal.TakePasskeyChallengeParams{ID: id, Ceremony: internal.PasskeyCeremony(ceremony)})
+	c, err := r.querier.TakePasskeyChallenge(ctx, &gen.TakePasskeyChallengeParams{ID: id, Ceremony: gen.PasskeyCeremony(ceremony)})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, store.ErrNotFound
@@ -183,9 +183,9 @@ func (r *Repository) TakeChallenge(ctx context.Context, id pgtype.UUID, ceremony
 func (r *Repository) CreateInvitation(ctx context.Context, createdBy pgtype.UUID, kind InvitationKind, userID pgtype.UUID, note string, expiry time.Time) (*Invitation, string, error) {
 	token := rand.Text()
 	hash := sha256.Sum256([]byte(token))
-	inv, err := r.querier.CreateInvitation(ctx, &internal.CreateInvitationParams{
+	inv, err := r.querier.CreateInvitation(ctx, &gen.CreateInvitationParams{
 		TokenSHA256: hash[:],
-		Kind:        internal.InvitationKind(kind),
+		Kind:        gen.InvitationKind(kind),
 		CreatedBy:   createdBy,
 		UserID:      userID,
 		Note:        note,
@@ -238,7 +238,7 @@ func (r *Repository) ListInvitations(ctx context.Context, createdBy pgtype.UUID)
 
 // DeleteInvitation deletes an invitation created by the user.
 func (r *Repository) DeleteInvitation(ctx context.Context, createdBy, id pgtype.UUID) error {
-	n, err := r.querier.DeleteInvitation(ctx, &internal.DeleteInvitationParams{ID: id, CreatedBy: createdBy})
+	n, err := r.querier.DeleteInvitation(ctx, &gen.DeleteInvitationParams{ID: id, CreatedBy: createdBy})
 	if err != nil {
 		return fmt.Errorf("failed to delete invitation: %w", err)
 	}
@@ -284,7 +284,7 @@ func (r *Repository) GetPasskey(ctx context.Context, credentialID []byte) (*Pass
 
 // UsePasskey records a sign in with a passkey.
 func (r *Repository) UsePasskey(ctx context.Context, credentialID []byte, signCount uint32, backedUp bool) error {
-	if err := r.querier.UsePasskey(ctx, &internal.UsePasskeyParams{ID: credentialID, SignCount: int64(signCount), BackedUp: backedUp}); err != nil {
+	if err := r.querier.UsePasskey(ctx, &gen.UsePasskeyParams{ID: credentialID, SignCount: int64(signCount), BackedUp: backedUp}); err != nil {
 		return fmt.Errorf("failed to update passkey: %w", err)
 	}
 	return nil
@@ -306,7 +306,7 @@ func (r *Repository) DeletePasskey(ctx context.Context, userID pgtype.UUID, cred
 	if _, err := q.GetPasskeyUser(ctx, userID); err == nil && count <= 1 {
 		return ErrLastPasskey
 	}
-	n, err := q.DeletePasskey(ctx, &internal.DeletePasskeyParams{ID: credentialID, UserID: userID})
+	n, err := q.DeletePasskey(ctx, &gen.DeletePasskeyParams{ID: credentialID, UserID: userID})
 	if err != nil {
 		return fmt.Errorf("failed to delete passkey: %w", err)
 	}
@@ -340,13 +340,13 @@ func (r *Repository) RegisterPasskey(ctx context.Context, reg *Registration) (Us
 	c := reg.Challenge
 	var userID pgtype.UUID
 	createUser := func(admin bool) error {
-		user, err := q.CreatePasskeyUser(ctx, &internal.CreatePasskeyUserParams{UserHandle: c.UserHandle, Name: reg.UserName})
+		user, err := q.CreatePasskeyUser(ctx, &gen.CreatePasskeyUserParams{UserHandle: c.UserHandle, Name: reg.UserName})
 		if err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
 		userID = user.ID
 		if admin {
-			if err := q.SetAdmin(ctx, &internal.SetAdminParams{ID: userID, IsAdmin: true}); err != nil {
+			if err := q.SetAdmin(ctx, &gen.SetAdminParams{ID: userID, IsAdmin: true}); err != nil {
 				return fmt.Errorf("failed to make user an admin: %w", err)
 			}
 		}
@@ -387,7 +387,7 @@ func (r *Repository) RegisterPasskey(ctx context.Context, reg *Registration) (Us
 		return nil, errors.New("the challenge doesn't authorize a registration")
 	}
 	p := reg.Passkey
-	if _, err := q.CreatePasskey(ctx, &internal.CreatePasskeyParams{
+	if _, err := q.CreatePasskey(ctx, &gen.CreatePasskeyParams{
 		ID:             p.ID,
 		UserID:         userID,
 		Name:           p.Name,
@@ -418,7 +418,7 @@ func (r *Repository) GetUser(ctx context.Context, userID pgtype.UUID) (User, err
 
 // CreateSession creates a session for the user and returns its ID.
 func (r *Repository) CreateSession(ctx context.Context, userID pgtype.UUID, expiry time.Time) (string, error) {
-	sessionID, err := r.querier.CreateSession(ctx, &internal.CreateSessionParams{
+	sessionID, err := r.querier.CreateSession(ctx, &gen.CreateSessionParams{
 		UserID: userID,
 		Expiry: pgtype.Timestamptz{Time: expiry, Valid: true},
 	})
@@ -430,7 +430,7 @@ func (r *Repository) CreateSession(ctx context.Context, userID pgtype.UUID, expi
 
 func invitationFromDB(
 	id pgtype.UUID,
-	kind internal.InvitationKind,
+	kind gen.InvitationKind,
 	createdBy pgtype.UUID,
 	createdByName string,
 	userID pgtype.UUID,
@@ -451,7 +451,7 @@ func invitationFromDB(
 	}
 }
 
-func passkeyFromDB(p *internal.Passkey) *Passkey {
+func passkeyFromDB(p *gen.Passkey) *Passkey {
 	return &Passkey{
 		ID:             p.ID,
 		UserID:         p.UserID,

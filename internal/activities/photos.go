@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities/internal"
+	"github.com/catzkorn/trail-tools/internal/activities/internal/gen"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -40,7 +40,7 @@ func (r *Repository) SetActivityPhotos(ctx context.Context, activityID pgtype.UU
 		return fmt.Errorf("failed to delete photos: %w", err)
 	}
 	for i, p := range photos {
-		params := &internal.InsertActivityPhotoParams{
+		params := &gen.InsertActivityPhotoParams{
 			ActivityID: activityID,
 			StravaID:   p.StravaID,
 			Position:   int32(i),
@@ -68,7 +68,7 @@ func (r *Repository) SetActivityPhotos(ctx context.Context, activityID pgtype.UU
 // ListActivityPhotos lists the photos of one of the user's activities, in
 // order.
 func (r *Repository) ListActivityPhotos(ctx context.Context, userID, activityID pgtype.UUID) ([]Photo, error) {
-	rows, err := r.q.ListActivityPhotos(ctx, &internal.ListActivityPhotosParams{ActivityID: activityID, UserID: userID})
+	rows, err := r.q.ListActivityPhotos(ctx, &gen.ListActivityPhotosParams{ActivityID: activityID, UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list photos: %w", err)
 	}

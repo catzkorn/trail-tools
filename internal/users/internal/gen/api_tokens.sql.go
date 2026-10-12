@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: api_tokens.sql
 
-package internal
+package gen
 
 import (
 	"context"
