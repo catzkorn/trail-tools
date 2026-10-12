@@ -26,6 +26,7 @@ import (
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -49,6 +50,7 @@ func allServices() []Service {
 		{Name: racesv1connect.RacePlanServiceName, Handler: racesv1connect.UnimplementedRacePlanServiceHandler{}},
 		{Name: routesv1connect.RouteServiceName, Handler: routesv1connect.UnimplementedRouteServiceHandler{}},
 		{Name: stravav1connect.StravaServiceName, Handler: stravav1connect.UnimplementedStravaServiceHandler{}},
+		{Name: tripsv1connect.TripReportServiceName, Handler: tripsv1connect.UnimplementedTripReportServiceHandler{}},
 		{Name: usersv1connect.UserServiceName, Handler: usersv1connect.UnimplementedUserServiceHandler{}},
 	}
 }
@@ -63,12 +65,18 @@ func TestNewServer(t *testing.T) {
 		tools[tool.Name] = tool
 	}
 
-	for _, name := range []string{"CreateAPIToken", "ListAPITokens", "DeleteAPIToken", "GetSharedRacePlan", "DisconnectStrava"} {
+	for _, name := range []string{
+		"CreateAPIToken", "ListAPITokens", "DeleteAPIToken", "GetSharedRacePlan", "DisconnectStrava",
+		"UploadTripPhoto", "PublishTripReport", "UnpublishTripReport", "UpdateProfile", "GetPublicProfile", "GetPublicTripReport",
+	} {
 		if _, ok := tools[name]; ok {
 			t.Errorf("excluded method %s is a tool", name)
 		}
 	}
-	for _, name := range []string{"GetCurrentUser", "CreateRoute", "UpdateRacePlan", "SearchPlaces", "SummarizeActivities", "SyncStrava"} {
+	for _, name := range []string{
+		"GetCurrentUser", "CreateRoute", "UpdateRacePlan", "SearchPlaces", "SummarizeActivities", "SyncStrava",
+		"CreateTripReport", "UpdateTripReport", "UpdateTripPhoto", "GetProfile",
+	} {
 		if _, ok := tools[name]; !ok {
 			t.Errorf("method %s is not a tool", name)
 		}
@@ -298,6 +306,7 @@ func TestInstructions(t *testing.T) {
 		"## plans.v1.TrainingPlanService\n\n",
 		"\n1. Months: the training phase (e.g. base, build, peak, taper) and monthly volume targets.\n2. Weeks:",
 		"## races.v1.RacePlanService\n\n",
+		"## trips.v1.TripReportService\n\nTripReportService writes trip reports",
 	} {
 		if !strings.Contains(initRes.Instructions, want) {
 			t.Errorf("instructions do not contain %q:\n%s", want, initRes.Instructions)

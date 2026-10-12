@@ -23,6 +23,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/cloudrun"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
@@ -34,6 +35,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
@@ -55,9 +57,11 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
+	"github.com/catzkorn/trail-tools/internal/services/trip"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/strava"
+	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -72,7 +76,8 @@ const (
 	mcpPath = "/mcp"
 )
 
-// maxRequestBytes limits the size of API requests.
+// maxRequestBytes limits the size of API requests. GPX files imported as
+// routes and trip report photos can be several megabytes.
 const maxRequestBytes = 32 << 20
 
 var (
@@ -173,6 +178,17 @@ var (
 		"The Cloud Run job that imports OpenStreetMap data, as projects/<project>/locations/<region>/jobs/<job>."+
 			" If unset, imports run in the server",
 	)
+	photoBucket = flag.String(
+		"photo-bucket",
+		"",
+		"The Google Cloud Storage bucket to store trip report photos in, using the application default credentials."+
+			" If unset, photos are stored in -photo-dir",
+	)
+	photoDir = flag.String(
+		"photo-dir",
+		"photos",
+		"The local directory to store trip report photos in, if -photo-bucket is unset",
+	)
 )
 
 func main() {
@@ -210,6 +226,8 @@ func main() {
 		*schedulerServiceAccount,
 		*schedulerAudience,
 		*importJob,
+		*photoBucket,
+		*photoDir,
 		mapdata.Config{
 			OverpassURLs: strings.Split(*overpassURLs, ","),
 		},
@@ -237,6 +255,8 @@ func run(
 	schedulerServiceAccount string,
 	schedulerAudience string,
 	importJob string,
+	photoBucket string,
+	photoDir string,
 	mapConfig mapdata.Config,
 ) error {
 	switch {
@@ -254,6 +274,8 @@ func run(
 		return errors.New(`strava-sync-mode must be "background" or "scheduled"`)
 	case stravaSyncMode == "scheduled" && schedulerServiceAccount == "":
 		return errors.New("scheduler-service-account is required with -strava-sync-mode=scheduled")
+	case photoBucket == "" && photoDir == "":
+		return errors.New("photo-bucket or photo-dir is required")
 	}
 	dbUrl, err := url.Parse(databaseUrl)
 	if err != nil {
@@ -300,6 +322,26 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create plan repository: %w", err)
 	}
+	tripRepo, err := trips.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create trip repository: %w", err)
+	}
+	// Photos are stored in Cloud Storage on Cloud Run, whose file system
+	// doesn't outlive an instance, and in a local directory otherwise.
+	var photos blob.Store
+	if photoBucket != "" {
+		photos, err = blob.NewGCS(ctx, photoBucket)
+		if err != nil {
+			return fmt.Errorf("failed to create the photo bucket client: %w", err)
+		}
+		log.InfoContext(ctx, "Storing photos in Cloud Storage", slog.String("bucket", photoBucket))
+	} else {
+		photos, err = blob.NewDir(photoDir)
+		if err != nil {
+			return fmt.Errorf("failed to create the photo directory: %w", err)
+		}
+		log.InfoContext(ctx, "Storing photos in a local directory", slog.String("dir", photoDir))
+	}
 	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
@@ -339,6 +381,13 @@ func run(
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
+	// Activities are synced from Strava before importing their photos into
+	// trip reports, if Strava is configured.
+	var activitySyncer trip.ActivitySyncer
+	if stravaSyncer != nil {
+		activitySyncer = stravaSyncer
+	}
+	tripService := trip.NewService(log, tripRepo, activityRepo, activitySyncer, photos, baseURL)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
 	oauthServer := oauth.NewServer(log, users, baseURL, mcpPath)
@@ -373,8 +422,8 @@ func run(
 	racesv1connect.RegisterRaceServiceHandler(server, raceService)
 	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
 	oauthv1connect.RegisterOAuthServiceHandler(server, oauthService)
+	tripsv1connect.RegisterTripReportServiceHandler(server, tripService)
 	apiMux := http.NewServeMux()
-	// GPX files imported as routes can be several megabytes.
 	connecthttp.Mount(apiMux, server, connecthttp.WithReadMaxBytes(maxRequestBytes))
 
 	// Wrap the API mux in the authn middleware. Each service checks
@@ -408,6 +457,7 @@ func run(
 		mcp.Service{Name: plansv1connect.TrainingPlanServiceName, Handler: planService},
 		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
 		mcp.Service{Name: racesv1connect.RacePlanServiceName, Handler: racePlanService},
+		mcp.Service{Name: tripsv1connect.TripReportServiceName, Handler: tripService},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create MCP server: %w", err)
@@ -468,6 +518,10 @@ func run(
 	// Registering /routes/ makes the mux redirect /routes to /routes/, so
 	// serve the frontend for /routes explicitly.
 	mux.Handle("/routes", indexHandler)
+	// Serve trip report photos, and the public trip report pages with their
+	// metadata for search engines and link previews.
+	mux.Handle(trip.PhotoPath, authenticate(tripService.PhotoHandler()))
+	mux.Handle(trip.ProfilePath, authenticate(tripService.PageHandler(serveDir != "")))
 
 	// Add auto-reloading middleware if serving from a directory
 	var srvHandler http.Handler = mux

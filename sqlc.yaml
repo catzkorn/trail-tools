@@ -129,3 +129,23 @@ sql:
           - url
           - api
           - sha256
+  - name: "trips"
+    queries: "./internal/trips/queries"
+    schema: "./internal/store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "internal"
+        out: "./internal/trips/internal"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: false
+        emit_params_struct_pointers: true
+        emit_result_struct_pointers: true
+        emit_enum_valid_method: true
+        initialisms:
+          - id
+          - json
+          - url
+          - api
+          - sha256

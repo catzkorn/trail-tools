@@ -13,6 +13,7 @@ import (
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	_ "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
+	_ "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"

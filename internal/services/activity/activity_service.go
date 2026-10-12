@@ -128,7 +128,7 @@ func (s *Service) GetActivity(ctx context.Context, req *activitiesv1.GetActivity
 			if n := int(req.GetMaxStreamPoints()); n > 0 {
 				limit = min(n, maxStreamPoints)
 			}
-			resp.Streams = downsampleStreams(&streams, limit)
+			resp.Streams = DownsampleStreams(&streams, limit)
 		case errors.Is(err, store.ErrNotFound):
 			// The activity has no streams, e.g. a manual entry.
 		default:
@@ -284,8 +284,8 @@ func activityToProto(a *activities.Activity) *activitiesv1.Activity {
 	}.Build()
 }
 
-// downsampleStreams returns the streams with at most limit points.
-func downsampleStreams(streams *activitiesv1.ActivityStreams, limit int) *activitiesv1.ActivityStreams {
+// DownsampleStreams returns the streams with at most limit points.
+func DownsampleStreams(streams *activitiesv1.ActivityStreams, limit int) *activitiesv1.ActivityStreams {
 	n := 0
 	for _, l := range []int{
 		len(streams.GetTimeSeconds()), len(streams.GetDistanceMeters()), len(streams.GetLat()),

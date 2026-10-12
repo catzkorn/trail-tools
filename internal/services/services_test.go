@@ -19,6 +19,7 @@ import (
 	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
@@ -28,6 +29,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/livetrack"
@@ -48,9 +50,11 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
+	"github.com/catzkorn/trail-tools/internal/services/trip"
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/store/storetest"
+	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -61,6 +65,9 @@ type env struct {
 	db         *store.DB
 	userID     pgtype.UUID
 	token      string
+	otherToken string
+	// The directory trip report photos are stored in.
+	photoDir   string
 	srv        *httptest.Server
 	mapData    *fakeMapData
 	router     *fakeRouter
@@ -84,6 +91,9 @@ type env struct {
 	otherPlans racesv1connect.RacePlanServiceClient
 	oauth      oauthv1connect.OAuthServiceClient
 	anonOAuth  oauthv1connect.OAuthServiceClient
+	trips      tripsv1connect.TripReportServiceClient
+	anonTrips  tripsv1connect.TripReportServiceClient
+	otherTrips tripsv1connect.TripReportServiceClient
 }
 
 // consentPage stands in for the frontend's OAuth consent page.
@@ -114,6 +124,10 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
+	tripRepo, err := trips.NewRepository(log, db)
+	if err != nil {
+		t.Fatal(err)
+	}
 	e := &env{t: t, db: db, mapData: &fakeMapData{}, router: &fakeRouter{}, activities: activityRepo, strava: newFakeStrava()}
 	e.userID = storetest.NewUser(t, db)
 	_, e.token, err = userRepo.CreateAPIToken(ctx, e.userID, "test")
@@ -121,7 +135,7 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	otherUser := storetest.NewUser(t, db)
-	_, otherToken, err := userRepo.CreateAPIToken(ctx, otherUser, "other")
+	_, e.otherToken, err = userRepo.CreateAPIToken(ctx, otherUser, "other")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,6 +160,12 @@ func newEnv(t *testing.T) *env {
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	e.liveTrack = &fakeLiveTrack{}
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
+	e.photoDir = t.TempDir()
+	photos, err := blob.NewDir(e.photoDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tripService := trip.NewService(log, tripRepo, activityRepo, e.syncer, photos, "https://trail.example")
 
 	// Start listening before creating the handler, as the OAuth server needs
 	// the URL of the server.
@@ -171,7 +191,10 @@ func newEnv(t *testing.T) *env {
 	plansv1connect.RegisterTrainingPlanServiceHandler(srv2, planService)
 	racesv1connect.RegisterRaceServiceHandler(srv2, raceService)
 	racesv1connect.RegisterRacePlanServiceHandler(srv2, racePlanService)
+	tripsv1connect.RegisterTripReportServiceHandler(srv2, tripService)
 	connecthttp.Mount(mux, srv2)
+	mux.Handle(trip.PhotoPath, tripService.PhotoHandler())
+	mux.Handle(trip.ProfilePath, tripService.PageHandler(false))
 
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
 	e.imports = &fakeImportRunner{}
@@ -206,11 +229,14 @@ func newEnv(t *testing.T) *env {
 	e.races = racesv1connect.NewRaceServiceClient(authed)
 	e.racePlans = racesv1connect.NewRacePlanServiceClient(authed)
 	e.anonPlans = racesv1connect.NewRacePlanServiceClient(anon)
-	other := connect.NewClient(connecthttp.NewTransport(client, e.srv.URL), bearerInterceptor(otherToken))
+	other := connect.NewClient(connecthttp.NewTransport(client, e.srv.URL), bearerInterceptor(e.otherToken))
 	e.otherRaces = racesv1connect.NewRaceServiceClient(other)
 	e.otherPlans = racesv1connect.NewRacePlanServiceClient(other)
 	e.oauth = oauthv1connect.NewOAuthServiceClient(authed)
 	e.anonOAuth = oauthv1connect.NewOAuthServiceClient(anon)
+	e.trips = tripsv1connect.NewTripReportServiceClient(authed)
+	e.anonTrips = tripsv1connect.NewTripReportServiceClient(anon)
+	e.otherTrips = tripsv1connect.NewTripReportServiceClient(other)
 	return e
 }
 

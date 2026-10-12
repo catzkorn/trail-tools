@@ -1,0 +1,829 @@
+// Package trip implements the TripReportService, which writes and publishes
+// trip reports, and serves their photos and public pages.
+package trip
+
+import (
+	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
+	"log/slog"
+	"math"
+	"net/http"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	"connectrpc.com/connect/v2"
+	"github.com/catzkorn/trail-tools/internal/activities"
+	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/blob"
+	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
+	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
+	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
+	"github.com/catzkorn/trail-tools/internal/gen/trips/v1/tripsv1connect"
+	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/trips"
+	"github.com/jackc/pgx/v5/pgtype"
+	"gitlab.com/greyxor/slogor"
+	"google.golang.org/protobuf/proto"
+)
+
+var _ tripsv1connect.TripReportServiceHandler = (*Service)(nil)
+
+// TripRepository stores trip reports, photos and public profiles.
+type TripRepository interface {
+	GetProfile(ctx context.Context, userID pgtype.UUID) (*trips.Profile, error)
+	GetProfileByHandle(ctx context.Context, handle string) (*trips.Profile, error)
+	UpsertProfile(ctx context.Context, p *trips.Profile) (*trips.Profile, error)
+	GetUserName(ctx context.Context, userID pgtype.UUID) (string, error)
+	CreateReport(ctx context.Context, report *trips.Report) (*trips.Report, error)
+	GetReport(ctx context.Context, userID, reportID pgtype.UUID) (*trips.Report, error)
+	GetReportBySlug(ctx context.Context, userID pgtype.UUID, slug string) (*trips.Report, error)
+	ListReports(ctx context.Context, userID pgtype.UUID, filter trips.ListReportsFilter) ([]*trips.Report, error)
+	UpdateReport(ctx context.Context, u *trips.ReportUpdate) (*trips.Report, error)
+	SetReportPublished(ctx context.Context, userID, reportID pgtype.UUID, published bool) (*trips.Report, error)
+	DeleteReport(ctx context.Context, userID, reportID pgtype.UUID) ([]string, error)
+	AddPhoto(ctx context.Context, userID pgtype.UUID, p *trips.Photo) (*trips.Photo, error)
+	ListPhotos(ctx context.Context, reportIDs ...pgtype.UUID) (map[pgtype.UUID][]*trips.Photo, error)
+	GetPhoto(ctx context.Context, userID, photoID pgtype.UUID) (*trips.Photo, error)
+	GetPhotoAccess(ctx context.Context, photoID pgtype.UUID) (*trips.PhotoAccess, error)
+	UpdatePhotoCaption(ctx context.Context, userID, photoID pgtype.UUID, caption string) (*trips.Photo, error)
+	UpdatePhotoLocation(ctx context.Context, userID, photoID pgtype.UUID, loc *trips.Location) (*trips.Photo, error)
+	ReorderPhotos(ctx context.Context, userID, reportID pgtype.UUID, photoIDs []pgtype.UUID) ([]*trips.Photo, error)
+	DeletePhoto(ctx context.Context, userID, photoID pgtype.UUID) (string, error)
+}
+
+// ActivityRepository gets the activities reports are made from.
+type ActivityRepository interface {
+	GetActivity(ctx context.Context, userID, activityID pgtype.UUID) (*activities.Activity, error)
+	GetActivityStreams(ctx context.Context, userID, activityID pgtype.UUID) ([]byte, error)
+	ListActivityPhotos(ctx context.Context, userID, activityID pgtype.UUID) ([]activities.Photo, error)
+}
+
+// ActivitySyncer syncs an activity from Strava.
+type ActivitySyncer interface {
+	SyncActivity(ctx context.Context, userID pgtype.UUID, stravaID int64) error
+}
+
+// Service implements API handlers for the trip report service.
+type Service struct {
+	log        *slog.Logger
+	repo       TripRepository
+	activities ActivityRepository
+	syncer     ActivitySyncer
+	blobs      blob.Store
+	baseURL    string
+	nowFn      func() time.Time
+	// Downloads photos from Strava.
+	httpClient *http.Client
+}
+
+// NewService creates a new Service. syncer refreshes activities from Strava
+// before importing their photos, and may be nil if Strava isn't configured.
+// Photos are stored in blobs. baseURL is the public URL of the server, used
+// for the URLs of reports and photos.
+func NewService(log *slog.Logger, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, baseURL string) *Service {
+	return &Service{
+		log:        log,
+		repo:       repo,
+		activities: activities,
+		syncer:     syncer,
+		blobs:      blobs,
+		baseURL:    strings.TrimSuffix(baseURL, "/"),
+		nowFn:      time.Now,
+		httpClient: &http.Client{Timeout: photoDownloadTimeout},
+	}
+}
+
+const (
+	// ProfilePath is the path of the public pages: /u/<handle> and
+	// /u/<handle>/<slug>.
+	ProfilePath = "/u/"
+	// PhotoPath is the path photos are served at:
+	// /photos/<id>/<size>.jpg.
+	PhotoPath = "/photos/"
+
+	maxTitleLength       = 200
+	maxBodyLength        = 100_000
+	maxCaptionLength     = 2000
+	maxDisplayNameLength = 80
+	maxPhotosPerReport   = 200
+	// maxSlugAttempts is how many numbered slugs are tried when creating a
+	// report whose slug is taken.
+	maxSlugAttempts = 100
+)
+
+func (s *Service) CreateTripReport(ctx context.Context, req *tripsv1.CreateTripReportRequest) (*tripsv1.CreateTripReportResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	report := &trips.Report{
+		UserID:   userID,
+		Title:    strings.TrimSpace(req.GetTitle()),
+		Date:     dateOf(s.nowFn().UTC()),
+		Timezone: "UTC",
+	}
+	if req.GetActivityId() != "" {
+		activityID, err := store.StringToUUID(req.GetActivityId())
+		if err != nil {
+			return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
+		}
+		if err := s.fillFromActivity(ctx, report, activityID); err != nil {
+			return nil, err
+		}
+	}
+	if report.Title == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "a title is required for a report without an activity")
+	}
+	if err := validateTitle(report.Title); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+	}
+	base := Slugify(report.Title)
+	if base == "" {
+		base = "trip"
+	}
+	for i := 1; i <= maxSlugAttempts; i++ {
+		report.Slug = base
+		if i > 1 {
+			suffix := fmt.Sprintf("-%d", i)
+			report.Slug = strings.TrimRight(base[:min(len(base), maxSlugLength-len(suffix))], "-") + suffix
+		}
+		created, err := s.repo.CreateReport(ctx, report)
+		if errors.Is(err, trips.ErrSlugTaken) {
+			continue
+		}
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to create trip report")
+		}
+		profile, err := s.profile(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		return tripsv1.CreateTripReportResponse_builder{
+			Report: s.reportToProto(created, nil, profile),
+		}.Build(), nil
+	}
+	return nil, connect.NewError(connect.CodeAlreadyExists, "too many trip reports have this title; choose another title")
+}
+
+// fillFromActivity copies the details of one of the user's activities into
+// a new report.
+func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, activityID pgtype.UUID) error {
+	a, err := s.activities.GetActivity(ctx, report.UserID, activityID)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return connect.NewError(connect.CodeNotFound, "activity not found")
+		}
+		return s.toConnectError(ctx, err, "failed to get activity")
+	}
+	report.ActivityID = a.ID
+	if report.Title == "" {
+		report.Title = strings.TrimSpace(a.Name)
+	}
+	report.Body = a.Description
+	report.Date = a.StartDateLocal
+	if a.Timezone != "" {
+		report.Timezone = a.Timezone
+	}
+	report.SportType = a.SportType
+	report.StartTime = a.StartTime
+	report.DistanceMeters = a.DistanceMeters
+	report.MovingTimeSeconds = a.MovingTimeSeconds
+	report.ElapsedTimeSeconds = a.ElapsedTimeSeconds
+	report.ElevationGainMeters = a.ElevationGainMeters
+
+	var t *activitiesv1.ActivityStreams
+	if a.StreamsSynced {
+		data, err := s.activities.GetActivityStreams(ctx, report.UserID, activityID)
+		switch {
+		case err == nil:
+			var streams activitiesv1.ActivityStreams
+			if err := proto.Unmarshal(data, &streams); err != nil {
+				return s.toConnectError(ctx, err, "failed to decode streams")
+			}
+			t = trackFromStreams(&streams)
+		case errors.Is(err, store.ErrNotFound):
+			// The activity has no streams, e.g. a manual entry.
+		default:
+			return s.toConnectError(ctx, err, "failed to get streams")
+		}
+	}
+	if t == nil {
+		t = trackFromPolyline(a.SummaryPolyline)
+	}
+	if t != nil {
+		report.Track, err = proto.Marshal(t)
+		if err != nil {
+			return s.toConnectError(ctx, err, "failed to encode track")
+		}
+	}
+	return nil
+}
+
+func (s *Service) GetTripReport(ctx context.Context, req *tripsv1.GetTripReportRequest) (*tripsv1.GetTripReportResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	report, err := s.repo.GetReport(ctx, userID, reportID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to get trip report")
+	}
+	resp, err := s.reportWithPhotos(ctx, report)
+	if err != nil {
+		return nil, err
+	}
+	b := tripsv1.GetTripReportResponse_builder{Report: resp}
+	if req.GetIncludeTrack() {
+		t, err := decodeTrack(report.Track)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to get track")
+		}
+		b.Track = t.routePoints()
+	}
+	return b.Build(), nil
+}
+
+func (s *Service) ListTripReports(ctx context.Context, req *tripsv1.ListTripReportsRequest) (*tripsv1.ListTripReportsResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	var filter trips.ListReportsFilter
+	if req.GetActivityId() != "" {
+		activityID, err := store.StringToUUID(req.GetActivityId())
+		if err != nil {
+			return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
+		}
+		filter.ActivityID = activityID
+	}
+	reports, err := s.repo.ListReports(ctx, userID, filter)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list trip reports")
+	}
+	profile, err := s.profile(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.reportsToProto(ctx, reports, profile)
+	if err != nil {
+		return nil, err
+	}
+	return tripsv1.ListTripReportsResponse_builder{Reports: result}.Build(), nil
+}
+
+func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripReportRequest) (*tripsv1.UpdateTripReportResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	update := &trips.ReportUpdate{ID: reportID, UserID: userID}
+	if req.HasTitle() {
+		title := strings.TrimSpace(req.GetTitle())
+		if title == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, "the title is required")
+		}
+		if err := validateTitle(title); err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+		}
+		update.Title = &title
+	}
+	if req.HasSlug() {
+		slug := req.GetSlug()
+		if err := validateSlug(slug); err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+		}
+		current, err := s.repo.GetReport(ctx, userID, reportID)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to get trip report")
+		}
+		if current.Published && current.Slug != slug {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, "the slug of a published report can't be changed, so that links to it keep working; unpublish the report first")
+		}
+		update.Slug = &slug
+	}
+	if req.HasBody() {
+		body := req.GetBody()
+		if utf8.RuneCountInString(body) > maxBodyLength {
+			return nil, connect.Errorf(connect.CodeInvalidArgument, "the story must be at most %d characters", maxBodyLength)
+		}
+		update.Body = &body
+	}
+	if req.HasDate() {
+		date, err := store.ParseDate(req.GetDate())
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+		}
+		update.Date = &date
+	}
+	report, err := s.repo.UpdateReport(ctx, update)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to update trip report")
+	}
+	result, err := s.reportWithPhotos(ctx, report)
+	if err != nil {
+		return nil, err
+	}
+	return tripsv1.UpdateTripReportResponse_builder{Report: result}.Build(), nil
+}
+
+func (s *Service) DeleteTripReport(ctx context.Context, req *tripsv1.DeleteTripReportRequest) (*tripsv1.DeleteTripReportResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	keys, err := s.repo.DeleteReport(ctx, userID, reportID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to delete trip report")
+	}
+	for _, key := range keys {
+		s.deleteImages(ctx, key)
+	}
+	return tripsv1.DeleteTripReportResponse_builder{}.Build(), nil
+}
+
+func (s *Service) PublishTripReport(ctx context.Context, req *tripsv1.PublishTripReportRequest) (*tripsv1.PublishTripReportResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.repo.GetReport(ctx, userID, reportID); err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to get trip report")
+	}
+	profile, err := s.profile(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if profile == nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "choose a public handle in Settings before publishing, so the report has an address")
+	}
+	report, err := s.repo.SetReportPublished(ctx, userID, reportID, true)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to publish trip report")
+	}
+	result, err := s.reportWithPhotos(ctx, report)
+	if err != nil {
+		return nil, err
+	}
+	return tripsv1.PublishTripReportResponse_builder{Report: result}.Build(), nil
+}
+
+func (s *Service) UnpublishTripReport(ctx context.Context, req *tripsv1.UnpublishTripReportRequest) (*tripsv1.UnpublishTripReportResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	report, err := s.repo.SetReportPublished(ctx, userID, reportID, false)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to unpublish trip report")
+	}
+	result, err := s.reportWithPhotos(ctx, report)
+	if err != nil {
+		return nil, err
+	}
+	return tripsv1.UnpublishTripReportResponse_builder{Report: result}.Build(), nil
+}
+
+func (s *Service) UploadTripPhoto(ctx context.Context, req *tripsv1.UploadTripPhotoRequest) (*tripsv1.UploadTripPhotoResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetReportId())
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case len(req.GetData()) == 0:
+		return nil, connect.NewError(connect.CodeInvalidArgument, "the photo is empty")
+	case len(req.GetData()) > maxPhotoBytes:
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "the photo must be at most %d MB", maxPhotoBytes>>20)
+	case utf8.RuneCountInString(req.GetCaption()) > maxCaptionLength:
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "the caption must be at most %d characters", maxCaptionLength)
+	}
+	report, err := s.repo.GetReport(ctx, userID, reportID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to get trip report")
+	}
+	existing, err := s.repo.ListPhotos(ctx, reportID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list photos")
+	}
+	if len(existing[reportID]) >= maxPhotosPerReport {
+		return nil, connect.Errorf(connect.CodeFailedPrecondition, "a report can have at most %d photos", maxPhotosPerReport)
+	}
+	photo := &trips.Photo{
+		ReportID: reportID,
+		Caption:  strings.TrimSpace(req.GetCaption()),
+	}
+	switch {
+	case req.HasTakenTime():
+		photo.TakenTime = req.GetTakenTime().AsTime()
+	case req.GetTakenLocalTime() != "":
+		photo.TakenTime, err = parseLocalTime(req.GetTakenLocalTime(), report.Timezone)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+		}
+	}
+	t, err := decodeTrack(report.Track)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to get track")
+	}
+	var gps *geov1.LatLng
+	if req.HasLocation() {
+		gps = req.GetLocation()
+	}
+	if photo.Location, err = placePhoto(report, t, gps, photo.TakenTime); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+	}
+	created, err := s.storePhoto(ctx, userID, photo, req.GetData())
+	if err != nil {
+		return nil, err
+	}
+	return tripsv1.UploadTripPhotoResponse_builder{Photo: s.photoToProto(created)}.Build(), nil
+}
+
+// placePhoto returns where a photo was taken: at its GPS position if it has
+// one, or else on the track at the time it was taken. It returns nil if
+// neither is known.
+func placePhoto(report *trips.Report, t *track, gps *geov1.LatLng, takenTime time.Time) (*trips.Location, error) {
+	if gps != nil {
+		return locationFromProto(gps, trips.LocationGPS, t)
+	}
+	if takenTime.IsZero() || report.StartTime.IsZero() {
+		return nil, nil
+	}
+	p, dist, ok := t.positionAt(takenTime.Sub(report.StartTime).Seconds())
+	if !ok {
+		return nil, nil
+	}
+	return &trips.Location{
+		Lat:                    p.Lat,
+		Lng:                    p.Lng,
+		Source:                 trips.LocationTrackTime,
+		TrackDistanceMeters:    dist,
+		HasTrackDistanceMeters: true,
+	}, nil
+}
+
+// storePhoto re-encodes a photo, stores its images and adds it to the end
+// of its report. It returns trips.ErrPhotoImported for a photo from Strava
+// the report already has, and otherwise connect errors.
+func (s *Service) storePhoto(ctx context.Context, userID pgtype.UUID, photo *trips.Photo, data []byte) (*trips.Photo, error) {
+	img, err := processImage(data)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+	}
+	photo.Width, photo.Height = int32(img.width), int32(img.height)
+	photo.ObjectKey = "trip-photos/" + strings.ToLower(rand.Text())
+	if err := s.blobs.Put(ctx, imageKey(photo.ObjectKey, sizeLarge), img.large, "image/jpeg"); err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to store photo")
+	}
+	if err := s.blobs.Put(ctx, imageKey(photo.ObjectKey, sizeThumb), img.thumb, "image/jpeg"); err != nil {
+		s.deleteImages(ctx, photo.ObjectKey)
+		return nil, s.toConnectError(ctx, err, "failed to store photo")
+	}
+	created, err := s.repo.AddPhoto(ctx, userID, photo)
+	if err != nil {
+		s.deleteImages(ctx, photo.ObjectKey)
+		if errors.Is(err, trips.ErrPhotoImported) {
+			return nil, err
+		}
+		return nil, s.toConnectError(ctx, err, "failed to add photo")
+	}
+	return created, nil
+}
+
+func (s *Service) UpdateTripPhoto(ctx context.Context, req *tripsv1.UpdateTripPhotoRequest) (*tripsv1.UpdateTripPhotoResponse, error) {
+	userID, photoID, err := s.parsePhotoID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if req.HasLocation() && req.GetClearLocation() {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "set either location or clear_location, not both")
+	}
+	if req.HasCaption() && utf8.RuneCountInString(req.GetCaption()) > maxCaptionLength {
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "the caption must be at most %d characters", maxCaptionLength)
+	}
+	photo, err := s.repo.GetPhoto(ctx, userID, photoID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to get photo")
+	}
+	if req.HasCaption() {
+		photo, err = s.repo.UpdatePhotoCaption(ctx, userID, photoID, strings.TrimSpace(req.GetCaption()))
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to update photo")
+		}
+	}
+	switch {
+	case req.HasLocation():
+		report, err := s.repo.GetReport(ctx, userID, photo.ReportID)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to get trip report")
+		}
+		t, err := decodeTrack(report.Track)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to get track")
+		}
+		loc, err := locationFromProto(req.GetLocation(), trips.LocationManual, t)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+		}
+		photo, err = s.repo.UpdatePhotoLocation(ctx, userID, photoID, loc)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to update photo")
+		}
+	case req.GetClearLocation():
+		photo, err = s.repo.UpdatePhotoLocation(ctx, userID, photoID, nil)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to update photo")
+		}
+	}
+	return tripsv1.UpdateTripPhotoResponse_builder{Photo: s.photoToProto(photo)}.Build(), nil
+}
+
+func (s *Service) ReorderTripPhotos(ctx context.Context, req *tripsv1.ReorderTripPhotosRequest) (*tripsv1.ReorderTripPhotosResponse, error) {
+	userID, reportID, err := s.parseReportID(ctx, req.GetReportId())
+	if err != nil {
+		return nil, err
+	}
+	photoIDs, err := store.UUIDsToPG(req.GetPhotoIds())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+	}
+	photos, err := s.repo.ReorderPhotos(ctx, userID, reportID, photoIDs)
+	if err != nil {
+		if errors.Is(err, trips.ErrPhotosMismatch) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, "photo_ids must list each of the report's photos exactly once")
+		}
+		return nil, s.toConnectError(ctx, err, "failed to reorder photos")
+	}
+	result := make([]*tripsv1.TripPhoto, len(photos))
+	for i, p := range photos {
+		result[i] = s.photoToProto(p)
+	}
+	return tripsv1.ReorderTripPhotosResponse_builder{Photos: result}.Build(), nil
+}
+
+func (s *Service) DeleteTripPhoto(ctx context.Context, req *tripsv1.DeleteTripPhotoRequest) (*tripsv1.DeleteTripPhotoResponse, error) {
+	userID, photoID, err := s.parsePhotoID(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	key, err := s.repo.DeletePhoto(ctx, userID, photoID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to delete photo")
+	}
+	s.deleteImages(ctx, key)
+	return tripsv1.DeleteTripPhotoResponse_builder{}.Build(), nil
+}
+
+func (s *Service) GetProfile(ctx context.Context, req *tripsv1.GetProfileRequest) (*tripsv1.GetProfileResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	profile, err := s.profile(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if profile != nil {
+		return tripsv1.GetProfileResponse_builder{
+			Profile:              s.profileToProto(profile),
+			SuggestedDisplayName: profile.DisplayName,
+		}.Build(), nil
+	}
+	name, err := s.repo.GetUserName(ctx, userID)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		return nil, s.toConnectError(ctx, err, "failed to get user")
+	}
+	return tripsv1.GetProfileResponse_builder{SuggestedDisplayName: name}.Build(), nil
+}
+
+func (s *Service) UpdateProfile(ctx context.Context, req *tripsv1.UpdateProfileRequest) (*tripsv1.UpdateProfileResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	handle := strings.ToLower(strings.TrimSpace(req.GetProfile().GetHandle()))
+	if err := validateHandle(handle); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+	}
+	displayName := strings.Join(strings.Fields(req.GetProfile().GetDisplayName()), " ")
+	if displayName == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "the display name is required")
+	}
+	if utf8.RuneCountInString(displayName) > maxDisplayNameLength {
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "the display name must be at most %d characters", maxDisplayNameLength)
+	}
+	profile, err := s.repo.UpsertProfile(ctx, &trips.Profile{UserID: userID, Handle: handle, DisplayName: displayName})
+	if err != nil {
+		if errors.Is(err, trips.ErrHandleTaken) {
+			return nil, connect.NewError(connect.CodeAlreadyExists, "this handle is taken; choose another one")
+		}
+		return nil, s.toConnectError(ctx, err, "failed to update profile")
+	}
+	return tripsv1.UpdateProfileResponse_builder{Profile: s.profileToProto(profile)}.Build(), nil
+}
+
+func (s *Service) GetPublicProfile(ctx context.Context, req *tripsv1.GetPublicProfileRequest) (*tripsv1.GetPublicProfileResponse, error) {
+	// Public profiles don't require authentication.
+	profile, err := s.repo.GetProfileByHandle(ctx, req.GetHandle())
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, "there is no profile with this handle")
+		}
+		return nil, s.toConnectError(ctx, err, "failed to get profile")
+	}
+	reports, err := s.repo.ListReports(ctx, profile.UserID, trips.ListReportsFilter{PublishedOnly: true})
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list trip reports")
+	}
+	result, err := s.reportsToProto(ctx, reports, profile)
+	if err != nil {
+		return nil, err
+	}
+	return tripsv1.GetPublicProfileResponse_builder{
+		Profile: s.profileToProto(profile),
+		Reports: result,
+	}.Build(), nil
+}
+
+func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPublicTripReportRequest) (*tripsv1.GetPublicTripReportResponse, error) {
+	// Published reports don't require authentication.
+	profile, report, err := s.publicReport(ctx, req.GetHandle(), req.GetSlug())
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, "this trip report doesn't exist or isn't published")
+		}
+		return nil, s.toConnectError(ctx, err, "failed to get trip report")
+	}
+	photos, err := s.repo.ListPhotos(ctx, report.ID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list photos")
+	}
+	t, err := decodeTrack(report.Track)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to get track")
+	}
+	return tripsv1.GetPublicTripReportResponse_builder{
+		Report: s.reportToProto(report, photos[report.ID], profile),
+		Author: s.profileToProto(profile),
+		Track:  t.routePoints(),
+	}.Build(), nil
+}
+
+// publicReport gets a report by its author's handle and slug, if it is
+// published or the caller is its author. Otherwise it returns
+// store.ErrNotFound, so drafts can't be told apart from missing reports.
+func (s *Service) publicReport(ctx context.Context, handle, slug string) (*trips.Profile, *trips.Report, error) {
+	profile, err := s.repo.GetProfileByHandle(ctx, handle)
+	if err != nil {
+		return nil, nil, err
+	}
+	report, err := s.repo.GetReportBySlug(ctx, profile.UserID, slug)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !report.Published {
+		if userID, ok := authn.GetUserID(ctx); !ok || userID != report.UserID {
+			return nil, nil, store.ErrNotFound
+		}
+	}
+	return profile, report, nil
+}
+
+// profile returns the user's public profile, or nil if the user has none.
+func (s *Service) profile(ctx context.Context, userID pgtype.UUID) (*trips.Profile, error) {
+	profile, err := s.repo.GetProfile(ctx, userID)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, s.toConnectError(ctx, err, "failed to get profile")
+	}
+	return profile, nil
+}
+
+// reportWithPhotos converts a report of the authenticated user, with its
+// photos.
+func (s *Service) reportWithPhotos(ctx context.Context, report *trips.Report) (*tripsv1.TripReport, error) {
+	photos, err := s.repo.ListPhotos(ctx, report.ID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list photos")
+	}
+	profile, err := s.profile(ctx, report.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return s.reportToProto(report, photos[report.ID], profile), nil
+}
+
+// reportsToProto converts reports of one author, with their photos.
+func (s *Service) reportsToProto(ctx context.Context, reports []*trips.Report, profile *trips.Profile) ([]*tripsv1.TripReport, error) {
+	ids := make([]pgtype.UUID, len(reports))
+	for i, r := range reports {
+		ids[i] = r.ID
+	}
+	photos, err := s.repo.ListPhotos(ctx, ids...)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list photos")
+	}
+	result := make([]*tripsv1.TripReport, len(reports))
+	for i, r := range reports {
+		result[i] = s.reportToProto(r, photos[r.ID], profile)
+	}
+	return result, nil
+}
+
+// deleteImages deletes the images of a photo. Failures are logged, as the
+// photo is already gone.
+func (s *Service) deleteImages(ctx context.Context, objectKey string) {
+	for _, size := range []string{sizeLarge, sizeThumb} {
+		if err := s.blobs.Delete(ctx, imageKey(objectKey, size)); err != nil {
+			s.log.ErrorContext(ctx, "Failed to delete photo image", slog.String("key", objectKey), slogor.Err(err))
+		}
+	}
+}
+
+// parseReportID returns the authenticated user's ID and the parsed report
+// ID.
+func (s *Service) parseReportID(ctx context.Context, id string) (userID, reportID pgtype.UUID, err error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return userID, reportID, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	reportID, err = store.StringToUUID(id)
+	if err != nil {
+		return userID, reportID, connect.Errorf(connect.CodeInvalidArgument, "invalid trip report ID: %v", err).WithCause(err)
+	}
+	return userID, reportID, nil
+}
+
+// parsePhotoID returns the authenticated user's ID and the parsed photo ID.
+func (s *Service) parsePhotoID(ctx context.Context, id string) (userID, photoID pgtype.UUID, err error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return userID, photoID, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	photoID, err = store.StringToUUID(id)
+	if err != nil {
+		return userID, photoID, connect.Errorf(connect.CodeInvalidArgument, "invalid photo ID: %v", err).WithCause(err)
+	}
+	return userID, photoID, nil
+}
+
+func validateTitle(title string) error {
+	if utf8.RuneCountInString(title) > maxTitleLength {
+		return fmt.Errorf("the title must be at most %d characters", maxTitleLength)
+	}
+	return nil
+}
+
+// localTimeLayout is the layout of local times without an offset.
+const localTimeLayout = "2006-01-02T15:04:05"
+
+// parseLocalTime parses a local time without an offset in the IANA
+// timezone, falling back to UTC for unknown timezones.
+func parseLocalTime(value, timezone string) (time.Time, error) {
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		loc = time.UTC
+	}
+	t, err := time.ParseInLocation(localTimeLayout, value, loc)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid taken_local_time %q, expected YYYY-MM-DDTHH:MM:SS", value)
+	}
+	return t, nil
+}
+
+// locationFromProto validates a location and finds its distance along the
+// track.
+func locationFromProto(ll *geov1.LatLng, source trips.LocationSource, t *track) (*trips.Location, error) {
+	lat, lng := ll.GetLat(), ll.GetLng()
+	if math.IsNaN(lat) || math.IsNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+		return nil, errors.New("the location must have a latitude between -90 and 90 and a longitude between -180 and 180")
+	}
+	loc := &trips.Location{Lat: lat, Lng: lng, Source: source}
+	loc.TrackDistanceMeters, loc.HasTrackDistanceMeters = t.nearestDistance(geo.Point{Lat: lat, Lng: lng})
+	return loc, nil
+}
+
+// dateOf returns the date of a time, at midnight UTC.
+func dateOf(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func (s *Service) toConnectError(ctx context.Context, err error, msg string) error {
+	var connectErr *connect.Error
+	switch {
+	case errors.As(err, &connectErr):
+		return err
+	case errors.Is(err, store.ErrNotFound):
+		return connect.NewError(connect.CodeNotFound, "not found")
+	case errors.Is(err, trips.ErrSlugTaken):
+		return connect.NewError(connect.CodeAlreadyExists, "another of your trip reports has this slug; choose another one")
+	default:
+		s.log.ErrorContext(ctx, msg, slogor.Err(err))
+		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
+	}
+}

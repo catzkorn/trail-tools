@@ -229,6 +229,59 @@ func (e PeriodGranularity) Valid() bool {
 	return false
 }
 
+type PhotoLocationSource string
+
+const (
+	PhotoLocationSourceGps       PhotoLocationSource = "gps"
+	PhotoLocationSourceTrackTime PhotoLocationSource = "track_time"
+	PhotoLocationSourceManual    PhotoLocationSource = "manual"
+)
+
+func (e *PhotoLocationSource) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PhotoLocationSource(s)
+	case string:
+		*e = PhotoLocationSource(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PhotoLocationSource: %T", src)
+	}
+	return nil
+}
+
+type NullPhotoLocationSource struct {
+	PhotoLocationSource PhotoLocationSource
+	Valid               bool // Valid is true if PhotoLocationSource is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPhotoLocationSource) Scan(value interface{}) error {
+	if value == nil {
+		ns.PhotoLocationSource, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PhotoLocationSource.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPhotoLocationSource) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PhotoLocationSource), nil
+}
+
+func (e PhotoLocationSource) Valid() bool {
+	switch e {
+	case PhotoLocationSourceGps,
+		PhotoLocationSourceTrackTime,
+		PhotoLocationSourceManual:
+		return true
+	}
+	return false
+}
+
 type RacePriority string
 
 const (
@@ -737,6 +790,14 @@ type PlanPeriod struct {
 	TargetDurationSeconds     int32
 }
 
+type PublicProfile struct {
+	UserID      pgtype.UUID
+	Handle      string
+	DisplayName string
+	CreateTime  pgtype.Timestamptz
+	UpdateTime  pgtype.Timestamptz
+}
+
 type Race struct {
 	ID                  pgtype.UUID
 	UserID              pgtype.UUID
@@ -991,6 +1052,45 @@ type TrainingPlan struct {
 	GoalRaceIds []pgtype.UUID
 	CreateTime  pgtype.Timestamptz
 	UpdateTime  pgtype.Timestamptz
+}
+
+type TripPhoto struct {
+	ID                  pgtype.UUID
+	ReportID            pgtype.UUID
+	Position            int32
+	ObjectKey           string
+	Width               int32
+	Height              int32
+	Caption             string
+	Lat                 pgtype.Float8
+	Lng                 pgtype.Float8
+	LocationSource      NullPhotoLocationSource
+	TrackDistanceMeters pgtype.Float8
+	TakenTime           pgtype.Timestamptz
+	StravaPhotoID       pgtype.Text
+	CreateTime          pgtype.Timestamptz
+}
+
+type TripReport struct {
+	ID                  pgtype.UUID
+	UserID              pgtype.UUID
+	ActivityID          pgtype.UUID
+	Title               string
+	Slug                string
+	Body                string
+	Date                pgtype.Date
+	Timezone            string
+	SportType           string
+	StartTime           pgtype.Timestamptz
+	DistanceMeters      float64
+	MovingTimeSeconds   int32
+	ElapsedTimeSeconds  int32
+	ElevationGainMeters float64
+	Track               []byte
+	Published           bool
+	PublishTime         pgtype.Timestamptz
+	CreateTime          pgtype.Timestamptz
+	UpdateTime          pgtype.Timestamptz
 }
 
 type User struct {

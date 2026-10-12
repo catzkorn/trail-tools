@@ -33,7 +33,7 @@ const implementationName = "trail-tools"
 
 // instructionsPreamble is the start of the server instructions, followed by
 // the description of each service.
-const instructionsPreamble = `Tools for planning trail running: routes, training plans, races and race plans, and recorded activities. Each tool is an RPC of one of the services described below.`
+const instructionsPreamble = `Tools for planning trail running: routes, training plans, races and race plans, recorded activities and trip reports. Each tool is an RPC of one of the services described below.`
 
 var (
 	// readOnlyPrefixes are the method name prefixes of methods that don't

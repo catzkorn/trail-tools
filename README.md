@@ -2,8 +2,8 @@
 
 A trail running planner: sync your activities from Strava, plan your training
 for up to a year towards your goal races, design routes on a topo map, check
-the weather along a route and build an opinionated race day plan you can
-share with your crew.
+the weather along a route, build an opinionated race day plan you can
+share with your crew, and write up your adventures as public trip reports.
 
 Everything is also exposed as an [MCP](https://modelcontextprotocol.io) server,
 so you can bring your own AI agent to do the planning.
@@ -33,6 +33,11 @@ so you can bring your own AI agent to do the planning.
   you'll be out in the dark) and can be shared read-only with a link.
 - **Activities**: your full Strava history including GPS, elevation and heart
   rate streams, stored locally.
+- **Trip reports**: turn an activity into a blog style story with photos,
+  each placed on the activity's track from its GPS position or the time it
+  was taken. Published reports are public at `/u/<handle>/<slug>` and listed
+  on your public page at `/u/<handle>`, with the metadata search engines and
+  link previews need.
 
 ## Prerequisites
 
@@ -80,6 +85,36 @@ starts. Strava allows one subscription per API application, so this replaces
 a subscription to another server. Strava can't reach a local server, so leave
 it unset locally: new activities arrive with the periodic sync, or when you
 sync from Settings.
+
+### Trip reports
+
+Write a trip report from an activity's page. Before publishing, choose a
+public handle under Settings: published reports are at
+`/u/<handle>/<slug>`, and listed at `/u/<handle>`, for anyone to read
+without signing in. Drafts are only visible to you.
+
+Photos are prepared in the browser before they're uploaded: their GPS
+position and capture time are read from their EXIF data, and they're
+downscaled to a JPEG of at most 2048 pixels, which also converts HEIC photos
+in browsers that can display them. A photo without a GPS position is placed
+on the activity's track at the time it was taken; otherwise drag it onto the
+map. The server re-encodes each photo, dropping its metadata, and stores it
+with a thumbnail.
+
+A report starts with the activity's description from Strava as its story.
+"Import photos from Strava" adds the photos of the activity on Strava to the
+report: the server downloads them and stores them like uploads, placed from
+their location or the time they were taken, with their captions, skipping
+photos imported before. Publishing a report makes its photos public, so
+they're only imported when you ask.
+
+Locally, photos are stored in the `photos` directory of the working
+directory, which is ignored by git. Set `-photo-dir` to store them
+elsewhere, or `-photo-bucket` (`TRAIL_TOOLS_PHOTO_BUCKET`) to store them in a
+Google Cloud Storage bucket with the application default credentials. The
+server serves them at `/photos/<id>/<size>.jpg`: photos of published
+reports to anyone, with long cache lifetimes, and photos of drafts only to
+their author.
 
 ### AI agents (MCP)
 
