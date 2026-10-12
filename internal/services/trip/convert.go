@@ -1,16 +1,40 @@
 package trip
 
 import (
+	"strings"
+
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/trips"
+	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// reportToProto converts a report with its photos. profile is the author's
+// story is the content of a report: its sections and photos in order, and
+// the excerpt shown in lists.
+type story struct {
+	// Nil in lists.
+	sections []*trips.Section
+	photos   []*trips.Photo
+	excerpt  string
+}
+
+// newStory returns the story of a report with its sections and photos.
+func newStory(sections []*trips.Section, photos []*trips.Photo) *story {
+	st := &story{sections: sections, photos: photos}
+	for _, sec := range sections {
+		if strings.TrimSpace(sec.Body) != "" {
+			st.excerpt = sec.Body
+			break
+		}
+	}
+	return st
+}
+
+// reportToProto converts a report with its story. profile is the author's
 // profile, nil if the author has none.
-func (s *Service) reportToProto(r *trips.Report, photos []*trips.Photo, profile *trips.Profile) *tripsv1.TripReport {
+func (s *Service) reportToProto(r *trips.Report, st *story, profile *trips.Profile) *tripsv1.TripReport {
 	stats := tripsv1.TripStats_builder{
 		SportType:           r.SportType,
 		Timezone:            r.Timezone,
@@ -27,7 +51,7 @@ func (s *Service) reportToProto(r *trips.Report, photos []*trips.Photo, profile 
 		ActivityId:       store.UUIDToString(r.ActivityID),
 		Title:            r.Title,
 		Slug:             r.Slug,
-		Body:             r.Body,
+		Excerpt:          Excerpt(st.excerpt, excerptLength),
 		Date:             store.FormatDate(r.Date),
 		Stats:            stats.Build(),
 		Published:        r.Published,
@@ -42,8 +66,28 @@ func (s *Service) reportToProto(r *trips.Report, photos []*trips.Photo, profile 
 	if profile != nil {
 		b.Url = s.reportURL(profile.Handle, r.Slug)
 	}
-	for _, p := range photos {
+	photoIDs := map[pgtype.UUID][]string{}
+	for _, p := range st.photos {
 		b.Photos = append(b.Photos, s.photoToProto(p))
+		photoIDs[p.SectionID] = append(photoIDs[p.SectionID], store.UUIDToString(p.ID))
+	}
+	for _, sec := range st.sections {
+		b.Sections = append(b.Sections, sectionToProto(sec, photoIDs[sec.ID]))
+	}
+	return b.Build()
+}
+
+// sectionToProto converts a section with the IDs of its photos.
+func sectionToProto(sec *trips.Section, photoIDs []string) *tripsv1.TripSection {
+	b := tripsv1.TripSection_builder{
+		Id:       store.UUIDToString(sec.ID),
+		Title:    sec.Title,
+		Body:     sec.Body,
+		PhotoIds: photoIDs,
+	}
+	if sec.HasDistances {
+		b.StartDistanceMeters = &sec.StartDistanceMeters
+		b.EndDistanceMeters = &sec.EndDistanceMeters
 	}
 	return b.Build()
 }

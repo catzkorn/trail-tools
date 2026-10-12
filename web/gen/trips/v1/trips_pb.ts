@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file trips/v1/trips.proto.
  */
 export const file_trips_v1_trips: GenFile = /*@__PURE__*/
-  fileDesc("ChR0cmlwcy92MS90cmlwcy5wcm90bxIIdHJpcHMudjEi4gMKClRyaXBSZXBvcnQSEgoCaWQYASABKAlCBqqfGQIIARIbCgthY3Rpdml0eV9pZBgCIAEoCUIGqp8ZAggBEg0KBXRpdGxlGAMgASgJEgwKBHNsdWcYBCABKAkSDAoEYm9keRgFIAEoCRIMCgRkYXRlGAYgASgJEioKBXN0YXRzGAcgASgLMhMudHJpcHMudjEuVHJpcFN0YXRzQgaqnxkCCAESGQoJcHVibGlzaGVkGAggASgIQgaqnxkCCAESOAoMcHVibGlzaF90aW1lGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhMKA3VybBgKIAEoCUIGqp8ZAggBEisKBnBob3RvcxgLIAMoCzITLnRyaXBzLnYxLlRyaXBQaG90b0IGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhkKCWhhc190cmFjaxgOIAEoCEIGqp8ZAggBEhoKEmhpZGRlbl9lbmRzX21ldGVycxgPIAEoBSLUAQoJVHJpcFN0YXRzEhIKCnNwb3J0X3R5cGUYASABKAkSLgoKc3RhcnRfdGltZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIdGltZXpvbmUYAyABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGAQgASgBEhsKE21vdmluZ190aW1lX3NlY29uZHMYBSABKAUSHAoUZWxhcHNlZF90aW1lX3NlY29uZHMYBiABKAUSHQoVZWxldmF0aW9uX2dhaW5fbWV0ZXJzGAcgASgBIu4CCglUcmlwUGhvdG8SEgoCaWQYASABKAlCBqqfGQIIARIPCgdjYXB0aW9uGAIgASgJEiAKCGxvY2F0aW9uGAMgASgLMg4uZ2VvLnYxLkxhdExuZxI5Cg9sb2NhdGlvbl9zb3VyY2UYBCABKA4yGC50cmlwcy52MS5Mb2NhdGlvblNvdXJjZUIGqp8ZAggBEioKFXRyYWNrX2Rpc3RhbmNlX21ldGVycxgFIAEoAUIGqp8ZAggBSACIAQESNgoKdGFrZW5fdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIARIVCgV3aWR0aBgHIAEoBUIGqp8ZAggBEhYKBmhlaWdodBgIIAEoBUIGqp8ZAggBEhMKA3VybBgJIAEoCUIGqp8ZAggBEh0KDXRodW1ibmFpbF91cmwYCiABKAlCBqqfGQIIAUIYChZfdHJhY2tfZGlzdGFuY2VfbWV0ZXJzIkQKB1Byb2ZpbGUSDgoGaGFuZGxlGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRITCgN1cmwYAyABKAlCBqqfGQIIASI9ChdDcmVhdGVUcmlwUmVwb3J0UmVxdWVzdBITCgthY3Rpdml0eV9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCSJAChhDcmVhdGVUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCI5ChRHZXRUcmlwUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCRIVCg1pbmNsdWRlX3RyYWNrGAIgASgIImMKFUdldFRyaXBSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC50cmlwcy52MS5UcmlwUmVwb3J0EiQKBXRyYWNrGAIgAygLMhUucm91dGVzLnYxLlJvdXRlUG9pbnQiLQoWTGlzdFRyaXBSZXBvcnRzUmVxdWVzdBITCgthY3Rpdml0eV9pZBgBIAEoCSJAChdMaXN0VHJpcFJlcG9ydHNSZXNwb25zZRIlCgdyZXBvcnRzGAEgAygLMhQudHJpcHMudjEuVHJpcFJlcG9ydCLPAQoXVXBkYXRlVHJpcFJlcG9ydFJlcXVlc3QSCgoCaWQYASABKAkSEgoFdGl0bGUYAiABKAlIAIgBARIRCgRzbHVnGAMgASgJSAGIAQESEQoEYm9keRgEIAEoCUgCiAEBEhEKBGRhdGUYBSABKAlIA4gBARIfChJoaWRkZW5fZW5kc19tZXRlcnMYBiABKAVIBIgBAUIICgZfdGl0bGVCBwoFX3NsdWdCBwoFX2JvZHlCBwoFX2RhdGVCFQoTX2hpZGRlbl9lbmRzX21ldGVycyJAChhVcGRhdGVUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCIlChdEZWxldGVUcmlwUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSIaChhEZWxldGVUcmlwUmVwb3J0UmVzcG9uc2UiJgoYUHVibGlzaFRyaXBSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJIkEKGVB1Ymxpc2hUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCIoChpVbnB1Ymxpc2hUcmlwUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJDChtVbnB1Ymxpc2hUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCK2AQoWVXBsb2FkVHJpcFBob3RvUmVxdWVzdBIRCglyZXBvcnRfaWQYASABKAkSDAoEZGF0YRgCIAEoDBIPCgdjYXB0aW9uGAMgASgJEiAKCGxvY2F0aW9uGAQgASgLMg4uZ2VvLnYxLkxhdExuZxIuCgp0YWtlbl90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIYChB0YWtlbl9sb2NhbF90aW1lGAYgASgJIj0KF1VwbG9hZFRyaXBQaG90b1Jlc3BvbnNlEiIKBXBob3RvGAEgASgLMhMudHJpcHMudjEuVHJpcFBob3RvIi4KGUltcG9ydFN0cmF2YVBob3Rvc1JlcXVlc3QSEQoJcmVwb3J0X2lkGAEgASgJIm4KGkltcG9ydFN0cmF2YVBob3Rvc1Jlc3BvbnNlEiMKBnBob3RvcxgBIAMoCzITLnRyaXBzLnYxLlRyaXBQaG90bxIVCg1za2lwcGVkX2NvdW50GAIgASgFEhQKDGZhaWxlZF9jb3VudBgDIAEoBSKAAQoWVXBkYXRlVHJpcFBob3RvUmVxdWVzdBIKCgJpZBgBIAEoCRIUCgdjYXB0aW9uGAIgASgJSACIAQESIAoIbG9jYXRpb24YAyABKAsyDi5nZW8udjEuTGF0TG5nEhYKDmNsZWFyX2xvY2F0aW9uGAQgASgIQgoKCF9jYXB0aW9uIj0KF1VwZGF0ZVRyaXBQaG90b1Jlc3BvbnNlEiIKBXBob3RvGAEgASgLMhMudHJpcHMudjEuVHJpcFBob3RvIkAKGFJlb3JkZXJUcmlwUGhvdG9zUmVxdWVzdBIRCglyZXBvcnRfaWQYASABKAkSEQoJcGhvdG9faWRzGAIgAygJIkAKGVJlb3JkZXJUcmlwUGhvdG9zUmVzcG9uc2USIwoGcGhvdG9zGAEgAygLMhMudHJpcHMudjEuVHJpcFBob3RvIiQKFkRlbGV0ZVRyaXBQaG90b1JlcXVlc3QSCgoCaWQYASABKAkiGQoXRGVsZXRlVHJpcFBob3RvUmVzcG9uc2UiEwoRR2V0UHJvZmlsZVJlcXVlc3QiWAoSR2V0UHJvZmlsZVJlc3BvbnNlEiIKB3Byb2ZpbGUYASABKAsyES50cmlwcy52MS5Qcm9maWxlEh4KFnN1Z2dlc3RlZF9kaXNwbGF5X25hbWUYAiABKAkiOgoUVXBkYXRlUHJvZmlsZVJlcXVlc3QSIgoHcHJvZmlsZRgBIAEoCzIRLnRyaXBzLnYxLlByb2ZpbGUiOwoVVXBkYXRlUHJvZmlsZVJlc3BvbnNlEiIKB3Byb2ZpbGUYASABKAsyES50cmlwcy52MS5Qcm9maWxlIikKF0dldFB1YmxpY1Byb2ZpbGVSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSJlChhHZXRQdWJsaWNQcm9maWxlUmVzcG9uc2USIgoHcHJvZmlsZRgBIAEoCzIRLnRyaXBzLnYxLlByb2ZpbGUSJQoHcmVwb3J0cxgCIAMoCzIULnRyaXBzLnYxLlRyaXBSZXBvcnQiOgoaR2V0UHVibGljVHJpcFJlcG9ydFJlcXVlc3QSDgoGaGFuZGxlGAEgASgJEgwKBHNsdWcYAiABKAkijAEKG0dldFB1YmxpY1RyaXBSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC50cmlwcy52MS5UcmlwUmVwb3J0EiEKBmF1dGhvchgCIAEoCzIRLnRyaXBzLnYxLlByb2ZpbGUSJAoFdHJhY2sYAyADKAsyFS5yb3V0ZXMudjEuUm91dGVQb2ludCqGAQoOTG9jYXRpb25Tb3VyY2USHwobTE9DQVRJT05fU09VUkNFX1VOU1BFQ0lGSUVEEAASFwoTTE9DQVRJT05fU09VUkNFX0dQUxABEh4KGkxPQ0FUSU9OX1NPVVJDRV9UUkFDS19USU1FEAISGgoWTE9DQVRJT05fU09VUkNFX01BTlVBTBADMukLChFUcmlwUmVwb3J0U2VydmljZRJZChBDcmVhdGVUcmlwUmVwb3J0EiEudHJpcHMudjEuQ3JlYXRlVHJpcFJlcG9ydFJlcXVlc3QaIi50cmlwcy52MS5DcmVhdGVUcmlwUmVwb3J0UmVzcG9uc2USUAoNR2V0VHJpcFJlcG9ydBIeLnRyaXBzLnYxLkdldFRyaXBSZXBvcnRSZXF1ZXN0Gh8udHJpcHMudjEuR2V0VHJpcFJlcG9ydFJlc3BvbnNlElYKD0xpc3RUcmlwUmVwb3J0cxIgLnRyaXBzLnYxLkxpc3RUcmlwUmVwb3J0c1JlcXVlc3QaIS50cmlwcy52MS5MaXN0VHJpcFJlcG9ydHNSZXNwb25zZRJZChBVcGRhdGVUcmlwUmVwb3J0EiEudHJpcHMudjEuVXBkYXRlVHJpcFJlcG9ydFJlcXVlc3QaIi50cmlwcy52MS5VcGRhdGVUcmlwUmVwb3J0UmVzcG9uc2USWQoQRGVsZXRlVHJpcFJlcG9ydBIhLnRyaXBzLnYxLkRlbGV0ZVRyaXBSZXBvcnRSZXF1ZXN0GiIudHJpcHMudjEuRGVsZXRlVHJpcFJlcG9ydFJlc3BvbnNlEmQKEVB1Ymxpc2hUcmlwUmVwb3J0EiIudHJpcHMudjEuUHVibGlzaFRyaXBSZXBvcnRSZXF1ZXN0GiMudHJpcHMudjEuUHVibGlzaFRyaXBSZXBvcnRSZXNwb25zZSIGop8ZAggBEmoKE1VucHVibGlzaFRyaXBSZXBvcnQSJC50cmlwcy52MS5VbnB1Ymxpc2hUcmlwUmVwb3J0UmVxdWVzdBolLnRyaXBzLnYxLlVucHVibGlzaFRyaXBSZXBvcnRSZXNwb25zZSIGop8ZAggBEl4KD1VwbG9hZFRyaXBQaG90bxIgLnRyaXBzLnYxLlVwbG9hZFRyaXBQaG90b1JlcXVlc3QaIS50cmlwcy52MS5VcGxvYWRUcmlwUGhvdG9SZXNwb25zZSIGop8ZAggBEmcKEkltcG9ydFN0cmF2YVBob3RvcxIjLnRyaXBzLnYxLkltcG9ydFN0cmF2YVBob3Rvc1JlcXVlc3QaJC50cmlwcy52MS5JbXBvcnRTdHJhdmFQaG90b3NSZXNwb25zZSIGop8ZAggBElYKD1VwZGF0ZVRyaXBQaG90bxIgLnRyaXBzLnYxLlVwZGF0ZVRyaXBQaG90b1JlcXVlc3QaIS50cmlwcy52MS5VcGRhdGVUcmlwUGhvdG9SZXNwb25zZRJcChFSZW9yZGVyVHJpcFBob3RvcxIiLnRyaXBzLnYxLlJlb3JkZXJUcmlwUGhvdG9zUmVxdWVzdBojLnRyaXBzLnYxLlJlb3JkZXJUcmlwUGhvdG9zUmVzcG9uc2USVgoPRGVsZXRlVHJpcFBob3RvEiAudHJpcHMudjEuRGVsZXRlVHJpcFBob3RvUmVxdWVzdBohLnRyaXBzLnYxLkRlbGV0ZVRyaXBQaG90b1Jlc3BvbnNlEkcKCkdldFByb2ZpbGUSGy50cmlwcy52MS5HZXRQcm9maWxlUmVxdWVzdBocLnRyaXBzLnYxLkdldFByb2ZpbGVSZXNwb25zZRJYCg1VcGRhdGVQcm9maWxlEh4udHJpcHMudjEuVXBkYXRlUHJvZmlsZVJlcXVlc3QaHy50cmlwcy52MS5VcGRhdGVQcm9maWxlUmVzcG9uc2UiBqKfGQIIARJhChBHZXRQdWJsaWNQcm9maWxlEiEudHJpcHMudjEuR2V0UHVibGljUHJvZmlsZVJlcXVlc3QaIi50cmlwcy52MS5HZXRQdWJsaWNQcm9maWxlUmVzcG9uc2UiBqKfGQIIARJqChNHZXRQdWJsaWNUcmlwUmVwb3J0EiQudHJpcHMudjEuR2V0UHVibGljVHJpcFJlcG9ydFJlcXVlc3QaJS50cmlwcy52MS5HZXRQdWJsaWNUcmlwUmVwb3J0UmVzcG9uc2UiBqKfGQIIAUKaAQoMY29tLnRyaXBzLnYxQgpUcmlwc1Byb3RvUAFaPWdpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL3RyaXBzL3YxO3RyaXBzdjGiAgNUWFiqAghUcmlwcy5WMcoCCFRyaXBzXFYx4gIUVHJpcHNcVjFcR1BCTWV0YWRhdGHqAglUcmlwczo6VjFiBnByb3RvMw", [file_geo_v1_geo, file_google_protobuf_timestamp, file_mcp_v1_options, file_routes_v1_routes]);
+  fileDesc("ChR0cmlwcy92MS90cmlwcy5wcm90bxIIdHJpcHMudjEiqgQKClRyaXBSZXBvcnQSEgoCaWQYASABKAlCBqqfGQIIARIbCgthY3Rpdml0eV9pZBgCIAEoCUIGqp8ZAggBEg0KBXRpdGxlGAMgASgJEgwKBHNsdWcYBCABKAkSDAoEZGF0ZRgGIAEoCRIqCgVzdGF0cxgHIAEoCzITLnRyaXBzLnYxLlRyaXBTdGF0c0IGqp8ZAggBEhkKCXB1Ymxpc2hlZBgIIAEoCEIGqp8ZAggBEjgKDHB1Ymxpc2hfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIARITCgN1cmwYCiABKAlCBqqfGQIIARIrCgZwaG90b3MYCyADKAsyEy50cmlwcy52MS5UcmlwUGhvdG9CBqqfGQIIARI3CgtjcmVhdGVfdGltZRgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIARI3Cgt1cGRhdGVfdGltZRgNIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIARIZCgloYXNfdHJhY2sYDiABKAhCBqqfGQIIARIaChJoaWRkZW5fZW5kc19tZXRlcnMYDyABKAUSLwoIc2VjdGlvbnMYECADKAsyFS50cmlwcy52MS5UcmlwU2VjdGlvbkIGqp8ZAggBEhcKB2V4Y2VycHQYESABKAlCBqqfGQIIAUoECAUQBlIEYm9keSLBAQoLVHJpcFNlY3Rpb24SCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEYm9keRgDIAEoCRIiChVzdGFydF9kaXN0YW5jZV9tZXRlcnMYBCABKAFIAIgBARIgChNlbmRfZGlzdGFuY2VfbWV0ZXJzGAUgASgBSAGIAQESEQoJcGhvdG9faWRzGAYgAygJQhgKFl9zdGFydF9kaXN0YW5jZV9tZXRlcnNCFgoUX2VuZF9kaXN0YW5jZV9tZXRlcnMi1AEKCVRyaXBTdGF0cxISCgpzcG9ydF90eXBlGAEgASgJEi4KCnN0YXJ0X3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCHRpbWV6b25lGAMgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgEIAEoARIbChNtb3ZpbmdfdGltZV9zZWNvbmRzGAUgASgFEhwKFGVsYXBzZWRfdGltZV9zZWNvbmRzGAYgASgFEh0KFWVsZXZhdGlvbl9nYWluX21ldGVycxgHIAEoASLuAgoJVHJpcFBob3RvEhIKAmlkGAEgASgJQgaqnxkCCAESDwoHY2FwdGlvbhgCIAEoCRIgCghsb2NhdGlvbhgDIAEoCzIOLmdlby52MS5MYXRMbmcSOQoPbG9jYXRpb25fc291cmNlGAQgASgOMhgudHJpcHMudjEuTG9jYXRpb25Tb3VyY2VCBqqfGQIIARIqChV0cmFja19kaXN0YW5jZV9tZXRlcnMYBSABKAFCBqqfGQIIAUgAiAEBEjYKCnRha2VuX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESFQoFd2lkdGgYByABKAVCBqqfGQIIARIWCgZoZWlnaHQYCCABKAVCBqqfGQIIARITCgN1cmwYCSABKAlCBqqfGQIIARIdCg10aHVtYm5haWxfdXJsGAogASgJQgaqnxkCCAFCGAoWX3RyYWNrX2Rpc3RhbmNlX21ldGVycyJECgdQcm9maWxlEg4KBmhhbmRsZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSEwoDdXJsGAMgASgJQgaqnxkCCAEiPQoXQ3JlYXRlVHJpcFJlcG9ydFJlcXVlc3QSEwoLYWN0aXZpdHlfaWQYASABKAkSDQoFdGl0bGUYAiABKAkiQAoYQ3JlYXRlVHJpcFJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnRyaXBzLnYxLlRyaXBSZXBvcnQiOQoUR2V0VHJpcFJlcG9ydFJlcXVlc3QSCgoCaWQYASABKAkSFQoNaW5jbHVkZV90cmFjaxgCIAEoCCJjChVHZXRUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydBIkCgV0cmFjaxgCIAMoCzIVLnJvdXRlcy52MS5Sb3V0ZVBvaW50Ii0KFkxpc3RUcmlwUmVwb3J0c1JlcXVlc3QSEwoLYWN0aXZpdHlfaWQYASABKAkiQAoXTGlzdFRyaXBSZXBvcnRzUmVzcG9uc2USJQoHcmVwb3J0cxgBIAMoCzIULnRyaXBzLnYxLlRyaXBSZXBvcnQivwEKF1VwZGF0ZVRyaXBSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJEhIKBXRpdGxlGAIgASgJSACIAQESEQoEc2x1ZxgDIAEoCUgBiAEBEhEKBGRhdGUYBSABKAlIAogBARIfChJoaWRkZW5fZW5kc19tZXRlcnMYBiABKAVIA4gBAUIICgZfdGl0bGVCBwoFX3NsdWdCBwoFX2RhdGVCFQoTX2hpZGRlbl9lbmRzX21ldGVyc0oECAQQBVIEYm9keSJAChhVcGRhdGVUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCIlChdEZWxldGVUcmlwUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSIaChhEZWxldGVUcmlwUmVwb3J0UmVzcG9uc2UiJgoYUHVibGlzaFRyaXBSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJIkEKGVB1Ymxpc2hUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCIoChpVbnB1Ymxpc2hUcmlwUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJDChtVbnB1Ymxpc2hUcmlwUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCK2AQoWVXBsb2FkVHJpcFBob3RvUmVxdWVzdBIRCglyZXBvcnRfaWQYASABKAkSDAoEZGF0YRgCIAEoDBIPCgdjYXB0aW9uGAMgASgJEiAKCGxvY2F0aW9uGAQgASgLMg4uZ2VvLnYxLkxhdExuZxIuCgp0YWtlbl90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIYChB0YWtlbl9sb2NhbF90aW1lGAYgASgJIj0KF1VwbG9hZFRyaXBQaG90b1Jlc3BvbnNlEiIKBXBob3RvGAEgASgLMhMudHJpcHMudjEuVHJpcFBob3RvIi4KGUltcG9ydFN0cmF2YVBob3Rvc1JlcXVlc3QSEQoJcmVwb3J0X2lkGAEgASgJIm4KGkltcG9ydFN0cmF2YVBob3Rvc1Jlc3BvbnNlEiMKBnBob3RvcxgBIAMoCzITLnRyaXBzLnYxLlRyaXBQaG90bxIVCg1za2lwcGVkX2NvdW50GAIgASgFEhQKDGZhaWxlZF9jb3VudBgDIAEoBSKAAQoWVXBkYXRlVHJpcFBob3RvUmVxdWVzdBIKCgJpZBgBIAEoCRIUCgdjYXB0aW9uGAIgASgJSACIAQESIAoIbG9jYXRpb24YAyABKAsyDi5nZW8udjEuTGF0TG5nEhYKDmNsZWFyX2xvY2F0aW9uGAQgASgIQgoKCF9jYXB0aW9uIj0KF1VwZGF0ZVRyaXBQaG90b1Jlc3BvbnNlEiIKBXBob3RvGAEgASgLMhMudHJpcHMudjEuVHJpcFBob3RvIlQKFlNldFRyaXBTZWN0aW9uc1JlcXVlc3QSEQoJcmVwb3J0X2lkGAEgASgJEicKCHNlY3Rpb25zGAIgAygLMhUudHJpcHMudjEuVHJpcFNlY3Rpb24iPwoXU2V0VHJpcFNlY3Rpb25zUmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQudHJpcHMudjEuVHJpcFJlcG9ydCIvChpTdWdnZXN0VHJpcFNlY3Rpb25zUmVxdWVzdBIRCglyZXBvcnRfaWQYASABKAkiRgobU3VnZ2VzdFRyaXBTZWN0aW9uc1Jlc3BvbnNlEicKCHNlY3Rpb25zGAEgAygLMhUudHJpcHMudjEuVHJpcFNlY3Rpb24iJAoWRGVsZXRlVHJpcFBob3RvUmVxdWVzdBIKCgJpZBgBIAEoCSIZChdEZWxldGVUcmlwUGhvdG9SZXNwb25zZSITChFHZXRQcm9maWxlUmVxdWVzdCJYChJHZXRQcm9maWxlUmVzcG9uc2USIgoHcHJvZmlsZRgBIAEoCzIRLnRyaXBzLnYxLlByb2ZpbGUSHgoWc3VnZ2VzdGVkX2Rpc3BsYXlfbmFtZRgCIAEoCSI6ChRVcGRhdGVQcm9maWxlUmVxdWVzdBIiCgdwcm9maWxlGAEgASgLMhEudHJpcHMudjEuUHJvZmlsZSI7ChVVcGRhdGVQcm9maWxlUmVzcG9uc2USIgoHcHJvZmlsZRgBIAEoCzIRLnRyaXBzLnYxLlByb2ZpbGUiKQoXR2V0UHVibGljUHJvZmlsZVJlcXVlc3QSDgoGaGFuZGxlGAEgASgJImUKGEdldFB1YmxpY1Byb2ZpbGVSZXNwb25zZRIiCgdwcm9maWxlGAEgASgLMhEudHJpcHMudjEuUHJvZmlsZRIlCgdyZXBvcnRzGAIgAygLMhQudHJpcHMudjEuVHJpcFJlcG9ydCI6ChpHZXRQdWJsaWNUcmlwUmVwb3J0UmVxdWVzdBIOCgZoYW5kbGUYASABKAkSDAoEc2x1ZxgCIAEoCSKMAQobR2V0UHVibGljVHJpcFJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnRyaXBzLnYxLlRyaXBSZXBvcnQSIQoGYXV0aG9yGAIgASgLMhEudHJpcHMudjEuUHJvZmlsZRIkCgV0cmFjaxgDIAMoCzIVLnJvdXRlcy52MS5Sb3V0ZVBvaW50KoYBCg5Mb2NhdGlvblNvdXJjZRIfChtMT0NBVElPTl9TT1VSQ0VfVU5TUEVDSUZJRUQQABIXChNMT0NBVElPTl9TT1VSQ0VfR1BTEAESHgoaTE9DQVRJT05fU09VUkNFX1RSQUNLX1RJTUUQAhIaChZMT0NBVElPTl9TT1VSQ0VfTUFOVUFMEAMyxwwKEVRyaXBSZXBvcnRTZXJ2aWNlElkKEENyZWF0ZVRyaXBSZXBvcnQSIS50cmlwcy52MS5DcmVhdGVUcmlwUmVwb3J0UmVxdWVzdBoiLnRyaXBzLnYxLkNyZWF0ZVRyaXBSZXBvcnRSZXNwb25zZRJQCg1HZXRUcmlwUmVwb3J0Eh4udHJpcHMudjEuR2V0VHJpcFJlcG9ydFJlcXVlc3QaHy50cmlwcy52MS5HZXRUcmlwUmVwb3J0UmVzcG9uc2USVgoPTGlzdFRyaXBSZXBvcnRzEiAudHJpcHMudjEuTGlzdFRyaXBSZXBvcnRzUmVxdWVzdBohLnRyaXBzLnYxLkxpc3RUcmlwUmVwb3J0c1Jlc3BvbnNlElkKEFVwZGF0ZVRyaXBSZXBvcnQSIS50cmlwcy52MS5VcGRhdGVUcmlwUmVwb3J0UmVxdWVzdBoiLnRyaXBzLnYxLlVwZGF0ZVRyaXBSZXBvcnRSZXNwb25zZRJZChBEZWxldGVUcmlwUmVwb3J0EiEudHJpcHMudjEuRGVsZXRlVHJpcFJlcG9ydFJlcXVlc3QaIi50cmlwcy52MS5EZWxldGVUcmlwUmVwb3J0UmVzcG9uc2USZAoRUHVibGlzaFRyaXBSZXBvcnQSIi50cmlwcy52MS5QdWJsaXNoVHJpcFJlcG9ydFJlcXVlc3QaIy50cmlwcy52MS5QdWJsaXNoVHJpcFJlcG9ydFJlc3BvbnNlIgainxkCCAESagoTVW5wdWJsaXNoVHJpcFJlcG9ydBIkLnRyaXBzLnYxLlVucHVibGlzaFRyaXBSZXBvcnRSZXF1ZXN0GiUudHJpcHMudjEuVW5wdWJsaXNoVHJpcFJlcG9ydFJlc3BvbnNlIgainxkCCAESXgoPVXBsb2FkVHJpcFBob3RvEiAudHJpcHMudjEuVXBsb2FkVHJpcFBob3RvUmVxdWVzdBohLnRyaXBzLnYxLlVwbG9hZFRyaXBQaG90b1Jlc3BvbnNlIgainxkCCAESZwoSSW1wb3J0U3RyYXZhUGhvdG9zEiMudHJpcHMudjEuSW1wb3J0U3RyYXZhUGhvdG9zUmVxdWVzdBokLnRyaXBzLnYxLkltcG9ydFN0cmF2YVBob3Rvc1Jlc3BvbnNlIgainxkCCAESVgoPVXBkYXRlVHJpcFBob3RvEiAudHJpcHMudjEuVXBkYXRlVHJpcFBob3RvUmVxdWVzdBohLnRyaXBzLnYxLlVwZGF0ZVRyaXBQaG90b1Jlc3BvbnNlElYKD1NldFRyaXBTZWN0aW9ucxIgLnRyaXBzLnYxLlNldFRyaXBTZWN0aW9uc1JlcXVlc3QaIS50cmlwcy52MS5TZXRUcmlwU2VjdGlvbnNSZXNwb25zZRJiChNTdWdnZXN0VHJpcFNlY3Rpb25zEiQudHJpcHMudjEuU3VnZ2VzdFRyaXBTZWN0aW9uc1JlcXVlc3QaJS50cmlwcy52MS5TdWdnZXN0VHJpcFNlY3Rpb25zUmVzcG9uc2USVgoPRGVsZXRlVHJpcFBob3RvEiAudHJpcHMudjEuRGVsZXRlVHJpcFBob3RvUmVxdWVzdBohLnRyaXBzLnYxLkRlbGV0ZVRyaXBQaG90b1Jlc3BvbnNlEkcKCkdldFByb2ZpbGUSGy50cmlwcy52MS5HZXRQcm9maWxlUmVxdWVzdBocLnRyaXBzLnYxLkdldFByb2ZpbGVSZXNwb25zZRJYCg1VcGRhdGVQcm9maWxlEh4udHJpcHMudjEuVXBkYXRlUHJvZmlsZVJlcXVlc3QaHy50cmlwcy52MS5VcGRhdGVQcm9maWxlUmVzcG9uc2UiBqKfGQIIARJhChBHZXRQdWJsaWNQcm9maWxlEiEudHJpcHMudjEuR2V0UHVibGljUHJvZmlsZVJlcXVlc3QaIi50cmlwcy52MS5HZXRQdWJsaWNQcm9maWxlUmVzcG9uc2UiBqKfGQIIARJqChNHZXRQdWJsaWNUcmlwUmVwb3J0EiQudHJpcHMudjEuR2V0UHVibGljVHJpcFJlcG9ydFJlcXVlc3QaJS50cmlwcy52MS5HZXRQdWJsaWNUcmlwUmVwb3J0UmVzcG9uc2UiBqKfGQIIAUKaAQoMY29tLnRyaXBzLnYxQgpUcmlwc1Byb3RvUAFaPWdpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL3RyaXBzL3YxO3RyaXBzdjGiAgNUWFiqAghUcmlwcy5WMcoCCFRyaXBzXFYx4gIUVHJpcHNcVjFcR1BCTWV0YWRhdGHqAglUcmlwczo6VjFiBnByb3RvMw", [file_geo_v1_geo, file_google_protobuf_timestamp, file_mcp_v1_options, file_routes_v1_routes]);
 
 /**
  * A trip report.
@@ -56,13 +56,6 @@ export type TripReport = Message<"trips.v1.TripReport"> & {
   slug: string;
 
   /**
-   * The story as plain text. Paragraphs are separated by blank lines.
-   *
-   * @generated from field: string body = 5;
-   */
-  body: string;
-
-  /**
    * The local date of the trip (YYYY-MM-DD).
    *
    * @generated from field: string date = 6;
@@ -99,7 +92,8 @@ export type TripReport = Message<"trips.v1.TripReport"> & {
   url: string;
 
   /**
-   * The photos in order.
+   * The photos in the order of the story: by section, and in order within
+   * each section.
    *
    * @generated from field: repeated trips.v1.TripPhoto photos = 11;
    */
@@ -137,6 +131,20 @@ export type TripReport = Message<"trips.v1.TripReport"> & {
    * @generated from field: int32 hidden_ends_meters = 15;
    */
   hiddenEndsMeters: number;
+
+  /**
+   * The sections of the story in order. Not set in lists of reports.
+   *
+   * @generated from field: repeated trips.v1.TripSection sections = 16;
+   */
+  sections: TripSection[];
+
+  /**
+   * The start of the story, for lists of reports.
+   *
+   * @generated from field: string excerpt = 17;
+   */
+  excerpt: string;
 };
 
 /**
@@ -145,6 +153,63 @@ export type TripReport = Message<"trips.v1.TripReport"> & {
  */
 export const TripReportSchema: GenMessage<TripReport> = /*@__PURE__*/
   messageDesc(file_trips_v1_trips, 0);
+
+/**
+ * A section of a trip report's story, like a chapter of a blog post.
+ *
+ * @generated from message trips.v1.TripSection
+ */
+export type TripSection = Message<"trips.v1.TripSection"> & {
+  /**
+   * The ID of the section. Empty for a new section.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The heading, e.g. "Climb to 1,450 m". Empty for a section without a
+   * heading, e.g. an introduction.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * The text as plain text. Paragraphs are separated by blank lines.
+   *
+   * @generated from field: string body = 3;
+   */
+  body: string;
+
+  /**
+   * Where the stretch of the track the section is about starts and ends, in
+   * meters along the track. Both are unset for a section that isn't about a
+   * stretch, e.g. an introduction.
+   *
+   * @generated from field: optional double start_distance_meters = 4;
+   */
+  startDistanceMeters?: number | undefined;
+
+  /**
+   * @generated from field: optional double end_distance_meters = 5;
+   */
+  endDistanceMeters?: number | undefined;
+
+  /**
+   * The IDs of the section's photos, in order.
+   *
+   * @generated from field: repeated string photo_ids = 6;
+   */
+  photoIds: string[];
+};
+
+/**
+ * Describes the message trips.v1.TripSection.
+ * Use `create(TripSectionSchema)` to create a new message.
+ */
+export const TripSectionSchema: GenMessage<TripSection> = /*@__PURE__*/
+  messageDesc(file_trips_v1_trips, 1);
 
 /**
  * The statistics of a trip.
@@ -207,7 +272,7 @@ export type TripStats = Message<"trips.v1.TripStats"> & {
  * Use `create(TripStatsSchema)` to create a new message.
  */
 export const TripStatsSchema: GenMessage<TripStats> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 1);
+  messageDesc(file_trips_v1_trips, 2);
 
 /**
  * A photo of a trip report.
@@ -292,7 +357,7 @@ export type TripPhoto = Message<"trips.v1.TripPhoto"> & {
  * Use `create(TripPhotoSchema)` to create a new message.
  */
 export const TripPhotoSchema: GenMessage<TripPhoto> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 2);
+  messageDesc(file_trips_v1_trips, 3);
 
 /**
  * A public profile, under which published trip reports are listed.
@@ -328,7 +393,7 @@ export type Profile = Message<"trips.v1.Profile"> & {
  * Use `create(ProfileSchema)` to create a new message.
  */
 export const ProfileSchema: GenMessage<Profile> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 3);
+  messageDesc(file_trips_v1_trips, 4);
 
 /**
  * @generated from message trips.v1.CreateTripReportRequest
@@ -355,7 +420,7 @@ export type CreateTripReportRequest = Message<"trips.v1.CreateTripReportRequest"
  * Use `create(CreateTripReportRequestSchema)` to create a new message.
  */
 export const CreateTripReportRequestSchema: GenMessage<CreateTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 4);
+  messageDesc(file_trips_v1_trips, 5);
 
 /**
  * @generated from message trips.v1.CreateTripReportResponse
@@ -374,7 +439,7 @@ export type CreateTripReportResponse = Message<"trips.v1.CreateTripReportRespons
  * Use `create(CreateTripReportResponseSchema)` to create a new message.
  */
 export const CreateTripReportResponseSchema: GenMessage<CreateTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 5);
+  messageDesc(file_trips_v1_trips, 6);
 
 /**
  * @generated from message trips.v1.GetTripReportRequest
@@ -400,7 +465,7 @@ export type GetTripReportRequest = Message<"trips.v1.GetTripReportRequest"> & {
  * Use `create(GetTripReportRequestSchema)` to create a new message.
  */
 export const GetTripReportRequestSchema: GenMessage<GetTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 6);
+  messageDesc(file_trips_v1_trips, 7);
 
 /**
  * @generated from message trips.v1.GetTripReportResponse
@@ -426,7 +491,7 @@ export type GetTripReportResponse = Message<"trips.v1.GetTripReportResponse"> & 
  * Use `create(GetTripReportResponseSchema)` to create a new message.
  */
 export const GetTripReportResponseSchema: GenMessage<GetTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 7);
+  messageDesc(file_trips_v1_trips, 8);
 
 /**
  * @generated from message trips.v1.ListTripReportsRequest
@@ -445,7 +510,7 @@ export type ListTripReportsRequest = Message<"trips.v1.ListTripReportsRequest"> 
  * Use `create(ListTripReportsRequestSchema)` to create a new message.
  */
 export const ListTripReportsRequestSchema: GenMessage<ListTripReportsRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 8);
+  messageDesc(file_trips_v1_trips, 9);
 
 /**
  * @generated from message trips.v1.ListTripReportsResponse
@@ -464,7 +529,7 @@ export type ListTripReportsResponse = Message<"trips.v1.ListTripReportsResponse"
  * Use `create(ListTripReportsResponseSchema)` to create a new message.
  */
 export const ListTripReportsResponseSchema: GenMessage<ListTripReportsResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 9);
+  messageDesc(file_trips_v1_trips, 10);
 
 /**
  * @generated from message trips.v1.UpdateTripReportRequest
@@ -492,13 +557,6 @@ export type UpdateTripReportRequest = Message<"trips.v1.UpdateTripReportRequest"
   slug?: string | undefined;
 
   /**
-   * The new story, if set.
-   *
-   * @generated from field: optional string body = 4;
-   */
-  body?: string | undefined;
-
-  /**
    * The new date (YYYY-MM-DD), if set.
    *
    * @generated from field: optional string date = 5;
@@ -519,7 +577,7 @@ export type UpdateTripReportRequest = Message<"trips.v1.UpdateTripReportRequest"
  * Use `create(UpdateTripReportRequestSchema)` to create a new message.
  */
 export const UpdateTripReportRequestSchema: GenMessage<UpdateTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 10);
+  messageDesc(file_trips_v1_trips, 11);
 
 /**
  * @generated from message trips.v1.UpdateTripReportResponse
@@ -538,7 +596,7 @@ export type UpdateTripReportResponse = Message<"trips.v1.UpdateTripReportRespons
  * Use `create(UpdateTripReportResponseSchema)` to create a new message.
  */
 export const UpdateTripReportResponseSchema: GenMessage<UpdateTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 11);
+  messageDesc(file_trips_v1_trips, 12);
 
 /**
  * @generated from message trips.v1.DeleteTripReportRequest
@@ -557,7 +615,7 @@ export type DeleteTripReportRequest = Message<"trips.v1.DeleteTripReportRequest"
  * Use `create(DeleteTripReportRequestSchema)` to create a new message.
  */
 export const DeleteTripReportRequestSchema: GenMessage<DeleteTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 12);
+  messageDesc(file_trips_v1_trips, 13);
 
 /**
  * @generated from message trips.v1.DeleteTripReportResponse
@@ -570,7 +628,7 @@ export type DeleteTripReportResponse = Message<"trips.v1.DeleteTripReportRespons
  * Use `create(DeleteTripReportResponseSchema)` to create a new message.
  */
 export const DeleteTripReportResponseSchema: GenMessage<DeleteTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 13);
+  messageDesc(file_trips_v1_trips, 14);
 
 /**
  * @generated from message trips.v1.PublishTripReportRequest
@@ -589,7 +647,7 @@ export type PublishTripReportRequest = Message<"trips.v1.PublishTripReportReques
  * Use `create(PublishTripReportRequestSchema)` to create a new message.
  */
 export const PublishTripReportRequestSchema: GenMessage<PublishTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 14);
+  messageDesc(file_trips_v1_trips, 15);
 
 /**
  * @generated from message trips.v1.PublishTripReportResponse
@@ -608,7 +666,7 @@ export type PublishTripReportResponse = Message<"trips.v1.PublishTripReportRespo
  * Use `create(PublishTripReportResponseSchema)` to create a new message.
  */
 export const PublishTripReportResponseSchema: GenMessage<PublishTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 15);
+  messageDesc(file_trips_v1_trips, 16);
 
 /**
  * @generated from message trips.v1.UnpublishTripReportRequest
@@ -627,7 +685,7 @@ export type UnpublishTripReportRequest = Message<"trips.v1.UnpublishTripReportRe
  * Use `create(UnpublishTripReportRequestSchema)` to create a new message.
  */
 export const UnpublishTripReportRequestSchema: GenMessage<UnpublishTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 16);
+  messageDesc(file_trips_v1_trips, 17);
 
 /**
  * @generated from message trips.v1.UnpublishTripReportResponse
@@ -646,7 +704,7 @@ export type UnpublishTripReportResponse = Message<"trips.v1.UnpublishTripReportR
  * Use `create(UnpublishTripReportResponseSchema)` to create a new message.
  */
 export const UnpublishTripReportResponseSchema: GenMessage<UnpublishTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 17);
+  messageDesc(file_trips_v1_trips, 18);
 
 /**
  * @generated from message trips.v1.UploadTripPhotoRequest
@@ -702,7 +760,7 @@ export type UploadTripPhotoRequest = Message<"trips.v1.UploadTripPhotoRequest"> 
  * Use `create(UploadTripPhotoRequestSchema)` to create a new message.
  */
 export const UploadTripPhotoRequestSchema: GenMessage<UploadTripPhotoRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 18);
+  messageDesc(file_trips_v1_trips, 19);
 
 /**
  * @generated from message trips.v1.UploadTripPhotoResponse
@@ -721,7 +779,7 @@ export type UploadTripPhotoResponse = Message<"trips.v1.UploadTripPhotoResponse"
  * Use `create(UploadTripPhotoResponseSchema)` to create a new message.
  */
 export const UploadTripPhotoResponseSchema: GenMessage<UploadTripPhotoResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 19);
+  messageDesc(file_trips_v1_trips, 20);
 
 /**
  * @generated from message trips.v1.ImportStravaPhotosRequest
@@ -740,7 +798,7 @@ export type ImportStravaPhotosRequest = Message<"trips.v1.ImportStravaPhotosRequ
  * Use `create(ImportStravaPhotosRequestSchema)` to create a new message.
  */
 export const ImportStravaPhotosRequestSchema: GenMessage<ImportStravaPhotosRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 20);
+  messageDesc(file_trips_v1_trips, 21);
 
 /**
  * @generated from message trips.v1.ImportStravaPhotosResponse
@@ -773,7 +831,7 @@ export type ImportStravaPhotosResponse = Message<"trips.v1.ImportStravaPhotosRes
  * Use `create(ImportStravaPhotosResponseSchema)` to create a new message.
  */
 export const ImportStravaPhotosResponseSchema: GenMessage<ImportStravaPhotosResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 21);
+  messageDesc(file_trips_v1_trips, 22);
 
 /**
  * @generated from message trips.v1.UpdateTripPhotoRequest
@@ -813,7 +871,7 @@ export type UpdateTripPhotoRequest = Message<"trips.v1.UpdateTripPhotoRequest"> 
  * Use `create(UpdateTripPhotoRequestSchema)` to create a new message.
  */
 export const UpdateTripPhotoRequestSchema: GenMessage<UpdateTripPhotoRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 22);
+  messageDesc(file_trips_v1_trips, 23);
 
 /**
  * @generated from message trips.v1.UpdateTripPhotoResponse
@@ -832,12 +890,12 @@ export type UpdateTripPhotoResponse = Message<"trips.v1.UpdateTripPhotoResponse"
  * Use `create(UpdateTripPhotoResponseSchema)` to create a new message.
  */
 export const UpdateTripPhotoResponseSchema: GenMessage<UpdateTripPhotoResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 23);
+  messageDesc(file_trips_v1_trips, 24);
 
 /**
- * @generated from message trips.v1.ReorderTripPhotosRequest
+ * @generated from message trips.v1.SetTripSectionsRequest
  */
-export type ReorderTripPhotosRequest = Message<"trips.v1.ReorderTripPhotosRequest"> & {
+export type SetTripSectionsRequest = Message<"trips.v1.SetTripSectionsRequest"> & {
   /**
    * The ID of the report.
    *
@@ -846,38 +904,77 @@ export type ReorderTripPhotosRequest = Message<"trips.v1.ReorderTripPhotosReques
   reportId: string;
 
   /**
-   * The IDs of all the report's photos in the new order.
+   * The sections in order, at least one. Photos that aren't listed stay in
+   * their section, or move to the first section if theirs is deleted.
    *
-   * @generated from field: repeated string photo_ids = 2;
+   * @generated from field: repeated trips.v1.TripSection sections = 2;
    */
-  photoIds: string[];
+  sections: TripSection[];
 };
 
 /**
- * Describes the message trips.v1.ReorderTripPhotosRequest.
- * Use `create(ReorderTripPhotosRequestSchema)` to create a new message.
+ * Describes the message trips.v1.SetTripSectionsRequest.
+ * Use `create(SetTripSectionsRequestSchema)` to create a new message.
  */
-export const ReorderTripPhotosRequestSchema: GenMessage<ReorderTripPhotosRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 24);
-
-/**
- * @generated from message trips.v1.ReorderTripPhotosResponse
- */
-export type ReorderTripPhotosResponse = Message<"trips.v1.ReorderTripPhotosResponse"> & {
-  /**
-   * The photos in the new order.
-   *
-   * @generated from field: repeated trips.v1.TripPhoto photos = 1;
-   */
-  photos: TripPhoto[];
-};
-
-/**
- * Describes the message trips.v1.ReorderTripPhotosResponse.
- * Use `create(ReorderTripPhotosResponseSchema)` to create a new message.
- */
-export const ReorderTripPhotosResponseSchema: GenMessage<ReorderTripPhotosResponse> = /*@__PURE__*/
+export const SetTripSectionsRequestSchema: GenMessage<SetTripSectionsRequest> = /*@__PURE__*/
   messageDesc(file_trips_v1_trips, 25);
+
+/**
+ * @generated from message trips.v1.SetTripSectionsResponse
+ */
+export type SetTripSectionsResponse = Message<"trips.v1.SetTripSectionsResponse"> & {
+  /**
+   * The updated report.
+   *
+   * @generated from field: trips.v1.TripReport report = 1;
+   */
+  report?: TripReport | undefined;
+};
+
+/**
+ * Describes the message trips.v1.SetTripSectionsResponse.
+ * Use `create(SetTripSectionsResponseSchema)` to create a new message.
+ */
+export const SetTripSectionsResponseSchema: GenMessage<SetTripSectionsResponse> = /*@__PURE__*/
+  messageDesc(file_trips_v1_trips, 26);
+
+/**
+ * @generated from message trips.v1.SuggestTripSectionsRequest
+ */
+export type SuggestTripSectionsRequest = Message<"trips.v1.SuggestTripSectionsRequest"> & {
+  /**
+   * The ID of the report.
+   *
+   * @generated from field: string report_id = 1;
+   */
+  reportId: string;
+};
+
+/**
+ * Describes the message trips.v1.SuggestTripSectionsRequest.
+ * Use `create(SuggestTripSectionsRequestSchema)` to create a new message.
+ */
+export const SuggestTripSectionsRequestSchema: GenMessage<SuggestTripSectionsRequest> = /*@__PURE__*/
+  messageDesc(file_trips_v1_trips, 27);
+
+/**
+ * @generated from message trips.v1.SuggestTripSectionsResponse
+ */
+export type SuggestTripSectionsResponse = Message<"trips.v1.SuggestTripSectionsResponse"> & {
+  /**
+   * The suggested sections in order, without IDs or text.
+   *
+   * @generated from field: repeated trips.v1.TripSection sections = 1;
+   */
+  sections: TripSection[];
+};
+
+/**
+ * Describes the message trips.v1.SuggestTripSectionsResponse.
+ * Use `create(SuggestTripSectionsResponseSchema)` to create a new message.
+ */
+export const SuggestTripSectionsResponseSchema: GenMessage<SuggestTripSectionsResponse> = /*@__PURE__*/
+  messageDesc(file_trips_v1_trips, 28);
 
 /**
  * @generated from message trips.v1.DeleteTripPhotoRequest
@@ -896,7 +993,7 @@ export type DeleteTripPhotoRequest = Message<"trips.v1.DeleteTripPhotoRequest"> 
  * Use `create(DeleteTripPhotoRequestSchema)` to create a new message.
  */
 export const DeleteTripPhotoRequestSchema: GenMessage<DeleteTripPhotoRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 26);
+  messageDesc(file_trips_v1_trips, 29);
 
 /**
  * @generated from message trips.v1.DeleteTripPhotoResponse
@@ -909,7 +1006,7 @@ export type DeleteTripPhotoResponse = Message<"trips.v1.DeleteTripPhotoResponse"
  * Use `create(DeleteTripPhotoResponseSchema)` to create a new message.
  */
 export const DeleteTripPhotoResponseSchema: GenMessage<DeleteTripPhotoResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 27);
+  messageDesc(file_trips_v1_trips, 30);
 
 /**
  * @generated from message trips.v1.GetProfileRequest
@@ -922,7 +1019,7 @@ export type GetProfileRequest = Message<"trips.v1.GetProfileRequest"> & {
  * Use `create(GetProfileRequestSchema)` to create a new message.
  */
 export const GetProfileRequestSchema: GenMessage<GetProfileRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 28);
+  messageDesc(file_trips_v1_trips, 31);
 
 /**
  * @generated from message trips.v1.GetProfileResponse
@@ -948,7 +1045,7 @@ export type GetProfileResponse = Message<"trips.v1.GetProfileResponse"> & {
  * Use `create(GetProfileResponseSchema)` to create a new message.
  */
 export const GetProfileResponseSchema: GenMessage<GetProfileResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 29);
+  messageDesc(file_trips_v1_trips, 32);
 
 /**
  * @generated from message trips.v1.UpdateProfileRequest
@@ -967,7 +1064,7 @@ export type UpdateProfileRequest = Message<"trips.v1.UpdateProfileRequest"> & {
  * Use `create(UpdateProfileRequestSchema)` to create a new message.
  */
 export const UpdateProfileRequestSchema: GenMessage<UpdateProfileRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 30);
+  messageDesc(file_trips_v1_trips, 33);
 
 /**
  * @generated from message trips.v1.UpdateProfileResponse
@@ -986,7 +1083,7 @@ export type UpdateProfileResponse = Message<"trips.v1.UpdateProfileResponse"> & 
  * Use `create(UpdateProfileResponseSchema)` to create a new message.
  */
 export const UpdateProfileResponseSchema: GenMessage<UpdateProfileResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 31);
+  messageDesc(file_trips_v1_trips, 34);
 
 /**
  * @generated from message trips.v1.GetPublicProfileRequest
@@ -1005,7 +1102,7 @@ export type GetPublicProfileRequest = Message<"trips.v1.GetPublicProfileRequest"
  * Use `create(GetPublicProfileRequestSchema)` to create a new message.
  */
 export const GetPublicProfileRequestSchema: GenMessage<GetPublicProfileRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 32);
+  messageDesc(file_trips_v1_trips, 35);
 
 /**
  * @generated from message trips.v1.GetPublicProfileResponse
@@ -1031,7 +1128,7 @@ export type GetPublicProfileResponse = Message<"trips.v1.GetPublicProfileRespons
  * Use `create(GetPublicProfileResponseSchema)` to create a new message.
  */
 export const GetPublicProfileResponseSchema: GenMessage<GetPublicProfileResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 33);
+  messageDesc(file_trips_v1_trips, 36);
 
 /**
  * @generated from message trips.v1.GetPublicTripReportRequest
@@ -1057,7 +1154,7 @@ export type GetPublicTripReportRequest = Message<"trips.v1.GetPublicTripReportRe
  * Use `create(GetPublicTripReportRequestSchema)` to create a new message.
  */
 export const GetPublicTripReportRequestSchema: GenMessage<GetPublicTripReportRequest> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 34);
+  messageDesc(file_trips_v1_trips, 37);
 
 /**
  * @generated from message trips.v1.GetPublicTripReportResponse
@@ -1090,7 +1187,7 @@ export type GetPublicTripReportResponse = Message<"trips.v1.GetPublicTripReportR
  * Use `create(GetPublicTripReportResponseSchema)` to create a new message.
  */
 export const GetPublicTripReportResponseSchema: GenMessage<GetPublicTripReportResponse> = /*@__PURE__*/
-  messageDesc(file_trips_v1_trips, 35);
+  messageDesc(file_trips_v1_trips, 38);
 
 /**
  * LocationSource is where the location of a photo comes from.
@@ -1140,25 +1237,30 @@ export const LocationSourceSchema: GenEnum<LocationSource> = /*@__PURE__*/
  *
  * A report starts as a private draft. Creating a report from an activity
  * copies the activity's name, date, statistics and GPS track into it, so the
- * report keeps them even if the activity changes. The author adds the story
- * as plain text (paragraphs separated by blank lines) and uploads photos in
- * the app. Each photo is placed on the map from its GPS position, or, without
- * one, from the time it was taken along the activity's track.
+ * report keeps them even if the activity changes. The story is told in
+ * sections, like the chapters of a blog post: each has a heading, plain text
+ * (paragraphs separated by blank lines) and photos, and is usually about a
+ * stretch of the track, e.g. the first climb or a ridge. The app can suggest
+ * sections from the track's elevation profile. The author uploads photos in
+ * the app; each photo is placed on the map at the time it was taken along the
+ * activity's track, or else from its GPS position, and goes in the section
+ * about where it was taken.
  *
  * Publishing makes a report public at <public URL>/u/<handle>/<slug>, where
  * it can be read without signing in and indexed by search engines, and lists
  * it on the author's public page at <public URL>/u/<handle>. Publishing
  * requires a public profile with a handle, and is done by the author in the
- * app. Help the author by drafting and editing the title and story, and
- * captions of photos.
+ * app. Help the author by drafting and editing the title, the sections and
+ * their text, and captions of photos.
  *
  * @generated from service trips.v1.TripReportService
  */
 export const TripReportService: GenService<{
   /**
-   * Create a draft trip report. With an activity, the report's title, date,
-   * statistics, track and story are copied from the activity, and its photos
-   * are imported from Strava.
+   * Create a draft trip report with one section. With an activity, the
+   * report's title, date, statistics and track are copied from the activity,
+   * its description becomes the section's text, and its photos are imported
+   * from Strava.
    *
    * @generated from rpc trips.v1.TripReportService.CreateTripReport
    */
@@ -1168,8 +1270,8 @@ export const TripReportService: GenService<{
     output: typeof CreateTripReportResponseSchema;
   },
   /**
-   * Get one of the user's trip reports with its photos, and optionally its
-   * track.
+   * Get one of the user's trip reports with its sections and photos, and
+   * optionally its track.
    *
    * @generated from rpc trips.v1.TripReportService.GetTripReport
    */
@@ -1190,8 +1292,9 @@ export const TripReportService: GenService<{
     output: typeof ListTripReportsResponseSchema;
   },
   /**
-   * Update the title, slug, date or story of a trip report. The slug of a
-   * published report can't be changed, so that its URL stays stable.
+   * Update the title, slug, date or privacy of a trip report. The slug of a
+   * published report can't be changed, so that its URL stays stable. The
+   * story is changed with SetTripSections.
    *
    * @generated from rpc trips.v1.TripReportService.UpdateTripReport
    */
@@ -1267,14 +1370,35 @@ export const TripReportService: GenService<{
     output: typeof UpdateTripPhotoResponseSchema;
   },
   /**
-   * Change the order of the photos of a trip report.
+   * Set the sections of a trip report's story, in order, replacing its
+   * sections: their headings, text, stretches of the track, and photos.
+   * Sections with an ID are updated, sections without one are created, and
+   * the report's other sections are deleted. Moving photos between sections
+   * or reordering them is done by listing them in their new section and
+   * order. To change one section, get the report and send all its sections
+   * back with the change.
    *
-   * @generated from rpc trips.v1.TripReportService.ReorderTripPhotos
+   * @generated from rpc trips.v1.TripReportService.SetTripSections
    */
-  reorderTripPhotos: {
+  setTripSections: {
     methodKind: "unary";
-    input: typeof ReorderTripPhotosRequestSchema;
-    output: typeof ReorderTripPhotosResponseSchema;
+    input: typeof SetTripSectionsRequestSchema;
+    output: typeof SetTripSectionsResponseSchema;
+  },
+  /**
+   * Suggest sections for a trip report from its track's elevation profile:
+   * the climbs, descents, and rolling or flat stretches in between, named
+   * e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+   * photos in the section about where they were taken. Nothing is saved;
+   * pass the sections to SetTripSections, with text, to use them. Requires
+   * a track with elevations.
+   *
+   * @generated from rpc trips.v1.TripReportService.SuggestTripSections
+   */
+  suggestTripSections: {
+    methodKind: "unary";
+    input: typeof SuggestTripSectionsRequestSchema;
+    output: typeof SuggestTripSectionsResponseSchema;
   },
   /**
    * Delete a photo.

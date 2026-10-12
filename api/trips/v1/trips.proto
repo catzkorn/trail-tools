@@ -13,30 +13,36 @@ import "routes/v1/routes.proto";
 //
 // A report starts as a private draft. Creating a report from an activity
 // copies the activity's name, date, statistics and GPS track into it, so the
-// report keeps them even if the activity changes. The author adds the story
-// as plain text (paragraphs separated by blank lines) and uploads photos in
-// the app. Each photo is placed on the map from its GPS position, or, without
-// one, from the time it was taken along the activity's track.
+// report keeps them even if the activity changes. The story is told in
+// sections, like the chapters of a blog post: each has a heading, plain text
+// (paragraphs separated by blank lines) and photos, and is usually about a
+// stretch of the track, e.g. the first climb or a ridge. The app can suggest
+// sections from the track's elevation profile. The author uploads photos in
+// the app; each photo is placed on the map at the time it was taken along the
+// activity's track, or else from its GPS position, and goes in the section
+// about where it was taken.
 //
 // Publishing makes a report public at <public URL>/u/<handle>/<slug>, where
 // it can be read without signing in and indexed by search engines, and lists
 // it on the author's public page at <public URL>/u/<handle>. Publishing
 // requires a public profile with a handle, and is done by the author in the
-// app. Help the author by drafting and editing the title and story, and
-// captions of photos.
+// app. Help the author by drafting and editing the title, the sections and
+// their text, and captions of photos.
 service TripReportService {
-  // Create a draft trip report. With an activity, the report's title, date,
-  // statistics, track and story are copied from the activity, and its photos
-  // are imported from Strava.
+  // Create a draft trip report with one section. With an activity, the
+  // report's title, date, statistics and track are copied from the activity,
+  // its description becomes the section's text, and its photos are imported
+  // from Strava.
   rpc CreateTripReport(CreateTripReportRequest) returns (CreateTripReportResponse);
-  // Get one of the user's trip reports with its photos, and optionally its
-  // track.
+  // Get one of the user's trip reports with its sections and photos, and
+  // optionally its track.
   rpc GetTripReport(GetTripReportRequest) returns (GetTripReportResponse);
   // List the user's trip reports, drafts and published, most recent trip
   // first.
   rpc ListTripReports(ListTripReportsRequest) returns (ListTripReportsResponse);
-  // Update the title, slug, date or story of a trip report. The slug of a
-  // published report can't be changed, so that its URL stays stable.
+  // Update the title, slug, date or privacy of a trip report. The slug of a
+  // published report can't be changed, so that its URL stays stable. The
+  // story is changed with SetTripSections.
   rpc UpdateTripReport(UpdateTripReportRequest) returns (UpdateTripReportResponse);
   // Delete a trip report and its photos.
   rpc DeleteTripReport(DeleteTripReportRequest) returns (DeleteTripReportResponse);
@@ -64,8 +70,21 @@ service TripReportService {
   }
   // Update the caption or the location of a photo.
   rpc UpdateTripPhoto(UpdateTripPhotoRequest) returns (UpdateTripPhotoResponse);
-  // Change the order of the photos of a trip report.
-  rpc ReorderTripPhotos(ReorderTripPhotosRequest) returns (ReorderTripPhotosResponse);
+  // Set the sections of a trip report's story, in order, replacing its
+  // sections: their headings, text, stretches of the track, and photos.
+  // Sections with an ID are updated, sections without one are created, and
+  // the report's other sections are deleted. Moving photos between sections
+  // or reordering them is done by listing them in their new section and
+  // order. To change one section, get the report and send all its sections
+  // back with the change.
+  rpc SetTripSections(SetTripSectionsRequest) returns (SetTripSectionsResponse);
+  // Suggest sections for a trip report from its track's elevation profile:
+  // the climbs, descents, and rolling or flat stretches in between, named
+  // e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+  // photos in the section about where they were taken. Nothing is saved;
+  // pass the sections to SetTripSections, with text, to use them. Requires
+  // a track with elevations.
+  rpc SuggestTripSections(SuggestTripSectionsRequest) returns (SuggestTripSectionsResponse);
   // Delete a photo.
   rpc DeleteTripPhoto(DeleteTripPhotoRequest) returns (DeleteTripPhotoResponse);
   // Get the user's public profile. The profile is unset if the user hasn't
@@ -100,8 +119,8 @@ message TripReport {
   // The last part of the report's URL: lowercase letters, digits and dashes,
   // unique among the author's reports. Defaults to the title.
   string slug = 4;
-  // The story as plain text. Paragraphs are separated by blank lines.
-  string body = 5;
+  reserved 5;
+  reserved "body";
   // The local date of the trip (YYYY-MM-DD).
   string date = 6;
   // The statistics of the trip, copied from the activity.
@@ -113,7 +132,8 @@ message TripReport {
   // The public URL of the report, if the author has a public profile. Only
   // reachable by others once published.
   string url = 10 [(mcp.v1.field).output_only = true];
-  // The photos in order.
+  // The photos in the order of the story: by section, and in order within
+  // each section.
   repeated TripPhoto photos = 11 [(mcp.v1.field).output_only = true];
   // When the report was created.
   google.protobuf.Timestamp create_time = 12 [(mcp.v1.field).output_only = true];
@@ -128,6 +148,28 @@ message TripReport {
   // either circle aren't shown on the map. 0 to show the whole track.
   // Defaults to 500.
   int32 hidden_ends_meters = 15;
+  // The sections of the story in order. Not set in lists of reports.
+  repeated TripSection sections = 16 [(mcp.v1.field).output_only = true];
+  // The start of the story, for lists of reports.
+  string excerpt = 17 [(mcp.v1.field).output_only = true];
+}
+
+// A section of a trip report's story, like a chapter of a blog post.
+message TripSection {
+  // The ID of the section. Empty for a new section.
+  string id = 1;
+  // The heading, e.g. "Climb to 1,450 m". Empty for a section without a
+  // heading, e.g. an introduction.
+  string title = 2;
+  // The text as plain text. Paragraphs are separated by blank lines.
+  string body = 3;
+  // Where the stretch of the track the section is about starts and ends, in
+  // meters along the track. Both are unset for a section that isn't about a
+  // stretch, e.g. an introduction.
+  optional double start_distance_meters = 4;
+  optional double end_distance_meters = 5;
+  // The IDs of the section's photos, in order.
+  repeated string photo_ids = 6;
 }
 
 // The statistics of a trip.
@@ -240,8 +282,8 @@ message UpdateTripReportRequest {
   optional string title = 2;
   // The new slug, if set. Can't be changed while published.
   optional string slug = 3;
-  // The new story, if set.
-  optional string body = 4;
+  reserved 4;
+  reserved "body";
   // The new date (YYYY-MM-DD), if set.
   optional string date = 5;
   // How far in meters around the start and finish of the track to hide on
@@ -333,16 +375,27 @@ message UpdateTripPhotoResponse {
   TripPhoto photo = 1;
 }
 
-message ReorderTripPhotosRequest {
+message SetTripSectionsRequest {
   // The ID of the report.
   string report_id = 1;
-  // The IDs of all the report's photos in the new order.
-  repeated string photo_ids = 2;
+  // The sections in order, at least one. Photos that aren't listed stay in
+  // their section, or move to the first section if theirs is deleted.
+  repeated TripSection sections = 2;
 }
 
-message ReorderTripPhotosResponse {
-  // The photos in the new order.
-  repeated TripPhoto photos = 1;
+message SetTripSectionsResponse {
+  // The updated report.
+  TripReport report = 1;
+}
+
+message SuggestTripSectionsRequest {
+  // The ID of the report.
+  string report_id = 1;
+}
+
+message SuggestTripSectionsResponse {
+  // The suggested sections in order, without IDs or text.
+  repeated TripSection sections = 1;
 }
 
 message DeleteTripPhotoRequest {

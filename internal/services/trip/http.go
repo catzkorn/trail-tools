@@ -170,9 +170,13 @@ func (s *Service) reportPage(r *http.Request, handle, slug string) (html.Page, e
 	if err != nil {
 		return html.Page{}, err
 	}
+	excerpts, err := s.repo.ListExcerpts(r.Context(), report.ID)
+	if err != nil {
+		return html.Page{}, err
+	}
 	page := html.Page{
 		Title:         report.Title + " · " + profile.DisplayName,
-		Description:   Excerpt(report.Body, 200),
+		Description:   Excerpt(excerpts[report.ID], 200),
 		URL:           s.reportURL(profile.Handle, report.Slug),
 		Type:          "article",
 		PublishedTime: report.PublishTime,

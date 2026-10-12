@@ -30,7 +30,6 @@ insert into trip_reports (
   activity_id,
   title,
   slug,
-  body,
   date,
   timezone,
   sport_type,
@@ -41,7 +40,7 @@ insert into trip_reports (
   elevation_gain_meters,
   track
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
 returning *;
 
@@ -55,7 +54,7 @@ where user_id = $1 and slug = $2;
 
 -- name: ListReports :many
 select
-  id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time,
+  id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time,
   distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters,
   (track is not null)::boolean as has_track, published, publish_time, create_time, update_time
 from trip_reports
@@ -68,7 +67,6 @@ order by date desc, create_time desc;
 update trip_reports set
   title = coalesce(sqlc.narg(title), title),
   slug = coalesce(sqlc.narg(slug), slug),
-  body = coalesce(sqlc.narg(body), body),
   date = coalesce(sqlc.narg(date), date),
   hidden_ends_meters = coalesce(sqlc.narg(hidden_ends_meters), hidden_ends_meters),
   update_time = now()
@@ -97,6 +95,7 @@ select exists (select 1 from trip_reports where id = $1 and user_id = $2);
 -- name: AddPhoto :one
 insert into trip_photos (
   report_id,
+  section_id,
   position,
   object_key,
   width,
@@ -110,6 +109,7 @@ insert into trip_photos (
   strava_photo_id
 ) values (
   sqlc.arg(report_id),
+  sqlc.arg(section_id),
   (select coalesce(max(position) + 1, 0) from trip_photos where report_id = sqlc.arg(report_id)),
   sqlc.arg(object_key),
   sqlc.arg(width),
@@ -125,9 +125,11 @@ insert into trip_photos (
 returning *;
 
 -- name: ListPhotos :many
-select * from trip_photos
-where report_id = any(sqlc.arg(report_ids)::uuid[])
-order by report_id, position, create_time;
+-- Lists photos in the order of the story: by section, then by position.
+select p.* from trip_photos p
+join trip_report_sections s on s.id = p.section_id
+where p.report_id = any(sqlc.arg(report_ids)::uuid[])
+order by p.report_id, s.position, p.position, p.create_time;
 
 -- name: GetPhoto :one
 select p.* from trip_photos p
@@ -157,8 +159,10 @@ from trip_reports r
 where r.id = p.report_id and p.id = sqlc.arg(id) and r.user_id = sqlc.arg(user_id)
 returning p.*;
 
--- name: SetPhotoPositions :exec
+-- name: SetPhotoSections :execrows
+-- Moves photos to sections, numbering them in the order given.
 update trip_photos p set
+  section_id = (sqlc.arg(section_ids)::uuid[])[o.position],
   position = o.position - 1
 from unnest(sqlc.arg(photo_ids)::uuid[]) with ordinality as o(id, position)
 where p.id = o.id and p.report_id = sqlc.arg(report_id);
@@ -173,3 +177,68 @@ returning p.object_key;
 update trip_reports set
   update_time = now()
 where id = $1;
+
+-- name: LockReport :one
+-- Gets the ID of one of the user's reports, locking it until the end of the
+-- transaction.
+select id from trip_reports
+where id = $1 and user_id = $2
+for update;
+
+-- name: CreateSection :one
+insert into trip_report_sections (
+  report_id,
+  position,
+  title,
+  body,
+  start_distance_meters,
+  end_distance_meters
+) values (
+  $1, $2, $3, $4, $5, $6
+)
+returning *;
+
+-- name: UpdateSection :execrows
+update trip_report_sections set
+  position = $3,
+  title = $4,
+  body = $5,
+  start_distance_meters = $6,
+  end_distance_meters = $7,
+  update_time = case
+    when (title, body, start_distance_meters, end_distance_meters)
+      is distinct from ($4::text, $5::text, $6::double precision, $7::double precision)
+    then now() else update_time end
+where id = $1 and report_id = $2;
+
+-- name: ListSections :many
+select * from trip_report_sections
+where report_id = any(sqlc.arg(report_ids)::uuid[])
+order by report_id, position;
+
+-- name: MovePhotosOutOfSections :exec
+-- Moves the photos of a report's sections that aren't kept to the end of a
+-- section, in the order of the story.
+with moved as (
+  select p.id, row_number() over (order by s.position, p.position, p.create_time) as n
+  from trip_photos p
+  join trip_report_sections s on s.id = p.section_id
+  where p.report_id = sqlc.arg(report_id) and not (p.section_id = any(sqlc.arg(kept_ids)::uuid[]))
+)
+update trip_photos p set
+  section_id = sqlc.arg(section_id),
+  position = (
+    select coalesce(max(position) + 1, 0) from trip_photos where section_id = sqlc.arg(section_id)
+  ) + moved.n - 1
+from moved
+where p.id = moved.id;
+
+-- name: DeleteSectionsExcept :exec
+delete from trip_report_sections
+where report_id = sqlc.arg(report_id) and not (id = any(sqlc.arg(kept_ids)::uuid[]));
+
+-- name: ListExcerpts :many
+-- Lists the text of the first section with text of each report.
+select distinct on (report_id) report_id, body from trip_report_sections
+where report_id = any(sqlc.arg(report_ids)::uuid[]) and body <> ''
+order by report_id, position;

@@ -83,7 +83,6 @@ type TripReport struct {
 	xxx_hidden_ActivityId       string                 `protobuf:"bytes,2,opt,name=activity_id,json=activityId,proto3"`
 	xxx_hidden_Title            string                 `protobuf:"bytes,3,opt,name=title,proto3"`
 	xxx_hidden_Slug             string                 `protobuf:"bytes,4,opt,name=slug,proto3"`
-	xxx_hidden_Body             string                 `protobuf:"bytes,5,opt,name=body,proto3"`
 	xxx_hidden_Date             string                 `protobuf:"bytes,6,opt,name=date,proto3"`
 	xxx_hidden_Stats            *TripStats             `protobuf:"bytes,7,opt,name=stats,proto3"`
 	xxx_hidden_Published        bool                   `protobuf:"varint,8,opt,name=published,proto3"`
@@ -94,6 +93,8 @@ type TripReport struct {
 	xxx_hidden_UpdateTime       *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3"`
 	xxx_hidden_HasTrack         bool                   `protobuf:"varint,14,opt,name=has_track,json=hasTrack,proto3"`
 	xxx_hidden_HiddenEndsMeters int32                  `protobuf:"varint,15,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3"`
+	xxx_hidden_Sections         *[]*TripSection        `protobuf:"bytes,16,rep,name=sections,proto3"`
+	xxx_hidden_Excerpt          string                 `protobuf:"bytes,17,opt,name=excerpt,proto3"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -147,13 +148,6 @@ func (x *TripReport) GetTitle() string {
 func (x *TripReport) GetSlug() string {
 	if x != nil {
 		return x.xxx_hidden_Slug
-	}
-	return ""
-}
-
-func (x *TripReport) GetBody() string {
-	if x != nil {
-		return x.xxx_hidden_Body
 	}
 	return ""
 }
@@ -230,6 +224,22 @@ func (x *TripReport) GetHiddenEndsMeters() int32 {
 	return 0
 }
 
+func (x *TripReport) GetSections() []*TripSection {
+	if x != nil {
+		if x.xxx_hidden_Sections != nil {
+			return *x.xxx_hidden_Sections
+		}
+	}
+	return nil
+}
+
+func (x *TripReport) GetExcerpt() string {
+	if x != nil {
+		return x.xxx_hidden_Excerpt
+	}
+	return ""
+}
+
 func (x *TripReport) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -244,10 +254,6 @@ func (x *TripReport) SetTitle(v string) {
 
 func (x *TripReport) SetSlug(v string) {
 	x.xxx_hidden_Slug = v
-}
-
-func (x *TripReport) SetBody(v string) {
-	x.xxx_hidden_Body = v
 }
 
 func (x *TripReport) SetDate(v string) {
@@ -288,6 +294,14 @@ func (x *TripReport) SetHasTrack(v bool) {
 
 func (x *TripReport) SetHiddenEndsMeters(v int32) {
 	x.xxx_hidden_HiddenEndsMeters = v
+}
+
+func (x *TripReport) SetSections(v []*TripSection) {
+	x.xxx_hidden_Sections = &v
+}
+
+func (x *TripReport) SetExcerpt(v string) {
+	x.xxx_hidden_Excerpt = v
 }
 
 func (x *TripReport) HasStats() bool {
@@ -347,8 +361,6 @@ type TripReport_builder struct {
 	// The last part of the report's URL: lowercase letters, digits and dashes,
 	// unique among the author's reports. Defaults to the title.
 	Slug string
-	// The story as plain text. Paragraphs are separated by blank lines.
-	Body string
 	// The local date of the trip (YYYY-MM-DD).
 	Date string
 	// The statistics of the trip, copied from the activity.
@@ -360,7 +372,8 @@ type TripReport_builder struct {
 	// The public URL of the report, if the author has a public profile. Only
 	// reachable by others once published.
 	Url string
-	// The photos in order.
+	// The photos in the order of the story: by section, and in order within
+	// each section.
 	Photos []*TripPhoto
 	// When the report was created.
 	CreateTime *timestamppb.Timestamp
@@ -375,6 +388,10 @@ type TripReport_builder struct {
 	// either circle aren't shown on the map. 0 to show the whole track.
 	// Defaults to 500.
 	HiddenEndsMeters int32
+	// The sections of the story in order. Not set in lists of reports.
+	Sections []*TripSection
+	// The start of the story, for lists of reports.
+	Excerpt string
 }
 
 func (b0 TripReport_builder) Build() *TripReport {
@@ -385,7 +402,6 @@ func (b0 TripReport_builder) Build() *TripReport {
 	x.xxx_hidden_ActivityId = b.ActivityId
 	x.xxx_hidden_Title = b.Title
 	x.xxx_hidden_Slug = b.Slug
-	x.xxx_hidden_Body = b.Body
 	x.xxx_hidden_Date = b.Date
 	x.xxx_hidden_Stats = b.Stats
 	x.xxx_hidden_Published = b.Published
@@ -396,6 +412,178 @@ func (b0 TripReport_builder) Build() *TripReport {
 	x.xxx_hidden_UpdateTime = b.UpdateTime
 	x.xxx_hidden_HasTrack = b.HasTrack
 	x.xxx_hidden_HiddenEndsMeters = b.HiddenEndsMeters
+	x.xxx_hidden_Sections = &b.Sections
+	x.xxx_hidden_Excerpt = b.Excerpt
+	return m0
+}
+
+// A section of a trip report's story, like a chapter of a blog post.
+type TripSection struct {
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Title               string                 `protobuf:"bytes,2,opt,name=title,proto3"`
+	xxx_hidden_Body                string                 `protobuf:"bytes,3,opt,name=body,proto3"`
+	xxx_hidden_StartDistanceMeters float64                `protobuf:"fixed64,4,opt,name=start_distance_meters,json=startDistanceMeters,proto3,oneof"`
+	xxx_hidden_EndDistanceMeters   float64                `protobuf:"fixed64,5,opt,name=end_distance_meters,json=endDistanceMeters,proto3,oneof"`
+	xxx_hidden_PhotoIds            []string               `protobuf:"bytes,6,rep,name=photo_ids,json=photoIds,proto3"`
+	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
+	XXX_presence                   [1]uint32
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
+}
+
+func (x *TripSection) Reset() {
+	*x = TripSection{}
+	mi := &file_trips_v1_trips_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TripSection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TripSection) ProtoMessage() {}
+
+func (x *TripSection) ProtoReflect() protoreflect.Message {
+	mi := &file_trips_v1_trips_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *TripSection) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *TripSection) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *TripSection) GetBody() string {
+	if x != nil {
+		return x.xxx_hidden_Body
+	}
+	return ""
+}
+
+func (x *TripSection) GetStartDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_StartDistanceMeters
+	}
+	return 0
+}
+
+func (x *TripSection) GetEndDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_EndDistanceMeters
+	}
+	return 0
+}
+
+func (x *TripSection) GetPhotoIds() []string {
+	if x != nil {
+		return x.xxx_hidden_PhotoIds
+	}
+	return nil
+}
+
+func (x *TripSection) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *TripSection) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *TripSection) SetBody(v string) {
+	x.xxx_hidden_Body = v
+}
+
+func (x *TripSection) SetStartDistanceMeters(v float64) {
+	x.xxx_hidden_StartDistanceMeters = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+}
+
+func (x *TripSection) SetEndDistanceMeters(v float64) {
+	x.xxx_hidden_EndDistanceMeters = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+}
+
+func (x *TripSection) SetPhotoIds(v []string) {
+	x.xxx_hidden_PhotoIds = v
+}
+
+func (x *TripSection) HasStartDistanceMeters() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+}
+
+func (x *TripSection) HasEndDistanceMeters() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+}
+
+func (x *TripSection) ClearStartDistanceMeters() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_StartDistanceMeters = 0
+}
+
+func (x *TripSection) ClearEndDistanceMeters() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_EndDistanceMeters = 0
+}
+
+type TripSection_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the section. Empty for a new section.
+	Id string
+	// The heading, e.g. "Climb to 1,450 m". Empty for a section without a
+	// heading, e.g. an introduction.
+	Title string
+	// The text as plain text. Paragraphs are separated by blank lines.
+	Body string
+	// Where the stretch of the track the section is about starts and ends, in
+	// meters along the track. Both are unset for a section that isn't about a
+	// stretch, e.g. an introduction.
+	StartDistanceMeters *float64
+	EndDistanceMeters   *float64
+	// The IDs of the section's photos, in order.
+	PhotoIds []string
+}
+
+func (b0 TripSection_builder) Build() *TripSection {
+	m0 := &TripSection{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_Body = b.Body
+	if b.StartDistanceMeters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_StartDistanceMeters = *b.StartDistanceMeters
+	}
+	if b.EndDistanceMeters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_EndDistanceMeters = *b.EndDistanceMeters
+	}
+	x.xxx_hidden_PhotoIds = b.PhotoIds
 	return m0
 }
 
@@ -415,7 +603,7 @@ type TripStats struct {
 
 func (x *TripStats) Reset() {
 	*x = TripStats{}
-	mi := &file_trips_v1_trips_proto_msgTypes[1]
+	mi := &file_trips_v1_trips_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -427,7 +615,7 @@ func (x *TripStats) String() string {
 func (*TripStats) ProtoMessage() {}
 
 func (x *TripStats) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[1]
+	mi := &file_trips_v1_trips_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -580,7 +768,7 @@ type TripPhoto struct {
 
 func (x *TripPhoto) Reset() {
 	*x = TripPhoto{}
-	mi := &file_trips_v1_trips_proto_msgTypes[2]
+	mi := &file_trips_v1_trips_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -592,7 +780,7 @@ func (x *TripPhoto) String() string {
 func (*TripPhoto) ProtoMessage() {}
 
 func (x *TripPhoto) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[2]
+	mi := &file_trips_v1_trips_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +994,7 @@ type Profile struct {
 
 func (x *Profile) Reset() {
 	*x = Profile{}
-	mi := &file_trips_v1_trips_proto_msgTypes[3]
+	mi := &file_trips_v1_trips_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -818,7 +1006,7 @@ func (x *Profile) String() string {
 func (*Profile) ProtoMessage() {}
 
 func (x *Profile) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[3]
+	mi := &file_trips_v1_trips_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -894,7 +1082,7 @@ type CreateTripReportRequest struct {
 
 func (x *CreateTripReportRequest) Reset() {
 	*x = CreateTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[4]
+	mi := &file_trips_v1_trips_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +1094,7 @@ func (x *CreateTripReportRequest) String() string {
 func (*CreateTripReportRequest) ProtoMessage() {}
 
 func (x *CreateTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[4]
+	mi := &file_trips_v1_trips_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -967,7 +1155,7 @@ type CreateTripReportResponse struct {
 
 func (x *CreateTripReportResponse) Reset() {
 	*x = CreateTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[5]
+	mi := &file_trips_v1_trips_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -979,7 +1167,7 @@ func (x *CreateTripReportResponse) String() string {
 func (*CreateTripReportResponse) ProtoMessage() {}
 
 func (x *CreateTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[5]
+	mi := &file_trips_v1_trips_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1037,7 +1225,7 @@ type GetTripReportRequest struct {
 
 func (x *GetTripReportRequest) Reset() {
 	*x = GetTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[6]
+	mi := &file_trips_v1_trips_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1049,7 +1237,7 @@ func (x *GetTripReportRequest) String() string {
 func (*GetTripReportRequest) ProtoMessage() {}
 
 func (x *GetTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[6]
+	mi := &file_trips_v1_trips_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1110,7 +1298,7 @@ type GetTripReportResponse struct {
 
 func (x *GetTripReportResponse) Reset() {
 	*x = GetTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[7]
+	mi := &file_trips_v1_trips_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1122,7 +1310,7 @@ func (x *GetTripReportResponse) String() string {
 func (*GetTripReportResponse) ProtoMessage() {}
 
 func (x *GetTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[7]
+	mi := &file_trips_v1_trips_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1383,7 @@ type ListTripReportsRequest struct {
 
 func (x *ListTripReportsRequest) Reset() {
 	*x = ListTripReportsRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[8]
+	mi := &file_trips_v1_trips_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1207,7 +1395,7 @@ func (x *ListTripReportsRequest) String() string {
 func (*ListTripReportsRequest) ProtoMessage() {}
 
 func (x *ListTripReportsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[8]
+	mi := &file_trips_v1_trips_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1253,7 +1441,7 @@ type ListTripReportsResponse struct {
 
 func (x *ListTripReportsResponse) Reset() {
 	*x = ListTripReportsResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[9]
+	mi := &file_trips_v1_trips_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1265,7 +1453,7 @@ func (x *ListTripReportsResponse) String() string {
 func (*ListTripReportsResponse) ProtoMessage() {}
 
 func (x *ListTripReportsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[9]
+	mi := &file_trips_v1_trips_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1309,7 +1497,6 @@ type UpdateTripReportRequest struct {
 	xxx_hidden_Id               string                 `protobuf:"bytes,1,opt,name=id,proto3"`
 	xxx_hidden_Title            *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof"`
 	xxx_hidden_Slug             *string                `protobuf:"bytes,3,opt,name=slug,proto3,oneof"`
-	xxx_hidden_Body             *string                `protobuf:"bytes,4,opt,name=body,proto3,oneof"`
 	xxx_hidden_Date             *string                `protobuf:"bytes,5,opt,name=date,proto3,oneof"`
 	xxx_hidden_HiddenEndsMeters int32                  `protobuf:"varint,6,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3,oneof"`
 	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
@@ -1320,7 +1507,7 @@ type UpdateTripReportRequest struct {
 
 func (x *UpdateTripReportRequest) Reset() {
 	*x = UpdateTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[10]
+	mi := &file_trips_v1_trips_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1332,7 +1519,7 @@ func (x *UpdateTripReportRequest) String() string {
 func (*UpdateTripReportRequest) ProtoMessage() {}
 
 func (x *UpdateTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[10]
+	mi := &file_trips_v1_trips_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1370,16 +1557,6 @@ func (x *UpdateTripReportRequest) GetSlug() string {
 	return ""
 }
 
-func (x *UpdateTripReportRequest) GetBody() string {
-	if x != nil {
-		if x.xxx_hidden_Body != nil {
-			return *x.xxx_hidden_Body
-		}
-		return ""
-	}
-	return ""
-}
-
 func (x *UpdateTripReportRequest) GetDate() string {
 	if x != nil {
 		if x.xxx_hidden_Date != nil {
@@ -1403,27 +1580,22 @@ func (x *UpdateTripReportRequest) SetId(v string) {
 
 func (x *UpdateTripReportRequest) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
 }
 
 func (x *UpdateTripReportRequest) SetSlug(v string) {
 	x.xxx_hidden_Slug = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
-}
-
-func (x *UpdateTripReportRequest) SetBody(v string) {
-	x.xxx_hidden_Body = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
 }
 
 func (x *UpdateTripReportRequest) SetDate(v string) {
 	x.xxx_hidden_Date = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
 }
 
 func (x *UpdateTripReportRequest) SetHiddenEndsMeters(v int32) {
 	x.xxx_hidden_HiddenEndsMeters = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
 }
 
 func (x *UpdateTripReportRequest) HasTitle() bool {
@@ -1440,25 +1612,18 @@ func (x *UpdateTripReportRequest) HasSlug() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
-func (x *UpdateTripReportRequest) HasBody() bool {
+func (x *UpdateTripReportRequest) HasDate() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
-func (x *UpdateTripReportRequest) HasDate() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
 func (x *UpdateTripReportRequest) HasHiddenEndsMeters() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
 func (x *UpdateTripReportRequest) ClearTitle() {
@@ -1471,18 +1636,13 @@ func (x *UpdateTripReportRequest) ClearSlug() {
 	x.xxx_hidden_Slug = nil
 }
 
-func (x *UpdateTripReportRequest) ClearBody() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Body = nil
-}
-
 func (x *UpdateTripReportRequest) ClearDate() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
 	x.xxx_hidden_Date = nil
 }
 
 func (x *UpdateTripReportRequest) ClearHiddenEndsMeters() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
 	x.xxx_hidden_HiddenEndsMeters = 0
 }
 
@@ -1495,8 +1655,6 @@ type UpdateTripReportRequest_builder struct {
 	Title *string
 	// The new slug, if set. Can't be changed while published.
 	Slug *string
-	// The new story, if set.
-	Body *string
 	// The new date (YYYY-MM-DD), if set.
 	Date *string
 	// How far in meters around the start and finish of the track to hide on
@@ -1510,23 +1668,19 @@ func (b0 UpdateTripReportRequest_builder) Build() *UpdateTripReportRequest {
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Slug != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
 		x.xxx_hidden_Slug = b.Slug
 	}
-	if b.Body != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Body = b.Body
-	}
 	if b.Date != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
 		x.xxx_hidden_Date = b.Date
 	}
 	if b.HiddenEndsMeters != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
 		x.xxx_hidden_HiddenEndsMeters = *b.HiddenEndsMeters
 	}
 	return m0
@@ -1541,7 +1695,7 @@ type UpdateTripReportResponse struct {
 
 func (x *UpdateTripReportResponse) Reset() {
 	*x = UpdateTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[11]
+	mi := &file_trips_v1_trips_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1553,7 +1707,7 @@ func (x *UpdateTripReportResponse) String() string {
 func (*UpdateTripReportResponse) ProtoMessage() {}
 
 func (x *UpdateTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[11]
+	mi := &file_trips_v1_trips_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1610,7 +1764,7 @@ type DeleteTripReportRequest struct {
 
 func (x *DeleteTripReportRequest) Reset() {
 	*x = DeleteTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[12]
+	mi := &file_trips_v1_trips_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1622,7 +1776,7 @@ func (x *DeleteTripReportRequest) String() string {
 func (*DeleteTripReportRequest) ProtoMessage() {}
 
 func (x *DeleteTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[12]
+	mi := &file_trips_v1_trips_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1667,7 +1821,7 @@ type DeleteTripReportResponse struct {
 
 func (x *DeleteTripReportResponse) Reset() {
 	*x = DeleteTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[13]
+	mi := &file_trips_v1_trips_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1679,7 +1833,7 @@ func (x *DeleteTripReportResponse) String() string {
 func (*DeleteTripReportResponse) ProtoMessage() {}
 
 func (x *DeleteTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[13]
+	mi := &file_trips_v1_trips_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1711,7 +1865,7 @@ type PublishTripReportRequest struct {
 
 func (x *PublishTripReportRequest) Reset() {
 	*x = PublishTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[14]
+	mi := &file_trips_v1_trips_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1723,7 +1877,7 @@ func (x *PublishTripReportRequest) String() string {
 func (*PublishTripReportRequest) ProtoMessage() {}
 
 func (x *PublishTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[14]
+	mi := &file_trips_v1_trips_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1769,7 +1923,7 @@ type PublishTripReportResponse struct {
 
 func (x *PublishTripReportResponse) Reset() {
 	*x = PublishTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[15]
+	mi := &file_trips_v1_trips_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1781,7 +1935,7 @@ func (x *PublishTripReportResponse) String() string {
 func (*PublishTripReportResponse) ProtoMessage() {}
 
 func (x *PublishTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[15]
+	mi := &file_trips_v1_trips_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1838,7 +1992,7 @@ type UnpublishTripReportRequest struct {
 
 func (x *UnpublishTripReportRequest) Reset() {
 	*x = UnpublishTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[16]
+	mi := &file_trips_v1_trips_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1850,7 +2004,7 @@ func (x *UnpublishTripReportRequest) String() string {
 func (*UnpublishTripReportRequest) ProtoMessage() {}
 
 func (x *UnpublishTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[16]
+	mi := &file_trips_v1_trips_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1896,7 +2050,7 @@ type UnpublishTripReportResponse struct {
 
 func (x *UnpublishTripReportResponse) Reset() {
 	*x = UnpublishTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[17]
+	mi := &file_trips_v1_trips_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1908,7 +2062,7 @@ func (x *UnpublishTripReportResponse) String() string {
 func (*UnpublishTripReportResponse) ProtoMessage() {}
 
 func (x *UnpublishTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[17]
+	mi := &file_trips_v1_trips_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1970,7 +2124,7 @@ type UploadTripPhotoRequest struct {
 
 func (x *UploadTripPhotoRequest) Reset() {
 	*x = UploadTripPhotoRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[18]
+	mi := &file_trips_v1_trips_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1982,7 +2136,7 @@ func (x *UploadTripPhotoRequest) String() string {
 func (*UploadTripPhotoRequest) ProtoMessage() {}
 
 func (x *UploadTripPhotoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[18]
+	mi := &file_trips_v1_trips_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2125,7 +2279,7 @@ type UploadTripPhotoResponse struct {
 
 func (x *UploadTripPhotoResponse) Reset() {
 	*x = UploadTripPhotoResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[19]
+	mi := &file_trips_v1_trips_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2137,7 +2291,7 @@ func (x *UploadTripPhotoResponse) String() string {
 func (*UploadTripPhotoResponse) ProtoMessage() {}
 
 func (x *UploadTripPhotoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[19]
+	mi := &file_trips_v1_trips_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2194,7 +2348,7 @@ type ImportStravaPhotosRequest struct {
 
 func (x *ImportStravaPhotosRequest) Reset() {
 	*x = ImportStravaPhotosRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[20]
+	mi := &file_trips_v1_trips_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2206,7 +2360,7 @@ func (x *ImportStravaPhotosRequest) String() string {
 func (*ImportStravaPhotosRequest) ProtoMessage() {}
 
 func (x *ImportStravaPhotosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[20]
+	mi := &file_trips_v1_trips_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2254,7 +2408,7 @@ type ImportStravaPhotosResponse struct {
 
 func (x *ImportStravaPhotosResponse) Reset() {
 	*x = ImportStravaPhotosResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[21]
+	mi := &file_trips_v1_trips_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2266,7 +2420,7 @@ func (x *ImportStravaPhotosResponse) String() string {
 func (*ImportStravaPhotosResponse) ProtoMessage() {}
 
 func (x *ImportStravaPhotosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[21]
+	mi := &file_trips_v1_trips_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2347,7 +2501,7 @@ type UpdateTripPhotoRequest struct {
 
 func (x *UpdateTripPhotoRequest) Reset() {
 	*x = UpdateTripPhotoRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[22]
+	mi := &file_trips_v1_trips_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2359,7 +2513,7 @@ func (x *UpdateTripPhotoRequest) String() string {
 func (*UpdateTripPhotoRequest) ProtoMessage() {}
 
 func (x *UpdateTripPhotoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[22]
+	mi := &file_trips_v1_trips_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2477,7 +2631,7 @@ type UpdateTripPhotoResponse struct {
 
 func (x *UpdateTripPhotoResponse) Reset() {
 	*x = UpdateTripPhotoResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[23]
+	mi := &file_trips_v1_trips_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2489,7 +2643,7 @@ func (x *UpdateTripPhotoResponse) String() string {
 func (*UpdateTripPhotoResponse) ProtoMessage() {}
 
 func (x *UpdateTripPhotoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[23]
+	mi := &file_trips_v1_trips_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2537,29 +2691,29 @@ func (b0 UpdateTripPhotoResponse_builder) Build() *UpdateTripPhotoResponse {
 	return m0
 }
 
-type ReorderTripPhotosRequest struct {
+type SetTripSectionsRequest struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_ReportId string                 `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3"`
-	xxx_hidden_PhotoIds []string               `protobuf:"bytes,2,rep,name=photo_ids,json=photoIds,proto3"`
+	xxx_hidden_Sections *[]*TripSection        `protobuf:"bytes,2,rep,name=sections,proto3"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
 
-func (x *ReorderTripPhotosRequest) Reset() {
-	*x = ReorderTripPhotosRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[24]
+func (x *SetTripSectionsRequest) Reset() {
+	*x = SetTripSectionsRequest{}
+	mi := &file_trips_v1_trips_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReorderTripPhotosRequest) String() string {
+func (x *SetTripSectionsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReorderTripPhotosRequest) ProtoMessage() {}
+func (*SetTripSectionsRequest) ProtoMessage() {}
 
-func (x *ReorderTripPhotosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[24]
+func (x *SetTripSectionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_trips_v1_trips_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2570,68 +2724,71 @@ func (x *ReorderTripPhotosRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ReorderTripPhotosRequest) GetReportId() string {
+func (x *SetTripSectionsRequest) GetReportId() string {
 	if x != nil {
 		return x.xxx_hidden_ReportId
 	}
 	return ""
 }
 
-func (x *ReorderTripPhotosRequest) GetPhotoIds() []string {
+func (x *SetTripSectionsRequest) GetSections() []*TripSection {
 	if x != nil {
-		return x.xxx_hidden_PhotoIds
+		if x.xxx_hidden_Sections != nil {
+			return *x.xxx_hidden_Sections
+		}
 	}
 	return nil
 }
 
-func (x *ReorderTripPhotosRequest) SetReportId(v string) {
+func (x *SetTripSectionsRequest) SetReportId(v string) {
 	x.xxx_hidden_ReportId = v
 }
 
-func (x *ReorderTripPhotosRequest) SetPhotoIds(v []string) {
-	x.xxx_hidden_PhotoIds = v
+func (x *SetTripSectionsRequest) SetSections(v []*TripSection) {
+	x.xxx_hidden_Sections = &v
 }
 
-type ReorderTripPhotosRequest_builder struct {
+type SetTripSectionsRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The ID of the report.
 	ReportId string
-	// The IDs of all the report's photos in the new order.
-	PhotoIds []string
+	// The sections in order, at least one. Photos that aren't listed stay in
+	// their section, or move to the first section if theirs is deleted.
+	Sections []*TripSection
 }
 
-func (b0 ReorderTripPhotosRequest_builder) Build() *ReorderTripPhotosRequest {
-	m0 := &ReorderTripPhotosRequest{}
+func (b0 SetTripSectionsRequest_builder) Build() *SetTripSectionsRequest {
+	m0 := &SetTripSectionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_ReportId = b.ReportId
-	x.xxx_hidden_PhotoIds = b.PhotoIds
+	x.xxx_hidden_Sections = &b.Sections
 	return m0
 }
 
-type ReorderTripPhotosResponse struct {
+type SetTripSectionsResponse struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Photos *[]*TripPhoto          `protobuf:"bytes,1,rep,name=photos,proto3"`
+	xxx_hidden_Report *TripReport            `protobuf:"bytes,1,opt,name=report,proto3"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
-func (x *ReorderTripPhotosResponse) Reset() {
-	*x = ReorderTripPhotosResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[25]
+func (x *SetTripSectionsResponse) Reset() {
+	*x = SetTripSectionsResponse{}
+	mi := &file_trips_v1_trips_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReorderTripPhotosResponse) String() string {
+func (x *SetTripSectionsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReorderTripPhotosResponse) ProtoMessage() {}
+func (*SetTripSectionsResponse) ProtoMessage() {}
 
-func (x *ReorderTripPhotosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[25]
+func (x *SetTripSectionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_trips_v1_trips_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2642,31 +2799,158 @@ func (x *ReorderTripPhotosResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ReorderTripPhotosResponse) GetPhotos() []*TripPhoto {
+func (x *SetTripSectionsResponse) GetReport() *TripReport {
 	if x != nil {
-		if x.xxx_hidden_Photos != nil {
-			return *x.xxx_hidden_Photos
+		return x.xxx_hidden_Report
+	}
+	return nil
+}
+
+func (x *SetTripSectionsResponse) SetReport(v *TripReport) {
+	x.xxx_hidden_Report = v
+}
+
+func (x *SetTripSectionsResponse) HasReport() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Report != nil
+}
+
+func (x *SetTripSectionsResponse) ClearReport() {
+	x.xxx_hidden_Report = nil
+}
+
+type SetTripSectionsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The updated report.
+	Report *TripReport
+}
+
+func (b0 SetTripSectionsResponse_builder) Build() *SetTripSectionsResponse {
+	m0 := &SetTripSectionsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Report = b.Report
+	return m0
+}
+
+type SuggestTripSectionsRequest struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ReportId string                 `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SuggestTripSectionsRequest) Reset() {
+	*x = SuggestTripSectionsRequest{}
+	mi := &file_trips_v1_trips_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SuggestTripSectionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuggestTripSectionsRequest) ProtoMessage() {}
+
+func (x *SuggestTripSectionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_trips_v1_trips_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SuggestTripSectionsRequest) GetReportId() string {
+	if x != nil {
+		return x.xxx_hidden_ReportId
+	}
+	return ""
+}
+
+func (x *SuggestTripSectionsRequest) SetReportId(v string) {
+	x.xxx_hidden_ReportId = v
+}
+
+type SuggestTripSectionsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the report.
+	ReportId string
+}
+
+func (b0 SuggestTripSectionsRequest_builder) Build() *SuggestTripSectionsRequest {
+	m0 := &SuggestTripSectionsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ReportId = b.ReportId
+	return m0
+}
+
+type SuggestTripSectionsResponse struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Sections *[]*TripSection        `protobuf:"bytes,1,rep,name=sections,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SuggestTripSectionsResponse) Reset() {
+	*x = SuggestTripSectionsResponse{}
+	mi := &file_trips_v1_trips_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SuggestTripSectionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuggestTripSectionsResponse) ProtoMessage() {}
+
+func (x *SuggestTripSectionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_trips_v1_trips_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SuggestTripSectionsResponse) GetSections() []*TripSection {
+	if x != nil {
+		if x.xxx_hidden_Sections != nil {
+			return *x.xxx_hidden_Sections
 		}
 	}
 	return nil
 }
 
-func (x *ReorderTripPhotosResponse) SetPhotos(v []*TripPhoto) {
-	x.xxx_hidden_Photos = &v
+func (x *SuggestTripSectionsResponse) SetSections(v []*TripSection) {
+	x.xxx_hidden_Sections = &v
 }
 
-type ReorderTripPhotosResponse_builder struct {
+type SuggestTripSectionsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The photos in the new order.
-	Photos []*TripPhoto
+	// The suggested sections in order, without IDs or text.
+	Sections []*TripSection
 }
 
-func (b0 ReorderTripPhotosResponse_builder) Build() *ReorderTripPhotosResponse {
-	m0 := &ReorderTripPhotosResponse{}
+func (b0 SuggestTripSectionsResponse_builder) Build() *SuggestTripSectionsResponse {
+	m0 := &SuggestTripSectionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Photos = &b.Photos
+	x.xxx_hidden_Sections = &b.Sections
 	return m0
 }
 
@@ -2679,7 +2963,7 @@ type DeleteTripPhotoRequest struct {
 
 func (x *DeleteTripPhotoRequest) Reset() {
 	*x = DeleteTripPhotoRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[26]
+	mi := &file_trips_v1_trips_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2691,7 +2975,7 @@ func (x *DeleteTripPhotoRequest) String() string {
 func (*DeleteTripPhotoRequest) ProtoMessage() {}
 
 func (x *DeleteTripPhotoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[26]
+	mi := &file_trips_v1_trips_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2736,7 +3020,7 @@ type DeleteTripPhotoResponse struct {
 
 func (x *DeleteTripPhotoResponse) Reset() {
 	*x = DeleteTripPhotoResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[27]
+	mi := &file_trips_v1_trips_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2748,7 +3032,7 @@ func (x *DeleteTripPhotoResponse) String() string {
 func (*DeleteTripPhotoResponse) ProtoMessage() {}
 
 func (x *DeleteTripPhotoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[27]
+	mi := &file_trips_v1_trips_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2779,7 +3063,7 @@ type GetProfileRequest struct {
 
 func (x *GetProfileRequest) Reset() {
 	*x = GetProfileRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[28]
+	mi := &file_trips_v1_trips_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2791,7 +3075,7 @@ func (x *GetProfileRequest) String() string {
 func (*GetProfileRequest) ProtoMessage() {}
 
 func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[28]
+	mi := &file_trips_v1_trips_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2824,7 +3108,7 @@ type GetProfileResponse struct {
 
 func (x *GetProfileResponse) Reset() {
 	*x = GetProfileResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[29]
+	mi := &file_trips_v1_trips_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2836,7 +3120,7 @@ func (x *GetProfileResponse) String() string {
 func (*GetProfileResponse) ProtoMessage() {}
 
 func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[29]
+	mi := &file_trips_v1_trips_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2907,7 +3191,7 @@ type UpdateProfileRequest struct {
 
 func (x *UpdateProfileRequest) Reset() {
 	*x = UpdateProfileRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[30]
+	mi := &file_trips_v1_trips_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2919,7 +3203,7 @@ func (x *UpdateProfileRequest) String() string {
 func (*UpdateProfileRequest) ProtoMessage() {}
 
 func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[30]
+	mi := &file_trips_v1_trips_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2976,7 +3260,7 @@ type UpdateProfileResponse struct {
 
 func (x *UpdateProfileResponse) Reset() {
 	*x = UpdateProfileResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[31]
+	mi := &file_trips_v1_trips_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2988,7 +3272,7 @@ func (x *UpdateProfileResponse) String() string {
 func (*UpdateProfileResponse) ProtoMessage() {}
 
 func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[31]
+	mi := &file_trips_v1_trips_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3045,7 +3329,7 @@ type GetPublicProfileRequest struct {
 
 func (x *GetPublicProfileRequest) Reset() {
 	*x = GetPublicProfileRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[32]
+	mi := &file_trips_v1_trips_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3057,7 +3341,7 @@ func (x *GetPublicProfileRequest) String() string {
 func (*GetPublicProfileRequest) ProtoMessage() {}
 
 func (x *GetPublicProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[32]
+	mi := &file_trips_v1_trips_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3104,7 +3388,7 @@ type GetPublicProfileResponse struct {
 
 func (x *GetPublicProfileResponse) Reset() {
 	*x = GetPublicProfileResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[33]
+	mi := &file_trips_v1_trips_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3116,7 +3400,7 @@ func (x *GetPublicProfileResponse) String() string {
 func (*GetPublicProfileResponse) ProtoMessage() {}
 
 func (x *GetPublicProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[33]
+	mi := &file_trips_v1_trips_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3190,7 +3474,7 @@ type GetPublicTripReportRequest struct {
 
 func (x *GetPublicTripReportRequest) Reset() {
 	*x = GetPublicTripReportRequest{}
-	mi := &file_trips_v1_trips_proto_msgTypes[34]
+	mi := &file_trips_v1_trips_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3202,7 +3486,7 @@ func (x *GetPublicTripReportRequest) String() string {
 func (*GetPublicTripReportRequest) ProtoMessage() {}
 
 func (x *GetPublicTripReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[34]
+	mi := &file_trips_v1_trips_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3264,7 +3548,7 @@ type GetPublicTripReportResponse struct {
 
 func (x *GetPublicTripReportResponse) Reset() {
 	*x = GetPublicTripReportResponse{}
-	mi := &file_trips_v1_trips_proto_msgTypes[35]
+	mi := &file_trips_v1_trips_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3276,7 +3560,7 @@ func (x *GetPublicTripReportResponse) String() string {
 func (*GetPublicTripReportResponse) ProtoMessage() {}
 
 func (x *GetPublicTripReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trips_v1_trips_proto_msgTypes[35]
+	mi := &file_trips_v1_trips_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3369,7 +3653,7 @@ var File_trips_v1_trips_proto protoreflect.FileDescriptor
 
 const file_trips_v1_trips_proto_rawDesc = "" +
 	"\n" +
-	"\x14trips/v1/trips.proto\x12\btrips.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xeb\x04\n" +
+	"\x14trips/v1/trips.proto\x12\btrips.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xc0\x05\n" +
 	"\n" +
 	"TripReport\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12'\n" +
@@ -3377,7 +3661,6 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"activityId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
 	"\x04slug\x18\x04 \x01(\tR\x04slug\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\tR\x04body\x12\x12\n" +
 	"\x04date\x18\x06 \x01(\tR\x04date\x121\n" +
 	"\x05stats\x18\a \x01(\v2\x13.trips.v1.TripStatsB\x06\xaa\x9f\x19\x02\b\x01R\x05stats\x12$\n" +
 	"\tpublished\x18\b \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\tpublished\x12E\n" +
@@ -3390,7 +3673,18 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\vupdate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"updateTime\x12#\n" +
 	"\thas_track\x18\x0e \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\x12,\n" +
-	"\x12hidden_ends_meters\x18\x0f \x01(\x05R\x10hiddenEndsMeters\"\xc0\x02\n" +
+	"\x12hidden_ends_meters\x18\x0f \x01(\x05R\x10hiddenEndsMeters\x129\n" +
+	"\bsections\x18\x10 \x03(\v2\x15.trips.v1.TripSectionB\x06\xaa\x9f\x19\x02\b\x01R\bsections\x12 \n" +
+	"\aexcerpt\x18\x11 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\aexcerptJ\x04\b\x05\x10\x06R\x04body\"\x84\x02\n" +
+	"\vTripSection\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x127\n" +
+	"\x15start_distance_meters\x18\x04 \x01(\x01H\x00R\x13startDistanceMeters\x88\x01\x01\x123\n" +
+	"\x13end_distance_meters\x18\x05 \x01(\x01H\x01R\x11endDistanceMeters\x88\x01\x01\x12\x1b\n" +
+	"\tphoto_ids\x18\x06 \x03(\tR\bphotoIdsB\x18\n" +
+	"\x16_start_distance_metersB\x16\n" +
+	"\x14_end_distance_meters\"\xc0\x02\n" +
 	"\tTripStats\x12\x1d\n" +
 	"\n" +
 	"sport_type\x18\x01 \x01(\tR\tsportType\x129\n" +
@@ -3435,19 +3729,17 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\vactivity_id\x18\x01 \x01(\tR\n" +
 	"activityId\"I\n" +
 	"\x17ListTripReportsResponse\x12.\n" +
-	"\areports\x18\x01 \x03(\v2\x14.trips.v1.TripReportR\areports\"\xfe\x01\n" +
+	"\areports\x18\x01 \x03(\v2\x14.trips.v1.TripReportR\areports\"\xe8\x01\n" +
 	"\x17UpdateTripReportRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x17\n" +
 	"\x04slug\x18\x03 \x01(\tH\x01R\x04slug\x88\x01\x01\x12\x17\n" +
-	"\x04body\x18\x04 \x01(\tH\x02R\x04body\x88\x01\x01\x12\x17\n" +
-	"\x04date\x18\x05 \x01(\tH\x03R\x04date\x88\x01\x01\x121\n" +
-	"\x12hidden_ends_meters\x18\x06 \x01(\x05H\x04R\x10hiddenEndsMeters\x88\x01\x01B\b\n" +
+	"\x04date\x18\x05 \x01(\tH\x02R\x04date\x88\x01\x01\x121\n" +
+	"\x12hidden_ends_meters\x18\x06 \x01(\x05H\x03R\x10hiddenEndsMeters\x88\x01\x01B\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_slugB\a\n" +
-	"\x05_bodyB\a\n" +
 	"\x05_dateB\x15\n" +
-	"\x13_hidden_ends_meters\"H\n" +
+	"\x13_hidden_ends_metersJ\x04\b\x04\x10\x05R\x04body\"H\n" +
 	"\x18UpdateTripReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.trips.v1.TripReportR\x06report\")\n" +
 	"\x17DeleteTripReportRequest\x12\x0e\n" +
@@ -3485,12 +3777,16 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\n" +
 	"\b_caption\"D\n" +
 	"\x17UpdateTripPhotoResponse\x12)\n" +
-	"\x05photo\x18\x01 \x01(\v2\x13.trips.v1.TripPhotoR\x05photo\"T\n" +
-	"\x18ReorderTripPhotosRequest\x12\x1b\n" +
-	"\treport_id\x18\x01 \x01(\tR\breportId\x12\x1b\n" +
-	"\tphoto_ids\x18\x02 \x03(\tR\bphotoIds\"H\n" +
-	"\x19ReorderTripPhotosResponse\x12+\n" +
-	"\x06photos\x18\x01 \x03(\v2\x13.trips.v1.TripPhotoR\x06photos\"(\n" +
+	"\x05photo\x18\x01 \x01(\v2\x13.trips.v1.TripPhotoR\x05photo\"h\n" +
+	"\x16SetTripSectionsRequest\x12\x1b\n" +
+	"\treport_id\x18\x01 \x01(\tR\breportId\x121\n" +
+	"\bsections\x18\x02 \x03(\v2\x15.trips.v1.TripSectionR\bsections\"G\n" +
+	"\x17SetTripSectionsResponse\x12,\n" +
+	"\x06report\x18\x01 \x01(\v2\x14.trips.v1.TripReportR\x06report\"9\n" +
+	"\x1aSuggestTripSectionsRequest\x12\x1b\n" +
+	"\treport_id\x18\x01 \x01(\tR\breportId\"P\n" +
+	"\x1bSuggestTripSectionsResponse\x121\n" +
+	"\bsections\x18\x01 \x03(\v2\x15.trips.v1.TripSectionR\bsections\"(\n" +
 	"\x16DeleteTripPhotoRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x19\n" +
 	"\x17DeleteTripPhotoResponse\"\x13\n" +
@@ -3518,7 +3814,7 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\x1bLOCATION_SOURCE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13LOCATION_SOURCE_GPS\x10\x01\x12\x1e\n" +
 	"\x1aLOCATION_SOURCE_TRACK_TIME\x10\x02\x12\x1a\n" +
-	"\x16LOCATION_SOURCE_MANUAL\x10\x032\xe9\v\n" +
+	"\x16LOCATION_SOURCE_MANUAL\x10\x032\xc7\f\n" +
 	"\x11TripReportService\x12Y\n" +
 	"\x10CreateTripReport\x12!.trips.v1.CreateTripReportRequest\x1a\".trips.v1.CreateTripReportResponse\x12P\n" +
 	"\rGetTripReport\x12\x1e.trips.v1.GetTripReportRequest\x1a\x1f.trips.v1.GetTripReportResponse\x12V\n" +
@@ -3529,8 +3825,9 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\x13UnpublishTripReport\x12$.trips.v1.UnpublishTripReportRequest\x1a%.trips.v1.UnpublishTripReportResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12^\n" +
 	"\x0fUploadTripPhoto\x12 .trips.v1.UploadTripPhotoRequest\x1a!.trips.v1.UploadTripPhotoResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12g\n" +
 	"\x12ImportStravaPhotos\x12#.trips.v1.ImportStravaPhotosRequest\x1a$.trips.v1.ImportStravaPhotosResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12V\n" +
-	"\x0fUpdateTripPhoto\x12 .trips.v1.UpdateTripPhotoRequest\x1a!.trips.v1.UpdateTripPhotoResponse\x12\\\n" +
-	"\x11ReorderTripPhotos\x12\".trips.v1.ReorderTripPhotosRequest\x1a#.trips.v1.ReorderTripPhotosResponse\x12V\n" +
+	"\x0fUpdateTripPhoto\x12 .trips.v1.UpdateTripPhotoRequest\x1a!.trips.v1.UpdateTripPhotoResponse\x12V\n" +
+	"\x0fSetTripSections\x12 .trips.v1.SetTripSectionsRequest\x1a!.trips.v1.SetTripSectionsResponse\x12b\n" +
+	"\x13SuggestTripSections\x12$.trips.v1.SuggestTripSectionsRequest\x1a%.trips.v1.SuggestTripSectionsResponse\x12V\n" +
 	"\x0fDeleteTripPhoto\x12 .trips.v1.DeleteTripPhotoRequest\x1a!.trips.v1.DeleteTripPhotoResponse\x12G\n" +
 	"\n" +
 	"GetProfile\x12\x1b.trips.v1.GetProfileRequest\x1a\x1c.trips.v1.GetProfileResponse\x12X\n" +
@@ -3541,118 +3838,126 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"TripsProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/trips/v1;tripsv1\xa2\x02\x03TXX\xaa\x02\bTrips.V1\xca\x02\bTrips\\V1\xe2\x02\x14Trips\\V1\\GPBMetadata\xea\x02\tTrips::V1b\x06proto3"
 
 var file_trips_v1_trips_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_trips_v1_trips_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_trips_v1_trips_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_trips_v1_trips_proto_goTypes = []any{
 	(LocationSource)(0),                 // 0: trips.v1.LocationSource
 	(*TripReport)(nil),                  // 1: trips.v1.TripReport
-	(*TripStats)(nil),                   // 2: trips.v1.TripStats
-	(*TripPhoto)(nil),                   // 3: trips.v1.TripPhoto
-	(*Profile)(nil),                     // 4: trips.v1.Profile
-	(*CreateTripReportRequest)(nil),     // 5: trips.v1.CreateTripReportRequest
-	(*CreateTripReportResponse)(nil),    // 6: trips.v1.CreateTripReportResponse
-	(*GetTripReportRequest)(nil),        // 7: trips.v1.GetTripReportRequest
-	(*GetTripReportResponse)(nil),       // 8: trips.v1.GetTripReportResponse
-	(*ListTripReportsRequest)(nil),      // 9: trips.v1.ListTripReportsRequest
-	(*ListTripReportsResponse)(nil),     // 10: trips.v1.ListTripReportsResponse
-	(*UpdateTripReportRequest)(nil),     // 11: trips.v1.UpdateTripReportRequest
-	(*UpdateTripReportResponse)(nil),    // 12: trips.v1.UpdateTripReportResponse
-	(*DeleteTripReportRequest)(nil),     // 13: trips.v1.DeleteTripReportRequest
-	(*DeleteTripReportResponse)(nil),    // 14: trips.v1.DeleteTripReportResponse
-	(*PublishTripReportRequest)(nil),    // 15: trips.v1.PublishTripReportRequest
-	(*PublishTripReportResponse)(nil),   // 16: trips.v1.PublishTripReportResponse
-	(*UnpublishTripReportRequest)(nil),  // 17: trips.v1.UnpublishTripReportRequest
-	(*UnpublishTripReportResponse)(nil), // 18: trips.v1.UnpublishTripReportResponse
-	(*UploadTripPhotoRequest)(nil),      // 19: trips.v1.UploadTripPhotoRequest
-	(*UploadTripPhotoResponse)(nil),     // 20: trips.v1.UploadTripPhotoResponse
-	(*ImportStravaPhotosRequest)(nil),   // 21: trips.v1.ImportStravaPhotosRequest
-	(*ImportStravaPhotosResponse)(nil),  // 22: trips.v1.ImportStravaPhotosResponse
-	(*UpdateTripPhotoRequest)(nil),      // 23: trips.v1.UpdateTripPhotoRequest
-	(*UpdateTripPhotoResponse)(nil),     // 24: trips.v1.UpdateTripPhotoResponse
-	(*ReorderTripPhotosRequest)(nil),    // 25: trips.v1.ReorderTripPhotosRequest
-	(*ReorderTripPhotosResponse)(nil),   // 26: trips.v1.ReorderTripPhotosResponse
-	(*DeleteTripPhotoRequest)(nil),      // 27: trips.v1.DeleteTripPhotoRequest
-	(*DeleteTripPhotoResponse)(nil),     // 28: trips.v1.DeleteTripPhotoResponse
-	(*GetProfileRequest)(nil),           // 29: trips.v1.GetProfileRequest
-	(*GetProfileResponse)(nil),          // 30: trips.v1.GetProfileResponse
-	(*UpdateProfileRequest)(nil),        // 31: trips.v1.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),       // 32: trips.v1.UpdateProfileResponse
-	(*GetPublicProfileRequest)(nil),     // 33: trips.v1.GetPublicProfileRequest
-	(*GetPublicProfileResponse)(nil),    // 34: trips.v1.GetPublicProfileResponse
-	(*GetPublicTripReportRequest)(nil),  // 35: trips.v1.GetPublicTripReportRequest
-	(*GetPublicTripReportResponse)(nil), // 36: trips.v1.GetPublicTripReportResponse
-	(*timestamppb.Timestamp)(nil),       // 37: google.protobuf.Timestamp
-	(*v1.LatLng)(nil),                   // 38: geo.v1.LatLng
-	(*v11.RoutePoint)(nil),              // 39: routes.v1.RoutePoint
+	(*TripSection)(nil),                 // 2: trips.v1.TripSection
+	(*TripStats)(nil),                   // 3: trips.v1.TripStats
+	(*TripPhoto)(nil),                   // 4: trips.v1.TripPhoto
+	(*Profile)(nil),                     // 5: trips.v1.Profile
+	(*CreateTripReportRequest)(nil),     // 6: trips.v1.CreateTripReportRequest
+	(*CreateTripReportResponse)(nil),    // 7: trips.v1.CreateTripReportResponse
+	(*GetTripReportRequest)(nil),        // 8: trips.v1.GetTripReportRequest
+	(*GetTripReportResponse)(nil),       // 9: trips.v1.GetTripReportResponse
+	(*ListTripReportsRequest)(nil),      // 10: trips.v1.ListTripReportsRequest
+	(*ListTripReportsResponse)(nil),     // 11: trips.v1.ListTripReportsResponse
+	(*UpdateTripReportRequest)(nil),     // 12: trips.v1.UpdateTripReportRequest
+	(*UpdateTripReportResponse)(nil),    // 13: trips.v1.UpdateTripReportResponse
+	(*DeleteTripReportRequest)(nil),     // 14: trips.v1.DeleteTripReportRequest
+	(*DeleteTripReportResponse)(nil),    // 15: trips.v1.DeleteTripReportResponse
+	(*PublishTripReportRequest)(nil),    // 16: trips.v1.PublishTripReportRequest
+	(*PublishTripReportResponse)(nil),   // 17: trips.v1.PublishTripReportResponse
+	(*UnpublishTripReportRequest)(nil),  // 18: trips.v1.UnpublishTripReportRequest
+	(*UnpublishTripReportResponse)(nil), // 19: trips.v1.UnpublishTripReportResponse
+	(*UploadTripPhotoRequest)(nil),      // 20: trips.v1.UploadTripPhotoRequest
+	(*UploadTripPhotoResponse)(nil),     // 21: trips.v1.UploadTripPhotoResponse
+	(*ImportStravaPhotosRequest)(nil),   // 22: trips.v1.ImportStravaPhotosRequest
+	(*ImportStravaPhotosResponse)(nil),  // 23: trips.v1.ImportStravaPhotosResponse
+	(*UpdateTripPhotoRequest)(nil),      // 24: trips.v1.UpdateTripPhotoRequest
+	(*UpdateTripPhotoResponse)(nil),     // 25: trips.v1.UpdateTripPhotoResponse
+	(*SetTripSectionsRequest)(nil),      // 26: trips.v1.SetTripSectionsRequest
+	(*SetTripSectionsResponse)(nil),     // 27: trips.v1.SetTripSectionsResponse
+	(*SuggestTripSectionsRequest)(nil),  // 28: trips.v1.SuggestTripSectionsRequest
+	(*SuggestTripSectionsResponse)(nil), // 29: trips.v1.SuggestTripSectionsResponse
+	(*DeleteTripPhotoRequest)(nil),      // 30: trips.v1.DeleteTripPhotoRequest
+	(*DeleteTripPhotoResponse)(nil),     // 31: trips.v1.DeleteTripPhotoResponse
+	(*GetProfileRequest)(nil),           // 32: trips.v1.GetProfileRequest
+	(*GetProfileResponse)(nil),          // 33: trips.v1.GetProfileResponse
+	(*UpdateProfileRequest)(nil),        // 34: trips.v1.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),       // 35: trips.v1.UpdateProfileResponse
+	(*GetPublicProfileRequest)(nil),     // 36: trips.v1.GetPublicProfileRequest
+	(*GetPublicProfileResponse)(nil),    // 37: trips.v1.GetPublicProfileResponse
+	(*GetPublicTripReportRequest)(nil),  // 38: trips.v1.GetPublicTripReportRequest
+	(*GetPublicTripReportResponse)(nil), // 39: trips.v1.GetPublicTripReportResponse
+	(*timestamppb.Timestamp)(nil),       // 40: google.protobuf.Timestamp
+	(*v1.LatLng)(nil),                   // 41: geo.v1.LatLng
+	(*v11.RoutePoint)(nil),              // 42: routes.v1.RoutePoint
 }
 var file_trips_v1_trips_proto_depIdxs = []int32{
-	2,  // 0: trips.v1.TripReport.stats:type_name -> trips.v1.TripStats
-	37, // 1: trips.v1.TripReport.publish_time:type_name -> google.protobuf.Timestamp
-	3,  // 2: trips.v1.TripReport.photos:type_name -> trips.v1.TripPhoto
-	37, // 3: trips.v1.TripReport.create_time:type_name -> google.protobuf.Timestamp
-	37, // 4: trips.v1.TripReport.update_time:type_name -> google.protobuf.Timestamp
-	37, // 5: trips.v1.TripStats.start_time:type_name -> google.protobuf.Timestamp
-	38, // 6: trips.v1.TripPhoto.location:type_name -> geo.v1.LatLng
-	0,  // 7: trips.v1.TripPhoto.location_source:type_name -> trips.v1.LocationSource
-	37, // 8: trips.v1.TripPhoto.taken_time:type_name -> google.protobuf.Timestamp
-	1,  // 9: trips.v1.CreateTripReportResponse.report:type_name -> trips.v1.TripReport
-	1,  // 10: trips.v1.GetTripReportResponse.report:type_name -> trips.v1.TripReport
-	39, // 11: trips.v1.GetTripReportResponse.track:type_name -> routes.v1.RoutePoint
-	1,  // 12: trips.v1.ListTripReportsResponse.reports:type_name -> trips.v1.TripReport
-	1,  // 13: trips.v1.UpdateTripReportResponse.report:type_name -> trips.v1.TripReport
-	1,  // 14: trips.v1.PublishTripReportResponse.report:type_name -> trips.v1.TripReport
-	1,  // 15: trips.v1.UnpublishTripReportResponse.report:type_name -> trips.v1.TripReport
-	38, // 16: trips.v1.UploadTripPhotoRequest.location:type_name -> geo.v1.LatLng
-	37, // 17: trips.v1.UploadTripPhotoRequest.taken_time:type_name -> google.protobuf.Timestamp
-	3,  // 18: trips.v1.UploadTripPhotoResponse.photo:type_name -> trips.v1.TripPhoto
-	3,  // 19: trips.v1.ImportStravaPhotosResponse.photos:type_name -> trips.v1.TripPhoto
-	38, // 20: trips.v1.UpdateTripPhotoRequest.location:type_name -> geo.v1.LatLng
-	3,  // 21: trips.v1.UpdateTripPhotoResponse.photo:type_name -> trips.v1.TripPhoto
-	3,  // 22: trips.v1.ReorderTripPhotosResponse.photos:type_name -> trips.v1.TripPhoto
-	4,  // 23: trips.v1.GetProfileResponse.profile:type_name -> trips.v1.Profile
-	4,  // 24: trips.v1.UpdateProfileRequest.profile:type_name -> trips.v1.Profile
-	4,  // 25: trips.v1.UpdateProfileResponse.profile:type_name -> trips.v1.Profile
-	4,  // 26: trips.v1.GetPublicProfileResponse.profile:type_name -> trips.v1.Profile
-	1,  // 27: trips.v1.GetPublicProfileResponse.reports:type_name -> trips.v1.TripReport
-	1,  // 28: trips.v1.GetPublicTripReportResponse.report:type_name -> trips.v1.TripReport
-	4,  // 29: trips.v1.GetPublicTripReportResponse.author:type_name -> trips.v1.Profile
-	39, // 30: trips.v1.GetPublicTripReportResponse.track:type_name -> routes.v1.RoutePoint
-	5,  // 31: trips.v1.TripReportService.CreateTripReport:input_type -> trips.v1.CreateTripReportRequest
-	7,  // 32: trips.v1.TripReportService.GetTripReport:input_type -> trips.v1.GetTripReportRequest
-	9,  // 33: trips.v1.TripReportService.ListTripReports:input_type -> trips.v1.ListTripReportsRequest
-	11, // 34: trips.v1.TripReportService.UpdateTripReport:input_type -> trips.v1.UpdateTripReportRequest
-	13, // 35: trips.v1.TripReportService.DeleteTripReport:input_type -> trips.v1.DeleteTripReportRequest
-	15, // 36: trips.v1.TripReportService.PublishTripReport:input_type -> trips.v1.PublishTripReportRequest
-	17, // 37: trips.v1.TripReportService.UnpublishTripReport:input_type -> trips.v1.UnpublishTripReportRequest
-	19, // 38: trips.v1.TripReportService.UploadTripPhoto:input_type -> trips.v1.UploadTripPhotoRequest
-	21, // 39: trips.v1.TripReportService.ImportStravaPhotos:input_type -> trips.v1.ImportStravaPhotosRequest
-	23, // 40: trips.v1.TripReportService.UpdateTripPhoto:input_type -> trips.v1.UpdateTripPhotoRequest
-	25, // 41: trips.v1.TripReportService.ReorderTripPhotos:input_type -> trips.v1.ReorderTripPhotosRequest
-	27, // 42: trips.v1.TripReportService.DeleteTripPhoto:input_type -> trips.v1.DeleteTripPhotoRequest
-	29, // 43: trips.v1.TripReportService.GetProfile:input_type -> trips.v1.GetProfileRequest
-	31, // 44: trips.v1.TripReportService.UpdateProfile:input_type -> trips.v1.UpdateProfileRequest
-	33, // 45: trips.v1.TripReportService.GetPublicProfile:input_type -> trips.v1.GetPublicProfileRequest
-	35, // 46: trips.v1.TripReportService.GetPublicTripReport:input_type -> trips.v1.GetPublicTripReportRequest
-	6,  // 47: trips.v1.TripReportService.CreateTripReport:output_type -> trips.v1.CreateTripReportResponse
-	8,  // 48: trips.v1.TripReportService.GetTripReport:output_type -> trips.v1.GetTripReportResponse
-	10, // 49: trips.v1.TripReportService.ListTripReports:output_type -> trips.v1.ListTripReportsResponse
-	12, // 50: trips.v1.TripReportService.UpdateTripReport:output_type -> trips.v1.UpdateTripReportResponse
-	14, // 51: trips.v1.TripReportService.DeleteTripReport:output_type -> trips.v1.DeleteTripReportResponse
-	16, // 52: trips.v1.TripReportService.PublishTripReport:output_type -> trips.v1.PublishTripReportResponse
-	18, // 53: trips.v1.TripReportService.UnpublishTripReport:output_type -> trips.v1.UnpublishTripReportResponse
-	20, // 54: trips.v1.TripReportService.UploadTripPhoto:output_type -> trips.v1.UploadTripPhotoResponse
-	22, // 55: trips.v1.TripReportService.ImportStravaPhotos:output_type -> trips.v1.ImportStravaPhotosResponse
-	24, // 56: trips.v1.TripReportService.UpdateTripPhoto:output_type -> trips.v1.UpdateTripPhotoResponse
-	26, // 57: trips.v1.TripReportService.ReorderTripPhotos:output_type -> trips.v1.ReorderTripPhotosResponse
-	28, // 58: trips.v1.TripReportService.DeleteTripPhoto:output_type -> trips.v1.DeleteTripPhotoResponse
-	30, // 59: trips.v1.TripReportService.GetProfile:output_type -> trips.v1.GetProfileResponse
-	32, // 60: trips.v1.TripReportService.UpdateProfile:output_type -> trips.v1.UpdateProfileResponse
-	34, // 61: trips.v1.TripReportService.GetPublicProfile:output_type -> trips.v1.GetPublicProfileResponse
-	36, // 62: trips.v1.TripReportService.GetPublicTripReport:output_type -> trips.v1.GetPublicTripReportResponse
-	47, // [47:63] is the sub-list for method output_type
-	31, // [31:47] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	3,  // 0: trips.v1.TripReport.stats:type_name -> trips.v1.TripStats
+	40, // 1: trips.v1.TripReport.publish_time:type_name -> google.protobuf.Timestamp
+	4,  // 2: trips.v1.TripReport.photos:type_name -> trips.v1.TripPhoto
+	40, // 3: trips.v1.TripReport.create_time:type_name -> google.protobuf.Timestamp
+	40, // 4: trips.v1.TripReport.update_time:type_name -> google.protobuf.Timestamp
+	2,  // 5: trips.v1.TripReport.sections:type_name -> trips.v1.TripSection
+	40, // 6: trips.v1.TripStats.start_time:type_name -> google.protobuf.Timestamp
+	41, // 7: trips.v1.TripPhoto.location:type_name -> geo.v1.LatLng
+	0,  // 8: trips.v1.TripPhoto.location_source:type_name -> trips.v1.LocationSource
+	40, // 9: trips.v1.TripPhoto.taken_time:type_name -> google.protobuf.Timestamp
+	1,  // 10: trips.v1.CreateTripReportResponse.report:type_name -> trips.v1.TripReport
+	1,  // 11: trips.v1.GetTripReportResponse.report:type_name -> trips.v1.TripReport
+	42, // 12: trips.v1.GetTripReportResponse.track:type_name -> routes.v1.RoutePoint
+	1,  // 13: trips.v1.ListTripReportsResponse.reports:type_name -> trips.v1.TripReport
+	1,  // 14: trips.v1.UpdateTripReportResponse.report:type_name -> trips.v1.TripReport
+	1,  // 15: trips.v1.PublishTripReportResponse.report:type_name -> trips.v1.TripReport
+	1,  // 16: trips.v1.UnpublishTripReportResponse.report:type_name -> trips.v1.TripReport
+	41, // 17: trips.v1.UploadTripPhotoRequest.location:type_name -> geo.v1.LatLng
+	40, // 18: trips.v1.UploadTripPhotoRequest.taken_time:type_name -> google.protobuf.Timestamp
+	4,  // 19: trips.v1.UploadTripPhotoResponse.photo:type_name -> trips.v1.TripPhoto
+	4,  // 20: trips.v1.ImportStravaPhotosResponse.photos:type_name -> trips.v1.TripPhoto
+	41, // 21: trips.v1.UpdateTripPhotoRequest.location:type_name -> geo.v1.LatLng
+	4,  // 22: trips.v1.UpdateTripPhotoResponse.photo:type_name -> trips.v1.TripPhoto
+	2,  // 23: trips.v1.SetTripSectionsRequest.sections:type_name -> trips.v1.TripSection
+	1,  // 24: trips.v1.SetTripSectionsResponse.report:type_name -> trips.v1.TripReport
+	2,  // 25: trips.v1.SuggestTripSectionsResponse.sections:type_name -> trips.v1.TripSection
+	5,  // 26: trips.v1.GetProfileResponse.profile:type_name -> trips.v1.Profile
+	5,  // 27: trips.v1.UpdateProfileRequest.profile:type_name -> trips.v1.Profile
+	5,  // 28: trips.v1.UpdateProfileResponse.profile:type_name -> trips.v1.Profile
+	5,  // 29: trips.v1.GetPublicProfileResponse.profile:type_name -> trips.v1.Profile
+	1,  // 30: trips.v1.GetPublicProfileResponse.reports:type_name -> trips.v1.TripReport
+	1,  // 31: trips.v1.GetPublicTripReportResponse.report:type_name -> trips.v1.TripReport
+	5,  // 32: trips.v1.GetPublicTripReportResponse.author:type_name -> trips.v1.Profile
+	42, // 33: trips.v1.GetPublicTripReportResponse.track:type_name -> routes.v1.RoutePoint
+	6,  // 34: trips.v1.TripReportService.CreateTripReport:input_type -> trips.v1.CreateTripReportRequest
+	8,  // 35: trips.v1.TripReportService.GetTripReport:input_type -> trips.v1.GetTripReportRequest
+	10, // 36: trips.v1.TripReportService.ListTripReports:input_type -> trips.v1.ListTripReportsRequest
+	12, // 37: trips.v1.TripReportService.UpdateTripReport:input_type -> trips.v1.UpdateTripReportRequest
+	14, // 38: trips.v1.TripReportService.DeleteTripReport:input_type -> trips.v1.DeleteTripReportRequest
+	16, // 39: trips.v1.TripReportService.PublishTripReport:input_type -> trips.v1.PublishTripReportRequest
+	18, // 40: trips.v1.TripReportService.UnpublishTripReport:input_type -> trips.v1.UnpublishTripReportRequest
+	20, // 41: trips.v1.TripReportService.UploadTripPhoto:input_type -> trips.v1.UploadTripPhotoRequest
+	22, // 42: trips.v1.TripReportService.ImportStravaPhotos:input_type -> trips.v1.ImportStravaPhotosRequest
+	24, // 43: trips.v1.TripReportService.UpdateTripPhoto:input_type -> trips.v1.UpdateTripPhotoRequest
+	26, // 44: trips.v1.TripReportService.SetTripSections:input_type -> trips.v1.SetTripSectionsRequest
+	28, // 45: trips.v1.TripReportService.SuggestTripSections:input_type -> trips.v1.SuggestTripSectionsRequest
+	30, // 46: trips.v1.TripReportService.DeleteTripPhoto:input_type -> trips.v1.DeleteTripPhotoRequest
+	32, // 47: trips.v1.TripReportService.GetProfile:input_type -> trips.v1.GetProfileRequest
+	34, // 48: trips.v1.TripReportService.UpdateProfile:input_type -> trips.v1.UpdateProfileRequest
+	36, // 49: trips.v1.TripReportService.GetPublicProfile:input_type -> trips.v1.GetPublicProfileRequest
+	38, // 50: trips.v1.TripReportService.GetPublicTripReport:input_type -> trips.v1.GetPublicTripReportRequest
+	7,  // 51: trips.v1.TripReportService.CreateTripReport:output_type -> trips.v1.CreateTripReportResponse
+	9,  // 52: trips.v1.TripReportService.GetTripReport:output_type -> trips.v1.GetTripReportResponse
+	11, // 53: trips.v1.TripReportService.ListTripReports:output_type -> trips.v1.ListTripReportsResponse
+	13, // 54: trips.v1.TripReportService.UpdateTripReport:output_type -> trips.v1.UpdateTripReportResponse
+	15, // 55: trips.v1.TripReportService.DeleteTripReport:output_type -> trips.v1.DeleteTripReportResponse
+	17, // 56: trips.v1.TripReportService.PublishTripReport:output_type -> trips.v1.PublishTripReportResponse
+	19, // 57: trips.v1.TripReportService.UnpublishTripReport:output_type -> trips.v1.UnpublishTripReportResponse
+	21, // 58: trips.v1.TripReportService.UploadTripPhoto:output_type -> trips.v1.UploadTripPhotoResponse
+	23, // 59: trips.v1.TripReportService.ImportStravaPhotos:output_type -> trips.v1.ImportStravaPhotosResponse
+	25, // 60: trips.v1.TripReportService.UpdateTripPhoto:output_type -> trips.v1.UpdateTripPhotoResponse
+	27, // 61: trips.v1.TripReportService.SetTripSections:output_type -> trips.v1.SetTripSectionsResponse
+	29, // 62: trips.v1.TripReportService.SuggestTripSections:output_type -> trips.v1.SuggestTripSectionsResponse
+	31, // 63: trips.v1.TripReportService.DeleteTripPhoto:output_type -> trips.v1.DeleteTripPhotoResponse
+	33, // 64: trips.v1.TripReportService.GetProfile:output_type -> trips.v1.GetProfileResponse
+	35, // 65: trips.v1.TripReportService.UpdateProfile:output_type -> trips.v1.UpdateProfileResponse
+	37, // 66: trips.v1.TripReportService.GetPublicProfile:output_type -> trips.v1.GetPublicProfileResponse
+	39, // 67: trips.v1.TripReportService.GetPublicTripReport:output_type -> trips.v1.GetPublicTripReportResponse
+	51, // [51:68] is the sub-list for method output_type
+	34, // [34:51] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_trips_v1_trips_proto_init() }
@@ -3660,16 +3965,17 @@ func file_trips_v1_trips_proto_init() {
 	if File_trips_v1_trips_proto != nil {
 		return
 	}
-	file_trips_v1_trips_proto_msgTypes[2].OneofWrappers = []any{}
-	file_trips_v1_trips_proto_msgTypes[10].OneofWrappers = []any{}
-	file_trips_v1_trips_proto_msgTypes[22].OneofWrappers = []any{}
+	file_trips_v1_trips_proto_msgTypes[1].OneofWrappers = []any{}
+	file_trips_v1_trips_proto_msgTypes[3].OneofWrappers = []any{}
+	file_trips_v1_trips_proto_msgTypes[11].OneofWrappers = []any{}
+	file_trips_v1_trips_proto_msgTypes[23].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_trips_v1_trips_proto_rawDesc), len(file_trips_v1_trips_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   36,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

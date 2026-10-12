@@ -38,7 +38,7 @@ type TripRepository interface {
 	GetProfileByHandle(ctx context.Context, handle string) (*trips.Profile, error)
 	UpsertProfile(ctx context.Context, p *trips.Profile) (*trips.Profile, error)
 	GetUserName(ctx context.Context, userID pgtype.UUID) (string, error)
-	CreateReport(ctx context.Context, report *trips.Report) (*trips.Report, error)
+	CreateReport(ctx context.Context, report *trips.Report, body string) (*trips.Report, error)
 	GetReport(ctx context.Context, userID, reportID pgtype.UUID) (*trips.Report, error)
 	GetReportBySlug(ctx context.Context, userID pgtype.UUID, slug string) (*trips.Report, error)
 	ListReports(ctx context.Context, userID pgtype.UUID, filter trips.ListReportsFilter) ([]*trips.Report, error)
@@ -51,7 +51,9 @@ type TripRepository interface {
 	GetPhotoAccess(ctx context.Context, photoID pgtype.UUID) (*trips.PhotoAccess, error)
 	UpdatePhotoCaption(ctx context.Context, userID, photoID pgtype.UUID, caption string) (*trips.Photo, error)
 	UpdatePhotoLocation(ctx context.Context, userID, photoID pgtype.UUID, loc *trips.Location) (*trips.Photo, error)
-	ReorderPhotos(ctx context.Context, userID, reportID pgtype.UUID, photoIDs []pgtype.UUID) ([]*trips.Photo, error)
+	SetSections(ctx context.Context, userID, reportID pgtype.UUID, sections []*trips.Section) ([]*trips.Section, error)
+	ListSections(ctx context.Context, reportIDs ...pgtype.UUID) (map[pgtype.UUID][]*trips.Section, error)
+	ListExcerpts(ctx context.Context, reportIDs ...pgtype.UUID) (map[pgtype.UUID]string, error)
 	DeletePhoto(ctx context.Context, userID, photoID pgtype.UUID) (string, error)
 }
 
@@ -106,7 +108,13 @@ const (
 	PhotoPath = "/photos/"
 
 	maxTitleLength = 200
-	maxBodyLength  = 100_000
+	// maxBodyLength is the most characters of text of all of a report's
+	// sections.
+	maxBodyLength = 100_000
+	// maxSections is the most sections a report can have.
+	maxSections = 50
+	// excerptLength is the length of the excerpts of reports in lists.
+	excerptLength = 220
 	// maxHiddenEndsMeters is the largest radius hidden around the ends of a
 	// public track.
 	maxHiddenEndsMeters  = 2000
@@ -129,12 +137,14 @@ func (s *Service) CreateTripReport(ctx context.Context, req *tripsv1.CreateTripR
 		Date:     dateOf(s.nowFn().UTC()),
 		Timezone: "UTC",
 	}
+	// The text of the report's first section.
+	var body string
 	if req.GetActivityId() != "" {
 		activityID, err := store.StringToUUID(req.GetActivityId())
 		if err != nil {
 			return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
 		}
-		if err := s.fillFromActivity(ctx, report, activityID); err != nil {
+		if body, err = s.fillFromActivity(ctx, report, activityID); err != nil {
 			return nil, err
 		}
 	}
@@ -154,7 +164,7 @@ func (s *Service) CreateTripReport(ctx context.Context, req *tripsv1.CreateTripR
 			suffix := fmt.Sprintf("-%d", i)
 			report.Slug = strings.TrimRight(base[:min(len(base), maxSlugLength-len(suffix))], "-") + suffix
 		}
-		created, err := s.repo.CreateReport(ctx, report)
+		created, err := s.repo.CreateReport(ctx, report, body)
 		if errors.Is(err, trips.ErrSlugTaken) {
 			continue
 		}
@@ -163,38 +173,34 @@ func (s *Service) CreateTripReport(ctx context.Context, req *tripsv1.CreateTripR
 		}
 		// A report includes the activity's photos on Strava from the start.
 		// Failing to import them doesn't fail creating the report.
-		var photos []*trips.Photo
 		if created.ActivityID.Valid {
-			if photos, err = s.importStravaPhotos(ctx, created); err != nil {
+			if _, err := s.importStravaPhotos(ctx, created); err != nil {
 				s.log.WarnContext(ctx, "Failed to import the activity's photos from Strava", slogor.Err(err))
 			}
 		}
-		profile, err := s.profile(ctx, userID)
+		result, err := s.reportWithStory(ctx, created)
 		if err != nil {
 			return nil, err
 		}
-		return tripsv1.CreateTripReportResponse_builder{
-			Report: s.reportToProto(created, photos, profile),
-		}.Build(), nil
+		return tripsv1.CreateTripReportResponse_builder{Report: result}.Build(), nil
 	}
 	return nil, connect.NewError(connect.CodeAlreadyExists, "too many trip reports have this title; choose another title")
 }
 
 // fillFromActivity copies the details of one of the user's activities into
-// a new report.
-func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, activityID pgtype.UUID) error {
+// a new report, and returns its description.
+func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, activityID pgtype.UUID) (string, error) {
 	a, err := s.activities.GetActivity(ctx, report.UserID, activityID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			return connect.NewError(connect.CodeNotFound, "activity not found")
+			return "", connect.NewError(connect.CodeNotFound, "activity not found")
 		}
-		return s.toConnectError(ctx, err, "failed to get activity")
+		return "", s.toConnectError(ctx, err, "failed to get activity")
 	}
 	report.ActivityID = a.ID
 	if report.Title == "" {
 		report.Title = strings.TrimSpace(a.Name)
 	}
-	report.Body = a.Description
 	report.Date = a.StartDateLocal
 	if a.Timezone != "" {
 		report.Timezone = a.Timezone
@@ -213,13 +219,13 @@ func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, ac
 		case err == nil:
 			var streams activitiesv1.ActivityStreams
 			if err := proto.Unmarshal(data, &streams); err != nil {
-				return s.toConnectError(ctx, err, "failed to decode streams")
+				return "", s.toConnectError(ctx, err, "failed to decode streams")
 			}
 			t = trackFromStreams(&streams)
 		case errors.Is(err, store.ErrNotFound):
 			// The activity has no streams, e.g. a manual entry.
 		default:
-			return s.toConnectError(ctx, err, "failed to get streams")
+			return "", s.toConnectError(ctx, err, "failed to get streams")
 		}
 	}
 	if t == nil {
@@ -228,10 +234,10 @@ func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, ac
 	if t != nil {
 		report.Track, err = proto.Marshal(t)
 		if err != nil {
-			return s.toConnectError(ctx, err, "failed to encode track")
+			return "", s.toConnectError(ctx, err, "failed to encode track")
 		}
 	}
-	return nil
+	return a.Description, nil
 }
 
 func (s *Service) GetTripReport(ctx context.Context, req *tripsv1.GetTripReportRequest) (*tripsv1.GetTripReportResponse, error) {
@@ -243,7 +249,7 @@ func (s *Service) GetTripReport(ctx context.Context, req *tripsv1.GetTripReportR
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get trip report")
 	}
-	resp, err := s.reportWithPhotos(ctx, report)
+	resp, err := s.reportWithStory(ctx, report)
 	if err != nil {
 		return nil, err
 	}
@@ -316,13 +322,6 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 		}
 		update.Slug = &slug
 	}
-	if req.HasBody() {
-		body := req.GetBody()
-		if utf8.RuneCountInString(body) > maxBodyLength {
-			return nil, connect.Errorf(connect.CodeInvalidArgument, "the story must be at most %d characters", maxBodyLength)
-		}
-		update.Body = &body
-	}
 	if req.HasDate() {
 		date, err := store.ParseDate(req.GetDate())
 		if err != nil {
@@ -341,7 +340,7 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to update trip report")
 	}
-	result, err := s.reportWithPhotos(ctx, report)
+	result, err := s.reportWithStory(ctx, report)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +381,7 @@ func (s *Service) PublishTripReport(ctx context.Context, req *tripsv1.PublishTri
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to publish trip report")
 	}
-	result, err := s.reportWithPhotos(ctx, report)
+	result, err := s.reportWithStory(ctx, report)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +397,7 @@ func (s *Service) UnpublishTripReport(ctx context.Context, req *tripsv1.Unpublis
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to unpublish trip report")
 	}
-	result, err := s.reportWithPhotos(ctx, report)
+	result, err := s.reportWithStory(ctx, report)
 	if err != nil {
 		return nil, err
 	}
@@ -559,29 +558,6 @@ func (s *Service) UpdateTripPhoto(ctx context.Context, req *tripsv1.UpdateTripPh
 	return tripsv1.UpdateTripPhotoResponse_builder{Photo: s.photoToProto(photo)}.Build(), nil
 }
 
-func (s *Service) ReorderTripPhotos(ctx context.Context, req *tripsv1.ReorderTripPhotosRequest) (*tripsv1.ReorderTripPhotosResponse, error) {
-	userID, reportID, err := s.parseReportID(ctx, req.GetReportId())
-	if err != nil {
-		return nil, err
-	}
-	photoIDs, err := store.UUIDsToPG(req.GetPhotoIds())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
-	}
-	photos, err := s.repo.ReorderPhotos(ctx, userID, reportID, photoIDs)
-	if err != nil {
-		if errors.Is(err, trips.ErrPhotosMismatch) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, "photo_ids must list each of the report's photos exactly once")
-		}
-		return nil, s.toConnectError(ctx, err, "failed to reorder photos")
-	}
-	result := make([]*tripsv1.TripPhoto, len(photos))
-	for i, p := range photos {
-		result[i] = s.photoToProto(p)
-	}
-	return tripsv1.ReorderTripPhotosResponse_builder{Photos: result}.Build(), nil
-}
-
 func (s *Service) DeleteTripPhoto(ctx context.Context, req *tripsv1.DeleteTripPhotoRequest) (*tripsv1.DeleteTripPhotoResponse, error) {
 	userID, photoID, err := s.parsePhotoID(ctx, req.GetId())
 	if err != nil {
@@ -700,8 +676,12 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 			visible[i] = &hidden
 		}
 	}
+	sections, err := s.repo.ListSections(ctx, report.ID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list sections")
+	}
 	return tripsv1.GetPublicTripReportResponse_builder{
-		Report: s.reportToProto(report, visible, profile),
+		Report: s.reportToProto(report, newStory(sections[report.ID], visible), profile),
 		Author: s.profileToProto(profile),
 		Track:  points,
 	}.Build(), nil
@@ -739,9 +719,13 @@ func (s *Service) profile(ctx context.Context, userID pgtype.UUID) (*trips.Profi
 	return profile, nil
 }
 
-// reportWithPhotos converts a report of the authenticated user, with its
-// photos.
-func (s *Service) reportWithPhotos(ctx context.Context, report *trips.Report) (*tripsv1.TripReport, error) {
+// reportWithStory converts a report of the authenticated user, with its
+// sections and photos.
+func (s *Service) reportWithStory(ctx context.Context, report *trips.Report) (*tripsv1.TripReport, error) {
+	sections, err := s.repo.ListSections(ctx, report.ID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list sections")
+	}
 	photos, err := s.repo.ListPhotos(ctx, report.ID)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list photos")
@@ -750,10 +734,11 @@ func (s *Service) reportWithPhotos(ctx context.Context, report *trips.Report) (*
 	if err != nil {
 		return nil, err
 	}
-	return s.reportToProto(report, photos[report.ID], profile), nil
+	return s.reportToProto(report, newStory(sections[report.ID], photos[report.ID]), profile), nil
 }
 
-// reportsToProto converts reports of one author, with their photos.
+// reportsToProto converts reports of one author for lists, with their
+// photos and excerpts but without their sections.
 func (s *Service) reportsToProto(ctx context.Context, reports []*trips.Report, profile *trips.Profile) ([]*tripsv1.TripReport, error) {
 	ids := make([]pgtype.UUID, len(reports))
 	for i, r := range reports {
@@ -763,9 +748,13 @@ func (s *Service) reportsToProto(ctx context.Context, reports []*trips.Report, p
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list photos")
 	}
+	excerpts, err := s.repo.ListExcerpts(ctx, ids...)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list excerpts")
+	}
 	result := make([]*tripsv1.TripReport, len(reports))
 	for i, r := range reports {
-		result[i] = s.reportToProto(r, photos[r.ID], profile)
+		result[i] = s.reportToProto(r, &story{photos: photos[r.ID], excerpt: excerpts[r.ID]}, profile)
 	}
 	return result, nil
 }
@@ -855,6 +844,10 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 		return err
 	case errors.Is(err, store.ErrNotFound):
 		return connect.NewError(connect.CodeNotFound, "not found")
+	case errors.Is(err, trips.ErrSectionsMismatch):
+		return connect.NewError(connect.CodeInvalidArgument, "the sections with an ID must be the report's sections, each listed once")
+	case errors.Is(err, trips.ErrPhotosMismatch):
+		return connect.NewError(connect.CodeInvalidArgument, "the photos must be the report's photos, each listed once")
 	case errors.Is(err, trips.ErrSlugTaken):
 		return connect.NewError(connect.CodeAlreadyExists, "another of your trip reports has this slug; choose another one")
 	default:

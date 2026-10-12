@@ -29,8 +29,20 @@ import (
 var tripStart = time.Date(2026, 9, 7, 8, 0, 0, 0, time.UTC)
 
 // createActivity stores an activity of the user with streams: 101 points
-// 36 seconds and 100 meters apart, heading north from the equator.
+// 36 seconds and 100 meters apart, heading north from the equator, climbing
+// 5 meters each.
 func (e *env) createActivity() string {
+	e.t.Helper()
+	altitudes := make([]float64, 101)
+	for i := range altitudes {
+		altitudes[i] = float64(i) * 5
+	}
+	return e.createActivityWithAltitudes(altitudes)
+}
+
+// createActivityWithAltitudes stores an activity like createActivity with
+// the altitudes of its 101 points.
+func (e *env) createActivityWithAltitudes(altitudes []float64) string {
 	e.t.Helper()
 	ctx := context.Background()
 	points := []geo.Point{{Lat: 0, Lng: 0}, {Lat: 0.09, Lng: 0}}
@@ -60,7 +72,7 @@ func (e *env) createActivity() string {
 		streams.SetDistanceMeters(append(streams.GetDistanceMeters(), float64(i)*100))
 		streams.SetLat(append(streams.GetLat(), float64(i)*0.0009))
 		streams.SetLng(append(streams.GetLng(), 0))
-		streams.SetAltitudeMeters(append(streams.GetAltitudeMeters(), float64(i)*5))
+		streams.SetAltitudeMeters(append(streams.GetAltitudeMeters(), altitudes[i]))
 		streams.SetHeartrateBpm(append(streams.GetHeartrateBpm(), 150))
 	}
 	data, err := proto.Marshal(streams)
@@ -125,9 +137,13 @@ func TestTripReports(t *testing.T) {
 	report := created.GetReport()
 	stats := report.GetStats()
 	if report.GetTitle() != "Ridge run" || report.GetSlug() != "ridge-run" || report.GetDate() != "2026-09-07" ||
-		report.GetBody() != "Felt good" || report.GetActivityId() != activityID || !report.GetHasTrack() ||
+		report.GetExcerpt() != "Felt good" || report.GetActivityId() != activityID || !report.GetHasTrack() ||
 		report.GetPublished() || report.GetUrl() != "" || report.HasPublishTime() {
 		t.Fatalf("unexpected report %v", report)
+	}
+	if sections := report.GetSections(); len(sections) != 1 || sections[0].GetTitle() != "" || sections[0].GetBody() != "Felt good" ||
+		sections[0].HasStartDistanceMeters() {
+		t.Errorf("got sections %v, want one with the activity's description", sections)
 	}
 	if stats.GetSportType() != "TrailRun" || stats.GetDistanceMeters() != 10000 || stats.GetElevationGainMeters() != 500 ||
 		stats.GetMovingTimeSeconds() != 3500 || stats.GetElapsedTimeSeconds() != 3600 ||
@@ -181,13 +197,12 @@ func TestTripReports(t *testing.T) {
 	updated, err := e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{
 		Id:    report.GetId(),
 		Title: new("Up the ridge"),
-		Body:  new("The climb.\n\nThe descent."),
 		Date:  new("2026-09-08"),
 	}.Build())
 	if err != nil {
 		t.Fatalf("UpdateTripReport: %v", err)
 	}
-	if r := updated.GetReport(); r.GetTitle() != "Up the ridge" || r.GetSlug() != "ridge-run" || r.GetBody() != "The climb.\n\nThe descent." || r.GetDate() != "2026-09-08" {
+	if r := updated.GetReport(); r.GetTitle() != "Up the ridge" || r.GetSlug() != "ridge-run" || r.GetDate() != "2026-09-08" {
 		t.Errorf("unexpected updated report %v", r)
 	}
 	for _, slug := range []string{"Bad Slug", "", "-x"} {
@@ -487,24 +502,30 @@ func TestTripPhotos(t *testing.T) {
 	_, err = e.otherTrips.UpdateTripPhoto(ctx, tripsv1.UpdateTripPhotoRequest_builder{Id: timed.GetId(), Caption: new("Mine")}.Build())
 	wantCode(t, err, connect.CodeNotFound)
 
+	// Photos are reordered by listing them in their section.
+	section := got.GetReport().GetSections()[0]
+	reorder := func(photoIDs ...string) (*tripsv1.SetTripSectionsResponse, error) {
+		return e.trips.SetTripSections(ctx, tripsv1.SetTripSectionsRequest_builder{
+			ReportId: reportID,
+			Sections: []*tripsv1.TripSection{tripsv1.TripSection_builder{Id: section.GetId(), Body: section.GetBody(), PhotoIds: photoIDs}.Build()},
+		}.Build())
+	}
 	reversed := []string{unplaced.GetId(), local.GetId(), timed.GetId(), gps.GetId()}
-	reordered, err := e.trips.ReorderTripPhotos(ctx, tripsv1.ReorderTripPhotosRequest_builder{ReportId: reportID, PhotoIds: reversed}.Build())
+	reordered, err := reorder(reversed...)
 	if err != nil {
-		t.Fatalf("ReorderTripPhotos: %v", err)
+		t.Fatalf("SetTripSections: %v", err)
 	}
 	ids = nil
-	for _, p := range reordered.GetPhotos() {
+	for _, p := range reordered.GetReport().GetPhotos() {
 		ids = append(ids, p.GetId())
 	}
 	if strings.Join(ids, ",") != strings.Join(reversed, ",") {
 		t.Errorf("photos in order %v, want %v", ids, reversed)
 	}
-	for _, photoIDs := range [][]string{reversed[:3], append(reversed, reversed[0]), {reversed[0], reversed[0], reversed[1], reversed[2]}} {
-		_, err = e.trips.ReorderTripPhotos(ctx, tripsv1.ReorderTripPhotosRequest_builder{ReportId: reportID, PhotoIds: photoIDs}.Build())
+	for _, photoIDs := range [][]string{append(reversed, reversed[0]), {reversed[0], reversed[0]}, {created.GetReport().GetId()}} {
+		_, err = reorder(photoIDs...)
 		wantCode(t, err, connect.CodeInvalidArgument)
 	}
-	_, err = e.otherTrips.ReorderTripPhotos(ctx, tripsv1.ReorderTripPhotosRequest_builder{ReportId: reportID, PhotoIds: reversed}.Build())
-	wantCode(t, err, connect.CodeNotFound)
 
 	// Photos of drafts are only served to their author.
 	firstURL := unplaced.GetUrl()

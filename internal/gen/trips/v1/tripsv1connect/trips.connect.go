@@ -54,9 +54,12 @@ const (
 	// TripReportServiceUpdateTripPhotoProcedure is the procedure name of the TripReportService's
 	// UpdateTripPhoto RPC.
 	TripReportServiceUpdateTripPhotoProcedure = "/trips.v1.TripReportService/UpdateTripPhoto"
-	// TripReportServiceReorderTripPhotosProcedure is the procedure name of the TripReportService's
-	// ReorderTripPhotos RPC.
-	TripReportServiceReorderTripPhotosProcedure = "/trips.v1.TripReportService/ReorderTripPhotos"
+	// TripReportServiceSetTripSectionsProcedure is the procedure name of the TripReportService's
+	// SetTripSections RPC.
+	TripReportServiceSetTripSectionsProcedure = "/trips.v1.TripReportService/SetTripSections"
+	// TripReportServiceSuggestTripSectionsProcedure is the procedure name of the TripReportService's
+	// SuggestTripSections RPC.
+	TripReportServiceSuggestTripSectionsProcedure = "/trips.v1.TripReportService/SuggestTripSections"
 	// TripReportServiceDeleteTripPhotoProcedure is the procedure name of the TripReportService's
 	// DeleteTripPhoto RPC.
 	TripReportServiceDeleteTripPhotoProcedure = "/trips.v1.TripReportService/DeleteTripPhoto"
@@ -145,11 +148,18 @@ var (
 			Procedure:  TripReportServiceUpdateTripPhotoProcedure,
 		}
 	})
-	tripReportServiceReorderTripPhotosSpec = sync.OnceValue(func() connect.Spec {
+	tripReportServiceSetTripSectionsSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
-			Schema:     v1.File_trips_v1_trips_proto.Services().ByName("TripReportService").Methods().ByName("ReorderTripPhotos"),
-			Procedure:  TripReportServiceReorderTripPhotosProcedure,
+			Schema:     v1.File_trips_v1_trips_proto.Services().ByName("TripReportService").Methods().ByName("SetTripSections"),
+			Procedure:  TripReportServiceSetTripSectionsProcedure,
+		}
+	})
+	tripReportServiceSuggestTripSectionsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_trips_v1_trips_proto.Services().ByName("TripReportService").Methods().ByName("SuggestTripSections"),
+			Procedure:  TripReportServiceSuggestTripSectionsProcedure,
 		}
 	})
 	tripReportServiceDeleteTripPhotoSpec = sync.OnceValue(func() connect.Spec {
@@ -191,18 +201,20 @@ var (
 
 // TripReportServiceClient is a client for the trips.v1.TripReportService service.
 type TripReportServiceClient interface {
-	// Create a draft trip report. With an activity, the report's title, date,
-	// statistics, track and story are copied from the activity, and its photos
-	// are imported from Strava.
+	// Create a draft trip report with one section. With an activity, the
+	// report's title, date, statistics and track are copied from the activity,
+	// its description becomes the section's text, and its photos are imported
+	// from Strava.
 	CreateTripReport(context.Context, *v1.CreateTripReportRequest) (*v1.CreateTripReportResponse, error)
-	// Get one of the user's trip reports with its photos, and optionally its
-	// track.
+	// Get one of the user's trip reports with its sections and photos, and
+	// optionally its track.
 	GetTripReport(context.Context, *v1.GetTripReportRequest) (*v1.GetTripReportResponse, error)
 	// List the user's trip reports, drafts and published, most recent trip
 	// first.
 	ListTripReports(context.Context, *v1.ListTripReportsRequest) (*v1.ListTripReportsResponse, error)
-	// Update the title, slug, date or story of a trip report. The slug of a
-	// published report can't be changed, so that its URL stays stable.
+	// Update the title, slug, date or privacy of a trip report. The slug of a
+	// published report can't be changed, so that its URL stays stable. The
+	// story is changed with SetTripSections.
 	UpdateTripReport(context.Context, *v1.UpdateTripReportRequest) (*v1.UpdateTripReportResponse, error)
 	// Delete a trip report and its photos.
 	DeleteTripReport(context.Context, *v1.DeleteTripReportRequest) (*v1.DeleteTripReportResponse, error)
@@ -222,8 +234,21 @@ type TripReportServiceClient interface {
 	ImportStravaPhotos(context.Context, *v1.ImportStravaPhotosRequest) (*v1.ImportStravaPhotosResponse, error)
 	// Update the caption or the location of a photo.
 	UpdateTripPhoto(context.Context, *v1.UpdateTripPhotoRequest) (*v1.UpdateTripPhotoResponse, error)
-	// Change the order of the photos of a trip report.
-	ReorderTripPhotos(context.Context, *v1.ReorderTripPhotosRequest) (*v1.ReorderTripPhotosResponse, error)
+	// Set the sections of a trip report's story, in order, replacing its
+	// sections: their headings, text, stretches of the track, and photos.
+	// Sections with an ID are updated, sections without one are created, and
+	// the report's other sections are deleted. Moving photos between sections
+	// or reordering them is done by listing them in their new section and
+	// order. To change one section, get the report and send all its sections
+	// back with the change.
+	SetTripSections(context.Context, *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error)
+	// Suggest sections for a trip report from its track's elevation profile:
+	// the climbs, descents, and rolling or flat stretches in between, named
+	// e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+	// photos in the section about where they were taken. Nothing is saved;
+	// pass the sections to SetTripSections, with text, to use them. Requires
+	// a track with elevations.
+	SuggestTripSections(context.Context, *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error)
 	// Delete a photo.
 	DeleteTripPhoto(context.Context, *v1.DeleteTripPhotoRequest) (*v1.DeleteTripPhotoResponse, error)
 	// Get the user's public profile. The profile is unset if the user hasn't
@@ -248,18 +273,20 @@ func NewTripReportServiceClient(client *connect.Client) TripReportServiceClient 
 
 // TripReportServiceHandler is an implementation of the trips.v1.TripReportService service.
 type TripReportServiceHandler interface {
-	// Create a draft trip report. With an activity, the report's title, date,
-	// statistics, track and story are copied from the activity, and its photos
-	// are imported from Strava.
+	// Create a draft trip report with one section. With an activity, the
+	// report's title, date, statistics and track are copied from the activity,
+	// its description becomes the section's text, and its photos are imported
+	// from Strava.
 	CreateTripReport(context.Context, *v1.CreateTripReportRequest) (*v1.CreateTripReportResponse, error)
-	// Get one of the user's trip reports with its photos, and optionally its
-	// track.
+	// Get one of the user's trip reports with its sections and photos, and
+	// optionally its track.
 	GetTripReport(context.Context, *v1.GetTripReportRequest) (*v1.GetTripReportResponse, error)
 	// List the user's trip reports, drafts and published, most recent trip
 	// first.
 	ListTripReports(context.Context, *v1.ListTripReportsRequest) (*v1.ListTripReportsResponse, error)
-	// Update the title, slug, date or story of a trip report. The slug of a
-	// published report can't be changed, so that its URL stays stable.
+	// Update the title, slug, date or privacy of a trip report. The slug of a
+	// published report can't be changed, so that its URL stays stable. The
+	// story is changed with SetTripSections.
 	UpdateTripReport(context.Context, *v1.UpdateTripReportRequest) (*v1.UpdateTripReportResponse, error)
 	// Delete a trip report and its photos.
 	DeleteTripReport(context.Context, *v1.DeleteTripReportRequest) (*v1.DeleteTripReportResponse, error)
@@ -279,8 +306,21 @@ type TripReportServiceHandler interface {
 	ImportStravaPhotos(context.Context, *v1.ImportStravaPhotosRequest) (*v1.ImportStravaPhotosResponse, error)
 	// Update the caption or the location of a photo.
 	UpdateTripPhoto(context.Context, *v1.UpdateTripPhotoRequest) (*v1.UpdateTripPhotoResponse, error)
-	// Change the order of the photos of a trip report.
-	ReorderTripPhotos(context.Context, *v1.ReorderTripPhotosRequest) (*v1.ReorderTripPhotosResponse, error)
+	// Set the sections of a trip report's story, in order, replacing its
+	// sections: their headings, text, stretches of the track, and photos.
+	// Sections with an ID are updated, sections without one are created, and
+	// the report's other sections are deleted. Moving photos between sections
+	// or reordering them is done by listing them in their new section and
+	// order. To change one section, get the report and send all its sections
+	// back with the change.
+	SetTripSections(context.Context, *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error)
+	// Suggest sections for a trip report from its track's elevation profile:
+	// the climbs, descents, and rolling or flat stretches in between, named
+	// e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+	// photos in the section about where they were taken. Nothing is saved;
+	// pass the sections to SetTripSections, with text, to use them. Requires
+	// a track with elevations.
+	SuggestTripSections(context.Context, *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error)
 	// Delete a photo.
 	DeleteTripPhoto(context.Context, *v1.DeleteTripPhotoRequest) (*v1.DeleteTripPhotoResponse, error)
 	// Get the user's public profile. The profile is unset if the user hasn't
@@ -312,7 +352,8 @@ func RegisterTripReportServiceHandler(server *connect.Server, svc TripReportServ
 		connect.Method{Spec: tripReportServiceUploadTripPhotoSpec(), Handler: adapter.uploadTripPhoto},
 		connect.Method{Spec: tripReportServiceImportStravaPhotosSpec(), Handler: adapter.importStravaPhotos},
 		connect.Method{Spec: tripReportServiceUpdateTripPhotoSpec(), Handler: adapter.updateTripPhoto},
-		connect.Method{Spec: tripReportServiceReorderTripPhotosSpec(), Handler: adapter.reorderTripPhotos},
+		connect.Method{Spec: tripReportServiceSetTripSectionsSpec(), Handler: adapter.setTripSections},
+		connect.Method{Spec: tripReportServiceSuggestTripSectionsSpec(), Handler: adapter.suggestTripSections},
 		connect.Method{Spec: tripReportServiceDeleteTripPhotoSpec(), Handler: adapter.deleteTripPhoto},
 		connect.Method{Spec: tripReportServiceGetProfileSpec(), Handler: adapter.getProfile},
 		connect.Method{Spec: tripReportServiceUpdateProfileSpec(), Handler: adapter.updateProfile},
@@ -364,8 +405,12 @@ func (UnimplementedTripReportServiceHandler) UpdateTripPhoto(context.Context, *v
 	return nil, connect.NewError(connect.CodeUnimplemented, "trips.v1.TripReportService.UpdateTripPhoto is not implemented")
 }
 
-func (UnimplementedTripReportServiceHandler) ReorderTripPhotos(context.Context, *v1.ReorderTripPhotosRequest) (*v1.ReorderTripPhotosResponse, error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, "trips.v1.TripReportService.ReorderTripPhotos is not implemented")
+func (UnimplementedTripReportServiceHandler) SetTripSections(context.Context, *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "trips.v1.TripReportService.SetTripSections is not implemented")
+}
+
+func (UnimplementedTripReportServiceHandler) SuggestTripSections(context.Context, *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "trips.v1.TripReportService.SuggestTripSections is not implemented")
 }
 
 func (UnimplementedTripReportServiceHandler) DeleteTripPhoto(context.Context, *v1.DeleteTripPhotoRequest) (*v1.DeleteTripPhotoResponse, error) {
@@ -472,9 +517,17 @@ func (c *tripReportServiceClient) UpdateTripPhoto(ctx context.Context, req *v1.U
 	return &res, nil
 }
 
-func (c *tripReportServiceClient) ReorderTripPhotos(ctx context.Context, req *v1.ReorderTripPhotosRequest) (*v1.ReorderTripPhotosResponse, error) {
-	var res v1.ReorderTripPhotosResponse
-	if err := c.client.CallUnary(ctx, tripReportServiceReorderTripPhotosSpec(), req, &res); err != nil {
+func (c *tripReportServiceClient) SetTripSections(ctx context.Context, req *v1.SetTripSectionsRequest) (*v1.SetTripSectionsResponse, error) {
+	var res v1.SetTripSectionsResponse
+	if err := c.client.CallUnary(ctx, tripReportServiceSetTripSectionsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *tripReportServiceClient) SuggestTripSections(ctx context.Context, req *v1.SuggestTripSectionsRequest) (*v1.SuggestTripSectionsResponse, error) {
+	var res v1.SuggestTripSectionsResponse
+	if err := c.client.CallUnary(ctx, tripReportServiceSuggestTripSectionsSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -642,12 +695,24 @@ func (h tripReportServiceHandler) updateTripPhoto(ctx context.Context, _ connect
 	return stream.Send(res)
 }
 
-func (h tripReportServiceHandler) reorderTripPhotos(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
-	var req v1.ReorderTripPhotosRequest
+func (h tripReportServiceHandler) setTripSections(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SetTripSectionsRequest
 	if err := stream.Receive(&req); err != nil {
 		return err
 	}
-	res, err := h.svc.ReorderTripPhotos(ctx, &req)
+	res, err := h.svc.SetTripSections(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h tripReportServiceHandler) suggestTripSections(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SuggestTripSectionsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SuggestTripSections(ctx, &req)
 	if err != nil {
 		return err
 	}

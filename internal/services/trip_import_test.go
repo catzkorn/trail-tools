@@ -59,8 +59,8 @@ func TestImportStravaPhotos(t *testing.T) {
 	}
 	report := created.GetReport()
 	// The story starts from the activity's description on Strava.
-	if report.GetBody() != "Felt good" {
-		t.Errorf("got body %q, want the activity's description", report.GetBody())
+	if sections := report.GetSections(); len(sections) != 1 || sections[0].GetBody() != "Felt good" || len(sections[0].GetPhotoIds()) != 3 {
+		t.Errorf("got sections %v, want one with the activity's description and the photos", sections)
 	}
 
 	// The report includes the activity's photos from the start.

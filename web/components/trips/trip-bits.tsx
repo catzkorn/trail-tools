@@ -187,17 +187,6 @@ export const tripKicker = (report: TripReport): string => {
   return parts.join(" · ");
 };
 
-// Excerpt returns the start of a story for listings.
-const excerpt = (body: string): string => {
-  const text = body.replaceAll(/\s+/gu, " ").trim();
-  if (text.length <= 220) {
-    return text;
-  }
-  const cut = text.slice(0, 219);
-  const space = cut.lastIndexOf(" ");
-  return `${space > 110 ? cut.slice(0, space) : cut}…`;
-};
-
 interface ReportCardProps {
   report: TripReport;
   to: string;
@@ -264,10 +253,8 @@ export const ReportCard: React.FC<ReportCardProps> = ({
               .join(" · ")}
           </p>
         )}
-        {report.body !== "" && (
-          <p className="line-clamp-3 text-sm text-gray-500">
-            {excerpt(report.body)}
-          </p>
+        {report.excerpt !== "" && (
+          <p className="line-clamp-3 text-sm text-gray-500">{report.excerpt}</p>
         )}
       </div>
     </Link>

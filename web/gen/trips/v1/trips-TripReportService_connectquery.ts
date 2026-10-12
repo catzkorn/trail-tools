@@ -5,17 +5,18 @@
 import { TripReportService } from "./trips_pb";
 
 /**
- * Create a draft trip report. With an activity, the report's title, date,
- * statistics, track and story are copied from the activity, and its photos
- * are imported from Strava.
+ * Create a draft trip report with one section. With an activity, the
+ * report's title, date, statistics and track are copied from the activity,
+ * its description becomes the section's text, and its photos are imported
+ * from Strava.
  *
  * @generated from rpc trips.v1.TripReportService.CreateTripReport
  */
 export const createTripReport = TripReportService.method.createTripReport;
 
 /**
- * Get one of the user's trip reports with its photos, and optionally its
- * track.
+ * Get one of the user's trip reports with its sections and photos, and
+ * optionally its track.
  *
  * @generated from rpc trips.v1.TripReportService.GetTripReport
  */
@@ -30,8 +31,9 @@ export const getTripReport = TripReportService.method.getTripReport;
 export const listTripReports = TripReportService.method.listTripReports;
 
 /**
- * Update the title, slug, date or story of a trip report. The slug of a
- * published report can't be changed, so that its URL stays stable.
+ * Update the title, slug, date or privacy of a trip report. The slug of a
+ * published report can't be changed, so that its URL stays stable. The
+ * story is changed with SetTripSections.
  *
  * @generated from rpc trips.v1.TripReportService.UpdateTripReport
  */
@@ -86,11 +88,29 @@ export const importStravaPhotos = TripReportService.method.importStravaPhotos;
 export const updateTripPhoto = TripReportService.method.updateTripPhoto;
 
 /**
- * Change the order of the photos of a trip report.
+ * Set the sections of a trip report's story, in order, replacing its
+ * sections: their headings, text, stretches of the track, and photos.
+ * Sections with an ID are updated, sections without one are created, and
+ * the report's other sections are deleted. Moving photos between sections
+ * or reordering them is done by listing them in their new section and
+ * order. To change one section, get the report and send all its sections
+ * back with the change.
  *
- * @generated from rpc trips.v1.TripReportService.ReorderTripPhotos
+ * @generated from rpc trips.v1.TripReportService.SetTripSections
  */
-export const reorderTripPhotos = TripReportService.method.reorderTripPhotos;
+export const setTripSections = TripReportService.method.setTripSections;
+
+/**
+ * Suggest sections for a trip report from its track's elevation profile:
+ * the climbs, descents, and rolling or flat stretches in between, named
+ * e.g. "Climb to 1,450 m" or "Rolling ridge, 6 km", with the report's
+ * photos in the section about where they were taken. Nothing is saved;
+ * pass the sections to SetTripSections, with text, to use them. Requires
+ * a track with elevations.
+ *
+ * @generated from rpc trips.v1.TripReportService.SuggestTripSections
+ */
+export const suggestTripSections = TripReportService.method.suggestTripSections;
 
 /**
  * Delete a photo.

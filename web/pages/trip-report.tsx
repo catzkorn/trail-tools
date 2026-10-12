@@ -1,9 +1,28 @@
 import ElevationProfile from "@components/charts/elevation-profile";
+import type { ProfileRange } from "@components/charts/elevation-profile";
 import Loading from "@components/loading";
 import PhotoUploader from "@components/trips/photo-uploader";
+import { SectionCard, sectionLabel } from "@components/trips/section-card";
+import type { DraftSection } from "@components/trips/section-draft";
+import {
+  applySuggestion,
+  draftRange,
+  draftSections,
+  mergeWithNext,
+  moveSection,
+  movePhotoToSection,
+  movePhotoWithin,
+  newSection,
+  rangeError,
+  reconcile,
+  removeSection,
+  sameSections,
+  sectionsToSave,
+  splitSection,
+} from "@components/trips/section-draft";
+import { formatRange, trackSlice } from "@components/trips/sections";
 import {
   TripStatsRow,
-  locationSourceLabel,
   mapPhotos,
   profileMarkers,
   profilePoints,
@@ -18,8 +37,6 @@ import { Badge } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import {
   ghostButton,
-  iconButton,
-  inputClass,
   labelClass,
   linkClass,
   primaryButton,
@@ -28,28 +45,28 @@ import {
 } from "@components/ui/styles";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
-  ArrowDownIcon,
   ArrowTopRightOnSquareIcon,
-  ArrowUpIcon,
+  ArrowUturnLeftIcon,
   EyeSlashIcon,
   GlobeAltIcon,
-  MapPinIcon,
+  PlusIcon,
+  SparklesIcon,
   TrashIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
+import type { RoutePoint } from "gen/routes/v1/routes_pb";
 import {
-  deleteTripPhoto,
   deleteTripReport,
   getProfile,
   getTripReport,
   publishTripReport,
-  reorderTripPhotos,
+  setTripSections,
+  suggestTripSections,
   unpublishTripReport,
   updateTripPhoto,
   updateTripReport,
 } from "gen/trips/v1/trips-TripReportService_connectquery";
-import type { TripPhoto, TripReport } from "gen/trips/v1/trips_pb";
+import type { TripReport, TripSection } from "gen/trips/v1/trips_pb";
 import { LocationSource, TripReportService } from "gen/trips/v1/trips_pb";
 import { invalidateServices } from "helpers/query";
 import { isValidSlug, slugify } from "helpers/slug";
@@ -66,17 +83,75 @@ const HIDDEN_ENDS_OPTIONS: SelectOption[] = [
   { label: "2 km around the start and finish", value: "2000" },
 ];
 
-interface ReportFormProps {
+interface SuggestionPanelProps {
+  sections: TripSection[];
+  onApply: () => void;
+  onCancel: () => void;
+}
+
+// SuggestionPanel previews suggested sections before they're used.
+const SuggestionPanel: React.FC<SuggestionPanelProps> = ({
+  sections,
+  onApply,
+  onCancel,
+}) => (
+  <div className="flex flex-col gap-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-950">
+    <p>
+      Suggested from the elevation profile, also shown on it. Your text is kept:
+      sections without a stretch, like an introduction, stay first, and the text
+      of the others moves to the suggested section where they started. Photos go
+      in the section where they were taken.
+    </p>
+    <ol className="flex flex-col gap-1">
+      {sections.map((section, index) => (
+        <li
+          key={`${section.title}-${String(section.startDistanceMeters)}`}
+          className="flex flex-wrap gap-x-2"
+        >
+          <span className="font-semibold">
+            {index + 1}. {section.title}
+          </span>
+          <span className="text-sky-800 tabular-nums">
+            {formatRange({
+              endMeters: section.endDistanceMeters ?? 0,
+              startMeters: section.startDistanceMeters ?? 0,
+            })}
+            {section.photoIds.length > 0 &&
+              ` · ${String(section.photoIds.length)} ${section.photoIds.length === 1 ? "photo" : "photos"}`}
+          </span>
+        </li>
+      ))}
+    </ol>
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className={primaryButton} onClick={onApply}>
+        Use these sections
+      </button>
+      <button type="button" className={secondaryButton} onClick={onCancel}>
+        Cancel
+      </button>
+    </div>
+  </div>
+);
+
+interface ReportEditorProps {
   report: TripReport;
+  track: RoutePoint[];
   handle: string | undefined;
-  onSaved: () => Promise<void>;
+  onChanged: () => Promise<void>;
 }
 
 /**
- * ReportForm edits the title, address, date and story of a report. It is
- * keyed by the report, so its state starts from the saved report.
+ * ReportEditor edits a report: its details and story are a draft saved
+ * together, while photos are uploaded, captioned, placed and deleted right
+ * away. It is keyed by the report, so its state starts from the saved
+ * report.
  */
-const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
+const ReportEditor: React.FC<ReportEditorProps> = ({
+  report,
+  track: routePoints,
+  handle,
+  onChanged,
+}) => {
   const [title, setTitle] = useState(report.title);
   const [slug, setSlug] = useState(report.slug);
   // The slug follows the title until it is edited by hand.
@@ -84,290 +159,23 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
     report.slug !== slugify(report.title)
   );
   const [date, setDate] = useState(report.date);
-  const [body, setBody] = useState(report.body);
   const [hiddenEnds, setHiddenEnds] = useState(String(report.hiddenEndsMeters));
-  const update = useMutation(updateTripReport, { onSuccess: onSaved });
-
-  const trimmedTitle = title.trim();
-  const dirty =
-    trimmedTitle !== report.title ||
-    slug !== report.slug ||
-    date !== report.date ||
-    body !== report.body ||
-    Number(hiddenEnds) !== report.hiddenEndsMeters;
-  const slugValid = isValidSlug(slug);
-  const save = () => {
-    update.mutate({
-      body: body === report.body ? undefined : body,
-      date: date === report.date ? undefined : date,
-      hiddenEndsMeters:
-        Number(hiddenEnds) === report.hiddenEndsMeters
-          ? undefined
-          : Number(hiddenEnds),
-      id: report.id,
-      slug: slug === report.slug ? undefined : slug,
-      title: trimmedTitle === report.title ? undefined : trimmedTitle,
-    });
-  };
-
-  return (
-    <form
-      className="flex flex-col gap-4"
-      onSubmit={(event) => {
-        event.preventDefault();
-        save();
-      }}
-    >
-      <TextField
-        label="Title"
-        value={title}
-        required
-        onChange={(value) => {
-          setTitle(value);
-          if (!slugEdited && !report.published) {
-            const next = slugify(value);
-            if (next !== "") {
-              setSlug(next);
-            }
-          }
-        }}
-      />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
-        <label className="flex min-w-0 flex-col gap-1">
-          <span className={labelClass}>Address</span>
-          <div className="flex items-center rounded-md border border-gray-300 bg-white shadow-sm focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600">
-            <span className="shrink-0 truncate pl-2.5 text-sm text-gray-500">
-              /u/{handle ?? "<handle>"}/
-            </span>
-            <input
-              value={slug}
-              disabled={report.published}
-              className="block w-full min-w-0 rounded-md border-0 bg-transparent py-1.5 pr-2.5 pl-0.5 text-sm text-gray-900 focus:outline-none disabled:text-gray-500"
-              onChange={(event) => {
-                setSlug(event.target.value.toLowerCase());
-                setSlugEdited(true);
-              }}
-            />
-          </div>
-          {report.published ? (
-            <span className="text-xs text-gray-500">
-              The address of a published report can&apos;t change, so links to
-              it keep working. Unpublish the report to change it.
-            </span>
-          ) : (
-            !slugValid && (
-              <span className="text-xs text-red-700">
-                Use lowercase letters and digits separated by single dashes.
-              </span>
-            )
-          )}
-        </label>
-        <TextField
-          label="Date"
-          type="date"
-          value={date}
-          required
-          onChange={setDate}
-        />
-      </div>
-      <label className="flex flex-col gap-1">
-        <span className={labelClass}>Story</span>
-        <textarea
-          value={body}
-          rows={14}
-          placeholder="How did it go? Separate paragraphs with a blank line."
-          className={`${inputClass} text-base leading-7`}
-          onChange={(event) => {
-            setBody(event.target.value);
-          }}
-        />
-      </label>
-      {report.hasTrack && (
-        <SelectField
-          label="Hide on the public map"
-          value={hiddenEnds}
-          onChange={setHiddenEnds}
-          options={HIDDEN_ENDS_OPTIONS}
-          className="sm:max-w-sm"
-        />
-      )}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          className={primaryButton}
-          disabled={
-            !dirty ||
-            update.isPending ||
-            trimmedTitle === "" ||
-            !slugValid ||
-            date === ""
-          }
-        >
-          {update.isPending ? "Saving…" : "Save"}
-        </button>
-        <span className="text-sm text-gray-500">
-          {dirty ? "Unsaved changes" : "All changes saved"}
-        </span>
-      </div>
-      <ErrorText error={update.error} />
-    </form>
-  );
-};
-
-interface PhotoRowProps {
-  photo: TripPhoto;
-  number: number;
-  count: number;
-  selected: boolean;
-  placing: boolean;
-  onSelect: () => void;
-  onPlace: () => void;
-  onMove: (delta: number) => void;
-  onChanged: () => Promise<void>;
-}
-
-// PhotoRow edits a photo: its caption, place on the map and order.
-const PhotoRow: React.FC<PhotoRowProps> = ({
-  photo,
-  number,
-  count,
-  selected,
-  placing,
-  onSelect,
-  onPlace,
-  onMove,
-  onChanged,
-}) => {
-  const [caption, setCaption] = useState(photo.caption);
-  const update = useMutation(updateTripPhoto, { onSuccess: onChanged });
-  const remove = useMutation(deleteTripPhoto, { onSuccess: onChanged });
-  const located = photo.location !== undefined;
-  let placeLabel = "Place on map";
-  if (placing) {
-    placeLabel = "Click the map…";
-  } else if (located) {
-    placeLabel = "Move";
-  }
-
-  return (
-    <li
-      data-photo-row
-      className={`flex gap-3 rounded-lg p-2 ${selected ? "bg-amber-50 ring-2 ring-amber-300" : ""}`}
-    >
-      <button
-        type="button"
-        className="relative shrink-0 self-start"
-        onClick={onSelect}
-        aria-label={`Select photo ${number}`}
-      >
-        <img
-          src={photo.thumbnailUrl}
-          alt=""
-          className="size-24 rounded-md object-cover sm:size-28"
-        />
-        <span className="absolute -top-1.5 -left-1.5 inline-flex size-5 items-center justify-center rounded-full border-2 border-white bg-emerald-700 text-[10px] font-bold text-white">
-          {number}
-        </span>
-      </button>
-      <div className="flex min-w-0 grow flex-col gap-1.5">
-        <textarea
-          value={caption}
-          rows={2}
-          placeholder="Caption"
-          className={`${inputClass} resize-none`}
-          onFocus={onSelect}
-          onChange={(event) => {
-            setCaption(event.target.value);
-          }}
-          onBlur={() => {
-            if (caption.trim() !== photo.caption) {
-              update.mutate({ caption, id: photo.id });
-            }
-          }}
-        />
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span
-            className={`inline-flex items-center gap-1 text-xs ${located ? "text-gray-500" : "text-amber-700"}`}
-          >
-            <MapPinIcon className="size-3.5" />
-            {locationSourceLabel(photo.locationSource)}
-          </span>
-          <span className="ml-auto flex items-center">
-            <button
-              type="button"
-              className={`${ghostButton} text-xs`}
-              onClick={onPlace}
-            >
-              {placeLabel}
-            </button>
-            {located && (
-              <button
-                type="button"
-                className={iconButton}
-                title="Remove from the map"
-                aria-label="Remove from the map"
-                disabled={update.isPending}
-                onClick={() => {
-                  update.mutate({ clearLocation: true, id: photo.id });
-                }}
-              >
-                <XMarkIcon className="size-4" />
-              </button>
-            )}
-            <button
-              type="button"
-              className={iconButton}
-              aria-label="Move up"
-              disabled={number === 1}
-              onClick={() => {
-                onMove(-1);
-              }}
-            >
-              <ArrowUpIcon className="size-4" />
-            </button>
-            <button
-              type="button"
-              className={iconButton}
-              aria-label="Move down"
-              disabled={number === count}
-              onClick={() => {
-                onMove(1);
-              }}
-            >
-              <ArrowDownIcon className="size-4" />
-            </button>
-            <ConfirmButton
-              className={`${iconButton} hover:text-red-600`}
-              title="Delete photo?"
-              message="The photo is removed from the report."
-              disabled={remove.isPending}
-              onConfirm={() => {
-                remove.mutate({ id: photo.id });
-              }}
-            >
-              <TrashIcon className="size-4" aria-label="Delete photo" />
-            </ConfirmButton>
-          </span>
-        </div>
-        <ErrorText error={update.error ?? remove.error} />
-      </div>
-    </li>
-  );
-};
-
-// TripReportPage edits a trip report: its story, photos and publication.
-const TripReportPage: React.FC = () => {
-  const { id = "" } = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { isPending, isError, data, error, refetch } = useQuery(getTripReport, {
-    id,
-    includeTrack: true,
-  });
-  const profileQuery = useQuery(getProfile);
+  const [draft, setDraft] = useState(() => draftSections(report.sections));
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [splittingKey, setSplittingKey] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<TripSection[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [placingId, setPlacingId] = useState<string | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  const update = useMutation(updateTripReport);
+  const saveSections = useMutation(setTripSections);
+  const suggest = useMutation(suggestTripSections, {
+    onSuccess: (response) => {
+      setSuggestion(response.sections);
+    },
+  });
+  const movePhoto = useMutation(updateTripPhoto, { onSuccess: onChanged });
 
   // Clicking anywhere but a photo, or pressing Escape, clears the selection.
   useEffect(() => {
@@ -395,6 +203,479 @@ const TripReportPage: React.FC = () => {
     };
   }, [selectedId, placingId]);
 
+  const sections = useMemo(() => reconcile(draft, report), [draft, report]);
+  const saved = useMemo(
+    () => reconcile(draftSections(report.sections), report),
+    [report]
+  );
+  const photosById = useMemo(
+    () => new Map(report.photos.map((photo) => [photo.id, photo])),
+    [report.photos]
+  );
+  // The photos in the order of the draft, numbered as they'll be published.
+  const photos = useMemo(
+    () =>
+      sections.flatMap((section) =>
+        section.photoIds.flatMap((id) => {
+          const photo = photosById.get(id);
+          return photo === undefined ? [] : [photo];
+        })
+      ),
+    [sections, photosById]
+  );
+  const numbers = new Map(photos.map((photo, index) => [photo.id, index + 1]));
+  const track = useMemo(() => trackPositions(routePoints), [routePoints]);
+  const profile = useMemo(() => profilePoints(routePoints), [routePoints]);
+  const markers = useMemo(() => mapPhotos(photos), [photos]);
+  const photoMarkers = useMemo(() => profileMarkers(photos), [photos]);
+  // The stretch of the track of the section being edited, if it has one.
+  const highlight = useMemo(() => {
+    const active = sections.find((section) => section.key === activeKey);
+    const range = active === undefined ? undefined : draftRange(active);
+    return range === undefined ? [] : trackSlice(routePoints, range);
+  }, [routePoints, sections, activeKey]);
+  // The profile shows the suggested sections while they're previewed.
+  const ranges: ProfileRange[] = [];
+  if (suggestion === null) {
+    for (const [index, section] of sections.entries()) {
+      const range = draftRange(section);
+      if (range !== undefined) {
+        ranges.push({
+          ...range,
+          active: section.key === activeKey,
+          label:
+            section.title.trim() === "" ? String(index + 1) : section.title,
+        });
+      }
+    }
+  } else {
+    for (const section of suggestion) {
+      if (
+        section.startDistanceMeters !== undefined &&
+        section.endDistanceMeters !== undefined
+      ) {
+        ranges.push({
+          endMeters: section.endDistanceMeters,
+          label: section.title,
+          startMeters: section.startDistanceMeters,
+        });
+      }
+    }
+  }
+
+  const trimmedTitle = title.trim();
+  const detailsDirty =
+    trimmedTitle !== report.title ||
+    slug !== report.slug ||
+    date !== report.date ||
+    Number(hiddenEnds) !== report.hiddenEndsMeters;
+  const sectionsDirty = !sameSections(sections, saved);
+  const dirty = detailsDirty || sectionsDirty;
+  const slugValid = isValidSlug(slug);
+  const sectionErrors = sections.some(
+    (section) => rangeError(section) !== undefined
+  );
+  const saving = update.isPending || saveSections.isPending;
+
+  // Warn before leaving with unsaved changes.
+  useEffect(() => {
+    if (!dirty) {
+      return undefined;
+    }
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    globalThis.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      globalThis.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [dirty]);
+
+  const save = async () => {
+    if (detailsDirty) {
+      await update.mutateAsync({
+        date: date === report.date ? undefined : date,
+        hiddenEndsMeters:
+          Number(hiddenEnds) === report.hiddenEndsMeters
+            ? undefined
+            : Number(hiddenEnds),
+        id: report.id,
+        slug: slug === report.slug ? undefined : slug,
+        title: trimmedTitle === report.title ? undefined : trimmedTitle,
+      });
+    }
+    if (sectionsDirty) {
+      const response = await saveSections.mutateAsync({
+        reportId: report.id,
+        sections: sectionsToSave(sections),
+      });
+      // New sections have IDs now.
+      setDraft(draftSections(response.report?.sections ?? []));
+      setActiveKey(null);
+    }
+    await onChanged();
+  };
+  const discard = () => {
+    setTitle(report.title);
+    setSlug(report.slug);
+    setDate(report.date);
+    setHiddenEnds(String(report.hiddenEndsMeters));
+    setDraft(draftSections(report.sections));
+    setSuggestion(null);
+    setSplittingKey(null);
+  };
+  const change = (next: DraftSection[]) => {
+    setDraft(next);
+  };
+  const place = (photoId: string, position: LatLng) => {
+    movePhoto.mutate({
+      id: photoId,
+      location: { lat: position.lat, lng: position.wrap().lng },
+    });
+  };
+  const placing = photos.find((photo) => photo.id === placingId);
+  const splitting = sections.findIndex(
+    (section) => section.key === splittingKey
+  );
+  let hoverPosition: LatLngTuple | null = null;
+  if (hoverIndex !== null) {
+    hoverPosition = track.at(hoverIndex) ?? null;
+  }
+  const labels = sections.map((section, index) => ({
+    key: section.key,
+    label: sectionLabel(section, index),
+  }));
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
+      <form
+        className="flex min-w-0 flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save().catch(() => {
+            // The mutations show their errors.
+          });
+        }}
+      >
+        <Card title="Details">
+          <div className="flex flex-col gap-4">
+            <TextField
+              label="Title"
+              value={title}
+              required
+              onChange={(value) => {
+                setTitle(value);
+                if (!slugEdited && !report.published) {
+                  const next = slugify(value);
+                  if (next !== "") {
+                    setSlug(next);
+                  }
+                }
+              }}
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={labelClass}>Address</span>
+                <div className="flex items-center rounded-md border border-gray-300 bg-white shadow-sm focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600">
+                  <span className="shrink-0 truncate pl-2.5 text-sm text-gray-500">
+                    /u/{handle ?? "<handle>"}/
+                  </span>
+                  <input
+                    value={slug}
+                    disabled={report.published}
+                    className="block w-full min-w-0 rounded-md border-0 bg-transparent py-1.5 pr-2.5 pl-0.5 text-sm text-gray-900 focus:outline-none disabled:text-gray-500"
+                    onChange={(event) => {
+                      setSlug(event.target.value.toLowerCase());
+                      setSlugEdited(true);
+                    }}
+                  />
+                </div>
+                {report.published ? (
+                  <span className="text-xs text-gray-500">
+                    The address of a published report can&apos;t change, so
+                    links to it keep working. Unpublish the report to change it.
+                  </span>
+                ) : (
+                  !slugValid && (
+                    <span className="text-xs text-red-700">
+                      Use lowercase letters and digits separated by single
+                      dashes.
+                    </span>
+                  )
+                )}
+              </label>
+              <TextField
+                label="Date"
+                type="date"
+                value={date}
+                required
+                onChange={setDate}
+              />
+            </div>
+            {report.hasTrack && (
+              <SelectField
+                label="Hide on the public map"
+                value={hiddenEnds}
+                onChange={setHiddenEnds}
+                options={HIDDEN_ENDS_OPTIONS}
+                className="sm:max-w-sm"
+              />
+            )}
+          </div>
+        </Card>
+
+        <Card
+          title="Story"
+          actions={
+            report.hasTrack && (
+              <button
+                type="button"
+                className={secondaryButton}
+                disabled={suggest.isPending}
+                onClick={() => {
+                  suggest.mutate({ reportId: report.id });
+                }}
+              >
+                <SparklesIcon className="size-4" />
+                {suggest.isPending ? "Suggesting…" : "Suggest sections"}
+              </button>
+            )
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-gray-600">
+              Tell the story in sections, each about a stretch of the trip with
+              its photos. Readers see the stretch on the map as they read.
+            </p>
+            <ErrorText error={suggest.error} />
+            {suggestion !== null && (
+              <SuggestionPanel
+                sections={suggestion}
+                onApply={() => {
+                  change(applySuggestion(sections, suggestion));
+                  setSuggestion(null);
+                  setActiveKey(null);
+                }}
+                onCancel={() => {
+                  setSuggestion(null);
+                }}
+              />
+            )}
+            {sections.map((section, index) => (
+              <SectionCard
+                key={section.key}
+                section={section}
+                index={index}
+                count={sections.length}
+                labels={labels}
+                photos={photosById}
+                numbers={numbers}
+                track={routePoints}
+                active={section.key === activeKey}
+                splitting={section.key === splittingKey}
+                selectedPhotoId={selectedId}
+                placingPhotoId={placingId}
+                onActivate={() => {
+                  setActiveKey(section.key);
+                }}
+                onChange={(next) => {
+                  change(
+                    sections.map((other) =>
+                      other.key === next.key ? next : other
+                    )
+                  );
+                }}
+                onMove={(delta) => {
+                  change(moveSection(sections, index, delta));
+                }}
+                onMergeWithNext={() => {
+                  change(mergeWithNext(sections, index));
+                }}
+                onSplit={() => {
+                  setSplittingKey(
+                    section.key === splittingKey ? null : section.key
+                  );
+                }}
+                onRemove={() => {
+                  change(removeSection(sections, index));
+                  setActiveKey(null);
+                }}
+                onSelectPhoto={setSelectedId}
+                onPlacePhoto={(photoId) => {
+                  setSelectedId(photoId);
+                  setPlacingId(photoId === placingId ? null : photoId);
+                }}
+                onMovePhoto={(photoId, delta) => {
+                  change(movePhotoWithin(sections, photoId, delta));
+                }}
+                onMovePhotoToSection={(photoId, key) => {
+                  change(movePhotoToSection(sections, photoId, key));
+                }}
+                onPhotoChanged={onChanged}
+              />
+            ))}
+            <button
+              type="button"
+              className={`${ghostButton} self-start`}
+              onClick={() => {
+                const added = newSection();
+                change([...sections, added]);
+                setActiveKey(added.key);
+              }}
+            >
+              <PlusIcon className="size-4" />
+              Add a section
+            </button>
+          </div>
+        </Card>
+
+        <Card title={`Photos (${String(photos.length)})`}>
+          <div className="flex flex-col gap-2">
+            <PhotoUploader reportId={report.id} onUploaded={onChanged} />
+            <p className="text-xs text-gray-500">
+              New photos go in the section about where they were taken, or the
+              last section.
+            </p>
+          </div>
+        </Card>
+
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-gray-200 bg-gray-100/95 py-3 backdrop-blur">
+          <button
+            type="submit"
+            className={primaryButton}
+            disabled={
+              !dirty ||
+              saving ||
+              trimmedTitle === "" ||
+              !slugValid ||
+              date === "" ||
+              sectionErrors
+            }
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+          {dirty && (
+            <button
+              type="button"
+              className={ghostButton}
+              disabled={saving}
+              onClick={discard}
+            >
+              <ArrowUturnLeftIcon className="size-4" />
+              Discard changes
+            </button>
+          )}
+          <span className="text-sm text-gray-500">
+            {dirty ? "Unsaved changes" : "All changes saved"}
+          </span>
+          <ErrorText error={update.error ?? saveSections.error} />
+        </div>
+      </form>
+
+      <div className="flex flex-col gap-3 lg:sticky lg:top-4 lg:self-start">
+        <div className="overflow-hidden rounded-lg border border-gray-200">
+          <TripMap
+            track={track}
+            photos={markers}
+            selectedId={selectedId}
+            hoverPosition={hoverPosition}
+            onSelectPhoto={setSelectedId}
+            onMovePhoto={place}
+            hiddenEndsMeters={report.hiddenEndsMeters}
+            highlight={highlight}
+            onMapClick={
+              placing === undefined
+                ? undefined
+                : (position) => {
+                    place(placing.id, position);
+                    setPlacingId(null);
+                  }
+            }
+            fitKey={report.id}
+            className="h-[45vh] min-h-72"
+          />
+        </div>
+        {placing === undefined ? (
+          <p className="text-xs text-gray-500">
+            Drag a photo on the map to move it. Photos that aren&apos;t on the
+            map yet can be placed from their section.
+          </p>
+        ) : (
+          <p className="flex items-center justify-between gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Click the map where photo {numbers.get(placing.id)} was taken.
+            <button
+              type="button"
+              className={ghostButton}
+              onClick={() => {
+                setPlacingId(null);
+              }}
+            >
+              Cancel
+            </button>
+          </p>
+        )}
+        <ErrorText error={movePhoto.error} />
+        {splitting >= 0 && (
+          <p className="flex items-center justify-between gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Click the elevation profile where section {splitting + 1} should
+            split.
+            <button
+              type="button"
+              className={ghostButton}
+              onClick={() => {
+                setSplittingKey(null);
+              }}
+            >
+              Cancel
+            </button>
+          </p>
+        )}
+        {profile.length > 1 && (
+          <Card>
+            <ElevationProfile
+              points={profile}
+              markers={photoMarkers}
+              ranges={ranges}
+              height={170}
+              onHover={setHoverIndex}
+              onSelectDistance={
+                splitting < 0
+                  ? undefined
+                  : (distance) => {
+                      change(
+                        splitSection(sections, splitting, distance, photosById)
+                      );
+                      setSplittingKey(null);
+                    }
+              }
+            />
+          </Card>
+        )}
+        {photos.some(
+          (photo) => photo.locationSource === LocationSource.UNSPECIFIED
+        ) && (
+          <p className="text-xs text-amber-800">
+            Some photos aren&apos;t on the map yet.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const NO_TRACK: RoutePoint[] = [];
+
+// TripReportPage edits a trip report: its story, photos and publication.
+const TripReportPage: React.FC = () => {
+  const { id = "" } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isPending, isError, data, error, refetch } = useQuery(getTripReport, {
+    id,
+    includeTrack: true,
+  });
+  const profileQuery = useQuery(getProfile);
+
   const invalidate = async () => {
     await invalidateServices(queryClient, [TripReportService]);
   };
@@ -406,24 +687,6 @@ const TripReportPage: React.FC = () => {
       await invalidate();
     },
   });
-  const movePhoto = useMutation(updateTripPhoto, { onSuccess: invalidate });
-  const reorder = useMutation(reorderTripPhotos, { onSuccess: invalidate });
-
-  /**
-   * Derived data is memoized, so the map isn't redrawn while hovering the
-   * elevation profile.
-   */
-  const photos = useMemo(
-    () => data?.report?.photos ?? [],
-    [data?.report?.photos]
-  );
-  const track = useMemo(() => trackPositions(data?.track ?? []), [data?.track]);
-  const profile = useMemo(
-    () => profilePoints(data?.track ?? []),
-    [data?.track]
-  );
-  const markers = useMemo(() => mapPhotos(photos), [photos]);
-  const photoMarkers = useMemo(() => profileMarkers(photos), [photos]);
 
   if (isPending) {
     return <Loading />;
@@ -443,30 +706,7 @@ const TripReportPage: React.FC = () => {
     return <p>Trip report not found.</p>;
   }
   const handle = profileQuery.data?.profile?.handle;
-  const placing = photos.find((photo) => photo.id === placingId);
-  const placingNumber = placing === undefined ? 0 : photos.indexOf(placing) + 1;
-  let hoverPosition: LatLngTuple | null = null;
-  if (hoverIndex !== null) {
-    hoverPosition = track.at(hoverIndex) ?? null;
-  }
   const publicPath = handle === undefined ? "" : `/u/${handle}/${report.slug}`;
-
-  const place = (photoId: string, position: LatLng) => {
-    movePhoto.mutate({
-      id: photoId,
-      location: { lat: position.lat, lng: position.wrap().lng },
-    });
-  };
-  const move = (index: number, delta: number) => {
-    const ids = photos.map((photo) => photo.id);
-    const target = index + delta;
-    const [moved] = ids.splice(index, 1);
-    if (moved === undefined || target < 0 || target > ids.length) {
-      return;
-    }
-    ids.splice(target, 0, moved);
-    reorder.mutate({ photoIds: ids, reportId: report.id });
-  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -561,114 +801,15 @@ const TripReportPage: React.FC = () => {
           . Anyone with the link can read it, and search engines can find it.
         </p>
       )}
-      <ErrorText
-        error={
-          publish.error ?? unpublish.error ?? remove.error ?? reorder.error
-        }
-      />
+      <ErrorText error={publish.error ?? unpublish.error ?? remove.error} />
       <TripStatsRow stats={report.stats} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <Card title="Story">
-            <ReportForm
-              key={report.id}
-              report={report}
-              handle={handle}
-              onSaved={invalidate}
-            />
-          </Card>
-          <Card title={`Photos (${photos.length})`}>
-            <div className="flex flex-col gap-4">
-              <PhotoUploader reportId={report.id} onUploaded={invalidate} />
-              {photos.length > 0 && (
-                <ul className="flex flex-col gap-2">
-                  {photos.map((photo, index) => (
-                    <PhotoRow
-                      key={photo.id}
-                      photo={photo}
-                      number={index + 1}
-                      count={photos.length}
-                      selected={photo.id === selectedId}
-                      placing={photo.id === placingId}
-                      onSelect={() => {
-                        setSelectedId(photo.id);
-                      }}
-                      onPlace={() => {
-                        setSelectedId(photo.id);
-                        setPlacingId(photo.id === placingId ? null : photo.id);
-                      }}
-                      onMove={(delta) => {
-                        move(index, delta);
-                      }}
-                      onChanged={invalidate}
-                    />
-                  ))}
-                </ul>
-              )}
-            </div>
-          </Card>
-        </div>
-        <div className="flex flex-col gap-3 lg:sticky lg:top-4 lg:self-start">
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <TripMap
-              track={track}
-              photos={markers}
-              selectedId={selectedId}
-              hoverPosition={hoverPosition}
-              onSelectPhoto={setSelectedId}
-              onMovePhoto={place}
-              hiddenEndsMeters={report.hiddenEndsMeters}
-              onMapClick={
-                placing === undefined
-                  ? undefined
-                  : (position) => {
-                      place(placing.id, position);
-                      setPlacingId(null);
-                    }
-              }
-              fitKey={report.id}
-              className="h-[45vh] min-h-72"
-            />
-          </div>
-          {placing === undefined ? (
-            <p className="text-xs text-gray-500">
-              Drag a photo on the map to move it. Photos that aren&apos;t on the
-              map yet can be placed from the list.
-            </p>
-          ) : (
-            <p className="flex items-center justify-between gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Click the map where photo {placingNumber} was taken.
-              <button
-                type="button"
-                className={ghostButton}
-                onClick={() => {
-                  setPlacingId(null);
-                }}
-              >
-                Cancel
-              </button>
-            </p>
-          )}
-          <ErrorText error={movePhoto.error} />
-          {profile.length > 1 && (
-            <Card>
-              <ElevationProfile
-                points={profile}
-                markers={photoMarkers}
-                height={150}
-                onHover={setHoverIndex}
-              />
-            </Card>
-          )}
-          {photos.some(
-            (photo) => photo.locationSource === LocationSource.UNSPECIFIED
-          ) && (
-            <p className="text-xs text-amber-800">
-              Some photos aren&apos;t on the map yet.
-            </p>
-          )}
-        </div>
-      </div>
+      <ReportEditor
+        key={report.id}
+        report={report}
+        track={data.track.length > 0 ? data.track : NO_TRACK}
+        handle={handle}
+        onChanged={invalidate}
+      />
     </div>
   );
 };

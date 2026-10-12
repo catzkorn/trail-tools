@@ -22,9 +22,12 @@ var (
 	// ErrSlugTaken is returned when another of the user's reports has the
 	// slug.
 	ErrSlugTaken = errors.New("the slug is taken")
-	// ErrPhotosMismatch is returned when reordering photos with a list that
-	// isn't exactly the report's photos.
+	// ErrPhotosMismatch is returned when setting the sections of a report
+	// with photos that aren't the report's, or with a photo twice.
 	ErrPhotosMismatch = errors.New("the photos don't match the report's photos")
+	// ErrSectionsMismatch is returned when setting the sections of a report
+	// with a section of another report, or with a section twice.
+	ErrSectionsMismatch = errors.New("the sections don't match the report's sections")
 	// ErrPhotoImported is returned when adding a photo from Strava that the
 	// report already has.
 	ErrPhotoImported = errors.New("the photo was already imported")
@@ -60,7 +63,6 @@ type Report struct {
 	ActivityID pgtype.UUID
 	Title      string
 	Slug       string
-	Body       string
 	// The local date of the trip.
 	Date      time.Time
 	Timezone  string
@@ -108,6 +110,9 @@ type Location struct {
 type Photo struct {
 	ID       pgtype.UUID
 	ReportID pgtype.UUID
+	// The section of the story the photo is in.
+	SectionID pgtype.UUID
+	// The order of the photo within its section.
 	Position int32
 	// The images are stored under <ObjectKey>/<size>.jpg.
 	ObjectKey string
@@ -121,6 +126,45 @@ type Photo struct {
 	// Strava's ID of the photo, if it was imported from Strava.
 	StravaPhotoID string
 	CreateTime    time.Time
+}
+
+// Section is a section of a report's story, like a chapter of a blog post.
+type Section struct {
+	// Invalid for a new section.
+	ID       pgtype.UUID
+	ReportID pgtype.UUID
+	// Empty for a section without a heading, e.g. an introduction.
+	Title string
+	// Plain text, with paragraphs separated by blank lines.
+	Body string
+	// The stretch of the track the section is about, if HasDistances.
+	StartDistanceMeters, EndDistanceMeters float64
+	HasDistances                           bool
+	// The IDs of the section's photos in order, when setting sections.
+	PhotoIDs []pgtype.UUID
+}
+
+// Contains returns whether the section is about the stretch of the track at
+// the distance.
+func (s *Section) Contains(distanceMeters float64) bool {
+	return s.HasDistances && distanceMeters >= s.StartDistanceMeters && distanceMeters <= s.EndDistanceMeters
+}
+
+// SectionFor returns the section a photo taken at the location belongs in:
+// the first section about the stretch of the track where it was taken, or
+// else the last section. It returns nil if there are no sections.
+func SectionFor(sections []*Section, loc *Location) *Section {
+	if len(sections) == 0 {
+		return nil
+	}
+	if loc != nil && loc.HasTrackDistanceMeters {
+		for _, s := range sections {
+			if s.Contains(loc.TrackDistanceMeters) {
+				return s
+			}
+		}
+	}
+	return sections[len(sections)-1]
 }
 
 // GetProfile gets the user's public profile.
@@ -176,15 +220,20 @@ func (r *Repository) GetUserName(ctx context.Context, userID pgtype.UUID) (strin
 	return name, nil
 }
 
-// CreateReport creates a trip report. It returns ErrSlugTaken if another of
-// the user's reports has the slug.
-func (r *Repository) CreateReport(ctx context.Context, report *Report) (*Report, error) {
-	row, err := r.q.CreateReport(ctx, &gen.CreateReportParams{
+// CreateReport creates a trip report, with a first section with the text.
+// It returns ErrSlugTaken if another of the user's reports has the slug.
+func (r *Repository) CreateReport(ctx context.Context, report *Report, body string) (*Report, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback(context.Background())
+	q := r.q.WithTx(tx)
+	row, err := q.CreateReport(ctx, &gen.CreateReportParams{
 		UserID:              report.UserID,
 		ActivityID:          report.ActivityID,
 		Title:               report.Title,
 		Slug:                report.Slug,
-		Body:                report.Body,
 		Date:                store.DateToPG(report.Date),
 		Timezone:            report.Timezone,
 		SportType:           report.SportType,
@@ -200,6 +249,12 @@ func (r *Repository) CreateReport(ctx context.Context, report *Report) (*Report,
 			return nil, ErrSlugTaken
 		}
 		return nil, fmt.Errorf("failed to create trip report: %w", err)
+	}
+	if _, err := q.CreateSection(ctx, &gen.CreateSectionParams{ReportID: row.ID, Body: body}); err != nil {
+		return nil, fmt.Errorf("failed to create section: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return reportFromDB(row), nil
 }
@@ -256,7 +311,6 @@ func (r *Repository) ListReports(ctx context.Context, userID pgtype.UUID, filter
 			ActivityID:          row.ActivityID,
 			Title:               row.Title,
 			Slug:                row.Slug,
-			Body:                row.Body,
 			Date:                store.DateFromPG(row.Date),
 			Timezone:            row.Timezone,
 			SportType:           row.SportType,
@@ -279,7 +333,6 @@ func (r *Repository) ListReports(ctx context.Context, userID pgtype.UUID, filter
 type ReportUpdate struct {
 	ID, UserID  pgtype.UUID
 	Title, Slug *string
-	Body        *string
 	Date        *time.Time
 	// How far around the start and finish of the track to hide.
 	HiddenEndsMeters *int32
@@ -294,9 +347,6 @@ func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report
 	}
 	if u.Slug != nil {
 		params.Slug = pgtype.Text{String: *u.Slug, Valid: true}
-	}
-	if u.Body != nil {
-		params.Body = pgtype.Text{String: *u.Body, Valid: true}
 	}
 	if u.Date != nil {
 		params.Date = store.DateToPG(*u.Date)
@@ -363,7 +413,8 @@ func (r *Repository) DeleteReport(ctx context.Context, userID, reportID pgtype.U
 	return keys, nil
 }
 
-// AddPhoto adds a photo to the end of one of the user's reports.
+// AddPhoto adds a photo to one of the user's reports, at the end of the
+// section about where it was taken, or else of the last section.
 func (r *Repository) AddPhoto(ctx context.Context, userID pgtype.UUID, p *Photo) (*Photo, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -371,15 +422,28 @@ func (r *Repository) AddPhoto(ctx context.Context, userID pgtype.UUID, p *Photo)
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	exists, err := q.ReportExists(ctx, &gen.ReportExistsParams{ID: p.ReportID, UserID: userID})
-	if err != nil {
+	// Lock the report, so its sections don't change meanwhile.
+	if _, err := q.LockReport(ctx, &gen.LockReportParams{ID: p.ReportID, UserID: userID}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
 		return nil, fmt.Errorf("failed to get trip report: %w", err)
 	}
-	if !exists {
-		return nil, store.ErrNotFound
+	rows, err := q.ListSections(ctx, []pgtype.UUID{p.ReportID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sections: %w", err)
+	}
+	sections := make([]*Section, len(rows))
+	for i, row := range rows {
+		sections[i] = sectionFromDB(row)
+	}
+	section := SectionFor(sections, p.Location)
+	if section == nil {
+		return nil, errors.New("the report has no sections")
 	}
 	params := &gen.AddPhotoParams{
 		ReportID:      p.ReportID,
+		SectionID:     section.ID,
 		ObjectKey:     p.ObjectKey,
 		Width:         p.Width,
 		Height:        p.Height,
@@ -486,57 +550,152 @@ func (r *Repository) UpdatePhotoLocation(ctx context.Context, userID, photoID pg
 	return photoFromDB(row), nil
 }
 
-// ReorderPhotos orders the photos of one of the user's reports. photoIDs
-// must be exactly the report's photos, or ErrPhotosMismatch is returned.
-func (r *Repository) ReorderPhotos(ctx context.Context, userID, reportID pgtype.UUID, photoIDs []pgtype.UUID) ([]*Photo, error) {
+// SetSections replaces the sections of one of the user's reports, in order.
+// Sections with an ID are updated, sections without one are created, and
+// the report's other sections are deleted. Each section's photos move to it
+// in the order given; photos that aren't listed stay in their section, or
+// move to the first section if theirs is deleted. It returns
+// ErrSectionsMismatch or ErrPhotosMismatch for sections or photos that
+// aren't the report's or are listed twice.
+func (r *Repository) SetSections(ctx context.Context, userID, reportID pgtype.UUID, sections []*Section) ([]*Section, error) {
+	if len(sections) == 0 {
+		return nil, errors.New("a report needs a section")
+	}
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %w", err)
 	}
 	defer tx.Rollback(context.Background())
 	q := r.q.WithTx(tx)
-	exists, err := q.ReportExists(ctx, &gen.ReportExistsParams{ID: reportID, UserID: userID})
-	if err != nil {
+	if _, err := q.LockReport(ctx, &gen.LockReportParams{ID: reportID, UserID: userID}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
 		return nil, fmt.Errorf("failed to get trip report: %w", err)
 	}
-	if !exists {
-		return nil, store.ErrNotFound
-	}
-	current, err := q.ListPhotos(ctx, []pgtype.UUID{reportID})
+	current, err := q.ListSections(ctx, []pgtype.UUID{reportID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list photos: %w", err)
+		return nil, fmt.Errorf("failed to list sections: %w", err)
 	}
-	remaining := map[pgtype.UUID]bool{}
-	for _, p := range current {
-		remaining[p.ID] = true
+	unused := map[pgtype.UUID]bool{}
+	for _, row := range current {
+		unused[row.ID] = true
 	}
-	for _, id := range photoIDs {
-		if !remaining[id] {
+	var kept, photoIDs, photoSections []pgtype.UUID
+	listed := map[pgtype.UUID]bool{}
+	for i, sec := range sections {
+		start := pgtype.Float8{Float64: sec.StartDistanceMeters, Valid: sec.HasDistances}
+		end := pgtype.Float8{Float64: sec.EndDistanceMeters, Valid: sec.HasDistances}
+		id := sec.ID
+		if id.Valid {
+			if !unused[id] {
+				return nil, ErrSectionsMismatch
+			}
+			delete(unused, id)
+			if _, err := q.UpdateSection(ctx, &gen.UpdateSectionParams{
+				ID:                  id,
+				ReportID:            reportID,
+				Position:            int32(i),
+				Title:               sec.Title,
+				Body:                sec.Body,
+				StartDistanceMeters: start,
+				EndDistanceMeters:   end,
+			}); err != nil {
+				return nil, fmt.Errorf("failed to update section: %w", err)
+			}
+		} else {
+			row, err := q.CreateSection(ctx, &gen.CreateSectionParams{
+				ReportID:            reportID,
+				Position:            int32(i),
+				Title:               sec.Title,
+				Body:                sec.Body,
+				StartDistanceMeters: start,
+				EndDistanceMeters:   end,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to create section: %w", err)
+			}
+			id = row.ID
+		}
+		kept = append(kept, id)
+		for _, photoID := range sec.PhotoIDs {
+			if listed[photoID] {
+				return nil, ErrPhotosMismatch
+			}
+			listed[photoID] = true
+			photoIDs = append(photoIDs, photoID)
+			photoSections = append(photoSections, id)
+		}
+	}
+	if len(photoIDs) > 0 {
+		n, err := q.SetPhotoSections(ctx, &gen.SetPhotoSectionsParams{
+			ReportID:   reportID,
+			PhotoIds:   photoIDs,
+			SectionIds: photoSections,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to move photos: %w", err)
+		}
+		if n != int64(len(photoIDs)) {
 			return nil, ErrPhotosMismatch
 		}
-		delete(remaining, id)
 	}
-	if len(remaining) > 0 {
-		return nil, ErrPhotosMismatch
-	}
-	if err := q.SetPhotoPositions(ctx, &gen.SetPhotoPositionsParams{ReportID: reportID, PhotoIds: photoIDs}); err != nil {
-		return nil, fmt.Errorf("failed to reorder photos: %w", err)
+	if len(unused) > 0 {
+		if err := q.MovePhotosOutOfSections(ctx, &gen.MovePhotosOutOfSectionsParams{
+			SectionID: kept[0],
+			ReportID:  reportID,
+			KeptIds:   kept,
+		}); err != nil {
+			return nil, fmt.Errorf("failed to move photos: %w", err)
+		}
+		if err := q.DeleteSectionsExcept(ctx, &gen.DeleteSectionsExceptParams{ReportID: reportID, KeptIds: kept}); err != nil {
+			return nil, fmt.Errorf("failed to delete sections: %w", err)
+		}
 	}
 	if err := q.TouchReport(ctx, reportID); err != nil {
 		return nil, fmt.Errorf("failed to update trip report: %w", err)
 	}
-	rows, err := q.ListPhotos(ctx, []pgtype.UUID{reportID})
+	rows, err := q.ListSections(ctx, []pgtype.UUID{reportID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list photos: %w", err)
+		return nil, fmt.Errorf("failed to list sections: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	photos := make([]*Photo, len(rows))
+	result := make([]*Section, len(rows))
 	for i, row := range rows {
-		photos[i] = photoFromDB(row)
+		result[i] = sectionFromDB(row)
 	}
-	return photos, nil
+	return result, nil
+}
+
+// ListSections lists the sections of reports in order. The caller must
+// check that the reports can be accessed.
+func (r *Repository) ListSections(ctx context.Context, reportIDs ...pgtype.UUID) (map[pgtype.UUID][]*Section, error) {
+	rows, err := r.q.ListSections(ctx, reportIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sections: %w", err)
+	}
+	sections := map[pgtype.UUID][]*Section{}
+	for _, row := range rows {
+		sections[row.ReportID] = append(sections[row.ReportID], sectionFromDB(row))
+	}
+	return sections, nil
+}
+
+// ListExcerpts returns the text of the first section with text of each of
+// the reports, if they have one. The caller must check that the reports can
+// be accessed.
+func (r *Repository) ListExcerpts(ctx context.Context, reportIDs ...pgtype.UUID) (map[pgtype.UUID]string, error) {
+	rows, err := r.q.ListExcerpts(ctx, reportIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list excerpts: %w", err)
+	}
+	excerpts := make(map[pgtype.UUID]string, len(rows))
+	for _, row := range rows {
+		excerpts[row.ReportID] = row.Body
+	}
+	return excerpts, nil
 }
 
 // DeletePhoto deletes a photo of one of the user's reports. It returns the
@@ -559,7 +718,6 @@ func reportFromDB(row *gen.TripReport) *Report {
 		ActivityID:          row.ActivityID,
 		Title:               row.Title,
 		Slug:                row.Slug,
-		Body:                row.Body,
 		Date:                store.DateFromPG(row.Date),
 		Timezone:            row.Timezone,
 		SportType:           row.SportType,
@@ -578,10 +736,23 @@ func reportFromDB(row *gen.TripReport) *Report {
 	}
 }
 
+func sectionFromDB(row *gen.TripReportSection) *Section {
+	return &Section{
+		ID:                  row.ID,
+		ReportID:            row.ReportID,
+		Title:               row.Title,
+		Body:                row.Body,
+		StartDistanceMeters: row.StartDistanceMeters.Float64,
+		EndDistanceMeters:   row.EndDistanceMeters.Float64,
+		HasDistances:        row.StartDistanceMeters.Valid && row.EndDistanceMeters.Valid,
+	}
+}
+
 func photoFromDB(row *gen.TripPhoto) *Photo {
 	p := &Photo{
 		ID:            row.ID,
 		ReportID:      row.ReportID,
+		SectionID:     row.SectionID,
 		Position:      row.Position,
 		ObjectKey:     row.ObjectKey,
 		Width:         row.Width,
