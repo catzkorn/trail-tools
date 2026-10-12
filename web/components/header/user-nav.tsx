@@ -10,7 +10,7 @@ interface UserNavProps {
 
 const UserNav: React.FC<UserNavProps> = ({ user }) => (
   <div className="ml-4 flex items-center gap-3 md:ml-6">
-    <span className="hidden items-center gap-2 text-sm text-gray-200 sm:flex">
+    <span className="hidden items-center gap-2 text-sm text-gray-200 lg:flex">
       {user.name}
       {user.admin && (
         <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-gray-900 uppercase">

@@ -1,0 +1,390 @@
+import Loading from "@components/loading";
+import {
+  RaceComparisonView,
+  SECTIONS,
+} from "@components/races/race-report-bits";
+import type { SectionKey } from "@components/races/race-report-bits";
+import Card from "@components/ui/card";
+import ConfirmButton from "@components/ui/confirm-button";
+import { TextField } from "@components/ui/fields";
+import { Badge } from "@components/ui/misc";
+import QueryError, { ErrorText } from "@components/ui/query-error";
+import {
+  inputClass,
+  labelClass,
+  linkClass,
+  primaryButton,
+  secondaryButton,
+  secondaryDangerButton,
+} from "@components/ui/styles";
+import { useMutation, useQuery } from "@connectrpc/connect-query";
+import {
+  ArrowTopRightOnSquareIcon,
+  EyeSlashIcon,
+  GlobeAltIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  deleteRaceReport,
+  getRaceReport,
+  publishRaceReport,
+  unpublishRaceReport,
+  updateRaceReport,
+} from "gen/races/v1/race_reports-RaceReportService_connectquery";
+import type { RaceReport } from "gen/races/v1/race_reports_pb";
+import { RaceReportService } from "gen/races/v1/race_reports_pb";
+import { getProfile } from "gen/trips/v1/trips-TripReportService_connectquery";
+import { formatDate, formatKm } from "helpers/format";
+import { durationInput, parseDuration } from "helpers/parse";
+import { invalidateServices } from "helpers/query";
+import { isValidSlug, slugify } from "helpers/slug";
+import React, { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
+
+interface ReportFormProps {
+  report: RaceReport;
+  handle: string | undefined;
+  onSaved: () => Promise<void>;
+}
+
+// ReportForm edits a race report's title, address, result and story.
+const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
+  const [title, setTitle] = useState(report.title);
+  const [slug, setSlug] = useState(report.slug);
+  const [slugEdited, setSlugEdited] = useState(
+    report.slug !== slugify(report.title)
+  );
+  const [finish, setFinish] = useState(
+    durationInput(report.finishSeconds, true)
+  );
+  const [placement, setPlacement] = useState(report.placement);
+  const [sections, setSections] = useState<Record<SectionKey, string>>({
+    lessons: report.lessons,
+    nutrition: report.nutrition,
+    preparation: report.preparation,
+    raceDay: report.raceDay,
+    summary: report.summary,
+    wentBadly: report.wentBadly,
+    wentWell: report.wentWell,
+  });
+  const update = useMutation(updateRaceReport, { onSuccess: onSaved });
+
+  const trimmedTitle = title.trim();
+  const finishSeconds = parseDuration(finish);
+  const slugValid = isValidSlug(slug);
+  const changedSections = SECTIONS.filter(
+    (section) => sections[section.key] !== report[section.key]
+  );
+  const dirty =
+    trimmedTitle !== report.title ||
+    slug !== report.slug ||
+    finishSeconds !== report.finishSeconds ||
+    placement.trim() !== report.placement ||
+    changedSections.length > 0;
+  const save = () => {
+    if (finishSeconds === null) {
+      return;
+    }
+    const changes: Partial<Record<SectionKey, string>> = {};
+    for (const section of changedSections) {
+      changes[section.key] = sections[section.key];
+    }
+    update.mutate({
+      ...changes,
+      finishSeconds:
+        finishSeconds === report.finishSeconds ? undefined : finishSeconds,
+      id: report.id,
+      placement:
+        placement.trim() === report.placement ? undefined : placement.trim(),
+      slug: slug === report.slug ? undefined : slug,
+      title: trimmedTitle === report.title ? undefined : trimmedTitle,
+    });
+  };
+
+  return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        save();
+      }}
+    >
+      <TextField
+        label="Title"
+        value={title}
+        required
+        onChange={(value) => {
+          setTitle(value);
+          if (!slugEdited && !report.published) {
+            const next = slugify(value);
+            if (next !== "") {
+              setSlug(next);
+            }
+          }
+        }}
+      />
+      <label className="flex min-w-0 flex-col gap-1">
+        <span className={labelClass}>Address</span>
+        <div className="flex items-center rounded-md border border-gray-300 bg-white shadow-sm focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600">
+          <span className="shrink-0 truncate pl-2.5 text-sm text-gray-500">
+            /u/{handle ?? "<handle>"}/races/
+          </span>
+          <input
+            value={slug}
+            disabled={report.published}
+            className="block w-full min-w-0 rounded-md border-0 bg-transparent py-1.5 pr-2.5 pl-0.5 text-sm text-gray-900 focus:outline-none disabled:text-gray-500"
+            onChange={(event) => {
+              setSlug(event.target.value.toLowerCase());
+              setSlugEdited(true);
+            }}
+          />
+        </div>
+        {report.published ? (
+          <span className="text-xs text-gray-500">
+            The address of a published report can&apos;t change, so links to it
+            keep working. Unpublish the report to change it.
+          </span>
+        ) : (
+          !slugValid && (
+            <span className="text-xs text-red-700">
+              Use lowercase letters and digits separated by single dashes.
+            </span>
+          )
+        )}
+      </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
+        <TextField
+          label="Finish time (h:mm:ss)"
+          value={finish}
+          onChange={setFinish}
+          placeholder="5:42:10"
+        />
+        <TextField
+          label="Placement"
+          value={placement}
+          onChange={setPlacement}
+          placeholder="e.g. 12th of 240, 3rd M40"
+        />
+      </div>
+      {finishSeconds === null && (
+        <p className="text-xs text-red-700">
+          Enter the finish time as h:mm:ss.
+        </p>
+      )}
+      {SECTIONS.map((section) => (
+        <label key={section.key} className="flex flex-col gap-1">
+          <span className={labelClass}>{section.label}</span>
+          <textarea
+            value={sections[section.key]}
+            rows={section.key === "summary" ? 3 : 6}
+            placeholder={section.placeholder}
+            className={`${inputClass} text-base leading-7`}
+            onChange={(event) => {
+              setSections((current) => ({
+                ...current,
+                [section.key]: event.target.value,
+              }));
+            }}
+          />
+        </label>
+      ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          className={primaryButton}
+          disabled={
+            !dirty ||
+            update.isPending ||
+            trimmedTitle === "" ||
+            !slugValid ||
+            finishSeconds === null
+          }
+        >
+          {update.isPending ? "Saving…" : "Save"}
+        </button>
+        <span className="text-sm text-gray-500">
+          {dirty ? "Unsaved changes" : "All changes saved"}
+        </span>
+      </div>
+      <ErrorText error={update.error} />
+    </form>
+  );
+};
+
+// RaceReportPage edits one of the user's race reports.
+const RaceReportPage: React.FC = () => {
+  const { id = "" } = useParams();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { isPending, isError, data, error, refetch } = useQuery(getRaceReport, {
+    id,
+  });
+  const profileQuery = useQuery(getProfile);
+  const handle = profileQuery.data?.profile?.handle;
+  const invalidate = async () => {
+    await invalidateServices(queryClient, [RaceReportService]);
+  };
+  const publish = useMutation(publishRaceReport, { onSuccess: invalidate });
+  const unpublish = useMutation(unpublishRaceReport, {
+    onSuccess: invalidate,
+  });
+  const remove = useMutation(deleteRaceReport, {
+    onSuccess: async () => {
+      await navigate("/race-reports");
+      await invalidate();
+    },
+  });
+
+  if (isPending) {
+    return <Loading />;
+  }
+  if (isError) {
+    return (
+      <QueryError
+        error={error}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
+  const { report, comparison } = data;
+  if (report === undefined) {
+    return <p>Race report not found.</p>;
+  }
+  const publicPath =
+    handle === undefined ? "" : `/u/${handle}/races/${report.slug}`;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link
+            to="/race-reports"
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Race reports
+          </Link>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-gray-900">
+            {report.title}
+            {report.published ? (
+              <Badge className="bg-emerald-50 text-emerald-800 ring-emerald-300">
+                Published
+              </Badge>
+            ) : (
+              <Badge>Draft</Badge>
+            )}
+          </h1>
+          <p className="text-sm text-gray-500">
+            {[
+              report.raceName,
+              formatDate(report.raceDate),
+              report.distanceMeters > 0 ? formatKm(report.distanceMeters) : "",
+              report.elevationGainMeters > 0
+                ? `${Math.round(report.elevationGainMeters).toLocaleString()} m gain`
+                : "",
+            ]
+              .filter((part) => part !== "")
+              .join(" · ")}
+            {report.activityId !== "" && (
+              <>
+                {" · "}
+                <Link
+                  to={`/activities/${report.activityId}`}
+                  className="hover:underline"
+                >
+                  View the activity
+                </Link>
+              </>
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {publicPath !== "" && (
+            <Link to={publicPath} className={secondaryButton}>
+              <ArrowTopRightOnSquareIcon className="size-4" />
+              {report.published ? "View" : "Preview"}
+            </Link>
+          )}
+          {report.published ? (
+            <button
+              type="button"
+              className={secondaryButton}
+              disabled={unpublish.isPending}
+              onClick={() => {
+                unpublish.mutate({ id: report.id });
+              }}
+            >
+              <EyeSlashIcon className="size-4" />
+              Unpublish
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={primaryButton}
+              disabled={handle === undefined || publish.isPending}
+              onClick={() => {
+                publish.mutate({ id: report.id });
+              }}
+            >
+              <GlobeAltIcon className="size-4" />
+              Publish
+            </button>
+          )}
+          <ConfirmButton
+            className={secondaryDangerButton}
+            title="Delete race report?"
+            message="The report is deleted. This can't be undone."
+            disabled={remove.isPending}
+            onConfirm={() => {
+              remove.mutate({ id: report.id });
+            }}
+          >
+            <TrashIcon className="size-4" />
+            Delete
+          </ConfirmButton>
+        </div>
+      </div>
+      {profileQuery.data !== undefined && handle === undefined && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          To publish, first choose a public handle for your reports&apos;
+          address in{" "}
+          <Link to="/settings" className={linkClass}>
+            Settings
+          </Link>
+          .
+        </p>
+      )}
+      {report.published && report.url !== "" && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          Published at{" "}
+          <a href={report.url} className="font-medium break-all underline">
+            {report.url}
+          </a>
+        </p>
+      )}
+      <ErrorText error={publish.error ?? unpublish.error ?? remove.error} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
+        <Card title="Story">
+          <ReportForm
+            key={report.id}
+            report={report}
+            handle={handle}
+            onSaved={invalidate}
+          />
+        </Card>
+        <div className="order-first flex flex-col gap-4 lg:sticky lg:top-4 lg:order-none lg:self-start">
+          <Card title="Plan vs actual">
+            <RaceComparisonView
+              comparison={comparison}
+              finishSeconds={report.finishSeconds}
+            />
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RaceReportPage;

@@ -34,7 +34,7 @@ func TestSlugify(t *testing.T) {
 			t.Errorf("Slugify(%q) = %q, want %q", tt.title, got, tt.want)
 		}
 		if got != "" {
-			if err := validateSlug(got); err != nil {
+			if err := ValidateSlug(got); err != nil {
 				t.Errorf("Slugify(%q) = %q, which is invalid: %v", tt.title, got, err)
 			}
 		}
@@ -43,13 +43,13 @@ func TestSlugify(t *testing.T) {
 
 func TestValidateSlug(t *testing.T) {
 	for _, slug := range []string{"a", "my-first-ultra", "2026-utmb"} {
-		if err := validateSlug(slug); err != nil {
-			t.Errorf("validateSlug(%q) = %v, want nil", slug, err)
+		if err := ValidateSlug(slug); err != nil {
+			t.Errorf("ValidateSlug(%q) = %v, want nil", slug, err)
 		}
 	}
 	for _, slug := range []string{"", "-a", "a-", "a--b", "A", "a b", "a_b", "ä", strings.Repeat("a", 81)} {
-		if err := validateSlug(slug); err == nil {
-			t.Errorf("validateSlug(%q) = nil, want an error", slug)
+		if err := ValidateSlug(slug); err == nil {
+			t.Errorf("ValidateSlug(%q) = nil, want an error", slug)
 		}
 	}
 }

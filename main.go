@@ -57,6 +57,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/plan"
 	"github.com/catzkorn/trail-tools/internal/services/race"
 	"github.com/catzkorn/trail-tools/internal/services/raceplan"
+	"github.com/catzkorn/trail-tools/internal/services/racereport"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/services/trip"
@@ -411,6 +412,7 @@ func run(
 		activitySyncer = stravaSyncer
 	}
 	tripService := trip.NewService(log, tripRepo, activityRepo, activitySyncer, photos, baseURL)
+	raceReportService := racereport.NewService(log, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
 	oauthServer := oauth.NewServer(log, users, baseURL, mcpPath)
@@ -444,6 +446,7 @@ func run(
 	plansv1connect.RegisterTrainingPlanServiceHandler(server, planService)
 	racesv1connect.RegisterRaceServiceHandler(server, raceService)
 	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
+	racesv1connect.RegisterRaceReportServiceHandler(server, raceReportService)
 	oauthv1connect.RegisterOAuthServiceHandler(server, oauthService)
 	tripsv1connect.RegisterTripReportServiceHandler(server, tripService)
 	apiMux := http.NewServeMux()
@@ -481,6 +484,7 @@ func run(
 		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
 		mcp.Service{Name: racesv1connect.RacePlanServiceName, Handler: racePlanService},
 		mcp.Service{Name: tripsv1connect.TripReportServiceName, Handler: tripService},
+		mcp.Service{Name: racesv1connect.RaceReportServiceName, Handler: raceReportService},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create MCP server: %w", err)
@@ -544,7 +548,7 @@ func run(
 	// Serve trip report photos, and the public trip report pages with their
 	// metadata for search engines and link previews.
 	mux.Handle(trip.PhotoPath, authenticate(tripService.PhotoHandler()))
-	mux.Handle(trip.ProfilePath, authenticate(tripService.PageHandler(serveDir != "")))
+	mux.Handle(trip.ProfilePath, authenticate(raceReportService.PageHandler(serveDir != "", tripService.PageHandler(serveDir != ""))))
 
 	// Add auto-reloading middleware if serving from a directory
 	var srvHandler http.Handler = mux

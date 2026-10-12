@@ -62,9 +62,9 @@ func Slugify(title string) string {
 	return slug
 }
 
-// validateSlug checks that a slug is lowercase letters and digits
-// separated by single dashes.
-func validateSlug(slug string) error {
+// ValidateSlug checks that a slug of a report is lowercase letters and
+// digits separated by single dashes, and not too long.
+func ValidateSlug(slug string) error {
 	if slug == "" {
 		return errors.New("the slug is required")
 	}
