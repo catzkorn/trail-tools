@@ -257,6 +257,10 @@ message CreateRouteRequest {
 message CreateRouteResponse {
   // The created route.
   Route route = 1;
+  // Set when the route differs from what was asked for, e.g. when a track
+  // couldn't be snapped to the map and was kept exactly as recorded instead,
+  // to tell the user.
+  string warning = 2 [(mcp.v1.field).output_only = true];
 }
 
 message GetRouteRequest {

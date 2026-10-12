@@ -5,6 +5,7 @@ package services_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -298,6 +299,9 @@ func (f *fakeRouter) Route(_ context.Context, req routing.Request) (*routing.Pat
 	if req.From.Lat > 80 {
 		return nil, fmt.Errorf("%w: there is no mapped path near the point", routing.ErrNotRoutable)
 	}
+	if req.From.Lat > 60 && req.From.Lat < 70 {
+		return nil, errors.New("the routing graph is unavailable")
+	}
 	path := &routing.Path{Points: fakeRoutePath(req.From, req.To, 0)}
 	for range path.Points {
 		path.Terrains = append(path.Terrains, geo.TerrainTrail)
@@ -328,9 +332,14 @@ func (f *fakeRouter) lastPrefer() [][]geo.Point {
 type fakeMapData struct {
 	mu        sync.Mutex
 	forecasts []mapdata.ForecastQuery
+	// The number of FillElevations calls.
+	fills int
 }
 
 func (f *fakeMapData) FillElevations(_ context.Context, points []geo.Point, _ int) error {
+	f.mu.Lock()
+	f.fills++
+	f.mu.Unlock()
 	for i := range points {
 		points[i].Ele = points[i].Lat * 1000
 	}
