@@ -89,11 +89,13 @@ type env struct {
 	anonPlans  racesv1connect.RacePlanServiceClient
 	otherRaces racesv1connect.RaceServiceClient
 	otherPlans racesv1connect.RacePlanServiceClient
-	oauth      oauthv1connect.OAuthServiceClient
-	anonOAuth  oauthv1connect.OAuthServiceClient
-	trips      tripsv1connect.TripReportServiceClient
-	anonTrips  tripsv1connect.TripReportServiceClient
-	otherTrips tripsv1connect.TripReportServiceClient
+	// Another user's training plans.
+	otherTraining plansv1connect.TrainingPlanServiceClient
+	oauth         oauthv1connect.OAuthServiceClient
+	anonOAuth     oauthv1connect.OAuthServiceClient
+	trips         tripsv1connect.TripReportServiceClient
+	anonTrips     tripsv1connect.TripReportServiceClient
+	otherTrips    tripsv1connect.TripReportServiceClient
 }
 
 // consentPage stands in for the frontend's OAuth consent page.
@@ -232,6 +234,7 @@ func newEnv(t *testing.T) *env {
 	other := connect.NewClient(connecthttp.NewTransport(client, e.srv.URL), bearerInterceptor(e.otherToken))
 	e.otherRaces = racesv1connect.NewRaceServiceClient(other)
 	e.otherPlans = racesv1connect.NewRacePlanServiceClient(other)
+	e.otherTraining = plansv1connect.NewTrainingPlanServiceClient(other)
 	e.oauth = oauthv1connect.NewOAuthServiceClient(authed)
 	e.anonOAuth = oauthv1connect.NewOAuthServiceClient(anon)
 	e.trips = tripsv1connect.NewTripReportServiceClient(authed)

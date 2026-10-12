@@ -57,8 +57,10 @@ type Race struct {
 	// Invalid if the race has no course.
 	CourseRouteID pgtype.UUID
 	Notes         string
-	CreateTime    time.Time
-	UpdateTime    time.Time
+	// Whether the user is running the race, rather than considering it.
+	OnCalendar bool
+	CreateTime time.Time
+	UpdateTime time.Time
 }
 
 // CreateRace stores a new race.
@@ -76,6 +78,7 @@ func (r *Repository) CreateRace(ctx context.Context, race *Race) (*Race, error) 
 		Priority:            priorityToDB(race.Priority),
 		CourseRouteID:       race.CourseRouteID,
 		Notes:               race.Notes,
+		OnCalendar:          race.OnCalendar,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create race: %w", err)
@@ -95,9 +98,10 @@ func (r *Repository) GetRace(ctx context.Context, userID, raceID pgtype.UUID) (*
 	return raceFromDB(dbRace), nil
 }
 
-// ListRaces lists the user's races in date order.
-func (r *Repository) ListRaces(ctx context.Context, userID pgtype.UUID) ([]*Race, error) {
-	dbRaces, err := r.q.ListRaces(ctx, userID)
+// ListRaces lists the user's races in date order, or only those on the
+// user's calendar.
+func (r *Repository) ListRaces(ctx context.Context, userID pgtype.UUID, onCalendarOnly bool) ([]*Race, error) {
+	dbRaces, err := r.q.ListRaces(ctx, &gen.ListRacesParams{UserID: userID, OnCalendarOnly: onCalendarOnly})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list races: %w", err)
 	}
@@ -124,6 +128,7 @@ func (r *Repository) UpdateRace(ctx context.Context, race *Race) (*Race, error) 
 		Priority:            priorityToDB(race.Priority),
 		CourseRouteID:       race.CourseRouteID,
 		Notes:               race.Notes,
+		OnCalendar:          race.OnCalendar,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -180,6 +185,7 @@ func raceFromDB(r *gen.Race) *Race {
 		CutoffSeconds:       r.CutoffSeconds,
 		CourseRouteID:       r.CourseRouteID,
 		Notes:               r.Notes,
+		OnCalendar:          r.OnCalendar,
 		CreateTime:          r.CreateTime.Time,
 		UpdateTime:          r.UpdateTime.Time,
 	}

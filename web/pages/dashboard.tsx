@@ -98,7 +98,9 @@ const VolumeCard: React.FC = () => {
 };
 
 const UpcomingRacesCard: React.FC = () => {
-  const { isPending, isError, data, error } = useQuery(listRaces);
+  const { isPending, isError, data, error } = useQuery(listRaces, {
+    onCalendarOnly: true,
+  });
   let content: React.ReactNode = null;
   if (isPending) {
     content = <Loading />;
@@ -110,9 +112,9 @@ const UpcomingRacesCard: React.FC = () => {
     content =
       upcoming.length === 0 ? (
         <p className="text-sm text-gray-500">
-          No upcoming races.{" "}
+          No races on your calendar.{" "}
           <Link to="/races" className={linkClass}>
-            Add a race
+            Find a race
           </Link>
         </p>
       ) : (
@@ -151,8 +153,8 @@ const UpcomingRacesCard: React.FC = () => {
     <Card
       title="Upcoming races"
       actions={
-        <Link to="/races" className={`${linkClass} text-sm`}>
-          All races
+        <Link to="/calendar" className={`${linkClass} text-sm`}>
+          Calendar
         </Link>
       }
     >

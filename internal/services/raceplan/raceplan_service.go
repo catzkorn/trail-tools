@@ -32,7 +32,7 @@ var _ racesv1connect.RacePlanServiceHandler = (*Service)(nil)
 
 type RacePlanRepository interface {
 	GetRace(ctx context.Context, userID, raceID pgtype.UUID) (*races.Race, error)
-	ListRaces(ctx context.Context, userID pgtype.UUID) ([]*races.Race, error)
+	ListRaces(ctx context.Context, userID pgtype.UUID, onCalendarOnly bool) ([]*races.Race, error)
 	CreateRacePlan(ctx context.Context, plan *races.RacePlan) (*races.RacePlan, error)
 	GetRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*races.RacePlan, error)
 	GetSharedRacePlan(ctx context.Context, token string) (*races.RacePlan, *races.Race, error)
@@ -91,6 +91,10 @@ func (s *Service) CreateRacePlan(ctx context.Context, req *racesv1.CreateRacePla
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get race")
 	}
+	if !r.OnCalendar {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			"the race isn't on the user's calendar; add it with UpdateRace, setting on_calendar, if the user is running it")
+	}
 	seed := planFromProto(seedPlan(r))
 	seed.UserID, seed.RaceID = userID, raceID
 	stored, err := s.repo.CreateRacePlan(ctx, seed)
@@ -133,7 +137,7 @@ func (s *Service) ListRacePlans(ctx context.Context, req *racesv1.ListRacePlansR
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list race plans")
 	}
-	raceList, err := s.repo.ListRaces(ctx, userID)
+	raceList, err := s.repo.ListRaces(ctx, userID, false)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list races")
 	}

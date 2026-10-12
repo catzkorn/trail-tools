@@ -2148,8 +2148,9 @@ export const RuleStatusSchema: GenEnum<RuleStatus> = /*@__PURE__*/
  */
 export const RacePlanService: GenService<{
   /**
-   * Create a race plan for a race. The plan is seeded with the race's
-   * details and empty entries for the core contingency scenarios.
+   * Create a race plan for a race on the user's calendar. The plan is seeded
+   * with the race's details and empty entries for the core contingency
+   * scenarios.
    *
    * @generated from rpc races.v1.RacePlanService.CreateRacePlan
    */

@@ -58,7 +58,8 @@ export const setPlanPeriods = TrainingPlanService.method.setPlanPeriods;
 export const deletePlanPeriods = TrainingPlanService.method.deletePlanPeriods;
 
 /**
- * List a plan's workouts in date order, optionally within a date range.
+ * List a plan's workouts, or those of all the user's plans, in date order,
+ * optionally within a date range.
  *
  * @generated from rpc plans.v1.TrainingPlanService.ListWorkouts
  */

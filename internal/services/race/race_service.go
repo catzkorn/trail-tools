@@ -26,7 +26,7 @@ var _ racesv1connect.RaceServiceHandler = (*Service)(nil)
 type RaceRepository interface {
 	CreateRace(ctx context.Context, race *races.Race) (*races.Race, error)
 	GetRace(ctx context.Context, userID, raceID pgtype.UUID) (*races.Race, error)
-	ListRaces(ctx context.Context, userID pgtype.UUID) ([]*races.Race, error)
+	ListRaces(ctx context.Context, userID pgtype.UUID, onCalendarOnly bool) ([]*races.Race, error)
 	UpdateRace(ctx context.Context, race *races.Race) (*races.Race, error)
 	DeleteRace(ctx context.Context, userID, raceID pgtype.UUID) error
 }
@@ -80,7 +80,7 @@ func (s *Service) ListRaces(ctx context.Context, req *racesv1.ListRacesRequest) 
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, "")
 	}
-	list, err := s.races.ListRaces(ctx, userID)
+	list, err := s.races.ListRaces(ctx, userID, req.GetOnCalendarOnly())
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list races")
 	}
@@ -174,6 +174,7 @@ func (s *Service) raceFromProto(ctx context.Context, userID pgtype.UUID, r *race
 		CutoffSeconds:       r.GetCutoffSeconds(),
 		Priority:            priorityFromProto(r.GetPriority()),
 		Notes:               r.GetNotes(),
+		OnCalendar:          r.GetOnCalendar(),
 	}
 	if r.GetCourseRouteId() != "" {
 		if race.CourseRouteID, err = store.StringToUUID(r.GetCourseRouteId()); err != nil {
@@ -230,6 +231,7 @@ func RaceToProto(r *races.Race) *racesv1.Race {
 		Priority:            priorityToProto(r.Priority),
 		CourseRouteId:       store.UUIDToString(r.CourseRouteID),
 		Notes:               r.Notes,
+		OnCalendar:          r.OnCalendar,
 		CreateTime:          timestamppb.New(r.CreateTime),
 		UpdateTime:          timestamppb.New(r.UpdateTime),
 	}.Build()

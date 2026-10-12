@@ -15,6 +15,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { end: true, label: "Dashboard", to: "/" },
+  { end: false, label: "Calendar", to: "/calendar" },
   { end: false, label: "Training plans", to: "/plans" },
   { end: false, label: "Routes", to: "/routes" },
   { end: false, label: "Races", to: "/races" },

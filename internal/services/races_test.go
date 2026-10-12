@@ -72,6 +72,26 @@ func TestRacesAndRacePlans(t *testing.T) {
 		t.Errorf("unexpected race %v", updated.GetRace())
 	}
 
+	// Races start off the calendar, and only races on it can be planned.
+	if created.GetRace().GetOnCalendar() {
+		t.Error("a new race is on the calendar")
+	}
+	_, err = e.racePlans.CreateRacePlan(ctx, racesv1.CreateRacePlanRequest_builder{RaceId: raceID}.Build())
+	wantCode(t, err, connect.CodeFailedPrecondition)
+	onCalendar, err := e.races.ListRaces(ctx, racesv1.ListRacesRequest_builder{OnCalendarOnly: true}.Build())
+	if err != nil || len(onCalendar.GetRaces()) != 0 {
+		t.Fatalf("got %d races on the calendar (%v), want none", len(onCalendar.GetRaces()), err)
+	}
+	if _, err := e.races.UpdateRace(ctx, racesv1.UpdateRaceRequest_builder{
+		Race:       racesv1.Race_builder{Id: raceID, OnCalendar: true}.Build(),
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"on_calendar"}},
+	}.Build()); err != nil {
+		t.Fatalf("UpdateRace: %v", err)
+	}
+	if onCalendar, err = e.races.ListRaces(ctx, racesv1.ListRacesRequest_builder{OnCalendarOnly: true}.Build()); err != nil || len(onCalendar.GetRaces()) != 1 {
+		t.Fatalf("got %d races on the calendar (%v), want 1", len(onCalendar.GetRaces()), err)
+	}
+
 	// A new plan is seeded with the finish and core contingencies, and most
 	// rules fail.
 	newPlan, err := e.racePlans.CreateRacePlan(ctx, racesv1.CreateRacePlanRequest_builder{RaceId: raceID}.Build())
@@ -226,7 +246,7 @@ func TestRacePlanSections(t *testing.T) {
 	ctx := context.Background()
 
 	race, err := e.races.CreateRace(ctx, racesv1.CreateRaceRequest_builder{
-		Race: racesv1.Race_builder{Name: "Race", Date: "2027-06-12", DistanceMeters: 30000}.Build(),
+		Race: racesv1.Race_builder{Name: "Race", Date: "2027-06-12", DistanceMeters: 30000, OnCalendar: true}.Build(),
 	}.Build())
 	if err != nil {
 		t.Fatal(err)

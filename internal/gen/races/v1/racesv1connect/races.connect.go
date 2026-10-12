@@ -76,11 +76,13 @@ var (
 
 // RaceServiceClient is a client for the races.v1.RaceService service.
 type RaceServiceClient interface {
-	// Create a race.
+	// Create a race. Races start off the user's calendar: only set on_calendar
+	// when the user says they are running the race.
 	CreateRace(context.Context, *v1.CreateRaceRequest) (*v1.CreateRaceResponse, error)
 	// Get a race by ID.
 	GetRace(context.Context, *v1.GetRaceRequest) (*v1.GetRaceResponse, error)
-	// List the user's races in date order.
+	// List the user's races in date order, or only those on the user's
+	// calendar.
 	ListRaces(context.Context, *v1.ListRacesRequest) (*v1.ListRacesResponse, error)
 	// Update a race.
 	UpdateRace(context.Context, *v1.UpdateRaceRequest) (*v1.UpdateRaceResponse, error)
@@ -96,11 +98,13 @@ func NewRaceServiceClient(client *connect.Client) RaceServiceClient {
 
 // RaceServiceHandler is an implementation of the races.v1.RaceService service.
 type RaceServiceHandler interface {
-	// Create a race.
+	// Create a race. Races start off the user's calendar: only set on_calendar
+	// when the user says they are running the race.
 	CreateRace(context.Context, *v1.CreateRaceRequest) (*v1.CreateRaceResponse, error)
 	// Get a race by ID.
 	GetRace(context.Context, *v1.GetRaceRequest) (*v1.GetRaceResponse, error)
-	// List the user's races in date order.
+	// List the user's races in date order, or only those on the user's
+	// calendar.
 	ListRaces(context.Context, *v1.ListRacesRequest) (*v1.ListRacesResponse, error)
 	// Update a race.
 	UpdateRace(context.Context, *v1.UpdateRaceRequest) (*v1.UpdateRaceResponse, error)

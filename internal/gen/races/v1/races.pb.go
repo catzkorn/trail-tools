@@ -89,6 +89,7 @@ type Race struct {
 	xxx_hidden_Priority            RacePriority           `protobuf:"varint,10,opt,name=priority,proto3,enum=races.v1.RacePriority"`
 	xxx_hidden_CourseRouteId       string                 `protobuf:"bytes,11,opt,name=course_route_id,json=courseRouteId,proto3"`
 	xxx_hidden_Notes               string                 `protobuf:"bytes,12,opt,name=notes,proto3"`
+	xxx_hidden_OnCalendar          bool                   `protobuf:"varint,15,opt,name=on_calendar,json=onCalendar,proto3"`
 	xxx_hidden_CreateTime          *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=create_time,json=createTime,proto3"`
 	xxx_hidden_UpdateTime          *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=update_time,json=updateTime,proto3"`
 	unknownFields                  protoimpl.UnknownFields
@@ -204,6 +205,13 @@ func (x *Race) GetNotes() string {
 	return ""
 }
 
+func (x *Race) GetOnCalendar() bool {
+	if x != nil {
+		return x.xxx_hidden_OnCalendar
+	}
+	return false
+}
+
 func (x *Race) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_CreateTime
@@ -266,6 +274,10 @@ func (x *Race) SetNotes(v string) {
 	x.xxx_hidden_Notes = v
 }
 
+func (x *Race) SetOnCalendar(v bool) {
+	x.xxx_hidden_OnCalendar = v
+}
+
 func (x *Race) SetCreateTime(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreateTime = v
 }
@@ -324,6 +336,10 @@ type Race_builder struct {
 	CourseRouteId string
 	// Free text notes, e.g. terrain, weather, qualification requirements.
 	Notes string
+	// Whether the race is on the user's calendar: the user is running it,
+	// rather than considering it. Only races on the calendar can have race
+	// plans. Making a race a goal race of a training plan adds it.
+	OnCalendar bool
 	// When the race was created.
 	CreateTime *timestamppb.Timestamp
 	// When the race was last updated.
@@ -346,6 +362,7 @@ func (b0 Race_builder) Build() *Race {
 	x.xxx_hidden_Priority = b.Priority
 	x.xxx_hidden_CourseRouteId = b.CourseRouteId
 	x.xxx_hidden_Notes = b.Notes
+	x.xxx_hidden_OnCalendar = b.OnCalendar
 	x.xxx_hidden_CreateTime = b.CreateTime
 	x.xxx_hidden_UpdateTime = b.UpdateTime
 	return m0
@@ -617,9 +634,10 @@ func (b0 GetRaceResponse_builder) Build() *GetRaceResponse {
 }
 
 type ListRacesRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OnCalendarOnly bool                   `protobuf:"varint,1,opt,name=on_calendar_only,json=onCalendarOnly,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ListRacesRequest) Reset() {
@@ -647,15 +665,29 @@ func (x *ListRacesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *ListRacesRequest) GetOnCalendarOnly() bool {
+	if x != nil {
+		return x.xxx_hidden_OnCalendarOnly
+	}
+	return false
+}
+
+func (x *ListRacesRequest) SetOnCalendarOnly(v bool) {
+	x.xxx_hidden_OnCalendarOnly = v
+}
+
 type ListRacesRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
+	// Only list the races on the user's calendar.
+	OnCalendarOnly bool
 }
 
 func (b0 ListRacesRequest_builder) Build() *ListRacesRequest {
 	m0 := &ListRacesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
+	x.xxx_hidden_OnCalendarOnly = b.OnCalendarOnly
 	return m0
 }
 
@@ -989,7 +1021,7 @@ var File_races_v1_races_proto protoreflect.FileDescriptor
 
 const file_races_v1_races_proto_rawDesc = "" +
 	"\n" +
-	"\x14races/v1/races.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\x9a\x04\n" +
+	"\x14races/v1/races.proto\x12\braces.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xbb\x04\n" +
 	"\x04Race\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1005,7 +1037,9 @@ const file_races_v1_races_proto_rawDesc = "" +
 	"\bpriority\x18\n" +
 	" \x01(\x0e2\x16.races.v1.RacePriorityR\bpriority\x12&\n" +
 	"\x0fcourse_route_id\x18\v \x01(\tR\rcourseRouteId\x12\x14\n" +
-	"\x05notes\x18\f \x01(\tR\x05notes\x12C\n" +
+	"\x05notes\x18\f \x01(\tR\x05notes\x12\x1f\n" +
+	"\von_calendar\x18\x0f \x01(\bR\n" +
+	"onCalendar\x12C\n" +
 	"\vcreate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
 	"createTime\x12C\n" +
 	"\vupdate_time\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampB\x06\xaa\x9f\x19\x02\b\x01R\n" +
@@ -1017,8 +1051,9 @@ const file_races_v1_races_proto_rawDesc = "" +
 	"\x0eGetRaceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"5\n" +
 	"\x0fGetRaceResponse\x12\"\n" +
-	"\x04race\x18\x01 \x01(\v2\x0e.races.v1.RaceR\x04race\"\x12\n" +
-	"\x10ListRacesRequest\"9\n" +
+	"\x04race\x18\x01 \x01(\v2\x0e.races.v1.RaceR\x04race\"<\n" +
+	"\x10ListRacesRequest\x12(\n" +
+	"\x10on_calendar_only\x18\x01 \x01(\bR\x0eonCalendarOnly\"9\n" +
 	"\x11ListRacesResponse\x12$\n" +
 	"\x05races\x18\x01 \x03(\v2\x0e.races.v1.RaceR\x05races\"t\n" +
 	"\x11UpdateRaceRequest\x12\"\n" +

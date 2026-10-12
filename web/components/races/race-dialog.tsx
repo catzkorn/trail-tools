@@ -1,4 +1,9 @@
-import { SelectField, TextAreaField, TextField } from "@components/ui/fields";
+import {
+  CheckboxField,
+  SelectField,
+  TextAreaField,
+  TextField,
+} from "@components/ui/fields";
 import type { SelectOption } from "@components/ui/fields";
 import Modal from "@components/ui/modal";
 import { ErrorText } from "@components/ui/query-error";
@@ -39,6 +44,8 @@ interface RaceDialogProps {
   onClose: () => void;
   // Called with the saved race before the dialog closes.
   onSaved?: (race: Race) => void;
+  // Whether a new race starts on the calendar.
+  defaultOnCalendar?: boolean;
 }
 
 const PRIORITY_SELECT: SelectOption[] = PRIORITY_OPTIONS.map((option) => ({
@@ -47,7 +54,12 @@ const PRIORITY_SELECT: SelectOption[] = PRIORITY_OPTIONS.map((option) => ({
 }));
 
 // RaceDialog creates or edits a race.
-const RaceDialog: React.FC<RaceDialogProps> = ({ race, onClose, onSaved }) => {
+const RaceDialog: React.FC<RaceDialogProps> = ({
+  race,
+  onClose,
+  onSaved,
+  defaultOnCalendar = false,
+}) => {
   const queryClient = useQueryClient();
   const routes = useQuery(listRoutes);
   const [name, setName] = useState(race?.name ?? "");
@@ -65,6 +77,9 @@ const RaceDialog: React.FC<RaceDialogProps> = ({ race, onClose, onSaved }) => {
   );
   const [courseRouteId, setCourseRouteId] = useState(race?.courseRouteId ?? "");
   const [notes, setNotes] = useState(race?.notes ?? "");
+  const [onCalendar, setOnCalendar] = useState(
+    race?.onCalendar ?? defaultOnCalendar
+  );
   const [validation, setValidation] = useState("");
 
   const onSuccess = async (saved: Race | undefined) => {
@@ -151,6 +166,7 @@ const RaceDialog: React.FC<RaceDialogProps> = ({ race, onClose, onSaved }) => {
       location,
       name: name.trim(),
       notes,
+      onCalendar,
       priority: Number(priority),
       startTime,
       websiteUrl: website.trim(),
@@ -297,6 +313,11 @@ const RaceDialog: React.FC<RaceDialogProps> = ({ race, onClose, onSaved }) => {
           value={notes}
           onChange={setNotes}
           placeholder="Terrain, weather, qualification requirements"
+        />
+        <CheckboxField
+          label="On my calendar: I'm running this race"
+          checked={onCalendar}
+          onChange={setOnCalendar}
         />
         {validation !== "" && (
           <p className="text-sm text-red-700">{validation}</p>

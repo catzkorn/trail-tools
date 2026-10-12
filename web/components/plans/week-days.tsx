@@ -22,6 +22,8 @@ interface WeekDaysProps {
   monthEnd?: string;
   onAddWorkout?: (date: string) => void;
   onEditWorkout?: (workout: Workout) => void;
+  // Hide days with nothing on them on small screens, where days are stacked.
+  hideEmptyDays?: boolean;
 }
 
 /**
@@ -39,6 +41,7 @@ const WeekDays: React.FC<WeekDaysProps> = ({
   monthEnd,
   onAddWorkout,
   onEditWorkout,
+  hideEmptyDays = false,
 }) => {
   const now = today();
   return (
@@ -53,6 +56,10 @@ const WeekDays: React.FC<WeekDaysProps> = ({
         const workouts = workoutsByDate.get(day) ?? [];
         const activities = activitiesByDate.get(day) ?? [];
         const isToday = day === now;
+        const empty =
+          race === undefined &&
+          workouts.length === 0 &&
+          activities.length === 0;
         let cellClass = "border-gray-200 bg-white";
         if (race !== undefined) {
           cellClass = "border-yellow-400 bg-yellow-50";
@@ -62,7 +69,7 @@ const WeekDays: React.FC<WeekDaysProps> = ({
         return (
           <div
             key={day}
-            className={`group flex min-h-24 flex-col gap-1 rounded-md border p-1 ${cellClass} ${inMonth && inPlan ? "" : "opacity-60"} ${isToday ? "ring-2 ring-emerald-500" : ""}`}
+            className={`group min-h-24 flex-col gap-1 rounded-md border p-1 ${cellClass} ${inMonth && inPlan ? "" : "opacity-60"} ${isToday ? "ring-2 ring-emerald-500" : ""} ${hideEmptyDays && empty && !isToday ? "hidden sm:flex" : "flex"}`}
           >
             <div className="flex items-center justify-between text-[11px] text-gray-500">
               <span className={isToday ? "font-bold text-emerald-700" : ""}>

@@ -141,8 +141,9 @@ var (
 
 // RacePlanServiceClient is a client for the races.v1.RacePlanService service.
 type RacePlanServiceClient interface {
-	// Create a race plan for a race. The plan is seeded with the race's
-	// details and empty entries for the core contingency scenarios.
+	// Create a race plan for a race on the user's calendar. The plan is seeded
+	// with the race's details and empty entries for the core contingency
+	// scenarios.
 	CreateRacePlan(context.Context, *v1.CreateRacePlanRequest) (*v1.CreateRacePlanResponse, error)
 	// Get a race plan with its race and analysis.
 	GetRacePlan(context.Context, *v1.GetRacePlanRequest) (*v1.GetRacePlanResponse, error)
@@ -186,8 +187,9 @@ func NewRacePlanServiceClient(client *connect.Client) RacePlanServiceClient {
 
 // RacePlanServiceHandler is an implementation of the races.v1.RacePlanService service.
 type RacePlanServiceHandler interface {
-	// Create a race plan for a race. The plan is seeded with the race's
-	// details and empty entries for the core contingency scenarios.
+	// Create a race plan for a race on the user's calendar. The plan is seeded
+	// with the race's details and empty entries for the core contingency
+	// scenarios.
 	CreateRacePlan(context.Context, *v1.CreateRacePlanRequest) (*v1.CreateRacePlanResponse, error)
 	// Get a race plan with its race and analysis.
 	GetRacePlan(context.Context, *v1.GetRacePlanRequest) (*v1.GetRacePlanResponse, error)
