@@ -12,6 +12,41 @@ export interface ProfileMarker {
   label: string;
 }
 
+// MAX_LABEL_ROWS is the number of rows marker labels are spread over.
+const MAX_LABEL_ROWS = 3;
+// LABEL_ROW_HEIGHT is the height of a row of marker labels in pixels.
+const LABEL_ROW_HEIGHT = 11;
+
+// MarkerLabel shortens a marker's label to fit above the profile.
+const markerLabel = (marker: ProfileMarker): string =>
+  marker.label.length > 14 ? `${marker.label.slice(0, 13)}…` : marker.label;
+
+/**
+ * LabelRows assigns each marker label, centered at its x position, the first
+ * row where it doesn't overlap another label, or -1 if no row has room.
+ */
+const labelRows = (xs: number[], labels: string[]): number[] => {
+  // The right edge of the last label in each row.
+  const rowEnds: number[] = [];
+  const rows = xs.map(() => -1);
+  const order = xs.map((_value, index) => index);
+  order.sort((first, second) => (xs[first] ?? 0) - (xs[second] ?? 0));
+  for (const index of order) {
+    // About 6 pixels per character at 10px, and a gap.
+    const halfWidth = ((labels[index] ?? "").length * 6) / 2 + 2;
+    const center = xs[index] ?? 0;
+    let row = rowEnds.findIndex((end) => end <= center - halfWidth);
+    if (row < 0 && rowEnds.length < MAX_LABEL_ROWS) {
+      row = rowEnds.length;
+    }
+    if (row >= 0) {
+      rowEnds[row] = center + halfWidth;
+      rows[index] = row;
+    }
+  }
+  return rows;
+};
+
 interface ElevationProfileProps {
   points: ProfilePoint[];
   // An optional second series with one value per point, e.g. heart rate.
@@ -233,13 +268,24 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
     secondary.some((value) => value > 0);
   const marginLeft = 44;
   const marginRight = hasSecondary ? 40 : 12;
-  const marginTop = markers.length > 0 ? 30 : 10;
   const marginBottom = 22;
   const plotWidth = Math.max(width - marginLeft - marginRight, 10);
-  const plotHeight = height - marginTop - marginBottom;
-
   const minDistance = first.distanceMeters;
   const maxDistance = Math.max(last.distanceMeters, minDistance + 1);
+  const xFor = (distance: number): number =>
+    marginLeft +
+    ((distance - minDistance) / (maxDistance - minDistance)) * plotWidth;
+
+  // Marker labels are spread over rows above the plot, so they don't overlap.
+  const markerLabels = markers.map(markerLabel);
+  const markerRows = labelRows(
+    markers.map((marker) => xFor(marker.distanceMeters)),
+    markerLabels
+  );
+  const labelRowCount = Math.max(...markerRows, -1) + 1;
+  const marginTop =
+    markers.length > 0 ? 8 + Math.max(labelRowCount, 1) * LABEL_ROW_HEIGHT : 10;
+  const plotHeight = height - marginTop - marginBottom;
   let minElevation = Infinity;
   let maxElevation = -Infinity;
   for (const point of points) {
@@ -269,9 +315,6 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
     Math.ceil((maxElevation + elevationRange * 0.05) / elevationStep) *
     elevationStep;
 
-  const xFor = (distance: number): number =>
-    marginLeft +
-    ((distance - minDistance) / (maxDistance - minDistance)) * plotWidth;
   const yFor = (elevation: number): number =>
     marginTop + (1 - (elevation - yMin) / (yMax - yMin)) * plotHeight;
   const baseline = marginTop + plotHeight;
@@ -534,8 +577,10 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
           ))}
           {markers.map((marker, index) => {
             const xMarker = xFor(marker.distanceMeters);
+            const row = markerRows[index] ?? -1;
             return (
               <g key={`marker-${marker.distanceMeters}-${marker.label}`}>
+                <title>{marker.label}</title>
                 <line
                   x1={xMarker}
                   x2={xMarker}
@@ -545,16 +590,16 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   strokeDasharray="3 3"
                   strokeWidth={1}
                 />
-                <text
-                  x={xMarker}
-                  y={index % 2 === 0 ? 10 : 21}
-                  textAnchor="middle"
-                  className="fill-gray-700 text-[10px] font-medium"
-                >
-                  {marker.label.length > 14
-                    ? `${marker.label.slice(0, 13)}…`
-                    : marker.label}
-                </text>
+                {row >= 0 && (
+                  <text
+                    x={xMarker}
+                    y={10 + row * LABEL_ROW_HEIGHT}
+                    textAnchor="middle"
+                    className="fill-gray-700 text-[10px] font-medium"
+                  >
+                    {markerLabels[index]}
+                  </text>
+                )}
               </g>
             );
           })}
