@@ -61,7 +61,14 @@ page.
 
 ### Strava
 
-To sync activities, create a Strava API application at
+Without Strava credentials, `make run` and `make watch` use a fake Strava
+(`-fake-strava`), so every feature can be tried locally. Connecting Strava
+under Settings shows a page that says it's fake, and syncs a made-up athlete
+from Interlaken with about four months of runs, trail runs, hikes and rides up
+to today. They have GPS tracks with elevation, heart rate and cadence, and the
+longer outings have photos, for trip reports.
+
+To sync real activities, create a Strava API application at
 https://www.strava.com/settings/api with the "Authorization Callback Domain"
 set to `localhost`, then run the server with its credentials:
 

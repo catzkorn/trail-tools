@@ -43,10 +43,14 @@ SERVER_FLAGS := \
 	-log-level debug \
 	-admin-bootstrap-token $(ADMIN_BOOTSTRAP_TOKEN)
 
-# Strava sync is enabled when STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET are
-# set in the environment. See the README for how to create a Strava API app.
+# Strava sync uses the Strava API application in STRAVA_CLIENT_ID and
+# STRAVA_CLIENT_SECRET, if they're set in the environment, see the README for
+# how to create one. Without them, it uses a fake Strava with generated
+# activities.
 ifneq ($(STRAVA_CLIENT_ID),)
 SERVER_FLAGS += -strava-client-id $(STRAVA_CLIENT_ID) -strava-client-secret $(STRAVA_CLIENT_SECRET)
+else
+SERVER_FLAGS += -fake-strava
 endif
 
 # The database tests run against. Each test creates its own database.
