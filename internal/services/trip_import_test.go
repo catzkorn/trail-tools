@@ -21,7 +21,7 @@ func TestImportStravaPhotos(t *testing.T) {
 	image := testJPEG(t, 300, 200)
 	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/p1.jpg", "/p2.jpg":
+		case "/p1.jpg", "/p2.jpg", "/p3.jpg":
 			_, _ = w.Write(image)
 		case "/text.jpg":
 			_, _ = w.Write([]byte("not an image"))
@@ -42,6 +42,12 @@ func TestImportStravaPhotos(t *testing.T) {
 		{StravaID: "p1", Caption: "Halfway", URL: cdn.URL + "/p1.jpg", Location: &geo.Point{Lat: 0.045, Lng: 0}, RawJSON: []byte("{}")},
 		// 18 minutes in, 30 points along the track.
 		{StravaID: "p2", URL: cdn.URL + "/p2.jpg", TakenTime: tripStart.Add(18 * time.Minute), RawJSON: []byte("{}")},
+		// A GPS position far off the track, and a time during the activity:
+		// 36 minutes in, 60 points along the track.
+		{
+			StravaID: "p3", URL: cdn.URL + "/p3.jpg", Location: &geo.Point{Lat: 1, Lng: 1},
+			TakenTime: tripStart.Add(36 * time.Minute), RawJSON: []byte("{}"),
+		},
 		{StravaID: "gone", URL: cdn.URL + "/gone.jpg", RawJSON: []byte("{}")},
 		{StravaID: "text", URL: cdn.URL + "/text.jpg", RawJSON: []byte("{}")},
 	}); err != nil {
@@ -57,14 +63,12 @@ func TestImportStravaPhotos(t *testing.T) {
 		t.Errorf("got body %q, want the activity's description", report.GetBody())
 	}
 
-	resp, err := e.trips.ImportStravaPhotos(ctx, tripsv1.ImportStravaPhotosRequest_builder{ReportId: report.GetId()}.Build())
-	if err != nil {
-		t.Fatalf("ImportStravaPhotos: %v", err)
+	// The report includes the activity's photos from the start.
+	photos := report.GetPhotos()
+	if len(photos) != 3 {
+		t.Fatalf("got %d photos, want the 3 importable ones", len(photos))
 	}
-	photos := resp.GetPhotos()
-	if len(photos) != 2 || resp.GetSkippedCount() != 0 || resp.GetFailedCount() != 2 {
-		t.Fatalf("got %d photos, %d skipped and %d failed, want 2, 0 and 2", len(photos), resp.GetSkippedCount(), resp.GetFailedCount())
-	}
+	// Without a time, a photo is placed at its GPS position.
 	if p := photos[0]; p.GetCaption() != "Halfway" || p.GetLocationSource() != tripsv1.LocationSource_LOCATION_SOURCE_GPS ||
 		!approx(p.GetTrackDistanceMeters(), 5000, 1) || p.GetWidth() != 300 {
 		t.Errorf("unexpected photo with a location %v", p)
@@ -73,20 +77,26 @@ func TestImportStravaPhotos(t *testing.T) {
 		!approx(p.GetLocation().GetLat(), 0.027, 1e-6) || !approx(p.GetTrackDistanceMeters(), 3000, 1) {
 		t.Errorf("unexpected photo placed by time %v", p)
 	}
-	if n := e.storedImages(); n != 4 {
-		t.Errorf("got %d stored images, want 4", n)
+	// With a time during the activity, the track is trusted over a GPS
+	// position.
+	if p := photos[2]; p.GetLocationSource() != tripsv1.LocationSource_LOCATION_SOURCE_TRACK_TIME ||
+		!approx(p.GetLocation().GetLat(), 0.054, 1e-6) || !approx(p.GetTrackDistanceMeters(), 6000, 1) {
+		t.Errorf("unexpected photo with a GPS position off the track %v", p)
+	}
+	if n := e.storedImages(); n != 6 {
+		t.Errorf("got %d stored images, want 6", n)
 	}
 
 	// Importing again skips the imported photos.
-	resp, err = e.trips.ImportStravaPhotos(ctx, tripsv1.ImportStravaPhotosRequest_builder{ReportId: report.GetId()}.Build())
+	resp, err := e.trips.ImportStravaPhotos(ctx, tripsv1.ImportStravaPhotosRequest_builder{ReportId: report.GetId()}.Build())
 	if err != nil {
 		t.Fatalf("ImportStravaPhotos: %v", err)
 	}
-	if len(resp.GetPhotos()) != 0 || resp.GetSkippedCount() != 2 || resp.GetFailedCount() != 2 {
-		t.Errorf("got %d photos, %d skipped and %d failed, want 0, 2 and 2", len(resp.GetPhotos()), resp.GetSkippedCount(), resp.GetFailedCount())
+	if len(resp.GetPhotos()) != 0 || resp.GetSkippedCount() != 3 || resp.GetFailedCount() != 2 {
+		t.Errorf("got %d photos, %d skipped and %d failed, want 0, 3 and 2", len(resp.GetPhotos()), resp.GetSkippedCount(), resp.GetFailedCount())
 	}
 	got, err := e.trips.GetTripReport(ctx, tripsv1.GetTripReportRequest_builder{Id: report.GetId()}.Build())
-	if err != nil || len(got.GetReport().GetPhotos()) != 2 {
+	if err != nil || len(got.GetReport().GetPhotos()) != 3 {
 		t.Fatalf("GetTripReport: got %v, %v", got, err)
 	}
 

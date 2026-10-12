@@ -158,12 +158,20 @@ func (s *Service) CreateTripReport(ctx context.Context, req *tripsv1.CreateTripR
 		if err != nil {
 			return nil, s.toConnectError(ctx, err, "failed to create trip report")
 		}
+		// A report includes the activity's photos on Strava from the start.
+		// Failing to import them doesn't fail creating the report.
+		var photos []*trips.Photo
+		if created.ActivityID.Valid {
+			if photos, err = s.importStravaPhotos(ctx, created); err != nil {
+				s.log.WarnContext(ctx, "Failed to import the activity's photos from Strava", slogor.Err(err))
+			}
+		}
 		profile, err := s.profile(ctx, userID)
 		if err != nil {
 			return nil, err
 		}
 		return tripsv1.CreateTripReportResponse_builder{
-			Report: s.reportToProto(created, nil, profile),
+			Report: s.reportToProto(created, photos, profile),
 		}.Build(), nil
 	}
 	return nil, connect.NewError(connect.CodeAlreadyExists, "too many trip reports have this title; choose another title")
@@ -442,27 +450,27 @@ func (s *Service) UploadTripPhoto(ctx context.Context, req *tripsv1.UploadTripPh
 	return tripsv1.UploadTripPhotoResponse_builder{Photo: s.photoToProto(created)}.Build(), nil
 }
 
-// placePhoto returns where a photo was taken: at its GPS position if it has
-// one, or else on the track at the time it was taken. It returns nil if
+// placePhoto returns where a photo was taken: on the track at the time it
+// was taken if that was during the activity, or else at its GPS position if
+// it has one. Photo GPS positions are often far off, e.g. from a phone in a
+// pocket, while the track records where the activity went. It returns nil if
 // neither is known.
 func placePhoto(report *trips.Report, t *track, gps *geov1.LatLng, takenTime time.Time) (*trips.Location, error) {
+	if !takenTime.IsZero() && !report.StartTime.IsZero() {
+		if p, dist, ok := t.positionAt(takenTime.Sub(report.StartTime).Seconds()); ok {
+			return &trips.Location{
+				Lat:                    p.Lat,
+				Lng:                    p.Lng,
+				Source:                 trips.LocationTrackTime,
+				TrackDistanceMeters:    dist,
+				HasTrackDistanceMeters: true,
+			}, nil
+		}
+	}
 	if gps != nil {
 		return locationFromProto(gps, trips.LocationGPS, t)
 	}
-	if takenTime.IsZero() || report.StartTime.IsZero() {
-		return nil, nil
-	}
-	p, dist, ok := t.positionAt(takenTime.Sub(report.StartTime).Seconds())
-	if !ok {
-		return nil, nil
-	}
-	return &trips.Location{
-		Lat:                    p.Lat,
-		Lng:                    p.Lng,
-		Source:                 trips.LocationTrackTime,
-		TrackDistanceMeters:    dist,
-		HasTrackDistanceMeters: true,
-	}, nil
+	return nil, nil
 }
 
 // storePhoto re-encodes a photo, stores its images and adds it to the end
