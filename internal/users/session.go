@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/users/internal"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, error) {
@@ -20,34 +22,16 @@ func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, er
 	}
 	defer tx.Rollback(context.Background())
 	querier := r.querier.WithTx(tx)
-	user, err := querier.GetSessionUser(ctx, id)
+	userID, err := querier.GetSessionUser(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, store.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
-	var retUser User
-	switch user.Type {
-	case "oidc":
-		dbUser, err := querier.GetOIDCUser(ctx, user.UserID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get OIDC user: %w", err)
-		}
-		retUser = &OIDCUser{
-			OIDCUser: dbUser,
-		}
-	case "webauthn":
-		dbUser, err := querier.GetWebAuthnUser(ctx, user.UserID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get WebAuthn user: %w", err)
-		}
-		retUser, err = newWebAuthnUser(ctx, dbUser.ID, dbUser.Name, dbUser.WebAuthnUserID, r.querier)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create WebAuthn user: %w", err)
-		}
-	default:
-		return nil, fmt.Errorf("unknown user type %q", user.Type)
+	retUser, err := r.loadUser(ctx, querier, userID)
+	if err != nil {
+		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
@@ -67,4 +51,16 @@ func (r *Repository) DeleteSession(ctx context.Context, sessionID string) error 
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
 	return nil
+}
+
+// loadUser loads a user.
+func (r *Repository) loadUser(ctx context.Context, querier *internal.Queries, userID pgtype.UUID) (User, error) {
+	row, err := querier.GetPasskeyUser(ctx, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, store.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+	return &PasskeyUser{id: row.ID, Name: row.Name, UserHandle: row.UserHandle, admin: row.IsAdmin}, nil
 }

@@ -1,0 +1,227 @@
+syntax = "proto3";
+
+package geo.v1;
+
+// GeoService provides tools for exploring the area around a location. Map data
+// comes from OpenStreetMap, elevation data from the Copernicus DEM (via
+// Open-Meteo), and the heatmap from the user's own synced activities. Use these
+// tools to find trails, peaks, water sources and the user's familiar areas
+// before designing a route with the RouteService.
+service GeoService {
+  // Geocode a free text query (e.g. "Mount Tamalpais", "Chamonix" or
+  // "Marin Headlands trailhead") into candidate places with coordinates.
+  rpc SearchPlaces(SearchPlacesRequest) returns (SearchPlacesResponse);
+  // Find footpaths, tracks and trails within a radius of a point. Results are
+  // OpenStreetMap ways with their name, type, surface and difficulty, sorted by
+  // length, longest first.
+  rpc FindTrails(FindTrailsRequest) returns (FindTrailsResponse);
+  // Find points of interest useful for trail running, such as peaks, water
+  // sources, parking, viewpoints and shelters, within a radius of a point.
+  rpc FindPointsOfInterest(FindPointsOfInterestRequest) returns (FindPointsOfInterestResponse);
+  // Look up the ground elevation of up to 100 points.
+  rpc GetElevation(GetElevationRequest) returns (GetElevationResponse);
+  // Aggregate the user's own GPS tracks from synced activities into a grid of
+  // cells inside a bounding box. Cells with a high count are places the user
+  // runs often. Useful for finding familiar trails and areas.
+  rpc GetPersonalHeatmap(GetPersonalHeatmapRequest) returns (GetPersonalHeatmapResponse);
+}
+
+// A WGS84 coordinate.
+message LatLng {
+  // Latitude in decimal degrees.
+  double lat = 1;
+  // Longitude in decimal degrees.
+  double lng = 2;
+}
+
+// A rectangular area on the map.
+message BoundingBox {
+  // Southern edge latitude in decimal degrees.
+  double south = 1;
+  // Western edge longitude in decimal degrees.
+  double west = 2;
+  // Northern edge latitude in decimal degrees.
+  double north = 3;
+  // Eastern edge longitude in decimal degrees.
+  double east = 4;
+}
+
+message SearchPlacesRequest {
+  // Free text search query.
+  string query = 1;
+  // Maximum number of results. Defaults to 5, maximum 20.
+  int32 limit = 2;
+}
+
+// A place found by a search.
+message Place {
+  // The full display name of the place.
+  string name = 1;
+  // The location of the place.
+  LatLng location = 2;
+  // The OpenStreetMap category of the place, e.g. "natural" or "highway".
+  string category = 3;
+  // The OpenStreetMap type of the place, e.g. "peak" or "trailhead".
+  string type = 4;
+  // The extent of the place, if known.
+  BoundingBox bounds = 5;
+}
+
+message SearchPlacesResponse {
+  // The places found, most relevant first.
+  repeated Place places = 1;
+}
+
+message FindTrailsRequest {
+  // The center of the search area.
+  LatLng center = 1;
+  // The search radius in meters. Defaults to 3000, maximum 15000.
+  double radius_meters = 2;
+  // Maximum number of trails to return. Defaults to 50, maximum 500.
+  int32 limit = 3;
+  // Include the geometry of each trail. Increases the response size
+  // significantly; leave unset unless the coordinates are needed.
+  bool include_geometry = 4;
+}
+
+// A trail is a single OpenStreetMap way, such as a path or track.
+message Trail {
+  // The OpenStreetMap way ID.
+  string osm_id = 1;
+  // The name of the trail, if it has one.
+  string name = 2;
+  // The OpenStreetMap highway type: path, footway, track, bridleway, steps,
+  // cycleway, etc.
+  string highway = 3;
+  // The surface, e.g. dirt, gravel, asphalt, rock. Empty if unknown.
+  string surface = 4;
+  // The SAC hiking difficulty scale, e.g. hiking, mountain_hiking,
+  // demanding_mountain_hiking, alpine_hiking. Empty if unknown.
+  string sac_scale = 5;
+  // The classified terrain of the trail.
+  Terrain terrain = 6;
+  // Length of the trail inside the search area, in meters.
+  double length_meters = 7;
+  // The first point of the trail.
+  LatLng start = 8;
+  // The last point of the trail.
+  LatLng end = 9;
+  // The point of the trail closest to the search center.
+  LatLng nearest_point = 10;
+  // Distance from the search center to the nearest point, in meters.
+  double distance_from_center_meters = 11;
+  // The trail geometry. Only set if include_geometry was set.
+  repeated LatLng geometry = 12;
+}
+
+// Terrain is a coarse classification of the surface underfoot.
+enum Terrain {
+  TERRAIN_UNSPECIFIED = 0;
+  // Asphalt, concrete or paving stones.
+  TERRAIN_PAVED = 1;
+  // Gravel or compacted fire roads and tracks.
+  TERRAIN_GRAVEL = 2;
+  // Dirt, grass or forest singletrack.
+  TERRAIN_TRAIL = 3;
+  // Rocky, scree or demanding mountain trails (SAC scale T3 or above).
+  TERRAIN_TECHNICAL = 4;
+}
+
+message FindTrailsResponse {
+  // The trails found.
+  repeated Trail trails = 1;
+}
+
+// PointOfInterestKind is the kind of a point of interest.
+enum PointOfInterestKind {
+  POINT_OF_INTEREST_KIND_UNSPECIFIED = 0;
+  // A summit or peak.
+  POINT_OF_INTEREST_KIND_PEAK = 1;
+  // Drinking water, a spring or a water tap.
+  POINT_OF_INTEREST_KIND_WATER = 2;
+  // A car park.
+  POINT_OF_INTEREST_KIND_PARKING = 3;
+  // A viewpoint.
+  POINT_OF_INTEREST_KIND_VIEWPOINT = 4;
+  // A shelter, hut or alpine hut.
+  POINT_OF_INTEREST_KIND_SHELTER = 5;
+  // Public toilets.
+  POINT_OF_INTEREST_KIND_TOILETS = 6;
+  // A mountain pass or saddle.
+  POINT_OF_INTEREST_KIND_SADDLE = 7;
+  // A marked trailhead.
+  POINT_OF_INTEREST_KIND_TRAILHEAD = 8;
+}
+
+message FindPointsOfInterestRequest {
+  // The center of the search area.
+  LatLng center = 1;
+  // The search radius in meters. Defaults to 3000, maximum 15000.
+  double radius_meters = 2;
+  // The kinds of points to find. Defaults to all kinds.
+  repeated PointOfInterestKind kinds = 3;
+  // Maximum number of results. Defaults to 100, maximum 500.
+  int32 limit = 4;
+}
+
+// A point of interest.
+message PointOfInterest {
+  // The OpenStreetMap node ID.
+  string osm_id = 1;
+  // The kind of point.
+  PointOfInterestKind kind = 2;
+  // The name of the point, if it has one.
+  string name = 3;
+  // The location of the point.
+  LatLng location = 4;
+  // The elevation in meters, if known.
+  double elevation_meters = 5;
+  // Distance from the search center in meters.
+  double distance_from_center_meters = 6;
+}
+
+message FindPointsOfInterestResponse {
+  // The points found, nearest first.
+  repeated PointOfInterest points = 1;
+}
+
+message GetElevationRequest {
+  // The points to look up. Maximum 100.
+  repeated LatLng points = 1;
+}
+
+message GetElevationResponse {
+  // The elevation of each point in meters, in the same order as the request.
+  repeated double elevations_meters = 1;
+}
+
+message GetPersonalHeatmapRequest {
+  // The area to aggregate.
+  BoundingBox bounds = 1;
+  // The size of each grid cell in meters. Defaults to 100, minimum 25.
+  double cell_size_meters = 2;
+  // Only include activities that started on or after this date (YYYY-MM-DD).
+  string start_date = 3;
+  // Only include activities that started on or before this date (YYYY-MM-DD).
+  string end_date = 4;
+  // Maximum number of cells to return, highest count first. Defaults to 2000,
+  // maximum 20000.
+  int32 limit = 5;
+}
+
+// A grid cell in a heatmap.
+message HeatmapCell {
+  // The center of the cell.
+  LatLng center = 1;
+  // The number of distinct activities that passed through the cell.
+  int32 activity_count = 2;
+}
+
+message GetPersonalHeatmapResponse {
+  // The cells with at least one activity, highest count first.
+  repeated HeatmapCell cells = 1;
+  // The size of each cell in meters.
+  double cell_size_meters = 2;
+  // The number of activities that intersected the bounds.
+  int32 activity_count = 3;
+}

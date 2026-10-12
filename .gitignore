@@ -1,2 +1,8 @@
 localhost-key.pem
 localhost.pem
+
+# Binaries built with go build
+/trail-tools
+
+# Trip report photos stored locally, see -photo-dir
+/photos/

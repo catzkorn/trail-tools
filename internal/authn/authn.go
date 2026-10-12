@@ -3,12 +3,15 @@ package authn
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users"
+	"github.com/jackc/pgx/v5/pgtype"
 	"gitlab.com/greyxor/slogor"
 )
 
@@ -20,12 +23,50 @@ const (
 type SessionRepository interface {
 	GetSession(ctx context.Context, sessionID string) (users.User, error)
 	DeleteSession(ctx context.Context, sessionID string) error
+	GetAPITokenUser(ctx context.Context, secret string) (users.User, error)
 }
 
 type authCtx struct{}
 
-func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepository, next http.Handler) (http.Handler, error) {
+// Option configures the authn middleware.
+type Option func(*options)
+
+type options struct {
+	resourceMetadataURL string
+}
+
+// WithResourceMetadata points OAuth clients that send an invalid token to
+// the protected resource metadata (RFC 9728) at the URL, so they can get a
+// new token.
+func WithResourceMetadata(url string) Option {
+	return func(o *options) {
+		o.resourceMetadataURL = url
+	}
+}
+
+func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepository, next http.Handler, opts ...Option) (http.Handler, error) {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// API clients authenticate with a bearer token instead of a cookie.
+		if secret, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer "); ok {
+			user, err := repo.GetAPITokenUser(r.Context(), secret)
+			if err != nil {
+				if errors.Is(err, store.ErrNotFound) {
+					log.DebugContext(r.Context(), "Invalid API token", slog.String("path", r.URL.Path))
+					w.Header().Set("WWW-Authenticate", bearerChallenge(o.resourceMetadataURL, "invalid_token"))
+					http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+					return
+				}
+				log.ErrorContext(r.Context(), "Failed to get API token user", slogor.Err(err))
+				http.Error(w, "failed to authenticate", http.StatusInternalServerError)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), authCtx{}, user)))
+			return
+		}
 		sessionCookie, err := r.Cookie(sessionCookieName)
 		if errors.Is(err, http.ErrNoCookie) {
 			log.DebugContext(r.Context(), "User had no session cookie, continue unauthenticated", slog.String("path", r.URL.Path))
@@ -61,9 +102,50 @@ func GetUser(ctx context.Context) (users.User, bool) {
 	return user, ok
 }
 
-// SetSessionCookie is called by the auth method login handlers on successful login.
-func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time) {
-	http.SetCookie(w, &http.Cookie{
+// GetUserID gets the ID of the authenticated user, if there is one. It
+// returns false if the current request is unauthenticated.
+func GetUserID(ctx context.Context) (pgtype.UUID, bool) {
+	user, ok := GetUser(ctx)
+	if !ok {
+		return pgtype.UUID{}, false
+	}
+	return user.ID(), true
+}
+
+// RequireUser rejects unauthenticated requests with a 401 Unauthorized. It
+// must be wrapped by the authn middleware. If resourceMetadataURL is set, the
+// WWW-Authenticate header points OAuth clients to the protected resource
+// metadata (RFC 9728), so they can discover how to sign in.
+func RequireUser(resourceMetadataURL string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := GetUser(r.Context()); !ok {
+			w.Header().Set("WWW-Authenticate", bearerChallenge(resourceMetadataURL, ""))
+			http.Error(w, "authentication required: connect with OAuth, or create an API token in the Trail Tools settings and send it in an \"Authorization: Bearer <token>\" header", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// bearerChallenge returns a Bearer WWW-Authenticate challenge (RFC 6750
+// section 3), with the optional resource metadata URL and error code.
+func bearerChallenge(resourceMetadataURL, errorCode string) string {
+	var params []string
+	if resourceMetadataURL != "" {
+		params = append(params, fmt.Sprintf("resource_metadata=%q", resourceMetadataURL))
+	}
+	if errorCode != "" {
+		params = append(params, fmt.Sprintf("error=%q", errorCode))
+	}
+	if len(params) == 0 {
+		return "Bearer"
+	}
+	return "Bearer " + strings.Join(params, ", ")
+}
+
+// SessionCookie returns the session cookie for a session.
+func SessionCookie(sessionID string, expiry time.Time) *http.Cookie {
+	return &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    sessionID,
 		MaxAge:   int(time.Until(expiry).Seconds()),
@@ -71,23 +153,18 @@ func SetSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time)
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
-	})
+	}
 }
 
 // RegisterLogoutHandler registers a handler that logs out the user by
 // expiring the session cookie and redirecting to the root path.
-// extraLogoutHandlers are additional handlers that will be called
-// before the redirect.
-func RegisterLogoutHandler(logger *slog.Logger, mux *http.ServeMux, sessionRepo SessionRepository, extraLogoutHandlers ...http.Handler) {
+func RegisterLogoutHandler(logger *slog.Logger, mux *http.ServeMux, sessionRepo SessionRepository) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if c, err := r.Cookie(sessionCookieName); err == nil {
 			if err := sessionRepo.DeleteSession(r.Context(), c.Value); err != nil && !errors.Is(err, store.ErrNotFound) {
 				logger.ErrorContext(r.Context(), "failed to delete session", slogor.Err(err))
 			}
 			expireCookie(w, c)
-		}
-		for _, h := range extraLogoutHandlers {
-			h.ServeHTTP(w, r)
 		}
 		http.Redirect(w, r, "/", http.StatusFound)
 	})

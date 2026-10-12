@@ -1,5 +1,11 @@
 # See https://docs.sqlc.dev/en/latest/reference/config.html for documentation on the fields
 version: "2"
+overrides:
+  go:
+    rename:
+      oauth_grant: OAuthGrant
+      oauth_grant_id: OAuthGrantID
+      oauth_authorization_code: OAuthAuthorizationCode
 sql:
   - name: "athletes"
     queries: "./internal/athletes/queries"
@@ -35,9 +41,111 @@ sql:
         emit_result_struct_pointers: true
         emit_enum_valid_method: true
         initialisms:
-          - oidc
           - id
           - json
           - usb
           - nfc
           - ble
+          - api
+          - sha256
+          - uri
+  - name: "activities"
+    queries: "./internal/activities/queries"
+    schema: "./internal/store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "internal"
+        out: "./internal/activities/internal"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: false
+        emit_params_struct_pointers: true
+        emit_result_struct_pointers: true
+        emit_enum_valid_method: true
+        initialisms:
+          - id
+          - json
+          - url
+          - api
+          - sha256
+  - name: "routes"
+    queries: "./internal/routes/queries"
+    schema: "./internal/store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "internal"
+        out: "./internal/routes/internal"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: false
+        emit_params_struct_pointers: true
+        emit_result_struct_pointers: true
+        emit_enum_valid_method: true
+        initialisms:
+          - id
+          - json
+          - url
+          - api
+          - sha256
+  - name: "races"
+    queries: "./internal/races/queries"
+    schema: "./internal/store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "internal"
+        out: "./internal/races/internal"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: false
+        emit_params_struct_pointers: true
+        emit_result_struct_pointers: true
+        emit_enum_valid_method: true
+        initialisms:
+          - id
+          - json
+          - url
+          - api
+          - sha256
+  - name: "plans"
+    queries: "./internal/plans/queries"
+    schema: "./internal/store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "internal"
+        out: "./internal/plans/internal"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: false
+        emit_params_struct_pointers: true
+        emit_result_struct_pointers: true
+        emit_enum_valid_method: true
+        initialisms:
+          - id
+          - json
+          - url
+          - api
+          - sha256
+  - name: "trips"
+    queries: "./internal/trips/queries"
+    schema: "./internal/store/migrations"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "internal"
+        out: "./internal/trips/internal"
+        sql_package: "pgx/v5"
+        sql_driver: "github.com/jackc/pgx/v5"
+        emit_interface: false
+        emit_params_struct_pointers: true
+        emit_result_struct_pointers: true
+        emit_enum_valid_method: true
+        initialisms:
+          - id
+          - json
+          - url
+          - api
+          - sha256

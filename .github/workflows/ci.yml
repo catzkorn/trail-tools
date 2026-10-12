@@ -6,17 +6,24 @@ on:
       - main
   pull_request:
 
+env:
+  # Keep in sync with the version used locally, as Terraform refuses to read
+  # state written by a newer version.
+  TERRAFORM_VERSION: "1.14.8"
+
 jobs:
   format:
     name: Check diff after formatting code
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run make format
         run: |
           make format
@@ -27,11 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run make lint
         run: |
           make web-deps
@@ -42,11 +51,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run make gen
         run: |
           make web-deps
@@ -61,9 +72,9 @@ jobs:
         go-version: ["stable", "oldstable"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
       - name: Run go build
@@ -72,13 +83,30 @@ jobs:
   test:
     name: Run Go tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        # PostGIS and pgRouting, matching the versions on Neon.
+        image: pgrouting/pgrouting:18-3.6-3.8
+        env:
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgres://postgres:password@localhost:5432/postgres?sslmode=disable
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - name: Run go test
         run: go test -race ./...
 
@@ -87,12 +115,69 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: "stable"
+          # Lint and code generation tools must support the Go version, so
+          # use the one in go.mod rather than the latest.
+          go-version-file: go.mod
       - run: |
           make web-deps
           go mod tidy
           git diff --exit-code --name-only
+
+  terraform:
+    name: Check Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - name: Check formatting and validate
+        run: |
+          terraform -chdir=infra fmt -check -recursive
+          terraform -chdir=infra init -backend=false -input=false
+          terraform -chdir=infra validate
+
+  deploy:
+    name: Deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [format, lint, gen, build, test, mod, terraform]
+    runs-on: ubuntu-latest
+    # Only one deployment at a time. Terraform also locks its state.
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      # Needed to authenticate to Google Cloud with Workload Identity
+      # Federation, without stored credentials.
+      id-token: write
+    env:
+      KO_DOCKER_REPO: us-west1-docker.pkg.dev/trail-tools-444904/trail-tools/server
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/296221712346/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-terraform@trail-tools-444904.iam.gserviceaccount.com
+      - name: Build and push the image
+        run: echo "IMAGE=$(go tool ko build --bare --tags "${GITHUB_SHA},latest" .)" >> "$GITHUB_ENV"
+      - name: Apply Terraform
+        run: |
+          terraform -chdir=infra init -input=false
+          terraform -chdir=infra apply -input=false -auto-approve -var "image=${IMAGE}"

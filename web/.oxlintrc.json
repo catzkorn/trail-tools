@@ -13,7 +13,6 @@
   },
   "rules": {
     "eqeqeq": "error",
-
     "typescript/consistent-type-imports": "error",
     "react/self-closing-comp": "error",
     "react/jsx-no-useless-fragment": "error",
@@ -25,16 +24,81 @@
     "unicorn/prefer-query-selector": "error",
     "unicorn/prefer-code-point": "error",
     "unicorn/prefer-ternary": "error",
-
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/prefer-global-this": "error",
     "id-length": "error",
     "func-style": "error",
     "no-inline-comments": "error",
     "capitalized-comments": "error",
-
     "unicorn/filename-case": "error",
-    "sort-keys": "error"
+    "sort-keys": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": [
+      "error",
+      {
+        "considerDefaultExhaustiveForUnions": true
+      }
+    ],
+    "typescript/strict-boolean-expressions": [
+      "error",
+      {
+        "allowString": false,
+        "allowNumber": false,
+        "allowNullableObject": false
+      }
+    ],
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/return-await": "error",
+    "typescript/require-await": "error",
+    "typescript/no-confusing-void-expression": "error",
+    "typescript/use-unknown-in-catch-callback-variable": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/explicit-module-boundary-types": "error",
+    "typescript/no-unnecessary-boolean-literal-compare": "error",
+    "eslint/no-nested-ternary": "error",
+    "eslint/max-depth": [
+      "error",
+      {
+        "max": 4
+      }
+    ],
+    "eslint/no-param-reassign": "error",
+    "eslint/no-shadow": "error",
+    "eslint/no-implicit-coercion": "error",
+    "eslint/curly": "error",
+    "eslint/no-else-return": "error",
+    "eslint/prefer-const": "error",
+    "eslint/no-var": "error",
+    "typescript/consistent-type-definitions": ["error", "interface"],
+    "typescript/no-unnecessary-template-expression": "error",
+    "typescript/no-unnecessary-type-arguments": "error",
+    "typescript/no-inferrable-types": "error",
+    "typescript/array-type": [
+      "error",
+      {
+        "default": "array"
+      }
+    ],
+    "react/rules-of-hooks": "error",
+    "eslint/no-console": [
+      "error",
+      {
+        "allow": ["error"]
+      }
+    ],
+    "unicorn/no-negated-condition": "error",
+    "eslint/no-lonely-if": "error",
+    "eslint/no-useless-return": "error"
   },
   "ignorePatterns": ["gen/**", "dist/**", "node_modules/**", "*.config.mjs"]
 }

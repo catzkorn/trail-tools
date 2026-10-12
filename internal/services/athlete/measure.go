@@ -2,9 +2,8 @@ package athlete
 
 import (
 	"context"
-	"fmt"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	athletesv1 "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -12,30 +11,30 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Request[athletesv1.CreateBloodLactateMeasureRequest]) (*connect.Response[athletesv1.CreateBloodLactateMeasureResponse], error) {
+func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *athletesv1.CreateBloodLactateMeasureRequest) (*athletesv1.CreateBloodLactateMeasureResponse, error) {
 	_, ok := authn.GetUser(ctx)
 	if !ok {
-		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthenticated"))
+		return nil, connect.NewError(connect.CodeUnauthenticated, "unauthenticated")
 	}
-	if req.Msg.GetHeartRateBpm() <= 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid heart rate: %d", req.Msg.GetHeartRateBpm()))
+	if req.GetHeartRateBpm() <= 0 {
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid heart rate: %d", req.GetHeartRateBpm())
 	}
-	activityID, err := store.StringToUUID(req.Msg.GetActivityId())
+	activityID, err := store.StringToUUID(req.GetActivityId())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid activity ID: %w", err))
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
 	}
-	mmol, err := decimal.NewFromString(req.Msg.GetMmolPerLiter())
+	mmol, err := decimal.NewFromString(req.GetMmolPerLiter())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid mmol per liter: %w", err))
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid mmol per liter: %v", err).WithCause(err)
 	}
 	if mmol.LessThan(decimal.Zero) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("mmol per liter must be positive: %s", req.Msg.GetMmolPerLiter()))
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "mmol per liter must be positive: %s", req.GetMmolPerLiter())
 	}
-	measure, err := s.athletes.AddMeasure(ctx, activityID, mmol, req.Msg.GetHeartRateBpm())
+	measure, err := s.athletes.AddMeasure(ctx, activityID, mmol, req.GetHeartRateBpm())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to add measure: %w", err))
+		return nil, connect.NewError(connect.CodeInternal, "failed to add measure").WithCause(err)
 	}
-	return connect.NewResponse(athletesv1.CreateBloodLactateMeasureResponse_builder{
+	return athletesv1.CreateBloodLactateMeasureResponse_builder{
 		BloodLactateMeasure: athletesv1.BloodLactateMeasure_builder{
 			MmolPerLiter: measure.MmolPerLiter.String(),
 			HeartRateBpm: int32(measure.HeartRateBpm),
@@ -43,5 +42,5 @@ func (s *Service) CreateBloodLactateMeasure(ctx context.Context, req *connect.Re
 			Id:           store.UUIDToString(measure.ID),
 			ActivityId:   store.UUIDToString(measure.ActivityID),
 		}.Build(),
-	}.Build()), nil
+	}.Build(), nil
 }

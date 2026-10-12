@@ -1,0 +1,680 @@
+syntax = "proto3";
+
+package races.v1;
+
+import "geo/v1/geo.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "mcp/v1/options.proto";
+import "races/v1/races.proto";
+import "routes/v1/routes.proto";
+
+// RacePlanService manages race day plans. A race plan is an opinionated
+// document with a fixed set of sections that every trail race plan should
+// cover: goals, checkpoints with pacing and cutoffs, fueling, gear, crew,
+// contingencies, race morning and mental strategy.
+//
+// The server analyses each plan: it computes arrival times at each checkpoint,
+// buffers against cutoffs, fuel totals per segment against the hourly targets
+// and segment elevation from the race course, and checks the plan against a
+// list of rules. Work through the rules until they all pass.
+//
+// Plans can be shared with others via a share link. On race day, crew can use
+// the share link to follow the runner: link the runner's Garmin LiveTrack
+// session and record arrival and departure times at checkpoints, and the
+// server re-estimates the arrival times at the remaining checkpoints from the
+// runner's pace relative to the plan.
+service RacePlanService {
+  // Create a race plan for a race. The plan is seeded with the race's
+  // details and empty entries for the core contingency scenarios.
+  rpc CreateRacePlan(CreateRacePlanRequest) returns (CreateRacePlanResponse);
+  // Get a race plan with its race and analysis.
+  rpc GetRacePlan(GetRacePlanRequest) returns (GetRacePlanResponse);
+  // List the user's race plans.
+  rpc ListRacePlans(ListRacePlansRequest) returns (ListRacePlansResponse);
+  // Update sections of a race plan. Each top level field is a section that is
+  // replaced as a whole, e.g. updating "checkpoints" replaces all
+  // checkpoints. Returns the updated plan and analysis.
+  rpc UpdateRacePlan(UpdateRacePlanRequest) returns (UpdateRacePlanResponse);
+  // Delete a race plan.
+  rpc DeleteRacePlan(DeleteRacePlanRequest) returns (DeleteRacePlanResponse);
+  // Create a share link for a race plan. Anyone with the link can view the
+  // plan. Calling this again returns the existing link.
+  rpc ShareRacePlan(ShareRacePlanRequest) returns (ShareRacePlanResponse);
+  // Revoke a race plan's share link.
+  rpc UnshareRacePlan(UnshareRacePlanRequest) returns (UnshareRacePlanResponse);
+  // Get a shared race plan by its share token. Does not require
+  // authentication.
+  rpc GetSharedRacePlan(GetSharedRacePlanRequest) returns (GetSharedRacePlanResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // Get the live race day status of a plan: the recorded checkpoint times,
+  // the runner's latest LiveTrack position and estimated arrival times at
+  // the remaining checkpoints. Identify the plan by its ID (authenticated) or
+  // its share token (unauthenticated).
+  rpc GetRaceDayStatus(GetRaceDayStatusRequest) returns (GetRaceDayStatusResponse);
+  // Update the race day data of a plan: the actual start time, the LiveTrack
+  // link and the checkpoint times. Anyone with the share link can update it,
+  // so crew can record times. Returns the updated status.
+  rpc UpdateRaceDay(UpdateRaceDayRequest) returns (UpdateRaceDayResponse);
+  // Set or clear the recorded times at a single checkpoint, leaving the
+  // other checkpoints unchanged. Use this rather than UpdateRaceDay to record
+  // times, so crew recording at different checkpoints at the same time don't
+  // overwrite each other. Returns the updated status.
+  rpc SetCheckpointSplit(SetCheckpointSplitRequest) returns (SetCheckpointSplitResponse);
+}
+
+// A race plan.
+message RacePlan {
+  // The ID of the plan.
+  string id = 1;
+  // The ID of the race this plan is for.
+  string race_id = 2 [(mcp.v1.field).output_only = true];
+  // The share URL, if the plan is shared.
+  string share_url = 3 [(mcp.v1.field).output_only = true];
+  // When the plan was created.
+  google.protobuf.Timestamp create_time = 4 [(mcp.v1.field).output_only = true];
+  // When the plan was last updated.
+  google.protobuf.Timestamp update_time = 5 [(mcp.v1.field).output_only = true];
+
+  // Section: finish time goals.
+  RaceGoals goals = 6;
+  // Section: checkpoints and aid stations in course order, ending with the
+  // finish. Each checkpoint describes the segment leading to it from the
+  // previous checkpoint (or the start).
+  repeated Checkpoint checkpoints = 7;
+  // Section: overall pacing strategy.
+  PacingStrategy pacing = 8;
+  // Section: fueling and hydration targets and products.
+  NutritionStrategy nutrition = 9;
+  // Section: gear, mandatory kit and drop bags.
+  repeated GearItem gear = 10;
+  // Section: crew logistics.
+  CrewPlan crew = 11;
+  // Section: what to do when things go wrong.
+  repeated Contingency contingencies = 12;
+  // Section: the race morning timeline, from waking up to the start.
+  repeated TimelineItem race_morning = 13;
+  // Section: mental strategy.
+  MentalStrategy mental = 14;
+  // Free text notes that don't fit anywhere else.
+  string notes = 15;
+  // What happened on race day. Updated with UpdateRaceDay, not
+  // UpdateRacePlan.
+  RaceDay race_day = 16 [(mcp.v1.field).output_only = true];
+}
+
+// Finish time goals, from most to least ambitious.
+message RaceGoals {
+  // The A goal finish time in seconds: everything goes right.
+  int32 a_finish_seconds = 1;
+  // The B goal finish time in seconds: a solid day.
+  int32 b_finish_seconds = 2;
+  // The C goal finish time in seconds: a tough day, but still finishing.
+  int32 c_finish_seconds = 3;
+  // Notes on the goals, e.g. non-time goals like "enjoy the descents".
+  string notes = 4;
+}
+
+// A checkpoint, aid station or the finish, together with the segment leading
+// to it.
+message Checkpoint {
+  // The name of the checkpoint, e.g. "CP3 Col de la Seigne" or "Finish".
+  string name = 1;
+  // Cumulative distance from the start in meters.
+  double distance_meters = 2;
+  // Elevation gain on the segment leading to this checkpoint, in meters. If
+  // 0 and the race has a course route, the analysis uses the course.
+  double elevation_gain_meters = 3;
+  // Elevation loss on the segment leading to this checkpoint, in meters. If
+  // 0 and the race has a course route, the analysis uses the course.
+  double elevation_loss_meters = 4;
+  // The cutoff as elapsed time from the start, in seconds. 0 if none.
+  int32 cutoff_seconds = 5;
+  // Whether crew can meet the runner here.
+  bool crew_access = 6;
+  // Whether a drop bag is available here.
+  bool drop_bag = 7;
+  // What the aid station offers, e.g. "water, electrolyte, gels, soup".
+  string aid = 8;
+  // The planned time to run the segment leading to this checkpoint, in
+  // seconds.
+  int32 planned_segment_seconds = 9;
+  // The planned time spent at this checkpoint, in seconds.
+  int32 planned_stop_seconds = 10;
+  // Pacing and effort notes for the segment, e.g. "power hike the climb, HR
+  // under 150".
+  string segment_strategy = 11;
+  // Fuel to consume on the segment leading to this checkpoint.
+  repeated Intake intake = 12;
+  // What to do at the checkpoint, e.g. "refill both flasks, swap socks".
+  string tasks = 13;
+  // Instructions for crew at this checkpoint. Required if crew_access is set
+  // and the plan has crew.
+  string crew_instructions = 14;
+  // The contents of the drop bag at this checkpoint. Required if drop_bag is
+  // set.
+  string drop_bag_contents = 15;
+}
+
+// An amount of a nutrition product.
+message Intake {
+  // The name of the product, matching a product in the nutrition section.
+  string product = 1;
+  // The number of servings.
+  double quantity = 2;
+}
+
+// Overall pacing strategy.
+message PacingStrategy {
+  // The overall approach, e.g. "start conservatively, run the flats and
+  // descents, hike everything steep, push from the last climb".
+  string strategy = 1;
+  // Hike climbs steeper than this grade, in percent. 0 if not set.
+  double hike_grade_percent = 2;
+  // Heart rate cap in beats per minute for the first half. 0 if not set.
+  int32 heart_rate_cap_bpm = 3;
+  // Notes on effort, e.g. RPE targets or how to handle the night.
+  string notes = 4;
+}
+
+// Fueling and hydration targets.
+message NutritionStrategy {
+  // Target carbohydrate intake in grams per hour.
+  double carbs_grams_per_hour = 1;
+  // Target fluid intake in milliliters per hour.
+  double fluid_ml_per_hour = 2;
+  // Target sodium intake in milligrams per hour.
+  double sodium_mg_per_hour = 3;
+  // The products available. Intakes in checkpoints refer to these by name.
+  repeated NutritionProduct products = 4;
+  // Notes, e.g. caffeine strategy or what to eat at aid stations.
+  string notes = 5;
+}
+
+// A nutrition product and what one serving contains.
+message NutritionProduct {
+  // The name of the product, e.g. "Maurten Gel 100".
+  string name = 1;
+  // Carbohydrate per serving in grams.
+  double carbs_grams = 2;
+  // Sodium per serving in milligrams.
+  double sodium_mg = 3;
+  // Fluid per serving in milliliters, for drinks.
+  double fluid_ml = 4;
+  // Caffeine per serving in milligrams.
+  double caffeine_mg = 5;
+}
+
+// An item of gear.
+message GearItem {
+  // The name of the item, e.g. "Waterproof jacket with taped seams".
+  string name = 1;
+  // Whether the item is on the race's mandatory kit list.
+  bool mandatory = 2;
+  // Where the item is, e.g. "worn", "vest", "drop bag CP3" or "crew".
+  string location = 3;
+  // Whether the item is packed. Used as a checklist before the race.
+  bool packed = 4;
+  // Notes about the item.
+  string notes = 5;
+}
+
+// Crew logistics.
+message CrewPlan {
+  // Whether the runner has crew. If not, crew instructions are not required.
+  bool has_crew = 1;
+  // Who is crewing and how to reach them.
+  string members = 2;
+  // Logistics, e.g. driving between checkpoints, parking and timings.
+  string notes = 3;
+}
+
+// ContingencyScenario is a kind of problem that can occur during a race.
+enum ContingencyScenario {
+  CONTINGENCY_SCENARIO_UNSPECIFIED = 0;
+  // Nausea, vomiting or stomach problems.
+  CONTINGENCY_SCENARIO_GI_DISTRESS = 1;
+  // Falling behind the plan or getting close to cutoffs.
+  CONTINGENCY_SCENARIO_BEHIND_SCHEDULE = 2;
+  // Bonking, low energy or sleepiness.
+  CONTINGENCY_SCENARIO_LOW_ENERGY = 3;
+  // Falls, blisters, chafing, cramps or other injuries.
+  CONTINGENCY_SCENARIO_INJURY = 4;
+  // Heat, cold, rain, storms or snow.
+  CONTINGENCY_SCENARIO_WEATHER = 5;
+  // Broken poles, dead headlamp, lost bottle, etc.
+  CONTINGENCY_SCENARIO_GEAR_FAILURE = 6;
+  // Low motivation or a mental low point.
+  CONTINGENCY_SCENARIO_LOW_MOTIVATION = 7;
+  // Getting lost or missing a marker.
+  CONTINGENCY_SCENARIO_NAVIGATION = 8;
+  // Anything else.
+  CONTINGENCY_SCENARIO_OTHER = 9;
+}
+
+// A plan for a problem.
+message Contingency {
+  // The kind of problem.
+  ContingencyScenario scenario = 1;
+  // How to recognise the problem, e.g. "can't stomach gels".
+  string trigger = 2;
+  // What to do about it.
+  string response = 3;
+}
+
+// An item in a timeline.
+message TimelineItem {
+  // The local time (HH:MM, 24 hour clock).
+  string time = 1;
+  // What happens at this time.
+  string description = 2;
+}
+
+// Mental strategy.
+message MentalStrategy {
+  // Short mantras to repeat during the race.
+  repeated string mantras = 1;
+  // Notes, e.g. how to break the race down or what to think about on the
+  // hardest climb.
+  string notes = 2;
+}
+
+// What happened on race day, as recorded by the runner or crew.
+message RaceDay {
+  // The Garmin LiveTrack link of the runner's activity, e.g.
+  // https://livetrack.garmin.com/session/<id>/token/<token>. Empty if not
+  // linked.
+  string livetrack_url = 1;
+  // When the runner started. If unset, the start time of the LiveTrack
+  // session is used.
+  google.protobuf.Timestamp start_time = 2;
+  // The recorded checkpoint times.
+  repeated CheckpointSplit splits = 3;
+}
+
+// The recorded times at a checkpoint.
+message CheckpointSplit {
+  // The index of the checkpoint in the plan, starting at 0.
+  int32 checkpoint_index = 1;
+  // When the runner arrived at the checkpoint, if recorded.
+  google.protobuf.Timestamp arrival_time = 2;
+  // When the runner left the checkpoint, if recorded.
+  google.protobuf.Timestamp departure_time = 3;
+}
+
+// EstimateSource is what race day estimates are based on.
+enum EstimateSource {
+  ESTIMATE_SOURCE_UNSPECIFIED = 0;
+  // The race hasn't started or there is no progress yet: estimates follow
+  // the plan.
+  ESTIMATE_SOURCE_PLAN = 1;
+  // The most recent recorded checkpoint time.
+  ESTIMATE_SOURCE_CHECKPOINT = 2;
+  // The runner's latest LiveTrack position.
+  ESTIMATE_SOURCE_LIVETRACK = 3;
+}
+
+// CheckpointStatus is where the runner is relative to a checkpoint.
+enum CheckpointStatus {
+  CHECKPOINT_STATUS_UNSPECIFIED = 0;
+  // The runner hasn't reached the checkpoint yet.
+  CHECKPOINT_STATUS_UPCOMING = 1;
+  // The runner is at the checkpoint.
+  CHECKPOINT_STATUS_ARRIVED = 2;
+  // The runner has left the checkpoint.
+  CHECKPOINT_STATUS_DEPARTED = 3;
+}
+
+// The runner's latest position from Garmin LiveTrack.
+message LiveTrackPosition {
+  // When the position was recorded.
+  google.protobuf.Timestamp time = 1;
+  // The location.
+  geo.v1.LatLng location = 2;
+  // The elevation in meters, if known.
+  double elevation_meters = 4;
+  // The distance recorded by the watch in meters.
+  double distance_meters = 5;
+  // The position matched to the race course, as a distance from the start in
+  // meters. Equal to distance_meters if the race has no course.
+  double course_distance_meters = 6;
+  // The elapsed time of the activity in seconds.
+  int32 elapsed_seconds = 7;
+  // The current speed in meters per second.
+  double speed_mps = 8;
+  // Whether the activity has ended.
+  bool ended = 9;
+}
+
+// The estimated and recorded times at a checkpoint.
+message CheckpointEstimate {
+  // The index of the checkpoint in the plan.
+  int32 checkpoint_index = 1;
+  // The name of the checkpoint.
+  string name = 2;
+  // The distance of the checkpoint from the start in meters.
+  double distance_meters = 13;
+  // Where the runner is relative to the checkpoint.
+  CheckpointStatus status = 3;
+  // The arrival time: recorded if arrival_recorded is set, otherwise
+  // estimated.
+  google.protobuf.Timestamp arrival_time = 4;
+  // Whether the arrival time was recorded rather than estimated.
+  bool arrival_recorded = 5;
+  // The departure time: recorded if departure_recorded is set, otherwise
+  // estimated.
+  google.protobuf.Timestamp departure_time = 6;
+  // Whether the departure time was recorded rather than estimated.
+  bool departure_recorded = 7;
+  // The arrival time according to the plan, from the actual start time.
+  google.protobuf.Timestamp planned_arrival_time = 8;
+  // The difference between the arrival time and the planned arrival time in
+  // seconds. Positive if behind the plan.
+  int32 delay_seconds = 9;
+  // The cutoff time, if the checkpoint has a cutoff.
+  google.protobuf.Timestamp cutoff_time = 10;
+  // The time between the arrival time and the cutoff in seconds. Negative
+  // if the cutoff is missed.
+  int32 cutoff_buffer_seconds = 11;
+  // Whether the runner was expected at the checkpoint but hasn't been
+  // recorded there yet.
+  bool overdue = 12;
+}
+
+// StartTimeSource is where the start time used for estimates comes from.
+enum StartTimeSource {
+  START_TIME_SOURCE_UNSPECIFIED = 0;
+  // The start time was recorded in the race day data.
+  START_TIME_SOURCE_RECORDED = 1;
+  // The start time comes from the LiveTrack activity.
+  START_TIME_SOURCE_LIVETRACK = 2;
+}
+
+// The live status of a race.
+message RaceDayStatus {
+  // The recorded race day data.
+  RaceDay race_day = 1;
+  // The start time used for estimates: recorded, or from LiveTrack. Unset if
+  // unknown, in which case there are no estimates.
+  google.protobuf.Timestamp start_time = 2;
+  // Where the start time comes from. Unspecified if there is no start time.
+  StartTimeSource start_time_source = 11;
+  // The latest LiveTrack position, if a LiveTrack session is linked and has
+  // data.
+  LiveTrackPosition livetrack = 3;
+  // Why the LiveTrack position couldn't be fetched, if it failed.
+  string livetrack_error = 4;
+  // What the estimates are based on.
+  EstimateSource estimate_source = 5;
+  // The runner's moving pace relative to the plan, e.g. 1.1 means 10% slower
+  // than planned. 1 if there is no progress yet.
+  double pace_factor = 6;
+  // The distance covered at the latest known progress (a recorded checkpoint
+  // or LiveTrack position), in meters.
+  double distance_meters = 7;
+  // The estimated distance covered now, in meters, extrapolated from the
+  // latest known progress and the estimates.
+  double estimated_distance_meters = 12;
+  // The runner's estimated location now: the LiveTrack position if it is
+  // the latest known progress, otherwise the point on the course at
+  // estimated_distance_meters. Unset if unknown.
+  geo.v1.LatLng estimated_location = 13;
+  // The estimates for each checkpoint, in course order.
+  repeated CheckpointEstimate checkpoints = 8;
+  // The estimated finish time.
+  google.protobuf.Timestamp estimated_finish_time = 9;
+  // When the status was computed.
+  google.protobuf.Timestamp status_time = 10;
+}
+
+// The computed analysis of a checkpoint.
+message CheckpointAnalysis {
+  // The name of the checkpoint.
+  string name = 1;
+  // The length of the segment leading to the checkpoint in meters.
+  double segment_distance_meters = 2;
+  // The elevation gain of the segment in meters, from the plan or the course.
+  double segment_elevation_gain_meters = 3;
+  // The elevation loss of the segment in meters, from the plan or the course.
+  double segment_elevation_loss_meters = 4;
+  // The planned arrival as elapsed time from the start, in seconds.
+  int32 arrival_seconds = 5;
+  // The planned local arrival time (HH:MM), prefixed with the day number if
+  // after the first day, e.g. "Day 2 03:15".
+  string arrival_clock_time = 6;
+  // The planned departure as elapsed time from the start, in seconds.
+  int32 departure_seconds = 7;
+  // The time between the planned arrival and the cutoff in seconds. Negative
+  // if the plan misses the cutoff. Only meaningful if has_cutoff is set.
+  int32 cutoff_buffer_seconds = 8;
+  // Whether the checkpoint has a cutoff.
+  bool has_cutoff = 9;
+  // The planned average pace of the segment in seconds per kilometer.
+  double segment_pace_seconds_per_km = 10;
+  // Planned carbohydrate intake on the segment in grams.
+  double carbs_grams = 11;
+  // Target carbohydrate intake for the segment in grams.
+  double carbs_target_grams = 12;
+  // Planned fluid intake on the segment in milliliters.
+  double fluid_ml = 13;
+  // Target fluid intake for the segment in milliliters.
+  double fluid_target_ml = 14;
+  // Planned sodium intake on the segment in milligrams.
+  double sodium_mg = 15;
+  // Target sodium intake for the segment in milligrams.
+  double sodium_target_mg = 16;
+}
+
+// RuleStatus is the result of checking a rule.
+enum RuleStatus {
+  RULE_STATUS_UNSPECIFIED = 0;
+  // The rule is satisfied.
+  RULE_STATUS_PASS = 1;
+  // The rule is satisfied but something looks risky.
+  RULE_STATUS_WARN = 2;
+  // The rule is not satisfied.
+  RULE_STATUS_FAIL = 3;
+}
+
+// The result of checking a plan against a rule.
+message RuleResult {
+  // A stable identifier for the rule, e.g. "cutoff-buffers".
+  string id = 1;
+  // The plan section the rule applies to, e.g. "checkpoints".
+  string section = 2;
+  // A short title for the rule.
+  string title = 3;
+  // What the rule requires and why.
+  string description = 4;
+  // The result.
+  RuleStatus status = 5;
+  // Details of the result, e.g. which checkpoints fail.
+  string message = 6;
+}
+
+// The computed analysis of a race plan.
+message RacePlanAnalysis {
+  // The analysis of each checkpoint, in order.
+  repeated CheckpointAnalysis checkpoints = 1;
+  // The planned finish as elapsed time in seconds.
+  int32 planned_finish_seconds = 2;
+  // The planned local finish time, e.g. "18:45" or "Day 2 03:15".
+  string planned_finish_clock_time = 3;
+  // Total planned carbohydrate intake in grams.
+  double total_carbs_grams = 4;
+  // Total planned fluid intake in milliliters.
+  double total_fluid_ml = 5;
+  // Total planned sodium intake in milligrams.
+  double total_sodium_mg = 6;
+  // Total planned caffeine intake in milligrams.
+  double total_caffeine_mg = 7;
+  // The result of each rule.
+  repeated RuleResult rules = 8;
+  // The number of rules that pass or warn.
+  int32 rules_passed = 9;
+  // The total number of rules.
+  int32 rules_total = 10;
+}
+
+message CreateRacePlanRequest {
+  // The ID of the race to plan for.
+  string race_id = 1;
+}
+
+message CreateRacePlanResponse {
+  // The created plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the plan.
+  RacePlanAnalysis analysis = 3;
+}
+
+message GetRacePlanRequest {
+  // The ID of the plan.
+  string id = 1;
+}
+
+message GetRacePlanResponse {
+  // The plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the plan.
+  RacePlanAnalysis analysis = 3;
+}
+
+message ListRacePlansRequest {}
+
+// A race plan with its race, for listings.
+message RacePlanSummary {
+  // The ID of the plan.
+  string id = 1;
+  // The race.
+  Race race = 2;
+  // The number of rules that pass or warn.
+  int32 rules_passed = 3;
+  // The total number of rules.
+  int32 rules_total = 4;
+  // Whether the plan is shared.
+  bool shared = 5;
+  // When the plan was last updated.
+  google.protobuf.Timestamp update_time = 6;
+}
+
+message ListRacePlansResponse {
+  // The user's race plans in race date order.
+  repeated RacePlanSummary plans = 1;
+}
+
+message UpdateRacePlanRequest {
+  // The plan to update. The ID must be set.
+  RacePlan plan = 1;
+  // The sections to update, e.g. "checkpoints,nutrition". If empty, all
+  // sections are replaced.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateRacePlanResponse {
+  // The updated plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the updated plan.
+  RacePlanAnalysis analysis = 3;
+}
+
+message DeleteRacePlanRequest {
+  // The ID of the plan to delete.
+  string id = 1;
+}
+
+message DeleteRacePlanResponse {}
+
+message ShareRacePlanRequest {
+  // The ID of the plan to share.
+  string id = 1;
+}
+
+message ShareRacePlanResponse {
+  // The URL anyone can use to view the plan.
+  string share_url = 1;
+}
+
+message UnshareRacePlanRequest {
+  // The ID of the plan to stop sharing.
+  string id = 1;
+}
+
+message UnshareRacePlanResponse {}
+
+message GetSharedRacePlanRequest {
+  // The share token from the share URL.
+  string token = 1;
+}
+
+message GetSharedRacePlanResponse {
+  // The plan.
+  RacePlan plan = 1;
+  // The race.
+  Race race = 2;
+  // The analysis of the plan.
+  RacePlanAnalysis analysis = 3;
+  // The race course path, if the race has a course route, downsampled for
+  // display.
+  repeated routes.v1.RoutePoint course = 4;
+}
+
+message GetRaceDayStatusRequest {
+  // The plan to get the status of. Exactly one must be set.
+  oneof plan {
+    // The ID of the plan. Requires authentication.
+    string plan_id = 1;
+    // The share token of the plan.
+    string share_token = 2;
+  }
+}
+
+message GetRaceDayStatusResponse {
+  // The race day status.
+  RaceDayStatus status = 1;
+}
+
+message UpdateRaceDayRequest {
+  // The plan to update. Exactly one must be set.
+  oneof plan {
+    // The ID of the plan. Requires authentication.
+    string plan_id = 1;
+    // The share token of the plan.
+    string share_token = 2;
+  }
+  // The race day data.
+  RaceDay race_day = 3;
+  // The fields to update: "livetrack_url", "start_time" or "splits". If
+  // empty, all fields are replaced.
+  google.protobuf.FieldMask update_mask = 4;
+}
+
+message UpdateRaceDayResponse {
+  // The updated race day status.
+  RaceDayStatus status = 1;
+}
+
+message SetCheckpointSplitRequest {
+  // The plan to update. Exactly one must be set.
+  oneof plan {
+    // The ID of the plan. Requires authentication.
+    string plan_id = 1;
+    // The share token of the plan.
+    string share_token = 2;
+  }
+  // The times at the checkpoint, identified by checkpoint_index. Unset times
+  // are cleared.
+  CheckpointSplit split = 3;
+}
+
+message SetCheckpointSplitResponse {
+  // The updated race day status.
+  RaceDayStatus status = 1;
+}

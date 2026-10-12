@@ -1,14 +1,20 @@
+// Package html serves the frontend's index.html, which loads the single page
+// application.
 package html
 
 import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/johanbrandhorst/reload"
 )
 
 const templateName = "index.html"
+
+// defaultTitle is the title of pages without their own.
+const defaultTitle = "Trail tools"
 
 var indexTemplate = template.Must(template.New(templateName).Parse(
 	fmt.Sprintf(
@@ -18,10 +24,37 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Trail tools</title>
-    <link rel="stylesheet" href="index.css" />
-    <link rel="icon" href="favicon.svg" />
-    <script src="index.js" defer></script>
+    <title>{{ .Page.Title }}</title>
+    {{- with .Page }}
+    {{- if .NoIndex }}
+    <meta name="robots" content="noindex" />
+    {{- end }}
+    {{- if .Description }}
+    <meta name="description" content="{{ .Description }}" />
+    {{- end }}
+    {{- if .URL }}
+    <link rel="canonical" href="{{ .URL }}" />
+    <meta property="og:site_name" content="Trail Tools" />
+    <meta property="og:type" content="{{ or .Type "website" }}" />
+    <meta property="og:title" content="{{ .Title }}" />
+    <meta property="og:url" content="{{ .URL }}" />
+    {{- if .Description }}
+    <meta property="og:description" content="{{ .Description }}" />
+    {{- end }}
+    {{- if .Image }}
+    <meta property="og:image" content="{{ .Image }}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {{- else }}
+    <meta name="twitter:card" content="summary" />
+    {{- end }}
+    {{- if not .PublishedTime.IsZero }}
+    <meta property="article:published_time" content="{{ .PublishedTime.UTC.Format "2006-01-02T15:04:05Z07:00" }}" />
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    <link rel="stylesheet" href="/index.css" />
+    <link rel="icon" href="/favicon.svg" />
+    <script src="/index.js" defer></script>
   </head>
   <body class="h-full">
     <div id="root" class="h-full"></div>
@@ -35,10 +68,45 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
 	),
 ))
 
+// Page describes a page for search engines and link previews, which don't
+// run the single page application.
+type Page struct {
+	// The title of the page. Defaults to "Trail tools".
+	Title string
+	// A short description of the page.
+	Description string
+	// The canonical URL of the page. The Open Graph tags are only added
+	// for pages with a URL.
+	URL string
+	// The URL of an image representing the page.
+	Image string
+	// The Open Graph type, e.g. "article" or "profile". Defaults to
+	// "website".
+	Type string
+	// When an article was published.
+	PublishedTime time.Time
+	// Ask search engines not to index the page.
+	NoIndex bool
+}
+
+// Render writes index.html with the status code, with the page's metadata
+// in its head. watch adds the live reload script.
+func Render(w http.ResponseWriter, watch bool, status int, page Page) {
+	if page.Title == "" {
+		page.Title = defaultTitle
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	_ = indexTemplate.ExecuteTemplate(w, templateName, map[string]any{
+		"Watch": watch,
+		"Page":  page,
+	})
+}
+
+// ServeIndexHTML serves index.html for any request. watch adds the live
+// reload script.
 func ServeIndexHTML(watch bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		indexTemplate.ExecuteTemplate(w, templateName, map[string]bool{
-			"Watch": watch,
-		})
+		Render(w, watch, http.StatusOK, Page{})
 	})
 }

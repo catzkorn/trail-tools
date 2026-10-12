@@ -9,7 +9,7 @@ This is a full-stack Go/React/TypeScript/PostgreSQL application for trail runnin
 - **Backend**: Go server with Connect RPC handlers in `internal/services/`
 - **Frontend**: React/TypeScript SPA using Connect Query for API calls
 - **Database**: PostgreSQL with SQLC-generated queries and migrations
-- **Authentication**: OIDC + WebAuthn with session-based auth via cookies
+- **Authentication**: Passkeys (WebAuthn) with session-based auth via cookies, and API tokens for API and MCP clients
 - **Build System**: Make-driven with Docker containers for Node.js tools
 
 ## Development Workflows
@@ -17,7 +17,7 @@ This is a full-stack Go/React/TypeScript/PostgreSQL application for trail runnin
 ### Essential Commands
 
 ```bash
-make run      # Start full stack (Postgres + Dex OIDC + Go server)
+make run      # Start full stack (Postgres + Go server)
 make watch    # Development mode with frontend/CSS auto-rebuild
 make gen      # Regenerate all code (protobuf, SQLC, frontend assets)
 make format   # Format Go, TypeScript, and protobuf files
@@ -28,7 +28,7 @@ make lint     # Run all linters
 
 ### Code Generation Pipeline
 
-1. **Protobuf**: `api/*/v1/*.proto` → `internal/gen/` (Go) + `web/gen/` (TypeScript)
+1. **Protobuf**: `api/*/v1/*.proto` → `internal/gen/` (Go) + `web/gen/` (TypeScript) + `internal/apidesc/descriptor.binpb` (descriptor set with comments, embedded for MCP)
 2. **SQLC**: `internal/*/queries/*.sql` + migrations → `internal/*/internal/*.sql.go`
 3. **Frontend**: `web/index.tsx` → `web/dist/` via esbuild + Tailwind CSS
 4. **Asset Embedding**: `web/dist/` → embedded in Go binary via `//go:embed dist` in `web/web.go`
@@ -49,16 +49,19 @@ func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athlet
 }
 ```
 
+### MCP Server
+
+`internal/mcp` exposes every Connect RPC as an MCP tool at `/mcp`, built at startup from the descriptors in `internal/apidesc`. Tool descriptions are the proto comments, so write them for an AI agent. Exclude a method with `option (mcp.v1.method).exclude = true` and hide server-set fields from tool inputs with `[(mcp.v1.field).output_only = true]`. MCP clients authenticate with API tokens (`Authorization: Bearer`), handled by `internal/authn`.
+
 ### Repository Pattern
 
 Services depend on repository interfaces (see `AthleteRepository` in `athlete_service.go`), implemented by SQLC-generated code in `internal/*/internal/`.
 
 ### Authentication Flow
 
-1. OIDC login via Dex creates session cookie
-2. `internal/authn` middleware extracts user from session
-3. Services use `authn.UserFromContext(ctx)` for access control
-4. WebAuthn available for passwordless auth
+1. Passkey sign in creates a session cookie
+2. `internal/authn` middleware extracts the user from the session cookie or an API token
+3. Services use `authn.GetUser(ctx)` or `authn.GetUserID(ctx)` for access control
 
 ## Frontend Patterns
 
@@ -86,7 +89,7 @@ All schema changes via numbered migrations in `internal/store/migrations/`. SQLC
 
 ### SQLC Configuration
 
-- Separate configs for `athletes` and `users` domains in `sqlc.yaml`
+- Separate configs per domain (`athletes`, `users`, `activities`, `routes`, `races`, `plans`) in `sqlc.yaml`
 - Custom type overrides (e.g., `pg_catalog.numeric` → `decimal.Decimal`)
 - Pointer structs for nullable fields
 
@@ -95,7 +98,6 @@ All schema changes via numbered migrations in `internal/store/migrations/`. SQLC
 ### Docker Dependencies
 
 - PostgreSQL on `:5432` with password `password`
-- Dex OIDC provider on `:5556` with test config
 - Node.js tools run in Alpine containers with proper user mapping
 
 ### Build Tool Integration
@@ -110,9 +112,12 @@ Go tools are prefixed with `go tool` (e.g., `go tool buf`, `go tool esbuild`, `g
 - **Decimal Precision**: `shopspring/decimal` for financial/scientific precision (blood lactate)
 - **Generated Code**: Never edit files with `// Code generated .* DO NOT EDIT` headers
 
+## Testing
+
+`make test` starts Postgres and runs `go test -race ./...` with `TEST_DATABASE_URL` set. `internal/store/storetest` gives each test its own migrated database; tests needing a database are skipped without it. `internal/services` has integration tests driving the Connect handlers over HTTP with a fake map data backend.
+
 ## Common Debugging
 
-- Check `make run` output for OIDC configuration issues
 - Frontend API errors often indicate Connect transport misconfiguration
 - Database connection issues: ensure `make db` container is running
 - Missing types after schema changes: run `make gen`

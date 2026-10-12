@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trail-tools",
+      "runtimeExecutable": "make",
+      "runtimeArgs": ["run"],
+      "port": 8080
+    },
+    {
+      "name": "trail-tools-watch",
+      "runtimeExecutable": "make",
+      "runtimeArgs": ["watch"],
+      "port": 8080
+    }
+  ]
+}

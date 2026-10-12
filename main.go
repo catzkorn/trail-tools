@@ -13,21 +13,58 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"slices"
+	"strings"
+	"syscall"
 	"time"
 
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
+	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/blob"
+	"github.com/catzkorn/trail-tools/internal/cloudrun"
+	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/oauth/v1/oauthv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
+	"github.com/catzkorn/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/html"
-	"github.com/catzkorn/trail-tools/internal/oidc"
+	"github.com/catzkorn/trail-tools/internal/livetrack"
+	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/mcp"
+	"github.com/catzkorn/trail-tools/internal/oauth"
+	"github.com/catzkorn/trail-tools/internal/plans"
+	"github.com/catzkorn/trail-tools/internal/races"
+	"github.com/catzkorn/trail-tools/internal/routes"
+	"github.com/catzkorn/trail-tools/internal/routing"
+	"github.com/catzkorn/trail-tools/internal/services/activity"
 	"github.com/catzkorn/trail-tools/internal/services/athlete"
+	"github.com/catzkorn/trail-tools/internal/services/auth"
+	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
+	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
+	oauthsvc "github.com/catzkorn/trail-tools/internal/services/oauth"
+	"github.com/catzkorn/trail-tools/internal/services/plan"
+	"github.com/catzkorn/trail-tools/internal/services/race"
+	"github.com/catzkorn/trail-tools/internal/services/raceplan"
+	"github.com/catzkorn/trail-tools/internal/services/route"
+	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
+	"github.com/catzkorn/trail-tools/internal/services/trip"
 	"github.com/catzkorn/trail-tools/internal/services/user"
-	"github.com/catzkorn/trail-tools/internal/services/webauthn"
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/strava"
+	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
-	wauthn "github.com/go-webauthn/webauthn/webauthn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
 )
@@ -35,13 +72,24 @@ import (
 const (
 	defaultHostname = "localhost"
 	defaultPort     = "8080"
+	// mcpPath is the path of the MCP server.
+	mcpPath = "/mcp"
 )
+
+// maxRequestBytes limits the size of API requests. GPX files imported as
+// routes and trip report photos can be several megabytes.
+const maxRequestBytes = 32 << 20
 
 var (
 	logLevel = flag.String(
 		"log-level",
 		"info",
 		"The log level to use",
+	)
+	logFormat = flag.String(
+		"log-format",
+		"text",
+		"The log format: \"text\" for terminals, or \"json\" for structured logging platforms like Cloud Logging",
 	)
 	databaseUrl = flag.String(
 		"database-url",
@@ -68,42 +116,97 @@ var (
 		"",
 		"The path to the certificate used for serving the application over HTTPS",
 	)
-	oidcClientID = flag.String(
-		"oidc-client-id",
-		"",
-		"The client ID to use when authenticating with the OIDC issuer",
-	)
-	oidcClientSecret = flag.String(
-		"oidc-client-secret",
-		"",
-		"The client secret to use when authenticating with the OIDC issuer",
-	)
-	oidcIssuerURL = flag.String(
-		"oidc-issuer-url",
-		"https://accounts.google.com",
-		"The URL of the OIDC issuer to use for authentication",
-	)
 	serveDir = flag.String(
 		"serve-dir",
 		"",
 		"Optionally, the directory to serve as the root of the web application."+
 			" If unset, will serve the compiled web application from the web package",
 	)
+	publicURL = flag.String(
+		"public-url",
+		"",
+		"The public URL of the application, used for OAuth redirects and share links."+
+			" Defaults to http(s)://<hostname>:<port>",
+	)
+	stravaClientID = flag.String(
+		"strava-client-id",
+		"",
+		"The client ID of the Strava API application. If unset, Strava sync is disabled",
+	)
+	stravaClientSecret = flag.String(
+		"strava-client-secret",
+		"",
+		"The client secret of the Strava API application",
+	)
+	stravaSyncMode = flag.String(
+		"strava-sync-mode",
+		"background",
+		"How Strava syncs run: \"background\" runs them in the server, \"scheduled\" runs them when"+
+			" a scheduler calls "+stravasvc.SyncPath+", for servers that don't run between requests, like Cloud Run",
+	)
+	stravaWebhookVerifyToken = flag.String(
+		"strava-webhook-verify-token",
+		"",
+		"A secret Strava sends back when validating the webhook. If set, the server subscribes to Strava's webhook events"+
+			" at "+stravasvc.WebhookPath+" on startup, to sync new activities right away. Requires a public URL",
+	)
+	schedulerServiceAccount = flag.String(
+		"scheduler-service-account",
+		"",
+		"The email of the service account allowed to call "+stravasvc.SyncPath+" with a Google signed ID token,"+
+			" e.g. from Cloud Scheduler. Required with -strava-sync-mode=scheduled",
+	)
+	schedulerAudience = flag.String(
+		"scheduler-audience",
+		"trail-tools-scheduler",
+		"The audience of the scheduler's ID tokens",
+	)
+	adminBootstrapToken = flag.String(
+		"admin-bootstrap-token",
+		"",
+		"A secret that can be used as an invitation to create the first administrator,"+
+			" at /invite/<token>, while there are no administrators",
+	)
+	overpassURLs = flag.String(
+		"overpass-urls",
+		strings.Join(mapdata.DefaultOverpassURLs, ","),
+		"Comma separated Overpass API URLs used to query OpenStreetMap, tried in order",
+	)
+	importJob = flag.String(
+		"import-job",
+		"",
+		"The Cloud Run job that imports OpenStreetMap data, as projects/<project>/locations/<region>/jobs/<job>."+
+			" If unset, imports run in the server",
+	)
+	photoBucket = flag.String(
+		"photo-bucket",
+		"",
+		"The Google Cloud Storage bucket to store trip report photos in, using the application default credentials."+
+			" If unset, photos are stored in -photo-dir",
+	)
+	photoDir = flag.String(
+		"photo-dir",
+		"photos",
+		"The local directory to store trip report photos in, if -photo-bucket is unset",
+	)
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "import-osm" {
+		os.Exit(importOSM(os.Args[2:]))
+	}
 	flag.Parse()
-	var slogLevel slog.Level
-	if err := slogLevel.UnmarshalText([]byte(*logLevel)); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse log level: %v\n", err)
+	if err := setFlagsFromEnv(flag.CommandLine); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
 		os.Exit(1)
 	}
-	logger := slog.New(slogor.NewHandler(
-		os.Stdout,
-		slogor.SetTimeFormat(time.Stamp),
-		slogor.SetLevel(slogLevel),
-	))
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	logger, err := newLogger(*logLevel, *logFormat)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
+		os.Exit(1)
+	}
+	// Cloud Run sends SIGTERM to stop instances.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if err := run(
 		ctx,
@@ -113,10 +216,21 @@ func main() {
 		*port,
 		*tlsKeyPath,
 		*tlsCertPath,
-		*oidcClientID,
-		*oidcClientSecret,
-		*oidcIssuerURL,
 		*serveDir,
+		*publicURL,
+		*stravaClientID,
+		*stravaClientSecret,
+		*adminBootstrapToken,
+		*stravaSyncMode,
+		*stravaWebhookVerifyToken,
+		*schedulerServiceAccount,
+		*schedulerAudience,
+		*importJob,
+		*photoBucket,
+		*photoDir,
+		mapdata.Config{
+			OverpassURLs: strings.Split(*overpassURLs, ","),
+		},
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -131,10 +245,19 @@ func run(
 	port string,
 	tlsKeyPath string,
 	tlsCertPath string,
-	oidcClientID string,
-	oidcClientSecret string,
-	oidcIssuerURL string,
 	serveDir string,
+	publicURL string,
+	stravaClientID string,
+	stravaClientSecret string,
+	adminBootstrapToken string,
+	stravaSyncMode string,
+	stravaWebhookVerifyToken string,
+	schedulerServiceAccount string,
+	schedulerAudience string,
+	importJob string,
+	photoBucket string,
+	photoDir string,
+	mapConfig mapdata.Config,
 ) error {
 	switch {
 	case databaseUrl == "":
@@ -143,14 +266,16 @@ func run(
 		return errors.New("address is required")
 	case port == "":
 		return errors.New("port is required")
-	case oidcClientID == "":
-		return errors.New("oidc-client-id is required")
-	case oidcClientSecret == "":
-		return errors.New("oidc-client-secret is required")
-	case oidcIssuerURL == "":
-		return errors.New("oidc-issuer-url is required")
 	case tlsKeyPath != "" && tlsCertPath == "" || tlsKeyPath == "" && tlsCertPath != "":
 		return errors.New("tls-cert and tls-key must be set together")
+	case stravaClientID != "" && stravaClientSecret == "":
+		return errors.New("strava-client-secret is required when strava-client-id is set")
+	case stravaSyncMode != "background" && stravaSyncMode != "scheduled":
+		return errors.New(`strava-sync-mode must be "background" or "scheduled"`)
+	case stravaSyncMode == "scheduled" && schedulerServiceAccount == "":
+		return errors.New("scheduler-service-account is required with -strava-sync-mode=scheduled")
+	case photoBucket == "" && photoDir == "":
+		return errors.New("photo-bucket or photo-dir is required")
 	}
 	dbUrl, err := url.Parse(databaseUrl)
 	if err != nil {
@@ -166,6 +291,9 @@ func run(
 		}
 		baseURL = "https://" + address
 	}
+	if publicURL != "" {
+		baseURL = strings.TrimSuffix(publicURL, "/")
+	}
 	db, err := store.New(ctx, log, dbUrl)
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
@@ -178,51 +306,192 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
-
-	// Register all handlers to a single mux
-	athletePath, athleteHandler := athletesv1connect.NewAthleteServiceHandler(athlete.NewService(log, athletes))
-	usersPath, usersHandler := usersv1connect.NewUserServiceHandler(user.NewService(log))
-	apiMux := http.NewServeMux()
-	apiMux.Handle(athletePath, athleteHandler)
-	apiMux.Handle(usersPath, usersHandler)
-
-	// Wrap the API mux in the OIDC authn middleware
-	// All API calls will require authentication.
-	oidcHandler, err := oidc.NewOIDCMiddleware(ctx, log, oidcIssuerURL, oidcClientID, apiMux)
+	activityRepo, err := activities.NewRepository(log, db)
 	if err != nil {
-		return fmt.Errorf("failed to create OIDC middleware: %w", err)
+		return fmt.Errorf("failed to create activity repository: %w", err)
 	}
-	authHandler, err := authn.NewAuthnMiddleware(ctx, log, users, oidcHandler)
+	routeRepo, err := routes.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create route repository: %w", err)
+	}
+	raceRepo, err := races.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create race repository: %w", err)
+	}
+	planRepo, err := plans.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create plan repository: %w", err)
+	}
+	tripRepo, err := trips.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create trip repository: %w", err)
+	}
+	// Photos are stored in Cloud Storage on Cloud Run, whose file system
+	// doesn't outlive an instance, and in a local directory otherwise.
+	var photos blob.Store
+	if photoBucket != "" {
+		photos, err = blob.NewGCS(ctx, photoBucket)
+		if err != nil {
+			return fmt.Errorf("failed to create the photo bucket client: %w", err)
+		}
+		log.InfoContext(ctx, "Storing photos in Cloud Storage", slog.String("bucket", photoBucket))
+	} else {
+		photos, err = blob.NewDir(photoDir)
+		if err != nil {
+			return fmt.Errorf("failed to create the photo directory: %w", err)
+		}
+		log.InfoContext(ctx, "Storing photos in a local directory", slog.String("dir", photoDir))
+	}
+	mapData := mapdata.New(mapConfig)
+
+	// Strava is optional, as it requires API credentials.
+	var stravaSyncer *stravasvc.Syncer
+	var stravaOAuth *stravasvc.OAuth
+	var stravaWebhook *stravasvc.Webhook
+	if stravaClientID != "" {
+		stravaClient := strava.New(strava.Config{
+			ClientID:     stravaClientID,
+			ClientSecret: stravaClientSecret,
+			RedirectURL:  baseURL + stravasvc.CallbackPath,
+		})
+		background := stravaSyncMode == "background"
+		stravaSyncer = stravasvc.NewSyncer(ctx, log, activityRepo, stravaClient, background)
+		stravaOAuth = stravasvc.NewOAuth(log, stravaClient, activityRepo, stravaSyncer, []byte(stravaClientSecret))
+		if stravaWebhookVerifyToken != "" {
+			stravaWebhook = stravasvc.NewWebhook(log, activityRepo, stravaSyncer, stravaClient,
+				baseURL+stravasvc.WebhookPath, stravaWebhookVerifyToken)
+		}
+		if background {
+			go stravaSyncer.RunBackground(ctx)
+			defer stravaSyncer.Wait()
+		}
+	} else {
+		log.InfoContext(ctx, "Strava sync disabled, set -strava-client-id and -strava-client-secret to enable it")
+	}
+
+	userService := user.NewService(log, users)
+	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
+	if err != nil {
+		return fmt.Errorf("failed to create auth service: %w", err)
+	}
+	activityService := activity.NewService(log, activityRepo)
+	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth)
+	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
+	geoService := geosvc.NewService(log, mapData, activityRepo)
+	planService := plan.NewService(log, planRepo)
+	raceService := race.NewService(log, raceRepo, routeRepo)
+	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
+	// Activities are synced from Strava before importing their photos into
+	// trip reports, if Strava is configured.
+	var activitySyncer trip.ActivitySyncer
+	if stravaSyncer != nil {
+		activitySyncer = stravaSyncer
+	}
+	tripService := trip.NewService(log, tripRepo, activityRepo, activitySyncer, photos, baseURL)
+	// MCP clients that require OAuth, like claude.ai, authorize with this
+	// authorization server instead of API tokens.
+	oauthServer := oauth.NewServer(log, users, baseURL, mcpPath)
+	oauthService := oauthsvc.NewService(log, oauthServer, users)
+	// Imports of OpenStreetMap data need more memory than the server has on
+	// Cloud Run, so they run as a Cloud Run job there.
+	var importRunner mapdatasvc.ImportRunner
+	if importJob != "" {
+		job, err := cloudrun.NewJob(ctx, importJob)
+		if err != nil {
+			return fmt.Errorf("failed to create the import job client: %w", err)
+		}
+		importRunner = jobImportRunner{job: job}
+	} else {
+		localRunner := routing.NewLocalRunner(ctx, log, db, routing.NewDEM(routing.DefaultDEMURL, routing.DefaultDEMCache))
+		defer localRunner.Wait()
+		importRunner = localRunner
+	}
+	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
+
+	// Register all services on a single Connect server, served by the API mux
+	server := connect.NewServer()
+	athletesv1connect.RegisterAthleteServiceHandler(server, athlete.NewService(log, athletes))
+	usersv1connect.RegisterUserServiceHandler(server, userService)
+	authv1connect.RegisterAuthServiceHandler(server, authService)
+	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)
+	stravav1connect.RegisterStravaServiceHandler(server, stravaService)
+	routesv1connect.RegisterRouteServiceHandler(server, routeService)
+	geov1connect.RegisterGeoServiceHandler(server, geoService)
+	routingv1connect.RegisterMapDataServiceHandler(server, mapDataService)
+	plansv1connect.RegisterTrainingPlanServiceHandler(server, planService)
+	racesv1connect.RegisterRaceServiceHandler(server, raceService)
+	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
+	oauthv1connect.RegisterOAuthServiceHandler(server, oauthService)
+	tripsv1connect.RegisterTripReportServiceHandler(server, tripService)
+	apiMux := http.NewServeMux()
+	connecthttp.Mount(apiMux, server, connecthttp.WithReadMaxBytes(maxRequestBytes))
+
+	// Wrap the API mux in the authn middleware. Each service checks
+	// authentication itself.
+	authHandler, err := authn.NewAuthnMiddleware(ctx, log, users, apiMux)
 	if err != nil {
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
+	authenticate := func(next http.Handler) http.Handler {
+		// NewAuthnMiddleware never returns an error.
+		h, _ := authn.NewAuthnMiddleware(ctx, log, users, next)
+		return h
+	}
 
-	// Create the core mux. This contains both the Connect API, OIDC, WebAuthn and HTML handlers.
+	// Create the core mux. This contains both the Connect API and HTML handlers.
 	// Only the Connect API endpoints (registered to apiMux) are authenticated.
 	mux := http.NewServeMux()
 	// Serve the Connect API handlers through the authn middleware
-	mux.Handle(athletePath, authHandler)
-	mux.Handle(usersPath, authHandler)
-
-	// Serve OIDC handlers directly on the mux (unauthenticated)
-	oidcLogout, err := oidc.RegisterHandlers(ctx, log, baseURL, oidcClientID, oidcClientSecret, oidcIssuerURL, users, mux)
-	if err != nil {
-		return fmt.Errorf("failed to register OIDC handlers: %w", err)
+	for _, path := range servicePaths(server) {
+		mux.Handle(path, authHandler)
 	}
 
-	// Register authn and oidc logout handler directly on the mux
-	authn.RegisterLogoutHandler(log, mux, users, oidcLogout)
-
-	webAuthn, err := wauthn.New(&wauthn.Config{
-		RPDisplayName: "Trail tools",
-		RPID:          hostname,
-		RPOrigins:     []string{baseURL},
-	})
+	// Serve the same API to AI agents over MCP. MCP clients authenticate
+	// with API tokens or OAuth access tokens.
+	mcpServer, err := mcp.NewServer(log,
+		mcp.Service{Name: usersv1connect.UserServiceName, Handler: userService},
+		mcp.Service{Name: activitiesv1connect.ActivityServiceName, Handler: activityService},
+		mcp.Service{Name: stravav1connect.StravaServiceName, Handler: stravaService},
+		mcp.Service{Name: routesv1connect.RouteServiceName, Handler: routeService},
+		mcp.Service{Name: geov1connect.GeoServiceName, Handler: geoService},
+		mcp.Service{Name: plansv1connect.TrainingPlanServiceName, Handler: planService},
+		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
+		mcp.Service{Name: racesv1connect.RacePlanServiceName, Handler: racePlanService},
+		mcp.Service{Name: tripsv1connect.TripReportServiceName, Handler: tripService},
+	)
 	if err != nil {
-		return fmt.Errorf("failed to create webauthn: %w", err)
+		return fmt.Errorf("failed to create MCP server: %w", err)
 	}
-	// Serve the WebAuthn handlers directly on the mux (unauthenticated)
-	webauthn.RegisterHandlers(mux, log, webAuthn, users)
+	resourceMetadataURL := oauthServer.ResourceMetadataURL()
+	mcpHandler, err := authn.NewAuthnMiddleware(ctx, log, users,
+		authn.RequireUser(resourceMetadataURL, mcpServer.Handler()),
+		authn.WithResourceMetadata(resourceMetadataURL),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create MCP authentication middleware: %w", err)
+	}
+	mux.Handle(mcpPath, mcpHandler)
+
+	// Serve Strava OAuth handlers
+	if stravaOAuth != nil {
+		stravaOAuth.RegisterHandlers(mux, authenticate)
+	}
+	// Serve Strava's webhook events, which aren't authenticated
+	if stravaWebhook != nil {
+		mux.Handle(stravasvc.WebhookPath, stravaWebhook)
+	}
+	// Serve the scheduled sync endpoint, only for the scheduler
+	if stravaSyncer != nil && !stravaSyncer.Background() {
+		syncHandler, err := authn.RequireGoogleServiceAccount(ctx, log, schedulerAudience, schedulerServiceAccount,
+			stravasvc.SyncHandler(log, stravaSyncer))
+		if err != nil {
+			return fmt.Errorf("failed to create scheduled sync handler: %w", err)
+		}
+		mux.Handle(stravasvc.SyncPath, syncHandler)
+	}
+
+	// Register the logout handler directly on the mux
+	authn.RegisterLogoutHandler(log, mux, users)
 
 	// Create the FS used to serve the frontend.
 	webFs, _ := fs.Sub(web.Dist, "dist")
@@ -238,7 +507,21 @@ func run(
 	mux.Handle("/favicon.svg", fileServer)
 	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
-	mux.Handle("/", html.ServeIndexHTML(serveDir != ""))
+	indexHandler := html.ServeIndexHTML(serveDir != "")
+	mux.Handle("/", indexHandler)
+	// Serve the OAuth endpoints, with the frontend's consent page for valid
+	// authorization requests.
+	oauthServer.RegisterHandlers(mux, indexHandler)
+	// Serve routes as GPX files, falling back to the frontend for other
+	// /routes/ pages.
+	mux.Handle("/routes/", authenticate(routeService.GPXHandler(indexHandler)))
+	// Registering /routes/ makes the mux redirect /routes to /routes/, so
+	// serve the frontend for /routes explicitly.
+	mux.Handle("/routes", indexHandler)
+	// Serve trip report photos, and the public trip report pages with their
+	// metadata for search engines and link previews.
+	mux.Handle(trip.PhotoPath, authenticate(tripService.PhotoHandler()))
+	mux.Handle(trip.ProfilePath, authenticate(tripService.PageHandler(serveDir != "")))
 
 	// Add auto-reloading middleware if serving from a directory
 	var srvHandler http.Handler = mux
@@ -279,9 +562,106 @@ func run(
 			log.ErrorContext(ctx, "Failed to shutdown server", slogor.Err(err))
 		}
 	}()
+	if stravaWebhook != nil {
+		// Strava calls the webhook while subscribing, so subscribe once the
+		// server is serving. Listing the existing subscription first gives
+		// it time to start.
+		go func() {
+			if err := stravaWebhook.Subscribe(ctx); err != nil {
+				log.ErrorContext(ctx, "Failed to subscribe to Strava webhook events, new activities sync periodically instead", slogor.Err(err))
+			}
+		}()
+	}
 	log.InfoContext(ctx, "Serving on", slog.String("addr", address))
 	if err := serveFn(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to serve: %w", err)
 	}
 	return nil
+}
+
+// envPrefix is the prefix of environment variables that set flags.
+const envPrefix = "TRAIL_TOOLS_"
+
+// setFlagsFromEnv sets flags that weren't set on the command line from
+// environment variables named TRAIL_TOOLS_<FLAG>, e.g. TRAIL_TOOLS_DATABASE_URL
+// for -database-url. This allows passing secrets through the environment.
+func setFlagsFromEnv(fs *flag.FlagSet) error {
+	set := map[string]bool{}
+	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
+	var err error
+	fs.VisitAll(func(f *flag.Flag) {
+		if set[f.Name] || err != nil {
+			return
+		}
+		name := envPrefix + strings.ToUpper(strings.ReplaceAll(f.Name, "-", "_"))
+		if value, ok := os.LookupEnv(name); ok {
+			if setErr := f.Value.Set(value); setErr != nil {
+				err = fmt.Errorf("invalid value for %s: %w", name, setErr)
+			}
+		}
+	})
+	return err
+}
+
+// newLogger returns a logger logging at level in format: "text" for
+// terminals, or "json" for Cloud Logging.
+func newLogger(level, format string) (*slog.Logger, error) {
+	var slogLevel slog.Level
+	if err := slogLevel.UnmarshalText([]byte(level)); err != nil {
+		return nil, fmt.Errorf("invalid log level: %w", err)
+	}
+	switch format {
+	case "text":
+		return slog.New(slogor.NewHandler(os.Stdout, slogor.SetTimeFormat(time.Stamp), slogor.SetLevel(slogLevel))), nil
+	case "json":
+		return slog.New(newJSONLogHandler(slogLevel)), nil
+	default:
+		return nil, fmt.Errorf("invalid log format %q, expected text or json", format)
+	}
+}
+
+// newJSONLogHandler returns a handler logging JSON lines in the format of
+// Google Cloud Logging's structured logs.
+func newJSONLogHandler(level slog.Level) slog.Handler {
+	return slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if len(groups) > 0 {
+				return a
+			}
+			switch a.Key {
+			case slog.MessageKey:
+				a.Key = "message"
+			case slog.LevelKey:
+				a.Key = "severity"
+				if lvl, ok := a.Value.Any().(slog.Level); ok && lvl == slog.LevelWarn {
+					a.Value = slog.StringValue("WARNING")
+				}
+			}
+			return a
+		},
+	})
+}
+
+// jobImportRunner runs imports as executions of a Cloud Run job, which runs
+// the import-osm command.
+type jobImportRunner struct {
+	job *cloudrun.Job
+}
+
+func (r jobImportRunner) Run(ctx context.Context, id pgtype.UUID) error {
+	return r.job.Run(ctx, []string{"import-osm", "-import-id", store.UUIDToString(id)})
+}
+
+// servicePaths returns the URL path prefixes of the services registered on
+// server, e.g. /users.v1.UserService/.
+func servicePaths(server *connect.Server) []string {
+	var paths []string
+	for spec := range server.Specs() {
+		path := spec.Procedure[:strings.LastIndexByte(spec.Procedure, '/')+1]
+		if !slices.Contains(paths, path) {
+			paths = append(paths, path)
+		}
+	}
+	return paths
 }
