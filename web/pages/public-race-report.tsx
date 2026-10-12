@@ -2,14 +2,15 @@ import Loading from "@components/loading";
 import {
   Paragraphs,
   RaceComparisonView,
+  RaceResult,
   SECTIONS,
 } from "@components/races/race-report-bits";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
-import { PencilSquareIcon, TrophyIcon } from "@heroicons/react/24/outline";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import { getPublicRaceReport } from "gen/races/v1/race_reports-RaceReportService_connectquery";
-import { formatDate, formatDurationLong, formatKm } from "helpers/format";
+import { formatDate, formatKm } from "helpers/format";
 import React, { useEffect } from "react";
 import { Link, useParams } from "react-router";
 
@@ -104,19 +105,11 @@ const PublicRaceReportPage: React.FC = () => {
           </Link>{" "}
           · {facts.join(" · ")}
         </p>
-        {(report.finishSeconds > 0 || report.placement !== "") && (
-          <p className="mt-2 inline-flex items-center justify-center gap-2 text-lg font-semibold text-gray-900">
-            <TrophyIcon className="size-5 text-amber-500" />
-            {[
-              report.finishSeconds > 0
-                ? formatDurationLong(report.finishSeconds)
-                : "",
-              report.placement,
-            ]
-              .filter((part) => part !== "")
-              .join(" · ")}
-          </p>
-        )}
+        <RaceResult
+          report={report}
+          className="mt-2 justify-center gap-2 text-lg font-semibold text-gray-900"
+          iconClassName="size-5"
+        />
       </header>
       {report.summary.trim() !== "" && (
         <div className="flex flex-col gap-4 text-lg leading-8 text-gray-800">
@@ -131,6 +124,7 @@ const PublicRaceReportPage: React.FC = () => {
           <RaceComparisonView
             comparison={data.comparison}
             finishSeconds={report.finishSeconds}
+            didNotFinish={report.didNotFinish}
           />
         </section>
       )}

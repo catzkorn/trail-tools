@@ -31,9 +31,14 @@ type RaceReport struct {
 	RaceDate            time.Time
 	DistanceMeters      float64
 	ElevationGainMeters float64
-	// The finish time, 0 if unknown, and the placement as free text.
+	// The finish time, 0 if unknown or the runner did not finish, and the
+	// placement as free text.
 	FinishSeconds int32
 	Placement     string
+	// Whether the runner did not finish (DNF), and if so where and when they
+	// stopped.
+	DidNotFinish bool
+	Stop         RaceStop
 	// The story, in sections.
 	Sections RaceReportSections
 	// Whether the report is published, and when it was first published.
@@ -41,6 +46,17 @@ type RaceReport struct {
 	PublishTime time.Time
 	CreateTime  time.Time
 	UpdateTime  time.Time
+}
+
+// RaceStop is where and when a runner who did not finish stopped. Zero
+// values are unknown.
+type RaceStop struct {
+	// The distance along the course from the start.
+	DistanceMeters float64
+	// The name of the checkpoint or place.
+	Checkpoint string
+	// The elapsed time.
+	Seconds int32
 }
 
 // RaceReportSections are the sections of a race report's story, as plain
@@ -144,6 +160,11 @@ type RaceReportUpdate struct {
 	WentWell      *string
 	WentBadly     *string
 	Lessons       *string
+	DidNotFinish  *bool
+	// The fields of the stop to change.
+	StopDistanceMeters *float64
+	StopCheckpoint     *string
+	StopSeconds        *int32
 }
 
 // UpdateRaceReport updates one of the user's race reports. It returns
@@ -173,6 +194,16 @@ func (r *Repository) UpdateRaceReport(ctx context.Context, u *RaceReportUpdate) 
 	}
 	if u.FinishSeconds != nil {
 		params.FinishSeconds = pgtype.Int4{Int32: *u.FinishSeconds, Valid: true}
+	}
+	if u.DidNotFinish != nil {
+		params.DidNotFinish = pgtype.Bool{Bool: *u.DidNotFinish, Valid: true}
+	}
+	if u.StopDistanceMeters != nil {
+		params.StopDistanceMeters = pgtype.Float8{Float64: *u.StopDistanceMeters, Valid: true}
+	}
+	params.StopCheckpoint = text(u.StopCheckpoint)
+	if u.StopSeconds != nil {
+		params.StopSeconds = pgtype.Int4{Int32: *u.StopSeconds, Valid: true}
 	}
 	row, err := r.q.UpdateRaceReport(ctx, params)
 	if err != nil {
@@ -230,6 +261,12 @@ func raceReportFromDB(row *gen.RaceReport) *RaceReport {
 		ElevationGainMeters: row.ElevationGainMeters,
 		FinishSeconds:       row.FinishSeconds,
 		Placement:           row.Placement,
+		DidNotFinish:        row.DidNotFinish,
+		Stop: RaceStop{
+			DistanceMeters: row.StopDistanceMeters,
+			Checkpoint:     row.StopCheckpoint,
+			Seconds:        row.StopSeconds,
+		},
 		Sections: RaceReportSections{
 			Summary:     row.Summary,
 			Preparation: row.Preparation,

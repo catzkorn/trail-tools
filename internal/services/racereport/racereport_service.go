@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"strings"
 	"unicode/utf8"
 
@@ -39,6 +40,9 @@ const (
 	maxSectionLength = 50_000
 	// maxPlacementLength is the longest placement in characters.
 	maxPlacementLength = 200
+	// maxStopCheckpointLength is the longest name of the checkpoint where a
+	// runner who did not finish stopped, in characters.
+	maxStopCheckpointLength = 200
 	// maxSlugAttempts is how many slugs are tried for a new report.
 	maxSlugAttempts = 20
 	// maxActivitiesPerDay is how many activities on the race date are
@@ -251,18 +255,21 @@ func (s *Service) UpdateRaceReport(ctx context.Context, req *racesv1.UpdateRaceR
 		}
 		update.Slug = &slug
 	}
+	activityID := current.ActivityID
 	if req.HasActivityId() {
 		update.SetActivity = true
+		activityID = pgtype.UUID{}
 		if req.GetActivityId() != "" {
-			activityID, err := store.StringToUUID(req.GetActivityId())
+			id, err := store.StringToUUID(req.GetActivityId())
 			if err != nil {
 				return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
 			}
-			if _, err := s.activities.GetActivity(ctx, current.UserID, activityID); err != nil {
+			if _, err := s.activities.GetActivity(ctx, current.UserID, id); err != nil {
 				return nil, s.toConnectError(ctx, err, "failed to get activity")
 			}
-			update.ActivityID = activityID
+			activityID = id
 		}
+		update.ActivityID = activityID
 	}
 	if req.HasFinishSeconds() {
 		finish := req.GetFinishSeconds()
@@ -270,6 +277,9 @@ func (s *Service) UpdateRaceReport(ctx context.Context, req *racesv1.UpdateRaceR
 			return nil, connect.NewError(connect.CodeInvalidArgument, "the finish time must not be negative")
 		}
 		update.FinishSeconds = &finish
+	}
+	if err := s.updateResult(ctx, current, activityID, req, update); err != nil {
+		return nil, err
 	}
 	if req.HasPlacement() {
 		placement := strings.TrimSpace(req.GetPlacement())
@@ -309,6 +319,84 @@ func (s *Service) UpdateRaceReport(ctx context.Context, req *racesv1.UpdateRaceR
 		return nil, err
 	}
 	return racesv1.UpdateRaceReportResponse_builder{Report: reportProto, Comparison: comparison}.Build(), nil
+}
+
+// updateResult adds the changes of the request to whether the runner
+// finished, and where and when they stopped if not, to update. Marking a
+// report as a DNF moves its finish time to the stop time, and defaults the
+// stop distance to that of the activity, unless they're set; marking it as
+// finished clears the stop.
+func (s *Service) updateResult(ctx context.Context, current *races.RaceReport, activityID pgtype.UUID, req *racesv1.UpdateRaceReportRequest, update *races.RaceReportUpdate) error {
+	dnf := current.DidNotFinish
+	if req.HasDidNotFinish() {
+		dnf = req.GetDidNotFinish()
+		update.DidNotFinish = &dnf
+	}
+	setsStop := req.HasStopDistanceMeters() || req.HasStopCheckpoint() || req.HasStopSeconds()
+	if !dnf {
+		if setsStop {
+			return connect.NewError(connect.CodeInvalidArgument, "where and when the runner stopped can only be set if they did not finish; set did_not_finish too")
+		}
+		if current.DidNotFinish {
+			update.StopDistanceMeters = new(0.0)
+			update.StopCheckpoint = new("")
+			update.StopSeconds = new(int32(0))
+		}
+		return nil
+	}
+
+	if update.FinishSeconds != nil && *update.FinishSeconds != 0 {
+		return connect.NewError(connect.CodeInvalidArgument, "a race that wasn't finished has no finish time; set the stop time instead")
+	}
+	if req.HasStopDistanceMeters() {
+		meters := req.GetStopDistanceMeters()
+		switch {
+		case math.IsNaN(meters) || meters < 0:
+			return connect.NewError(connect.CodeInvalidArgument, "the stop distance must not be negative")
+		case current.DistanceMeters > 0 && meters > current.DistanceMeters:
+			return connect.Errorf(connect.CodeInvalidArgument, "the stop distance must not be beyond the race distance of %.0f meters", current.DistanceMeters)
+		}
+		update.StopDistanceMeters = &meters
+	}
+	if req.HasStopCheckpoint() {
+		checkpoint := strings.TrimSpace(req.GetStopCheckpoint())
+		if utf8.RuneCountInString(checkpoint) > maxStopCheckpointLength {
+			return connect.Errorf(connect.CodeInvalidArgument, "the stop checkpoint must be at most %d characters", maxStopCheckpointLength)
+		}
+		update.StopCheckpoint = &checkpoint
+	}
+	if req.HasStopSeconds() {
+		seconds := req.GetStopSeconds()
+		if seconds < 0 {
+			return connect.NewError(connect.CodeInvalidArgument, "the stop time must not be negative")
+		}
+		update.StopSeconds = &seconds
+	}
+	if current.DidNotFinish {
+		return nil
+	}
+
+	// The report becomes a DNF: its finish time, e.g. the elapsed time of
+	// the activity, is when the runner stopped, and the activity's distance
+	// where.
+	if update.StopSeconds == nil && update.FinishSeconds == nil && current.FinishSeconds > 0 {
+		update.StopSeconds = &current.FinishSeconds
+	}
+	update.FinishSeconds = new(int32(0))
+	if update.StopDistanceMeters == nil && activityID.Valid {
+		activity, err := s.activities.GetActivity(ctx, current.UserID, activityID)
+		if err != nil && !errors.Is(err, store.ErrNotFound) {
+			return s.toConnectError(ctx, err, "failed to get activity")
+		}
+		if activity != nil && activity.DistanceMeters > 0 {
+			meters := activity.DistanceMeters
+			if current.DistanceMeters > 0 {
+				meters = min(meters, current.DistanceMeters)
+			}
+			update.StopDistanceMeters = &meters
+		}
+	}
+	return nil
 }
 
 func (s *Service) DeleteRaceReport(ctx context.Context, req *racesv1.DeleteRaceReportRequest) (*racesv1.DeleteRaceReportResponse, error) {
@@ -443,7 +531,7 @@ func (s *Service) withComparison(ctx context.Context, report *races.RaceReport) 
 			return nil, nil, s.toConnectError(ctx, err, "failed to get activity streams")
 		}
 	}
-	comparison := compare(outcome, report.FinishSeconds, report.DistanceMeters, rec)
+	comparison := compare(outcome, report, rec)
 	return s.reportToProto(report, profile), comparison, nil
 }
 
@@ -494,6 +582,10 @@ func (s *Service) reportToProto(r *races.RaceReport, profile *trips.Profile) *ra
 		ElevationGainMeters: r.ElevationGainMeters,
 		FinishSeconds:       r.FinishSeconds,
 		Placement:           r.Placement,
+		DidNotFinish:        r.DidNotFinish,
+		StopDistanceMeters:  r.Stop.DistanceMeters,
+		StopCheckpoint:      r.Stop.Checkpoint,
+		StopSeconds:         r.Stop.Seconds,
 		Summary:             r.Sections.Summary,
 		Preparation:         r.Sections.Preparation,
 		RaceDay:             r.Sections.RaceDay,

@@ -123,6 +123,62 @@ func TestRaceReports(t *testing.T) {
 	}
 	_, err = e.anonRaceReports.GetPublicRaceReport(ctx, publicReq)
 	wantCode(t, err, connect.CodeNotFound)
+	// Marking the report as a DNF moves the finish time to when the runner
+	// stopped, at the activity's distance unless set, and meets no goal.
+	dnf, err := e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{
+		Id:             report.GetId(),
+		DidNotFinish:   new(true),
+		StopCheckpoint: new(" Halfway "),
+	}.Build())
+	if err != nil {
+		t.Fatalf("UpdateRaceReport: %v", err)
+	}
+	if r := dnf.GetReport(); !r.GetDidNotFinish() || r.GetFinishSeconds() != 0 || r.GetStopSeconds() != 3590 ||
+		r.GetStopDistanceMeters() != 10_000 || r.GetStopCheckpoint() != "Halfway" {
+		t.Errorf("unexpected DNF report %v", r)
+	}
+	for _, goal := range dnf.GetComparison().GetGoals() {
+		if goal.GetMet() {
+			t.Errorf("goal %v is met by a DNF", goal)
+		}
+	}
+	// With the stop halfway, the finish isn't reached, and the activity isn't
+	// scaled to the 5 km up to the stop.
+	dnf, err = e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{
+		Id:                 report.GetId(),
+		StopDistanceMeters: new(5000.0),
+		StopSeconds:        new(int32(1900)),
+	}.Build())
+	if err != nil {
+		t.Fatalf("UpdateRaceReport: %v", err)
+	}
+	checkpoints = dnf.GetComparison().GetCheckpoints()
+	if r := dnf.GetReport(); r.GetStopDistanceMeters() != 5000 || r.GetStopSeconds() != 1900 || r.GetStopCheckpoint() != "Halfway" ||
+		checkpoints[0].GetActualArrivalSeconds() != 1800 || checkpoints[0].GetNotReached() ||
+		!checkpoints[1].GetNotReached() || checkpoints[1].HasActualArrivalSeconds() {
+		t.Errorf("unexpected DNF report %v, comparison %v", r, dnf.GetComparison())
+	}
+	// A DNF has no finish time, and stops within the race.
+	_, err = e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{Id: report.GetId(), FinishSeconds: new(int32(3600))}.Build())
+	wantCode(t, err, connect.CodeInvalidArgument)
+	_, err = e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{Id: report.GetId(), StopDistanceMeters: new(10_001.0)}.Build())
+	wantCode(t, err, connect.CodeInvalidArgument)
+	// Marking it as finished clears the stop, which can't then be set.
+	finished, err := e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{
+		Id:            report.GetId(),
+		DidNotFinish:  new(false),
+		FinishSeconds: new(int32(3590)),
+	}.Build())
+	if err != nil {
+		t.Fatalf("UpdateRaceReport: %v", err)
+	}
+	if r := finished.GetReport(); r.GetDidNotFinish() || r.GetFinishSeconds() != 3590 || r.GetStopSeconds() != 0 ||
+		r.GetStopDistanceMeters() != 0 || r.GetStopCheckpoint() != "" || !finished.GetComparison().GetGoals()[1].GetMet() {
+		t.Errorf("unexpected finished report %v", finished)
+	}
+	_, err = e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{Id: report.GetId(), StopSeconds: new(int32(1))}.Build())
+	wantCode(t, err, connect.CodeInvalidArgument)
+
 	if _, err := e.raceReports.DeleteRaceReport(ctx, racesv1.DeleteRaceReportRequest_builder{Id: report.GetId()}.Build()); err != nil {
 		t.Fatalf("DeleteRaceReport: %v", err)
 	}

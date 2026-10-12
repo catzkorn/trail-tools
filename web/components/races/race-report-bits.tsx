@@ -1,6 +1,7 @@
 import { cardClass } from "@components/ui/styles";
 import {
   CheckCircleIcon,
+  FlagIcon,
   TrophyIcon,
   XCircleIcon,
 } from "@heroicons/react/24/solid";
@@ -104,9 +105,85 @@ const DifferenceText: React.FC<{ seconds: number }> = ({ seconds }) => (
   </span>
 );
 
+// DnfBadge marks the result of a race the runner did not finish.
+export const DnfBadge: React.FC = () => (
+  <span
+    title="Did not finish"
+    className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold tracking-wide text-rose-800 ring-1 ring-rose-300 ring-inset"
+  >
+    DNF
+  </span>
+);
+
+/**
+ * StopText describes where and when a runner who did not finish stopped,
+ * e.g. "Stopped at 71.7 km, Function Junction, after 11:29:00".
+ */
+export const stopText = (report: RaceReport): string => {
+  const where = [
+    report.stopDistanceMeters > 0 ? formatKm(report.stopDistanceMeters) : "",
+    report.stopCheckpoint,
+  ]
+    .filter((part) => part !== "")
+    .join(", ");
+  const parts: string[] = [];
+  if (where !== "") {
+    parts.push(`at ${where}`);
+  }
+  if (report.stopSeconds > 0) {
+    parts.push(`after ${formatDurationLong(report.stopSeconds)}`);
+  }
+  return parts.length === 0 ? "" : `Stopped ${parts.join(", ")}`;
+};
+
+interface RaceResultProps {
+  report: RaceReport;
+  className?: string;
+  iconClassName?: string;
+}
+
+/**
+ * RaceResult shows the result of a race: the finish time and placement, or
+ * that the runner did not finish, and where and when they stopped.
+ */
+export const RaceResult: React.FC<RaceResultProps> = ({
+  report,
+  className = "",
+  iconClassName = "size-4",
+}) => {
+  if (report.didNotFinish) {
+    return (
+      <p className={`inline-flex flex-wrap items-center gap-1.5 ${className}`}>
+        <FlagIcon className={`${iconClassName} text-rose-500`} />
+        <DnfBadge />
+        {[stopText(report), report.placement]
+          .filter((part) => part !== "")
+          .join(" · ")}
+      </p>
+    );
+  }
+  if (report.finishSeconds <= 0 && report.placement === "") {
+    return null;
+  }
+  return (
+    <p className={`inline-flex items-center gap-1.5 ${className}`}>
+      <TrophyIcon className={`${iconClassName} text-amber-500`} />
+      {[
+        report.finishSeconds > 0
+          ? formatDurationLong(report.finishSeconds)
+          : "",
+        report.placement,
+      ]
+        .filter((part) => part !== "")
+        .join(" · ")}
+    </p>
+  );
+};
+
 interface ComparisonProps {
   comparison: RaceComparison | undefined;
   finishSeconds: number;
+  didNotFinish: boolean;
 }
 
 /**
@@ -117,6 +194,7 @@ interface ComparisonProps {
 export const RaceComparisonView: React.FC<ComparisonProps> = ({
   comparison,
   finishSeconds,
+  didNotFinish,
 }) => {
   if (comparison === undefined || !comparison.hasPlan) {
     return (
@@ -148,7 +226,10 @@ export const RaceComparisonView: React.FC<ComparisonProps> = ({
               <span className="tabular-nums">
                 {formatDurationLong(goal.targetSeconds)}
               </span>
-              {finishSeconds > 0 && (
+              {didNotFinish && (
+                <span className="font-semibold text-rose-700">DNF</span>
+              )}
+              {!didNotFinish && finishSeconds > 0 && (
                 <DifferenceText seconds={goal.differenceSeconds} />
               )}
             </li>
@@ -171,19 +252,27 @@ export const RaceComparisonView: React.FC<ComparisonProps> = ({
               {checkpoints.map((cp) => (
                 <tr
                   key={`${cp.name}-${cp.distanceMeters}`}
-                  className="border-b border-gray-100 last:border-0"
+                  className={`border-b border-gray-100 last:border-0 ${cp.notReached ? "text-gray-400" : ""}`}
                 >
-                  <td className="py-1.5 pr-3 text-gray-900">{cp.name}</td>
-                  <td className="py-1.5 pr-3 text-right text-gray-600 tabular-nums">
+                  <td
+                    className={`py-1.5 pr-3 ${cp.notReached ? "" : "text-gray-900"}`}
+                  >
+                    {cp.name}
+                  </td>
+                  <td
+                    className={`py-1.5 pr-3 text-right tabular-nums ${cp.notReached ? "" : "text-gray-600"}`}
+                  >
                     {(cp.distanceMeters / 1000).toFixed(1)}
                   </td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">
                     {formatDurationLong(cp.plannedArrivalSeconds)}
                   </td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">
-                    {cp.actualArrivalSeconds === undefined
-                      ? "–"
-                      : formatDurationLong(cp.actualArrivalSeconds)}
+                    {cp.notReached && "DNF"}
+                    {!cp.notReached &&
+                      (cp.actualArrivalSeconds === undefined
+                        ? "–"
+                        : formatDurationLong(cp.actualArrivalSeconds))}
                   </td>
                   <td className="py-1.5 text-right">
                     {cp.differenceSeconds === undefined ? (
@@ -198,11 +287,15 @@ export const RaceComparisonView: React.FC<ComparisonProps> = ({
           </table>
           <p className="mt-2 text-xs text-gray-500">
             {comparison.actualTimesSource === ActualTimesSource.ACTIVITY &&
-              "Actual times from the race's activity, scaled to the race distance."}
+              (comparison.actualTimesScaled
+                ? "Actual times from the race's activity, scaled to the race distance."
+                : "Actual times from the race's activity, up to where its recording ends.")}
             {comparison.actualTimesSource === ActualTimesSource.RACE_DAY &&
               "Actual times from the checkpoint times recorded on race day."}
             {comparison.actualTimesSource === ActualTimesSource.UNSPECIFIED &&
               "Link the race's activity, or record checkpoint times on race day, to see the actual times."}
+            {checkpoints.some((cp) => cp.notReached) &&
+              " Checkpoints marked DNF are beyond where the race ended."}
           </p>
         </div>
       )}
@@ -251,19 +344,7 @@ export const RaceReportCard: React.FC<RaceReportCardProps> = ({
         .filter((part) => part !== "")
         .join(" · ")}
     </p>
-    {(report.finishSeconds > 0 || report.placement !== "") && (
-      <p className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900">
-        <TrophyIcon className="size-4 text-amber-500" />
-        {[
-          report.finishSeconds > 0
-            ? formatDurationLong(report.finishSeconds)
-            : "",
-          report.placement,
-        ]
-          .filter((part) => part !== "")
-          .join(" · ")}
-      </p>
-    )}
+    <RaceResult report={report} className="text-sm font-medium text-gray-900" />
     {report.summary !== "" && (
       <p className="line-clamp-3 text-sm text-gray-700">{report.summary}</p>
     )}

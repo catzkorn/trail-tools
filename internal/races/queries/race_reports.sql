@@ -44,6 +44,10 @@ update race_reports set
   went_well = coalesce(sqlc.narg(went_well), went_well),
   went_badly = coalesce(sqlc.narg(went_badly), went_badly),
   lessons = coalesce(sqlc.narg(lessons), lessons),
+  did_not_finish = coalesce(sqlc.narg(did_not_finish), did_not_finish),
+  stop_distance_meters = coalesce(sqlc.narg(stop_distance_meters), stop_distance_meters),
+  stop_checkpoint = coalesce(sqlc.narg(stop_checkpoint), stop_checkpoint),
+  stop_seconds = coalesce(sqlc.narg(stop_seconds), stop_seconds),
   update_time = now()
 where id = sqlc.arg(id) and user_id = sqlc.arg(user_id)
 returning *;

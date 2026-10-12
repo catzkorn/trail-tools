@@ -1,12 +1,13 @@
 import Loading from "@components/loading";
 import {
+  DnfBadge,
   RaceComparisonView,
   SECTIONS,
 } from "@components/races/race-report-bits";
 import type { SectionKey } from "@components/races/race-report-bits";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
-import { TextField } from "@components/ui/fields";
+import { CheckboxField, TextField } from "@components/ui/fields";
 import { Badge } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import {
@@ -36,7 +37,7 @@ import type { RaceReport } from "gen/races/v1/race_reports_pb";
 import { RaceReportService } from "gen/races/v1/race_reports_pb";
 import { getProfile } from "gen/trips/v1/trips-TripReportService_connectquery";
 import { formatDate, formatKm } from "helpers/format";
-import { durationInput, parseDuration } from "helpers/parse";
+import { durationInput, kmInput, parseDuration, parseKm } from "helpers/parse";
 import { invalidateServices } from "helpers/query";
 import { isValidSlug, slugify } from "helpers/slug";
 import React, { useState } from "react";
@@ -59,6 +60,31 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
     durationInput(report.finishSeconds, true)
   );
   const [placement, setPlacement] = useState(report.placement);
+  const [didNotFinish, setDidNotFinish] = useState(report.didNotFinish);
+  const [stopTime, setStopTime] = useState(
+    durationInput(report.stopSeconds, true)
+  );
+  const [stopKm, setStopKm] = useState(kmInput(report.stopDistanceMeters));
+  const [stopCheckpoint, setStopCheckpoint] = useState(report.stopCheckpoint);
+  /*
+   * The server defaults where and when the runner stopped when the report
+   * becomes a DNF, so take them over once saved.
+   */
+  const [savedStop, setSavedStop] = useState({
+    meters: report.stopDistanceMeters,
+    seconds: report.stopSeconds,
+  });
+  if (
+    savedStop.meters !== report.stopDistanceMeters ||
+    savedStop.seconds !== report.stopSeconds
+  ) {
+    setSavedStop({
+      meters: report.stopDistanceMeters,
+      seconds: report.stopSeconds,
+    });
+    setStopKm(kmInput(report.stopDistanceMeters));
+    setStopTime(durationInput(report.stopSeconds, true));
+  }
   const [sections, setSections] = useState<Record<SectionKey, string>>({
     lessons: report.lessons,
     nutrition: report.nutrition,
@@ -72,18 +98,56 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
 
   const trimmedTitle = title.trim();
   const finishSeconds = parseDuration(finish);
+  const stopSeconds = parseDuration(stopTime);
+  const stopMeters = parseKm(stopKm);
+  const stopBeyondRace =
+    stopMeters !== null &&
+    report.distanceMeters > 0 &&
+    stopMeters > report.distanceMeters;
+  // The result is valid: a finish time, or where and when the runner stopped.
+  const resultValid = didNotFinish
+    ? stopSeconds !== null && stopMeters !== null && !stopBeyondRace
+    : finishSeconds !== null;
   const slugValid = isValidSlug(slug);
   const changedSections = SECTIONS.filter(
     (section) => sections[section.key] !== report[section.key]
   );
+  /*
+   * The changes to the result: the finish time, or whether the runner
+   * finished and if not where and when they stopped. Becoming a DNF without
+   * a stop distance lets the server default it to the activity's.
+   */
+  const resultChanges = didNotFinish
+    ? {
+        didNotFinish: report.didNotFinish ? undefined : true,
+        stopCheckpoint:
+          stopCheckpoint.trim() === report.stopCheckpoint
+            ? undefined
+            : stopCheckpoint.trim(),
+        stopDistanceMeters:
+          stopKm.trim() === kmInput(report.stopDistanceMeters)
+            ? undefined
+            : (stopMeters ?? undefined),
+        stopSeconds:
+          stopSeconds === report.stopSeconds
+            ? undefined
+            : (stopSeconds ?? undefined),
+      }
+    : {
+        didNotFinish: report.didNotFinish ? false : undefined,
+        finishSeconds:
+          finishSeconds === report.finishSeconds
+            ? undefined
+            : (finishSeconds ?? undefined),
+      };
   const dirty =
     trimmedTitle !== report.title ||
     slug !== report.slug ||
-    finishSeconds !== report.finishSeconds ||
+    Object.values(resultChanges).some((value) => value !== undefined) ||
     placement.trim() !== report.placement ||
     changedSections.length > 0;
   const save = () => {
-    if (finishSeconds === null) {
+    if (!resultValid) {
       return;
     }
     const changes: Partial<Record<SectionKey, string>> = {};
@@ -92,8 +156,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
     }
     update.mutate({
       ...changes,
-      finishSeconds:
-        finishSeconds === report.finishSeconds ? undefined : finishSeconds,
+      ...resultChanges,
       id: report.id,
       placement:
         placement.trim() === report.placement ? undefined : placement.trim(),
@@ -153,23 +216,82 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
           )
         )}
       </label>
+      <CheckboxField
+        label="I didn't finish (DNF)"
+        checked={didNotFinish}
+        onChange={(checked) => {
+          setDidNotFinish(checked);
+          // The time so far, e.g. the activity's, is when the runner stopped.
+          if (checked && stopTime === "") {
+            setStopTime(finish);
+          }
+        }}
+      />
+      {didNotFinish && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[10rem_8rem_minmax(0,1fr)]">
+          <TextField
+            label="Stopped after"
+            value={stopTime}
+            onChange={setStopTime}
+            placeholder="h:mm:ss"
+          />
+          <TextField
+            label="Stopped at (km)"
+            value={stopKm}
+            onChange={setStopKm}
+            inputMode="decimal"
+            placeholder={
+              report.activityId !== "" && !report.didNotFinish
+                ? "From activity"
+                : ""
+            }
+          />
+          <TextField
+            label="Stopped at checkpoint"
+            value={stopCheckpoint}
+            onChange={setStopCheckpoint}
+            placeholder="e.g. Function Junction"
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[10rem_minmax(0,1fr)]">
-        <TextField
-          label="Finish time (h:mm:ss)"
-          value={finish}
-          onChange={setFinish}
-          placeholder="5:42:10"
-        />
+        {!didNotFinish && (
+          <TextField
+            label="Finish time (h:mm:ss)"
+            value={finish}
+            onChange={setFinish}
+            placeholder="5:42:10"
+          />
+        )}
         <TextField
           label="Placement"
           value={placement}
           onChange={setPlacement}
-          placeholder="e.g. 12th of 240, 3rd M40"
+          placeholder={
+            didNotFinish ? "e.g. timed out" : "e.g. 12th of 240, 3rd M40"
+          }
+          className={didNotFinish ? "sm:col-span-2" : ""}
         />
       </div>
-      {finishSeconds === null && (
+      {!didNotFinish && finishSeconds === null && (
         <p className="text-xs text-red-700">
           Enter the finish time as h:mm:ss.
+        </p>
+      )}
+      {didNotFinish && stopSeconds === null && (
+        <p className="text-xs text-red-700">
+          Enter the time you stopped as h:mm:ss.
+        </p>
+      )}
+      {didNotFinish && stopMeters === null && (
+        <p className="text-xs text-red-700">
+          Enter where you stopped in kilometers.
+        </p>
+      )}
+      {stopBeyondRace && (
+        <p className="text-xs text-red-700">
+          Where you stopped must be within the race&apos;s{" "}
+          {formatKm(report.distanceMeters)}.
         </p>
       )}
       {SECTIONS.map((section) => (
@@ -198,7 +320,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
             update.isPending ||
             trimmedTitle === "" ||
             !slugValid ||
-            finishSeconds === null
+            !resultValid
           }
         >
           {update.isPending ? "Saving…" : "Save"}
@@ -268,6 +390,7 @@ const RaceReportPage: React.FC = () => {
           </Link>
           <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-gray-900">
             {report.title}
+            {report.didNotFinish && <DnfBadge />}
             {report.published ? (
               <Badge className="bg-emerald-50 text-emerald-800 ring-emerald-300">
                 Published
@@ -379,6 +502,7 @@ const RaceReportPage: React.FC = () => {
             <RaceComparisonView
               comparison={comparison}
               finishSeconds={report.finishSeconds}
+              didNotFinish={report.didNotFinish}
             />
           </Card>
         </div>

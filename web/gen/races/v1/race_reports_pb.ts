@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file races/v1/race_reports.proto.
  */
 export const file_races_v1_race_reports: GenFile = /*@__PURE__*/
-  fileDesc("ChtyYWNlcy92MS9yYWNlX3JlcG9ydHMucHJvdG8SCHJhY2VzLnYxIvMECgpSYWNlUmVwb3J0EhIKAmlkGAEgASgJQgaqnxkCCAESFwoHcmFjZV9pZBgCIAEoCUIGqp8ZAggBEhMKC2FjdGl2aXR5X2lkGAMgASgJEg0KBXRpdGxlGAQgASgJEgwKBHNsdWcYBSABKAkSGQoJcmFjZV9uYW1lGAYgASgJQgaqnxkCCAESGQoJcmFjZV9kYXRlGAcgASgJQgaqnxkCCAESHwoPZGlzdGFuY2VfbWV0ZXJzGAggASgBQgaqnxkCCAESJQoVZWxldmF0aW9uX2dhaW5fbWV0ZXJzGAkgASgBQgaqnxkCCAESFgoOZmluaXNoX3NlY29uZHMYCiABKAUSEQoJcGxhY2VtZW50GAsgASgJEg8KB3N1bW1hcnkYDCABKAkSEwoLcHJlcGFyYXRpb24YDSABKAkSEAoIcmFjZV9kYXkYDiABKAkSEQoJbnV0cml0aW9uGA8gASgJEhEKCXdlbnRfd2VsbBgQIAEoCRISCgp3ZW50X2JhZGx5GBEgASgJEg8KB2xlc3NvbnMYEiABKAkSGQoJcHVibGlzaGVkGBMgASgIQgaqnxkCCAESOAoMcHVibGlzaF90aW1lGBQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhMKA3VybBgVIAEoCUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGBYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGBcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBItIBCg5SYWNlQ29tcGFyaXNvbhIQCghoYXNfcGxhbhgBIAEoCBIjCgVnb2FscxgCIAMoCzIULnJhY2VzLnYxLkdvYWxSZXN1bHQSHgoWcGxhbm5lZF9maW5pc2hfc2Vjb25kcxgDIAEoBRIvCgtjaGVja3BvaW50cxgEIAMoCzIaLnJhY2VzLnYxLkNoZWNrcG9pbnRSZXN1bHQSOAoTYWN0dWFsX3RpbWVzX3NvdXJjZRgFIAEoDjIbLnJhY2VzLnYxLkFjdHVhbFRpbWVzU291cmNlIlsKCkdvYWxSZXN1bHQSDAoEZ29hbBgBIAEoCRIWCg50YXJnZXRfc2Vjb25kcxgCIAEoBRILCgNtZXQYAyABKAgSGgoSZGlmZmVyZW5jZV9zZWNvbmRzGAQgASgFIuoBChBDaGVja3BvaW50UmVzdWx0EgwKBG5hbWUYASABKAkSFwoPZGlzdGFuY2VfbWV0ZXJzGAIgASgBEh8KF3BsYW5uZWRfYXJyaXZhbF9zZWNvbmRzGAMgASgFEiMKFmFjdHVhbF9hcnJpdmFsX3NlY29uZHMYBCABKAVIAIgBARIfChJkaWZmZXJlbmNlX3NlY29uZHMYBSABKAVIAYgBARIWCg5jdXRvZmZfc2Vjb25kcxgGIAEoBUIZChdfYWN0dWFsX2Fycml2YWxfc2Vjb25kc0IVChNfZGlmZmVyZW5jZV9zZWNvbmRzIj8KF0NyZWF0ZVJhY2VSZXBvcnRSZXF1ZXN0Eg8KB3JhY2VfaWQYASABKAkSEwoLYWN0aXZpdHlfaWQYAiABKAkibgoYQ3JlYXRlUmFjZVJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQSLAoKY29tcGFyaXNvbhgCIAEoCzIYLnJhY2VzLnYxLlJhY2VDb21wYXJpc29uIiIKFEdldFJhY2VSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJImsKFUdldFJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiIpChZMaXN0UmFjZVJlcG9ydHNSZXF1ZXN0Eg8KB3JhY2VfaWQYASABKAkiQAoXTGlzdFJhY2VSZXBvcnRzUmVzcG9uc2USJQoHcmVwb3J0cxgBIAMoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQi5QMKF1VwZGF0ZVJhY2VSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJEhIKBXRpdGxlGAIgASgJSACIAQESEQoEc2x1ZxgDIAEoCUgBiAEBEhgKC2FjdGl2aXR5X2lkGAQgASgJSAKIAQESGwoOZmluaXNoX3NlY29uZHMYBSABKAVIA4gBARIWCglwbGFjZW1lbnQYBiABKAlIBIgBARIUCgdzdW1tYXJ5GAcgASgJSAWIAQESGAoLcHJlcGFyYXRpb24YCCABKAlIBogBARIVCghyYWNlX2RheRgJIAEoCUgHiAEBEhYKCW51dHJpdGlvbhgKIAEoCUgIiAEBEhYKCXdlbnRfd2VsbBgLIAEoCUgJiAEBEhcKCndlbnRfYmFkbHkYDCABKAlICogBARIUCgdsZXNzb25zGA0gASgJSAuIAQFCCAoGX3RpdGxlQgcKBV9zbHVnQg4KDF9hY3Rpdml0eV9pZEIRCg9fZmluaXNoX3NlY29uZHNCDAoKX3BsYWNlbWVudEIKCghfc3VtbWFyeUIOCgxfcHJlcGFyYXRpb25CCwoJX3JhY2VfZGF5QgwKCl9udXRyaXRpb25CDAoKX3dlbnRfd2VsbEINCgtfd2VudF9iYWRseUIKCghfbGVzc29ucyJuChhVcGRhdGVSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydBIsCgpjb21wYXJpc29uGAIgASgLMhgucmFjZXMudjEuUmFjZUNvbXBhcmlzb24iJQoXRGVsZXRlUmFjZVJlcG9ydFJlcXVlc3QSCgoCaWQYASABKAkiGgoYRGVsZXRlUmFjZVJlcG9ydFJlc3BvbnNlIiYKGFB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJBChlQdWJsaXNoUmFjZVJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQiKAoaVW5wdWJsaXNoUmFjZVJlcG9ydFJlcXVlc3QSCgoCaWQYASABKAkiQwobVW5wdWJsaXNoUmFjZVJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQiLgocTGlzdFB1YmxpY1JhY2VSZXBvcnRzUmVxdWVzdBIOCgZoYW5kbGUYASABKAkiRgodTGlzdFB1YmxpY1JhY2VSZXBvcnRzUmVzcG9uc2USJQoHcmVwb3J0cxgBIAMoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQiOgoaR2V0UHVibGljUmFjZVJlcG9ydFJlcXVlc3QSDgoGaGFuZGxlGAEgASgJEgwKBHNsdWcYAiABKAkihgEKG0dldFB1YmxpY1JhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbhITCgthdXRob3JfbmFtZRgDIAEoCSp8ChFBY3R1YWxUaW1lc1NvdXJjZRIjCh9BQ1RVQUxfVElNRVNfU09VUkNFX1VOU1BFQ0lGSUVEEAASIAocQUNUVUFMX1RJTUVTX1NPVVJDRV9BQ1RJVklUWRABEiAKHEFDVFVBTF9USU1FU19TT1VSQ0VfUkFDRV9EQVkQAjL+BgoRUmFjZVJlcG9ydFNlcnZpY2USWQoQQ3JlYXRlUmFjZVJlcG9ydBIhLnJhY2VzLnYxLkNyZWF0ZVJhY2VSZXBvcnRSZXF1ZXN0GiIucmFjZXMudjEuQ3JlYXRlUmFjZVJlcG9ydFJlc3BvbnNlElAKDUdldFJhY2VSZXBvcnQSHi5yYWNlcy52MS5HZXRSYWNlUmVwb3J0UmVxdWVzdBofLnJhY2VzLnYxLkdldFJhY2VSZXBvcnRSZXNwb25zZRJWCg9MaXN0UmFjZVJlcG9ydHMSIC5yYWNlcy52MS5MaXN0UmFjZVJlcG9ydHNSZXF1ZXN0GiEucmFjZXMudjEuTGlzdFJhY2VSZXBvcnRzUmVzcG9uc2USWQoQVXBkYXRlUmFjZVJlcG9ydBIhLnJhY2VzLnYxLlVwZGF0ZVJhY2VSZXBvcnRSZXF1ZXN0GiIucmFjZXMudjEuVXBkYXRlUmFjZVJlcG9ydFJlc3BvbnNlElkKEERlbGV0ZVJhY2VSZXBvcnQSIS5yYWNlcy52MS5EZWxldGVSYWNlUmVwb3J0UmVxdWVzdBoiLnJhY2VzLnYxLkRlbGV0ZVJhY2VSZXBvcnRSZXNwb25zZRJkChFQdWJsaXNoUmFjZVJlcG9ydBIiLnJhY2VzLnYxLlB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBojLnJhY2VzLnYxLlB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2UiBqKfGQIIARJqChNVbnB1Ymxpc2hSYWNlUmVwb3J0EiQucmFjZXMudjEuVW5wdWJsaXNoUmFjZVJlcG9ydFJlcXVlc3QaJS5yYWNlcy52MS5VbnB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2UiBqKfGQIIARJwChVMaXN0UHVibGljUmFjZVJlcG9ydHMSJi5yYWNlcy52MS5MaXN0UHVibGljUmFjZVJlcG9ydHNSZXF1ZXN0GicucmFjZXMudjEuTGlzdFB1YmxpY1JhY2VSZXBvcnRzUmVzcG9uc2UiBqKfGQIIARJqChNHZXRQdWJsaWNSYWNlUmVwb3J0EiQucmFjZXMudjEuR2V0UHVibGljUmFjZVJlcG9ydFJlcXVlc3QaJS5yYWNlcy52MS5HZXRQdWJsaWNSYWNlUmVwb3J0UmVzcG9uc2UiBqKfGQIIAUKgAQoMY29tLnJhY2VzLnYxQhBSYWNlUmVwb3J0c1Byb3RvUAFaPWdpdGh1Yi5jb20vY2F0emtvcm4vdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL3JhY2VzL3YxO3JhY2VzdjGiAgNSWFiqAghSYWNlcy5WMcoCCFJhY2VzXFYx4gIUUmFjZXNcVjFcR1BCTWV0YWRhdGHqAglSYWNlczo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChtyYWNlcy92MS9yYWNlX3JlcG9ydHMucHJvdG8SCHJhY2VzLnYxItgFCgpSYWNlUmVwb3J0EhIKAmlkGAEgASgJQgaqnxkCCAESFwoHcmFjZV9pZBgCIAEoCUIGqp8ZAggBEhMKC2FjdGl2aXR5X2lkGAMgASgJEg0KBXRpdGxlGAQgASgJEgwKBHNsdWcYBSABKAkSGQoJcmFjZV9uYW1lGAYgASgJQgaqnxkCCAESGQoJcmFjZV9kYXRlGAcgASgJQgaqnxkCCAESHwoPZGlzdGFuY2VfbWV0ZXJzGAggASgBQgaqnxkCCAESJQoVZWxldmF0aW9uX2dhaW5fbWV0ZXJzGAkgASgBQgaqnxkCCAESFgoOZmluaXNoX3NlY29uZHMYCiABKAUSEQoJcGxhY2VtZW50GAsgASgJEg8KB3N1bW1hcnkYDCABKAkSEwoLcHJlcGFyYXRpb24YDSABKAkSEAoIcmFjZV9kYXkYDiABKAkSEQoJbnV0cml0aW9uGA8gASgJEhEKCXdlbnRfd2VsbBgQIAEoCRISCgp3ZW50X2JhZGx5GBEgASgJEg8KB2xlc3NvbnMYEiABKAkSGQoJcHVibGlzaGVkGBMgASgIQgaqnxkCCAESOAoMcHVibGlzaF90aW1lGBQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhMKA3VybBgVIAEoCUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGBYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGBcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhYKDmRpZF9ub3RfZmluaXNoGBggASgIEhwKFHN0b3BfZGlzdGFuY2VfbWV0ZXJzGBkgASgBEhcKD3N0b3BfY2hlY2twb2ludBgaIAEoCRIUCgxzdG9wX3NlY29uZHMYGyABKAUi7wEKDlJhY2VDb21wYXJpc29uEhAKCGhhc19wbGFuGAEgASgIEiMKBWdvYWxzGAIgAygLMhQucmFjZXMudjEuR29hbFJlc3VsdBIeChZwbGFubmVkX2ZpbmlzaF9zZWNvbmRzGAMgASgFEi8KC2NoZWNrcG9pbnRzGAQgAygLMhoucmFjZXMudjEuQ2hlY2twb2ludFJlc3VsdBI4ChNhY3R1YWxfdGltZXNfc291cmNlGAUgASgOMhsucmFjZXMudjEuQWN0dWFsVGltZXNTb3VyY2USGwoTYWN0dWFsX3RpbWVzX3NjYWxlZBgGIAEoCCJbCgpHb2FsUmVzdWx0EgwKBGdvYWwYASABKAkSFgoOdGFyZ2V0X3NlY29uZHMYAiABKAUSCwoDbWV0GAMgASgIEhoKEmRpZmZlcmVuY2Vfc2Vjb25kcxgEIAEoBSL/AQoQQ2hlY2twb2ludFJlc3VsdBIMCgRuYW1lGAEgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgCIAEoARIfChdwbGFubmVkX2Fycml2YWxfc2Vjb25kcxgDIAEoBRIjChZhY3R1YWxfYXJyaXZhbF9zZWNvbmRzGAQgASgFSACIAQESHwoSZGlmZmVyZW5jZV9zZWNvbmRzGAUgASgFSAGIAQESFgoOY3V0b2ZmX3NlY29uZHMYBiABKAUSEwoLbm90X3JlYWNoZWQYByABKAhCGQoXX2FjdHVhbF9hcnJpdmFsX3NlY29uZHNCFQoTX2RpZmZlcmVuY2Vfc2Vjb25kcyI/ChdDcmVhdGVSYWNlUmVwb3J0UmVxdWVzdBIPCgdyYWNlX2lkGAEgASgJEhMKC2FjdGl2aXR5X2lkGAIgASgJIm4KGENyZWF0ZVJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiIiChRHZXRSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJrChVHZXRSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydBIsCgpjb21wYXJpc29uGAIgASgLMhgucmFjZXMudjEuUmFjZUNvbXBhcmlzb24iKQoWTGlzdFJhY2VSZXBvcnRzUmVxdWVzdBIPCgdyYWNlX2lkGAEgASgJIkAKF0xpc3RSYWNlUmVwb3J0c1Jlc3BvbnNlEiUKB3JlcG9ydHMYASADKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0Iq8FChdVcGRhdGVSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCRISCgV0aXRsZRgCIAEoCUgAiAEBEhEKBHNsdWcYAyABKAlIAYgBARIYCgthY3Rpdml0eV9pZBgEIAEoCUgCiAEBEhsKDmZpbmlzaF9zZWNvbmRzGAUgASgFSAOIAQESFgoJcGxhY2VtZW50GAYgASgJSASIAQESFAoHc3VtbWFyeRgHIAEoCUgFiAEBEhgKC3ByZXBhcmF0aW9uGAggASgJSAaIAQESFQoIcmFjZV9kYXkYCSABKAlIB4gBARIWCgludXRyaXRpb24YCiABKAlICIgBARIWCgl3ZW50X3dlbGwYCyABKAlICYgBARIXCgp3ZW50X2JhZGx5GAwgASgJSAqIAQESFAoHbGVzc29ucxgNIAEoCUgLiAEBEhsKDmRpZF9ub3RfZmluaXNoGA4gASgISAyIAQESIQoUc3RvcF9kaXN0YW5jZV9tZXRlcnMYDyABKAFIDYgBARIcCg9zdG9wX2NoZWNrcG9pbnQYECABKAlIDogBARIZCgxzdG9wX3NlY29uZHMYESABKAVID4gBAUIICgZfdGl0bGVCBwoFX3NsdWdCDgoMX2FjdGl2aXR5X2lkQhEKD19maW5pc2hfc2Vjb25kc0IMCgpfcGxhY2VtZW50QgoKCF9zdW1tYXJ5Qg4KDF9wcmVwYXJhdGlvbkILCglfcmFjZV9kYXlCDAoKX251dHJpdGlvbkIMCgpfd2VudF93ZWxsQg0KC193ZW50X2JhZGx5QgoKCF9sZXNzb25zQhEKD19kaWRfbm90X2ZpbmlzaEIXChVfc3RvcF9kaXN0YW5jZV9tZXRlcnNCEgoQX3N0b3BfY2hlY2twb2ludEIPCg1fc3RvcF9zZWNvbmRzIm4KGFVwZGF0ZVJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiIlChdEZWxldGVSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSIaChhEZWxldGVSYWNlUmVwb3J0UmVzcG9uc2UiJgoYUHVibGlzaFJhY2VSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJIkEKGVB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydCIoChpVbnB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJDChtVbnB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydCIuChxMaXN0UHVibGljUmFjZVJlcG9ydHNSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSJGCh1MaXN0UHVibGljUmFjZVJlcG9ydHNSZXNwb25zZRIlCgdyZXBvcnRzGAEgAygLMhQucmFjZXMudjEuUmFjZVJlcG9ydCI6ChpHZXRQdWJsaWNSYWNlUmVwb3J0UmVxdWVzdBIOCgZoYW5kbGUYASABKAkSDAoEc2x1ZxgCIAEoCSKGAQobR2V0UHVibGljUmFjZVJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQSLAoKY29tcGFyaXNvbhgCIAEoCzIYLnJhY2VzLnYxLlJhY2VDb21wYXJpc29uEhMKC2F1dGhvcl9uYW1lGAMgASgJKnwKEUFjdHVhbFRpbWVzU291cmNlEiMKH0FDVFVBTF9USU1FU19TT1VSQ0VfVU5TUEVDSUZJRUQQABIgChxBQ1RVQUxfVElNRVNfU09VUkNFX0FDVElWSVRZEAESIAocQUNUVUFMX1RJTUVTX1NPVVJDRV9SQUNFX0RBWRACMv4GChFSYWNlUmVwb3J0U2VydmljZRJZChBDcmVhdGVSYWNlUmVwb3J0EiEucmFjZXMudjEuQ3JlYXRlUmFjZVJlcG9ydFJlcXVlc3QaIi5yYWNlcy52MS5DcmVhdGVSYWNlUmVwb3J0UmVzcG9uc2USUAoNR2V0UmFjZVJlcG9ydBIeLnJhY2VzLnYxLkdldFJhY2VSZXBvcnRSZXF1ZXN0Gh8ucmFjZXMudjEuR2V0UmFjZVJlcG9ydFJlc3BvbnNlElYKD0xpc3RSYWNlUmVwb3J0cxIgLnJhY2VzLnYxLkxpc3RSYWNlUmVwb3J0c1JlcXVlc3QaIS5yYWNlcy52MS5MaXN0UmFjZVJlcG9ydHNSZXNwb25zZRJZChBVcGRhdGVSYWNlUmVwb3J0EiEucmFjZXMudjEuVXBkYXRlUmFjZVJlcG9ydFJlcXVlc3QaIi5yYWNlcy52MS5VcGRhdGVSYWNlUmVwb3J0UmVzcG9uc2USWQoQRGVsZXRlUmFjZVJlcG9ydBIhLnJhY2VzLnYxLkRlbGV0ZVJhY2VSZXBvcnRSZXF1ZXN0GiIucmFjZXMudjEuRGVsZXRlUmFjZVJlcG9ydFJlc3BvbnNlEmQKEVB1Ymxpc2hSYWNlUmVwb3J0EiIucmFjZXMudjEuUHVibGlzaFJhY2VSZXBvcnRSZXF1ZXN0GiMucmFjZXMudjEuUHVibGlzaFJhY2VSZXBvcnRSZXNwb25zZSIGop8ZAggBEmoKE1VucHVibGlzaFJhY2VSZXBvcnQSJC5yYWNlcy52MS5VbnB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBolLnJhY2VzLnYxLlVucHVibGlzaFJhY2VSZXBvcnRSZXNwb25zZSIGop8ZAggBEnAKFUxpc3RQdWJsaWNSYWNlUmVwb3J0cxImLnJhY2VzLnYxLkxpc3RQdWJsaWNSYWNlUmVwb3J0c1JlcXVlc3QaJy5yYWNlcy52MS5MaXN0UHVibGljUmFjZVJlcG9ydHNSZXNwb25zZSIGop8ZAggBEmoKE0dldFB1YmxpY1JhY2VSZXBvcnQSJC5yYWNlcy52MS5HZXRQdWJsaWNSYWNlUmVwb3J0UmVxdWVzdBolLnJhY2VzLnYxLkdldFB1YmxpY1JhY2VSZXBvcnRSZXNwb25zZSIGop8ZAggBQqABCgxjb20ucmFjZXMudjFCEFJhY2VSZXBvcnRzUHJvdG9QAVo9Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcmFjZXMvdjE7cmFjZXN2MaICA1JYWKoCCFJhY2VzLlYxygIIUmFjZXNcVjHiAhRSYWNlc1xWMVxHUEJNZXRhZGF0YeoCCVJhY2VzOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * A race report.
@@ -86,7 +86,7 @@ export type RaceReport = Message<"races.v1.RaceReport"> & {
   elevationGainMeters: number;
 
   /**
-   * The finish time in seconds, 0 if unknown.
+   * The finish time in seconds, 0 if unknown or the runner did not finish.
    *
    * @generated from field: int32 finish_seconds = 10;
    */
@@ -183,6 +183,39 @@ export type RaceReport = Message<"races.v1.RaceReport"> & {
    * @generated from field: google.protobuf.Timestamp update_time = 23;
    */
   updateTime?: Timestamp | undefined;
+
+  /**
+   * Whether the runner did not finish the race (DNF). The result is then
+   * where and when they stopped, and there is no finish time.
+   *
+   * @generated from field: bool did_not_finish = 24;
+   */
+  didNotFinish: boolean;
+
+  /**
+   * Where the runner stopped, as the distance along the course from the
+   * start in meters, 0 if unknown. Only for a DNF.
+   *
+   * @generated from field: double stop_distance_meters = 25;
+   */
+  stopDistanceMeters: number;
+
+  /**
+   * The checkpoint or place where the runner stopped, e.g. "Function
+   * Junction", if any. Only for a DNF. If it's one of the race plan's
+   * checkpoints, the runner reached it.
+   *
+   * @generated from field: string stop_checkpoint = 26;
+   */
+  stopCheckpoint: string;
+
+  /**
+   * The elapsed time when the runner stopped in seconds, 0 if unknown. Only
+   * for a DNF.
+   *
+   * @generated from field: int32 stop_seconds = 27;
+   */
+  stopSeconds: number;
 };
 
 /**
@@ -233,6 +266,16 @@ export type RaceComparison = Message<"races.v1.RaceComparison"> & {
    * @generated from field: races.v1.ActualTimesSource actual_times_source = 5;
    */
   actualTimesSource: ActualTimesSource;
+
+  /**
+   * Whether the activity's distances were scaled to the race's, as GPS
+   * distances differ from course distances. They are only scaled when the
+   * activity covers the course, or up to where the runner stopped for a DNF,
+   * so a partial recording is never stretched over the whole course.
+   *
+   * @generated from field: bool actual_times_scaled = 6;
+   */
+  actualTimesScaled: boolean;
 };
 
 /**
@@ -263,7 +306,8 @@ export type GoalResult = Message<"races.v1.GoalResult"> & {
   targetSeconds: number;
 
   /**
-   * Whether the finish time met the goal. False without a finish time.
+   * Whether the finish time met the goal. False without a finish time,
+   * and if the runner did not finish.
    *
    * @generated from field: bool met = 3;
    */
@@ -271,7 +315,7 @@ export type GoalResult = Message<"races.v1.GoalResult"> & {
 
   /**
    * The finish time minus the goal, in seconds: negative if faster. 0
-   * without a finish time.
+   * without a finish time, and if the runner did not finish.
    *
    * @generated from field: int32 difference_seconds = 4;
    */
@@ -313,7 +357,9 @@ export type CheckpointResult = Message<"races.v1.CheckpointResult"> & {
   plannedArrivalSeconds: number;
 
   /**
-   * The actual elapsed time at arrival in seconds, if known.
+   * The actual elapsed time at arrival in seconds, if known. Never set
+   * beyond the end of the activity's recording, nor beyond where the runner
+   * stopped if they did not finish.
    *
    * @generated from field: optional int32 actual_arrival_seconds = 4;
    */
@@ -333,6 +379,14 @@ export type CheckpointResult = Message<"races.v1.CheckpointResult"> & {
    * @generated from field: int32 cutoff_seconds = 6;
    */
   cutoffSeconds: number;
+
+  /**
+   * Whether the runner did not reach the checkpoint because they did not
+   * finish: it's beyond where they stopped.
+   *
+   * @generated from field: bool not_reached = 7;
+   */
+  notReached: boolean;
 };
 
 /**
@@ -511,7 +565,7 @@ export type UpdateRaceReportRequest = Message<"races.v1.UpdateRaceReportRequest"
   activityId?: string | undefined;
 
   /**
-   * The new finish time in seconds, if set.
+   * The new finish time in seconds, if set. Must be 0 for a DNF.
    *
    * @generated from field: optional int32 finish_seconds = 5;
    */
@@ -572,6 +626,41 @@ export type UpdateRaceReportRequest = Message<"races.v1.UpdateRaceReportRequest"
    * @generated from field: optional string lessons = 13;
    */
   lessons?: string | undefined;
+
+  /**
+   * Whether the runner did not finish (DNF), if set. Marking a report as a
+   * DNF moves its finish time, e.g. the activity's elapsed time, to the stop
+   * time, and defaults the stop distance to the activity's distance, unless
+   * they are set. Marking it as finished clears where and when the runner
+   * stopped.
+   *
+   * @generated from field: optional bool did_not_finish = 14;
+   */
+  didNotFinish?: boolean | undefined;
+
+  /**
+   * The new distance along the course where the runner stopped in meters, if
+   * set. Only for a DNF.
+   *
+   * @generated from field: optional double stop_distance_meters = 15;
+   */
+  stopDistanceMeters?: number | undefined;
+
+  /**
+   * The new checkpoint or place where the runner stopped, if set. Only for a
+   * DNF.
+   *
+   * @generated from field: optional string stop_checkpoint = 16;
+   */
+  stopCheckpoint?: string | undefined;
+
+  /**
+   * The new elapsed time when the runner stopped in seconds, if set. Only
+   * for a DNF.
+   *
+   * @generated from field: optional int32 stop_seconds = 17;
+   */
+  stopSeconds?: number | undefined;
 };
 
 /**
@@ -850,10 +939,13 @@ export const ActualTimesSourceSchema: GenEnum<ActualTimesSource> = /*@__PURE__*/
  * RaceReportService manages race reports: the story of a race the user ran,
  * focused on how it was prepared for and executed rather than on photos.
  * A report has a result and sections of text: a summary, preparation, race
- * day, nutrition, what went well and badly, and lessons. The server compares
- * the race plan with what happened: the result against the plan's A, B and C
- * goals, and the actual arrival times at the plan's checkpoints, from the
- * activity's recording or the race day splits, against the planned ones.
+ * day, nutrition, what went well and badly, and lessons. The result is a
+ * finish time, or, if the runner did not finish (DNF), where and when they
+ * stopped. The server compares the race plan with what happened: the result
+ * against the plan's A, B and C goals, and the actual arrival times at the
+ * plan's checkpoints, from the activity's recording or the race day splits,
+ * against the planned ones. A DNF meets no goal, and has no arrival times
+ * beyond where the runner stopped.
  *
  * Reports are private drafts until the author publishes them in the app,
  * which requires a public profile (see TripReportService). Help the author
