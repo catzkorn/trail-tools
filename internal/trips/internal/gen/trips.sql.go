@@ -14,6 +14,7 @@ import (
 const addPhoto = `-- name: AddPhoto :one
 insert into trip_photos (
   report_id,
+  section_id,
   position,
   object_key,
   width,
@@ -27,8 +28,8 @@ insert into trip_photos (
   strava_photo_id
 ) values (
   $1,
-  (select coalesce(max(position) + 1, 0) from trip_photos where report_id = $1),
   $2,
+  (select coalesce(max(position) + 1, 0) from trip_photos where report_id = $1),
   $3,
   $4,
   $5,
@@ -37,13 +38,15 @@ insert into trip_photos (
   $8,
   $9,
   $10,
-  $11
+  $11,
+  $12
 )
-returning id, report_id, position, object_key, width, height, caption, lat, lng, location_source, track_distance_meters, taken_time, strava_photo_id, create_time
+returning id, report_id, position, object_key, width, height, caption, lat, lng, location_source, track_distance_meters, taken_time, strava_photo_id, create_time, section_id
 `
 
 type AddPhotoParams struct {
 	ReportID            pgtype.UUID
+	SectionID           pgtype.UUID
 	ObjectKey           string
 	Width               int32
 	Height              int32
@@ -59,6 +62,7 @@ type AddPhotoParams struct {
 func (q *Queries) AddPhoto(ctx context.Context, arg *AddPhotoParams) (*TripPhoto, error) {
 	row := q.db.QueryRow(ctx, addPhoto,
 		arg.ReportID,
+		arg.SectionID,
 		arg.ObjectKey,
 		arg.Width,
 		arg.Height,
@@ -86,6 +90,7 @@ func (q *Queries) AddPhoto(ctx context.Context, arg *AddPhotoParams) (*TripPhoto
 		&i.TakenTime,
 		&i.StravaPhotoID,
 		&i.CreateTime,
+		&i.SectionID,
 	)
 	return &i, err
 }
@@ -96,7 +101,6 @@ insert into trip_reports (
   activity_id,
   title,
   slug,
-  body,
   date,
   timezone,
   sport_type,
@@ -107,9 +111,9 @@ insert into trip_reports (
   elevation_gain_meters,
   track
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
-returning id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters
+returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters
 `
 
 type CreateReportParams struct {
@@ -117,7 +121,6 @@ type CreateReportParams struct {
 	ActivityID          pgtype.UUID
 	Title               string
 	Slug                string
-	Body                string
 	Date                pgtype.Date
 	Timezone            string
 	SportType           string
@@ -135,7 +138,6 @@ func (q *Queries) CreateReport(ctx context.Context, arg *CreateReportParams) (*T
 		arg.ActivityID,
 		arg.Title,
 		arg.Slug,
-		arg.Body,
 		arg.Date,
 		arg.Timezone,
 		arg.SportType,
@@ -153,7 +155,6 @@ func (q *Queries) CreateReport(ctx context.Context, arg *CreateReportParams) (*T
 		&i.ActivityID,
 		&i.Title,
 		&i.Slug,
-		&i.Body,
 		&i.Date,
 		&i.Timezone,
 		&i.SportType,
@@ -168,6 +169,53 @@ func (q *Queries) CreateReport(ctx context.Context, arg *CreateReportParams) (*T
 		&i.CreateTime,
 		&i.UpdateTime,
 		&i.HiddenEndsMeters,
+	)
+	return &i, err
+}
+
+const createSection = `-- name: CreateSection :one
+insert into trip_report_sections (
+  report_id,
+  position,
+  title,
+  body,
+  start_distance_meters,
+  end_distance_meters
+) values (
+  $1, $2, $3, $4, $5, $6
+)
+returning id, report_id, position, title, body, start_distance_meters, end_distance_meters, create_time, update_time
+`
+
+type CreateSectionParams struct {
+	ReportID            pgtype.UUID
+	Position            int32
+	Title               string
+	Body                string
+	StartDistanceMeters pgtype.Float8
+	EndDistanceMeters   pgtype.Float8
+}
+
+func (q *Queries) CreateSection(ctx context.Context, arg *CreateSectionParams) (*TripReportSection, error) {
+	row := q.db.QueryRow(ctx, createSection,
+		arg.ReportID,
+		arg.Position,
+		arg.Title,
+		arg.Body,
+		arg.StartDistanceMeters,
+		arg.EndDistanceMeters,
+	)
+	var i TripReportSection
+	err := row.Scan(
+		&i.ID,
+		&i.ReportID,
+		&i.Position,
+		&i.Title,
+		&i.Body,
+		&i.StartDistanceMeters,
+		&i.EndDistanceMeters,
+		&i.CreateTime,
+		&i.UpdateTime,
 	)
 	return &i, err
 }
@@ -209,8 +257,23 @@ func (q *Queries) DeleteReport(ctx context.Context, arg *DeleteReportParams) (in
 	return result.RowsAffected(), nil
 }
 
+const deleteSectionsExcept = `-- name: DeleteSectionsExcept :exec
+delete from trip_report_sections
+where report_id = $1 and not (id = any($2::uuid[]))
+`
+
+type DeleteSectionsExceptParams struct {
+	ReportID pgtype.UUID
+	KeptIds  []pgtype.UUID
+}
+
+func (q *Queries) DeleteSectionsExcept(ctx context.Context, arg *DeleteSectionsExceptParams) error {
+	_, err := q.db.Exec(ctx, deleteSectionsExcept, arg.ReportID, arg.KeptIds)
+	return err
+}
+
 const getPhoto = `-- name: GetPhoto :one
-select p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time from trip_photos p
+select p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time, p.section_id from trip_photos p
 join trip_reports r on r.id = p.report_id
 where p.id = $1 and r.user_id = $2
 `
@@ -238,6 +301,7 @@ func (q *Queries) GetPhoto(ctx context.Context, arg *GetPhotoParams) (*TripPhoto
 		&i.TakenTime,
 		&i.StravaPhotoID,
 		&i.CreateTime,
+		&i.SectionID,
 	)
 	return &i, err
 }
@@ -305,7 +369,7 @@ func (q *Queries) GetProfileByHandle(ctx context.Context, handle string) (*GetPr
 }
 
 const getReport = `-- name: GetReport :one
-select id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters from trip_reports
+select id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters from trip_reports
 where id = $1 and user_id = $2
 `
 
@@ -323,7 +387,6 @@ func (q *Queries) GetReport(ctx context.Context, arg *GetReportParams) (*TripRep
 		&i.ActivityID,
 		&i.Title,
 		&i.Slug,
-		&i.Body,
 		&i.Date,
 		&i.Timezone,
 		&i.SportType,
@@ -343,7 +406,7 @@ func (q *Queries) GetReport(ctx context.Context, arg *GetReportParams) (*TripRep
 }
 
 const getReportBySlug = `-- name: GetReportBySlug :one
-select id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters from trip_reports
+select id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters from trip_reports
 where user_id = $1 and slug = $2
 `
 
@@ -361,7 +424,6 @@ func (q *Queries) GetReportBySlug(ctx context.Context, arg *GetReportBySlugParam
 		&i.ActivityID,
 		&i.Title,
 		&i.Slug,
-		&i.Body,
 		&i.Date,
 		&i.Timezone,
 		&i.SportType,
@@ -392,6 +454,38 @@ func (q *Queries) GetUserName(ctx context.Context, id pgtype.UUID) (string, erro
 	return name, err
 }
 
+const listExcerpts = `-- name: ListExcerpts :many
+select distinct on (report_id) report_id, body from trip_report_sections
+where report_id = any($1::uuid[]) and body <> ''
+order by report_id, position
+`
+
+type ListExcerptsRow struct {
+	ReportID pgtype.UUID
+	Body     string
+}
+
+// Lists the text of the first section with text of each report.
+func (q *Queries) ListExcerpts(ctx context.Context, reportIds []pgtype.UUID) ([]*ListExcerptsRow, error) {
+	rows, err := q.db.Query(ctx, listExcerpts, reportIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*ListExcerptsRow
+	for rows.Next() {
+		var i ListExcerptsRow
+		if err := rows.Scan(&i.ReportID, &i.Body); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPhotoObjectKeys = `-- name: ListPhotoObjectKeys :many
 select object_key from trip_photos
 where report_id = $1
@@ -418,11 +512,13 @@ func (q *Queries) ListPhotoObjectKeys(ctx context.Context, reportID pgtype.UUID)
 }
 
 const listPhotos = `-- name: ListPhotos :many
-select id, report_id, position, object_key, width, height, caption, lat, lng, location_source, track_distance_meters, taken_time, strava_photo_id, create_time from trip_photos
-where report_id = any($1::uuid[])
-order by report_id, position, create_time
+select p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time, p.section_id from trip_photos p
+join trip_report_sections s on s.id = p.section_id
+where p.report_id = any($1::uuid[])
+order by p.report_id, s.position, p.position, p.create_time
 `
 
+// Lists photos in the order of the story: by section, then by position.
 func (q *Queries) ListPhotos(ctx context.Context, reportIds []pgtype.UUID) ([]*TripPhoto, error) {
 	rows, err := q.db.Query(ctx, listPhotos, reportIds)
 	if err != nil {
@@ -447,6 +543,7 @@ func (q *Queries) ListPhotos(ctx context.Context, reportIds []pgtype.UUID) ([]*T
 			&i.TakenTime,
 			&i.StravaPhotoID,
 			&i.CreateTime,
+			&i.SectionID,
 		); err != nil {
 			return nil, err
 		}
@@ -460,7 +557,7 @@ func (q *Queries) ListPhotos(ctx context.Context, reportIds []pgtype.UUID) ([]*T
 
 const listReports = `-- name: ListReports :many
 select
-  id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time,
+  id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time,
   distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters,
   (track is not null)::boolean as has_track, published, publish_time, create_time, update_time
 from trip_reports
@@ -482,7 +579,6 @@ type ListReportsRow struct {
 	ActivityID          pgtype.UUID
 	Title               string
 	Slug                string
-	Body                string
 	Date                pgtype.Date
 	Timezone            string
 	SportType           string
@@ -513,7 +609,6 @@ func (q *Queries) ListReports(ctx context.Context, arg *ListReportsParams) ([]*L
 			&i.ActivityID,
 			&i.Title,
 			&i.Slug,
-			&i.Body,
 			&i.Date,
 			&i.Timezone,
 			&i.SportType,
@@ -538,6 +633,91 @@ func (q *Queries) ListReports(ctx context.Context, arg *ListReportsParams) ([]*L
 	return items, nil
 }
 
+const listSections = `-- name: ListSections :many
+select id, report_id, position, title, body, start_distance_meters, end_distance_meters, create_time, update_time from trip_report_sections
+where report_id = any($1::uuid[])
+order by report_id, position
+`
+
+func (q *Queries) ListSections(ctx context.Context, reportIds []pgtype.UUID) ([]*TripReportSection, error) {
+	rows, err := q.db.Query(ctx, listSections, reportIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*TripReportSection
+	for rows.Next() {
+		var i TripReportSection
+		if err := rows.Scan(
+			&i.ID,
+			&i.ReportID,
+			&i.Position,
+			&i.Title,
+			&i.Body,
+			&i.StartDistanceMeters,
+			&i.EndDistanceMeters,
+			&i.CreateTime,
+			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockReport = `-- name: LockReport :one
+select id from trip_reports
+where id = $1 and user_id = $2
+for update
+`
+
+type LockReportParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+// Gets the ID of one of the user's reports, locking it until the end of the
+// transaction.
+func (q *Queries) LockReport(ctx context.Context, arg *LockReportParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, lockReport, arg.ID, arg.UserID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const movePhotosOutOfSections = `-- name: MovePhotosOutOfSections :exec
+with moved as (
+  select p.id, row_number() over (order by s.position, p.position, p.create_time) as n
+  from trip_photos p
+  join trip_report_sections s on s.id = p.section_id
+  where p.report_id = $2 and not (p.section_id = any($3::uuid[]))
+)
+update trip_photos p set
+  section_id = $1,
+  position = (
+    select coalesce(max(position) + 1, 0) from trip_photos where section_id = $1
+  ) + moved.n - 1
+from moved
+where p.id = moved.id
+`
+
+type MovePhotosOutOfSectionsParams struct {
+	SectionID pgtype.UUID
+	ReportID  pgtype.UUID
+	KeptIds   []pgtype.UUID
+}
+
+// Moves the photos of a report's sections that aren't kept to the end of a
+// section, in the order of the story.
+func (q *Queries) MovePhotosOutOfSections(ctx context.Context, arg *MovePhotosOutOfSectionsParams) error {
+	_, err := q.db.Exec(ctx, movePhotosOutOfSections, arg.SectionID, arg.ReportID, arg.KeptIds)
+	return err
+}
+
 const reportExists = `-- name: ReportExists :one
 select exists (select 1 from trip_reports where id = $1 and user_id = $2)
 `
@@ -554,21 +734,27 @@ func (q *Queries) ReportExists(ctx context.Context, arg *ReportExistsParams) (bo
 	return exists, err
 }
 
-const setPhotoPositions = `-- name: SetPhotoPositions :exec
+const setPhotoSections = `-- name: SetPhotoSections :execrows
 update trip_photos p set
+  section_id = ($1::uuid[])[o.position],
   position = o.position - 1
-from unnest($2::uuid[]) with ordinality as o(id, position)
-where p.id = o.id and p.report_id = $1
+from unnest($3::uuid[]) with ordinality as o(id, position)
+where p.id = o.id and p.report_id = $2
 `
 
-type SetPhotoPositionsParams struct {
-	ReportID pgtype.UUID
-	PhotoIds []pgtype.UUID
+type SetPhotoSectionsParams struct {
+	SectionIds []pgtype.UUID
+	ReportID   pgtype.UUID
+	PhotoIds   []pgtype.UUID
 }
 
-func (q *Queries) SetPhotoPositions(ctx context.Context, arg *SetPhotoPositionsParams) error {
-	_, err := q.db.Exec(ctx, setPhotoPositions, arg.ReportID, arg.PhotoIds)
-	return err
+// Moves photos to sections, numbering them in the order given.
+func (q *Queries) SetPhotoSections(ctx context.Context, arg *SetPhotoSectionsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setPhotoSections, arg.SectionIds, arg.ReportID, arg.PhotoIds)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const setReportPublished = `-- name: SetReportPublished :one
@@ -577,7 +763,7 @@ update trip_reports set
   publish_time = case when $1 then coalesce(publish_time, now()) else publish_time end,
   update_time = now()
 where id = $2 and user_id = $3
-returning id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters
+returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters
 `
 
 type SetReportPublishedParams struct {
@@ -595,7 +781,6 @@ func (q *Queries) SetReportPublished(ctx context.Context, arg *SetReportPublishe
 		&i.ActivityID,
 		&i.Title,
 		&i.Slug,
-		&i.Body,
 		&i.Date,
 		&i.Timezone,
 		&i.SportType,
@@ -630,7 +815,7 @@ update trip_photos p set
   caption = $3
 from trip_reports r
 where r.id = p.report_id and p.id = $1 and r.user_id = $2
-returning p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time
+returning p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time, p.section_id
 `
 
 type UpdatePhotoCaptionParams struct {
@@ -657,6 +842,7 @@ func (q *Queries) UpdatePhotoCaption(ctx context.Context, arg *UpdatePhotoCaptio
 		&i.TakenTime,
 		&i.StravaPhotoID,
 		&i.CreateTime,
+		&i.SectionID,
 	)
 	return &i, err
 }
@@ -669,7 +855,7 @@ update trip_photos p set
   track_distance_meters = $4
 from trip_reports r
 where r.id = p.report_id and p.id = $5 and r.user_id = $6
-returning p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time
+returning p.id, p.report_id, p.position, p.object_key, p.width, p.height, p.caption, p.lat, p.lng, p.location_source, p.track_distance_meters, p.taken_time, p.strava_photo_id, p.create_time, p.section_id
 `
 
 type UpdatePhotoLocationParams struct {
@@ -706,6 +892,7 @@ func (q *Queries) UpdatePhotoLocation(ctx context.Context, arg *UpdatePhotoLocat
 		&i.TakenTime,
 		&i.StravaPhotoID,
 		&i.CreateTime,
+		&i.SectionID,
 	)
 	return &i, err
 }
@@ -714,18 +901,16 @@ const updateReport = `-- name: UpdateReport :one
 update trip_reports set
   title = coalesce($1, title),
   slug = coalesce($2, slug),
-  body = coalesce($3, body),
-  date = coalesce($4, date),
-  hidden_ends_meters = coalesce($5, hidden_ends_meters),
+  date = coalesce($3, date),
+  hidden_ends_meters = coalesce($4, hidden_ends_meters),
   update_time = now()
-where id = $6 and user_id = $7
-returning id, user_id, activity_id, title, slug, body, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters
+where id = $5 and user_id = $6
+returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters
 `
 
 type UpdateReportParams struct {
 	Title            pgtype.Text
 	Slug             pgtype.Text
-	Body             pgtype.Text
 	Date             pgtype.Date
 	HiddenEndsMeters pgtype.Int4
 	ID               pgtype.UUID
@@ -736,7 +921,6 @@ func (q *Queries) UpdateReport(ctx context.Context, arg *UpdateReportParams) (*T
 	row := q.db.QueryRow(ctx, updateReport,
 		arg.Title,
 		arg.Slug,
-		arg.Body,
 		arg.Date,
 		arg.HiddenEndsMeters,
 		arg.ID,
@@ -749,7 +933,6 @@ func (q *Queries) UpdateReport(ctx context.Context, arg *UpdateReportParams) (*T
 		&i.ActivityID,
 		&i.Title,
 		&i.Slug,
-		&i.Body,
 		&i.Date,
 		&i.Timezone,
 		&i.SportType,
@@ -766,6 +949,46 @@ func (q *Queries) UpdateReport(ctx context.Context, arg *UpdateReportParams) (*T
 		&i.HiddenEndsMeters,
 	)
 	return &i, err
+}
+
+const updateSection = `-- name: UpdateSection :execrows
+update trip_report_sections set
+  position = $3,
+  title = $4,
+  body = $5,
+  start_distance_meters = $6,
+  end_distance_meters = $7,
+  update_time = case
+    when (title, body, start_distance_meters, end_distance_meters)
+      is distinct from ($4::text, $5::text, $6::double precision, $7::double precision)
+    then now() else update_time end
+where id = $1 and report_id = $2
+`
+
+type UpdateSectionParams struct {
+	ID                  pgtype.UUID
+	ReportID            pgtype.UUID
+	Position            int32
+	Title               string
+	Body                string
+	StartDistanceMeters pgtype.Float8
+	EndDistanceMeters   pgtype.Float8
+}
+
+func (q *Queries) UpdateSection(ctx context.Context, arg *UpdateSectionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateSection,
+		arg.ID,
+		arg.ReportID,
+		arg.Position,
+		arg.Title,
+		arg.Body,
+		arg.StartDistanceMeters,
+		arg.EndDistanceMeters,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertProfile = `-- name: UpsertProfile :one

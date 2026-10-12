@@ -1072,6 +1072,7 @@ type TripPhoto struct {
 	TakenTime           pgtype.Timestamptz
 	StravaPhotoID       pgtype.Text
 	CreateTime          pgtype.Timestamptz
+	SectionID           pgtype.UUID
 }
 
 type TripReport struct {
@@ -1080,7 +1081,6 @@ type TripReport struct {
 	ActivityID          pgtype.UUID
 	Title               string
 	Slug                string
-	Body                string
 	Date                pgtype.Date
 	Timezone            string
 	SportType           string
@@ -1095,6 +1095,18 @@ type TripReport struct {
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
 	HiddenEndsMeters    int32
+}
+
+type TripReportSection struct {
+	ID                  pgtype.UUID
+	ReportID            pgtype.UUID
+	Position            int32
+	Title               string
+	Body                string
+	StartDistanceMeters pgtype.Float8
+	EndDistanceMeters   pgtype.Float8
+	CreateTime          pgtype.Timestamptz
+	UpdateTime          pgtype.Timestamptz
 }
 
 type User struct {

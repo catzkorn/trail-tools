@@ -291,7 +291,9 @@ const PublicTripReportPage: React.FC = () => {
           </aside>
         )}
         <div className="flex min-w-0 flex-col gap-10 lg:col-start-1 lg:row-start-1">
-          <Story body={report.body} />
+          <Story
+            body={report.sections.map((section) => section.body).join("\n\n")}
+          />
           {photos.length > 1 && (
             <div className="flex flex-col gap-8">
               {photos.slice(1).map((photo, index) => (

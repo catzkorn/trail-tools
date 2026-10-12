@@ -44,12 +44,12 @@ import {
   getProfile,
   getTripReport,
   publishTripReport,
-  reorderTripPhotos,
+  setTripSections,
   unpublishTripReport,
   updateTripPhoto,
   updateTripReport,
 } from "gen/trips/v1/trips-TripReportService_connectquery";
-import type { TripPhoto, TripReport } from "gen/trips/v1/trips_pb";
+import type { TripPhoto, TripReport, TripSection } from "gen/trips/v1/trips_pb";
 import { LocationSource, TripReportService } from "gen/trips/v1/trips_pb";
 import { invalidateServices } from "helpers/query";
 import { isValidSlug, slugify } from "helpers/slug";
@@ -65,6 +65,16 @@ const HIDDEN_ENDS_OPTIONS: SelectOption[] = [
   { label: "1 km around the start and finish", value: "1000" },
   { label: "2 km around the start and finish", value: "2000" },
 ];
+
+// SectionInput returns a section as it's saved with SetTripSections.
+const sectionInput = (section: TripSection, photoIds = section.photoIds) => ({
+  body: section.body,
+  endDistanceMeters: section.endDistanceMeters,
+  id: section.id,
+  photoIds,
+  startDistanceMeters: section.startDistanceMeters,
+  title: section.title,
+});
 
 interface ReportFormProps {
   report: TripReport;
@@ -84,21 +94,24 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
     report.slug !== slugify(report.title)
   );
   const [date, setDate] = useState(report.date);
-  const [body, setBody] = useState(report.body);
+  // The story is the text of the first section.
+  const story = report.sections[0]?.body ?? "";
+  const [body, setBody] = useState(story);
   const [hiddenEnds, setHiddenEnds] = useState(String(report.hiddenEndsMeters));
-  const update = useMutation(updateTripReport, { onSuccess: onSaved });
+  const update = useMutation(updateTripReport);
+  const saveSections = useMutation(setTripSections);
+  const saving = update.isPending || saveSections.isPending;
 
   const trimmedTitle = title.trim();
   const dirty =
     trimmedTitle !== report.title ||
     slug !== report.slug ||
     date !== report.date ||
-    body !== report.body ||
+    body !== story ||
     Number(hiddenEnds) !== report.hiddenEndsMeters;
   const slugValid = isValidSlug(slug);
-  const save = () => {
-    update.mutate({
-      body: body === report.body ? undefined : body,
+  const save = async () => {
+    await update.mutateAsync({
       date: date === report.date ? undefined : date,
       hiddenEndsMeters:
         Number(hiddenEnds) === report.hiddenEndsMeters
@@ -108,6 +121,16 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
       slug: slug === report.slug ? undefined : slug,
       title: trimmedTitle === report.title ? undefined : trimmedTitle,
     });
+    if (body !== story) {
+      await saveSections.mutateAsync({
+        reportId: report.id,
+        sections: report.sections.map((section, index) => ({
+          ...sectionInput(section),
+          body: index === 0 ? body : section.body,
+        })),
+      });
+    }
+    await onSaved();
   };
 
   return (
@@ -115,7 +138,9 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
       className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault();
-        save();
+        void save().catch(() => {
+          // The mutations show their errors.
+        });
       }}
     >
       <TextField
@@ -196,20 +221,16 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
           type="submit"
           className={primaryButton}
           disabled={
-            !dirty ||
-            update.isPending ||
-            trimmedTitle === "" ||
-            !slugValid ||
-            date === ""
+            !dirty || saving || trimmedTitle === "" || !slugValid || date === ""
           }
         >
-          {update.isPending ? "Saving…" : "Save"}
+          {saving ? "Saving…" : "Save"}
         </button>
         <span className="text-sm text-gray-500">
           {dirty ? "Unsaved changes" : "All changes saved"}
         </span>
       </div>
-      <ErrorText error={update.error} />
+      <ErrorText error={update.error ?? saveSections.error} />
     </form>
   );
 };
@@ -407,7 +428,7 @@ const TripReportPage: React.FC = () => {
     },
   });
   const movePhoto = useMutation(updateTripPhoto, { onSuccess: invalidate });
-  const reorder = useMutation(reorderTripPhotos, { onSuccess: invalidate });
+  const reorder = useMutation(setTripSections, { onSuccess: invalidate });
 
   /**
    * Derived data is memoized, so the map isn't redrawn while hovering the
@@ -457,15 +478,26 @@ const TripReportPage: React.FC = () => {
       location: { lat: position.lat, lng: position.wrap().lng },
     });
   };
+  // Moving a photo swaps it with the photo before or after it.
   const move = (index: number, delta: number) => {
-    const ids = photos.map((photo) => photo.id);
-    const target = index + delta;
-    const [moved] = ids.splice(index, 1);
-    if (moved === undefined || target < 0 || target > ids.length) {
+    const photo = photos[index];
+    const other = photos[index + delta];
+    if (photo === undefined || other === undefined) {
       return;
     }
-    ids.splice(target, 0, moved);
-    reorder.mutate({ photoIds: ids, reportId: report.id });
+    const swapped = new Map([
+      [photo.id, other.id],
+      [other.id, photo.id],
+    ]);
+    reorder.mutate({
+      reportId: report.id,
+      sections: report.sections.map((section) =>
+        sectionInput(
+          section,
+          section.photoIds.map((photoId) => swapped.get(photoId) ?? photoId)
+        )
+      ),
+    });
   };
 
   return (
