@@ -17,8 +17,11 @@ import OAuthConsentPage from "pages/oauth-consent";
 import PlanPage from "pages/plan";
 import PlansPage from "pages/plans";
 import PublicProfilePage from "pages/public-profile";
+import PublicRaceReportPage from "pages/public-race-report";
 import PublicTripReportPage from "pages/public-trip-report";
 import RacePlanPage from "pages/race-plan";
+import RaceReportPage from "pages/race-report";
+import RaceReportsPage from "pages/race-reports";
 import RacesPage from "pages/races";
 import RoutePage from "pages/route";
 import RoutesPage from "pages/routes";
@@ -147,6 +150,18 @@ const App: React.FC = () => {
             <Route
               path="/trip-reports/:id"
               element={protectedPage(<TripReportPage />)}
+            />
+            <Route
+              path="/race-reports"
+              element={protectedPage(<RaceReportsPage />)}
+            />
+            <Route
+              path="/race-reports/:id"
+              element={protectedPage(<RaceReportPage />)}
+            />
+            <Route
+              path="/u/:handle/races/:slug"
+              element={<PublicRaceReportPage />}
             />
             <Route path="/u/:handle" element={<PublicProfilePage />} />
             <Route path="/u/:handle/:slug" element={<PublicTripReportPage />} />

@@ -1,9 +1,11 @@
 import Loading from "@components/loading";
+import { RaceReportCard } from "@components/races/race-report-bits";
 import { ReportCard } from "@components/trips/trip-bits";
 import { EmptyState } from "@components/ui/misc";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
+import { listPublicRaceReports } from "gen/races/v1/race_reports-RaceReportService_connectquery";
 import { getPublicProfile } from "gen/trips/v1/trips-TripReportService_connectquery";
 import React, { useEffect } from "react";
 import { useParams } from "react-router";
@@ -18,7 +20,8 @@ const initials = (name: string): string =>
     .join("");
 
 /**
- * PublicProfilePage lists a user's published trip reports, at /u/<handle>.
+ * PublicProfilePage lists a user's published race and trip reports, at
+ * /u/<handle>.
  * It works without signing in.
  */
 const PublicProfilePage: React.FC = () => {
@@ -31,6 +34,7 @@ const PublicProfilePage: React.FC = () => {
         err.code !== Code.NotFound && failureCount < 3,
     }
   );
+  const raceReports = useQuery(listPublicRaceReports, { handle });
   const name = data?.profile?.displayName;
 
   useEffect(() => {
@@ -38,7 +42,7 @@ const PublicProfilePage: React.FC = () => {
       return undefined;
     }
     const previous = document.title;
-    document.title = `Trip reports by ${name}`;
+    document.title = `Reports by ${name}`;
     return () => {
       document.title = previous;
     };
@@ -71,6 +75,11 @@ const PublicProfilePage: React.FC = () => {
   if (profile === undefined) {
     return null;
   }
+  const races = raceReports.data?.reports ?? [];
+  const counts = [
+    races.length === 1 ? "1 race report" : `${races.length} race reports`,
+    reports.length === 1 ? "1 trip report" : `${reports.length} trip reports`,
+  ];
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-16">
@@ -82,15 +91,31 @@ const PublicProfilePage: React.FC = () => {
           {profile.displayName}
         </h1>
         <p className="text-gray-500">
-          @{profile.handle} ·{" "}
-          {reports.length === 1
-            ? "1 trip report"
-            : `${reports.length} trip reports`}
+          @{profile.handle} · {counts.join(" · ")}
         </p>
       </header>
-      {reports.length === 0 ? (
-        <EmptyState title="No trip reports yet">
-          Published trip reports will show up here.
+      {races.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-semibold text-gray-900">Race reports</h2>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {races.map((report) => (
+              <RaceReportCard
+                key={report.id}
+                report={report}
+                to={`/u/${profile.handle}/races/${report.slug}`}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      {races.length > 0 && reports.length > 0 && (
+        <h2 className="-mb-5 text-xl font-semibold text-gray-900">
+          Trip reports
+        </h2>
+      )}
+      {reports.length === 0 && races.length === 0 ? (
+        <EmptyState title="No reports yet">
+          Published race and trip reports will show up here.
         </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

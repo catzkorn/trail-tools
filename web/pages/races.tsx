@@ -15,6 +15,7 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
   CalendarDaysIcon,
   ClipboardDocumentListIcon,
+  DocumentTextIcon,
   MapIcon,
   PencilSquareIcon,
   PlusIcon,
@@ -28,6 +29,12 @@ import {
 } from "gen/races/v1/race_plans-RacePlanService_connectquery";
 import type { RacePlanSummary } from "gen/races/v1/race_plans_pb";
 import { RacePlanService } from "gen/races/v1/race_plans_pb";
+import {
+  createRaceReport,
+  listRaceReports,
+} from "gen/races/v1/race_reports-RaceReportService_connectquery";
+import type { RaceReport } from "gen/races/v1/race_reports_pb";
+import { RaceReportService } from "gen/races/v1/race_reports_pb";
 import {
   deleteRace,
   listRaces,
@@ -64,11 +71,18 @@ const DateTile: React.FC<{ date: string }> = ({ date }) => (
 interface RaceRowProps {
   race: Race;
   plan: RacePlanSummary | undefined;
+  report: RaceReport | undefined;
   past: boolean;
   onEdit: () => void;
 }
 
-const RaceRow: React.FC<RaceRowProps> = ({ race, plan, past, onEdit }) => {
+const RaceRow: React.FC<RaceRowProps> = ({
+  race,
+  plan,
+  report,
+  past,
+  onEdit,
+}) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const remove = useMutation(deleteRace, {
@@ -104,6 +118,38 @@ const RaceRow: React.FC<RaceRowProps> = ({ race, plan, past, onEdit }) => {
     race.cutoffSeconds > 0 ? `${formatDuration(race.cutoffSeconds)} limit` : "",
     race.startTime === "" ? "" : `starts ${race.startTime}`,
   ].filter((part) => part !== "");
+
+  const writeReport = useMutation(createRaceReport, {
+    onSuccess: async (response) => {
+      await invalidateServices(queryClient, [RaceReportService]);
+      if (response.report !== undefined) {
+        void navigate(`/race-reports/${response.report.id}`);
+      }
+    },
+  });
+  let reportAction: React.ReactNode = null;
+  if (report !== undefined) {
+    reportAction = (
+      <Link to={`/race-reports/${report.id}`} className={secondaryButton}>
+        <DocumentTextIcon className="size-4" />
+        Race report
+      </Link>
+    );
+  } else if (race.onCalendar && past) {
+    reportAction = (
+      <button
+        type="button"
+        className={secondaryButton}
+        disabled={writeReport.isPending}
+        onClick={() => {
+          writeReport.mutate({ raceId: race.id });
+        }}
+      >
+        <DocumentTextIcon className="size-4" />
+        Write race report
+      </button>
+    );
+  }
 
   let planAction: React.ReactNode = null;
   if (plan !== undefined) {
@@ -187,6 +233,7 @@ const RaceRow: React.FC<RaceRowProps> = ({ race, plan, past, onEdit }) => {
             </button>
           )}
           {planAction}
+          {reportAction}
           {race.courseRouteId !== "" && (
             <Link
               to={`/routes/${race.courseRouteId}`}
@@ -234,7 +281,12 @@ const RaceRow: React.FC<RaceRowProps> = ({ race, plan, past, onEdit }) => {
           </div>
         </div>
         <ErrorText
-          error={remove.error ?? setOnCalendar.error ?? createPlan.error}
+          error={
+            remove.error ??
+            setOnCalendar.error ??
+            createPlan.error ??
+            writeReport.error
+          }
         />
       </div>
     </li>
@@ -244,6 +296,7 @@ const RaceRow: React.FC<RaceRowProps> = ({ race, plan, past, onEdit }) => {
 interface RaceListProps {
   races: Race[];
   planByRace: Map<string, RacePlanSummary>;
+  reportByRace: Map<string, RaceReport>;
   past?: boolean;
   onEdit: (race: Race) => void;
 }
@@ -251,6 +304,7 @@ interface RaceListProps {
 const RaceList: React.FC<RaceListProps> = ({
   races,
   planByRace,
+  reportByRace,
   past = false,
   onEdit,
 }) => (
@@ -260,6 +314,7 @@ const RaceList: React.FC<RaceListProps> = ({
         key={race.id}
         race={race}
         plan={planByRace.get(race.id)}
+        report={reportByRace.get(race.id)}
         past={past}
         onEdit={() => {
           onEdit(race);
@@ -309,6 +364,13 @@ interface RaceEdit {
 const RacesPage: React.FC = () => {
   const { isPending, isError, data, error, refetch } = useQuery(listRaces, {});
   const plans = useQuery(listRacePlans);
+  const reports = useQuery(listRaceReports, {});
+  const reportByRace = new Map<string, RaceReport>();
+  for (const report of reports.data?.reports ?? []) {
+    if (report.raceId !== "") {
+      reportByRace.set(report.raceId, report);
+    }
+  }
   const [editing, setEditing] = useState<RaceEdit | null>(null);
   const edit = (race: Race) => {
     setEditing({ race });
@@ -367,6 +429,7 @@ const RacesPage: React.FC = () => {
             <RaceList
               races={onCalendar}
               planByRace={planByRace}
+              reportByRace={reportByRace}
               onEdit={edit}
             />
           )}
@@ -378,14 +441,25 @@ const RacesPage: React.FC = () => {
                 <h3 className="pt-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                   {formatMonth(month)}
                 </h3>
-                <RaceList races={races} planByRace={planByRace} onEdit={edit} />
+                <RaceList
+                  races={races}
+                  planByRace={planByRace}
+                  reportByRace={reportByRace}
+                  onEdit={edit}
+                />
               </div>
             ))}
           </Section>
         )}
         {past.length > 0 && (
           <Section title="Past races">
-            <RaceList races={past} planByRace={planByRace} past onEdit={edit} />
+            <RaceList
+              races={past}
+              planByRace={planByRace}
+              reportByRace={reportByRace}
+              past
+              onEdit={edit}
+            />
           </Section>
         )}
       </div>
