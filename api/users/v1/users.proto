@@ -22,6 +22,15 @@ service UserService {
   rpc DeleteAPIToken(DeleteAPITokenRequest) returns (DeleteAPITokenResponse) {
     option (mcp.v1.method).exclude = true;
   }
+  // Upload a picture to use as the user's avatar, replacing any previous
+  // one. The middle square of the picture is used.
+  rpc UploadAvatar(UploadAvatarRequest) returns (UploadAvatarResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // Remove the user's avatar.
+  rpc DeleteAvatar(DeleteAvatarRequest) returns (DeleteAvatarResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
 }
 
 message User {
@@ -30,6 +39,8 @@ message User {
   string name = 3;
   string given_name = 4;
   string family_name = 5;
+  // The URL of the user's avatar image, relative to the site. Empty if the
+  // user has no avatar.
   string avatar_url = 6;
   // Whether the user is an administrator, who can invite new users.
   bool admin = 7;
@@ -78,3 +89,20 @@ message DeleteAPITokenRequest {
 }
 
 message DeleteAPITokenResponse {}
+
+message UploadAvatarRequest {
+  // The picture, a JPEG, PNG or WebP image.
+  bytes data = 1;
+}
+
+message UploadAvatarResponse {
+  // The user, with the new avatar.
+  User user = 1;
+}
+
+message DeleteAvatarRequest {}
+
+message DeleteAvatarResponse {
+  // The user, without an avatar.
+  User user = 1;
+}

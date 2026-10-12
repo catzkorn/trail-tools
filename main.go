@@ -448,7 +448,7 @@ func run(
 		log.InfoContext(ctx, "Strava sync disabled, set -strava-client-id and -strava-client-secret to enable it")
 	}
 
-	userService := user.NewService(log, users)
+	userService := user.NewService(log, users, users, photos)
 	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
@@ -608,6 +608,7 @@ func run(
 	// Serve trip report photos, and the public trip report pages with their
 	// metadata for search engines and link previews.
 	mux.Handle(trip.PhotoPath, authenticate(tripService.PhotoHandler()))
+	mux.Handle(user.AvatarPath, userService.AvatarHandler())
 	mux.Handle(trip.ProfilePath, authenticate(raceReportService.PageHandler(serveDir != "", tripService.PageHandler(serveDir != ""))))
 
 	// Add auto-reloading middleware if serving from a directory

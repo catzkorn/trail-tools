@@ -1169,6 +1169,7 @@ type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
 	IsAdmin    bool
+	AvatarKey  pgtype.Text
 }
 
 type Workout struct {

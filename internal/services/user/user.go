@@ -15,14 +15,21 @@ func (s *Service) GetCurrentUser(ctx context.Context, req *usersv1.GetCurrentUse
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, "")
 	}
+	u, err := userToProto(user)
+	if err != nil {
+		return nil, err
+	}
+	return usersv1.GetCurrentUserResponse_builder{User: u}.Build(), nil
+}
+
+func userToProto(user users.User) (*usersv1.User, error) {
 	switch u := user.(type) {
 	case *users.PasskeyUser:
-		return usersv1.GetCurrentUserResponse_builder{
-			User: usersv1.User_builder{
-				Id:    store.UUIDToString(user.ID()),
-				Name:  u.Name,
-				Admin: u.IsAdmin(),
-			}.Build(),
+		return usersv1.User_builder{
+			Id:        store.UUIDToString(user.ID()),
+			Name:      u.Name,
+			AvatarUrl: AvatarURL(u.AvatarKey),
+			Admin:     u.IsAdmin(),
 		}.Build(), nil
 	default:
 		return nil, connect.Errorf(connect.CodeInternal, "unknown user type: %T", u)

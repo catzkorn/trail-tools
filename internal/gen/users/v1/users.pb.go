@@ -145,7 +145,9 @@ type User_builder struct {
 	Name       string
 	GivenName  string
 	FamilyName string
-	AvatarUrl  string
+	// The URL of the user's avatar image, relative to the site. Empty if the
+	// user has no avatar.
+	AvatarUrl string
 	// Whether the user is an administrator, who can invite new users.
 	Admin bool
 }
@@ -747,6 +749,248 @@ func (b0 DeleteAPITokenResponse_builder) Build() *DeleteAPITokenResponse {
 	return m0
 }
 
+type UploadAvatarRequest struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Data []byte                 `protobuf:"bytes,1,opt,name=data,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UploadAvatarRequest) Reset() {
+	*x = UploadAvatarRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadAvatarRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadAvatarRequest) ProtoMessage() {}
+
+func (x *UploadAvatarRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UploadAvatarRequest) GetData() []byte {
+	if x != nil {
+		return x.xxx_hidden_Data
+	}
+	return nil
+}
+
+func (x *UploadAvatarRequest) SetData(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_Data = v
+}
+
+type UploadAvatarRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The picture, a JPEG, PNG or WebP image.
+	Data []byte
+}
+
+func (b0 UploadAvatarRequest_builder) Build() *UploadAvatarRequest {
+	m0 := &UploadAvatarRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Data = b.Data
+	return m0
+}
+
+type UploadAvatarResponse struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UploadAvatarResponse) Reset() {
+	*x = UploadAvatarResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadAvatarResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadAvatarResponse) ProtoMessage() {}
+
+func (x *UploadAvatarResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UploadAvatarResponse) GetUser() *User {
+	if x != nil {
+		return x.xxx_hidden_User
+	}
+	return nil
+}
+
+func (x *UploadAvatarResponse) SetUser(v *User) {
+	x.xxx_hidden_User = v
+}
+
+func (x *UploadAvatarResponse) HasUser() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_User != nil
+}
+
+func (x *UploadAvatarResponse) ClearUser() {
+	x.xxx_hidden_User = nil
+}
+
+type UploadAvatarResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The user, with the new avatar.
+	User *User
+}
+
+func (b0 UploadAvatarResponse_builder) Build() *UploadAvatarResponse {
+	m0 := &UploadAvatarResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_User = b.User
+	return m0
+}
+
+type DeleteAvatarRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAvatarRequest) Reset() {
+	*x = DeleteAvatarRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAvatarRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAvatarRequest) ProtoMessage() {}
+
+func (x *DeleteAvatarRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type DeleteAvatarRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 DeleteAvatarRequest_builder) Build() *DeleteAvatarRequest {
+	m0 := &DeleteAvatarRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type DeleteAvatarResponse struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_User *User                  `protobuf:"bytes,1,opt,name=user,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeleteAvatarResponse) Reset() {
+	*x = DeleteAvatarResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAvatarResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAvatarResponse) ProtoMessage() {}
+
+func (x *DeleteAvatarResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DeleteAvatarResponse) GetUser() *User {
+	if x != nil {
+		return x.xxx_hidden_User
+	}
+	return nil
+}
+
+func (x *DeleteAvatarResponse) SetUser(v *User) {
+	x.xxx_hidden_User = v
+}
+
+func (x *DeleteAvatarResponse) HasUser() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_User != nil
+}
+
+func (x *DeleteAvatarResponse) ClearUser() {
+	x.xxx_hidden_User = nil
+}
+
+type DeleteAvatarResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The user, without an avatar.
+	User *User
+}
+
+func (b0 DeleteAvatarResponse_builder) Build() *DeleteAvatarResponse {
+	m0 := &DeleteAvatarResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_User = b.User
+	return m0
+}
+
 var File_users_v1_users_proto protoreflect.FileDescriptor
 
 const file_users_v1_users_proto_rawDesc = "" +
@@ -782,16 +1026,25 @@ const file_users_v1_users_proto_rawDesc = "" +
 	"\x06tokens\x18\x01 \x03(\v2\x12.users.v1.APITokenR\x06tokens\"'\n" +
 	"\x15DeleteAPITokenRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
-	"\x16DeleteAPITokenResponse2\xf6\x02\n" +
+	"\x16DeleteAPITokenResponse\")\n" +
+	"\x13UploadAvatarRequest\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\":\n" +
+	"\x14UploadAvatarResponse\x12\"\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user\"\x15\n" +
+	"\x13DeleteAvatarRequest\":\n" +
+	"\x14DeleteAvatarResponse\x12\"\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user2\xa4\x04\n" +
 	"\vUserService\x12S\n" +
 	"\x0eGetCurrentUser\x12\x1f.users.v1.GetCurrentUserRequest\x1a .users.v1.GetCurrentUserResponse\x12[\n" +
 	"\x0eCreateAPIToken\x12\x1f.users.v1.CreateAPITokenRequest\x1a .users.v1.CreateAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12X\n" +
 	"\rListAPITokens\x12\x1e.users.v1.ListAPITokensRequest\x1a\x1f.users.v1.ListAPITokensResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12[\n" +
-	"\x0eDeleteAPIToken\x12\x1f.users.v1.DeleteAPITokenRequest\x1a .users.v1.DeleteAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01B\x9a\x01\n" +
+	"\x0eDeleteAPIToken\x12\x1f.users.v1.DeleteAPITokenRequest\x1a .users.v1.DeleteAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12U\n" +
+	"\fUploadAvatar\x12\x1d.users.v1.UploadAvatarRequest\x1a\x1e.users.v1.UploadAvatarResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12U\n" +
+	"\fDeleteAvatar\x12\x1d.users.v1.DeleteAvatarRequest\x1a\x1e.users.v1.DeleteAvatarResponse\"\x06\xa2\x9f\x19\x02\b\x01B\x9a\x01\n" +
 	"\fcom.users.v1B\n" +
 	"UsersProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/users/v1;usersv1\xa2\x02\x03UXX\xaa\x02\bUsers.V1\xca\x02\bUsers\\V1\xe2\x02\x14Users\\V1\\GPBMetadata\xea\x02\tUsers::V1b\x06proto3"
 
-var file_users_v1_users_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_users_v1_users_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_users_v1_users_proto_goTypes = []any{
 	(*User)(nil),                   // 0: users.v1.User
 	(*GetCurrentUserRequest)(nil),  // 1: users.v1.GetCurrentUserRequest
@@ -803,27 +1056,37 @@ var file_users_v1_users_proto_goTypes = []any{
 	(*ListAPITokensResponse)(nil),  // 7: users.v1.ListAPITokensResponse
 	(*DeleteAPITokenRequest)(nil),  // 8: users.v1.DeleteAPITokenRequest
 	(*DeleteAPITokenResponse)(nil), // 9: users.v1.DeleteAPITokenResponse
-	(*timestamppb.Timestamp)(nil),  // 10: google.protobuf.Timestamp
+	(*UploadAvatarRequest)(nil),    // 10: users.v1.UploadAvatarRequest
+	(*UploadAvatarResponse)(nil),   // 11: users.v1.UploadAvatarResponse
+	(*DeleteAvatarRequest)(nil),    // 12: users.v1.DeleteAvatarRequest
+	(*DeleteAvatarResponse)(nil),   // 13: users.v1.DeleteAvatarResponse
+	(*timestamppb.Timestamp)(nil),  // 14: google.protobuf.Timestamp
 }
 var file_users_v1_users_proto_depIdxs = []int32{
 	0,  // 0: users.v1.GetCurrentUserResponse.user:type_name -> users.v1.User
-	10, // 1: users.v1.APIToken.create_time:type_name -> google.protobuf.Timestamp
-	10, // 2: users.v1.APIToken.last_used_time:type_name -> google.protobuf.Timestamp
+	14, // 1: users.v1.APIToken.create_time:type_name -> google.protobuf.Timestamp
+	14, // 2: users.v1.APIToken.last_used_time:type_name -> google.protobuf.Timestamp
 	3,  // 3: users.v1.CreateAPITokenResponse.token:type_name -> users.v1.APIToken
 	3,  // 4: users.v1.ListAPITokensResponse.tokens:type_name -> users.v1.APIToken
-	1,  // 5: users.v1.UserService.GetCurrentUser:input_type -> users.v1.GetCurrentUserRequest
-	4,  // 6: users.v1.UserService.CreateAPIToken:input_type -> users.v1.CreateAPITokenRequest
-	6,  // 7: users.v1.UserService.ListAPITokens:input_type -> users.v1.ListAPITokensRequest
-	8,  // 8: users.v1.UserService.DeleteAPIToken:input_type -> users.v1.DeleteAPITokenRequest
-	2,  // 9: users.v1.UserService.GetCurrentUser:output_type -> users.v1.GetCurrentUserResponse
-	5,  // 10: users.v1.UserService.CreateAPIToken:output_type -> users.v1.CreateAPITokenResponse
-	7,  // 11: users.v1.UserService.ListAPITokens:output_type -> users.v1.ListAPITokensResponse
-	9,  // 12: users.v1.UserService.DeleteAPIToken:output_type -> users.v1.DeleteAPITokenResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	0,  // 5: users.v1.UploadAvatarResponse.user:type_name -> users.v1.User
+	0,  // 6: users.v1.DeleteAvatarResponse.user:type_name -> users.v1.User
+	1,  // 7: users.v1.UserService.GetCurrentUser:input_type -> users.v1.GetCurrentUserRequest
+	4,  // 8: users.v1.UserService.CreateAPIToken:input_type -> users.v1.CreateAPITokenRequest
+	6,  // 9: users.v1.UserService.ListAPITokens:input_type -> users.v1.ListAPITokensRequest
+	8,  // 10: users.v1.UserService.DeleteAPIToken:input_type -> users.v1.DeleteAPITokenRequest
+	10, // 11: users.v1.UserService.UploadAvatar:input_type -> users.v1.UploadAvatarRequest
+	12, // 12: users.v1.UserService.DeleteAvatar:input_type -> users.v1.DeleteAvatarRequest
+	2,  // 13: users.v1.UserService.GetCurrentUser:output_type -> users.v1.GetCurrentUserResponse
+	5,  // 14: users.v1.UserService.CreateAPIToken:output_type -> users.v1.CreateAPITokenResponse
+	7,  // 15: users.v1.UserService.ListAPITokens:output_type -> users.v1.ListAPITokensResponse
+	9,  // 16: users.v1.UserService.DeleteAPIToken:output_type -> users.v1.DeleteAPITokenResponse
+	11, // 17: users.v1.UserService.UploadAvatar:output_type -> users.v1.UploadAvatarResponse
+	13, // 18: users.v1.UserService.DeleteAvatar:output_type -> users.v1.DeleteAvatarResponse
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_users_v1_users_proto_init() }
@@ -837,7 +1100,7 @@ func file_users_v1_users_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_v1_users_proto_rawDesc), len(file_users_v1_users_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

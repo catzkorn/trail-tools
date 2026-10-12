@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file users/v1/users.proto.
  */
 export const file_users_v1_users: GenFile = /*@__PURE__*/
-  fileDesc("ChR1c2Vycy92MS91c2Vycy5wcm90bxIIdXNlcnMudjEiewoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJEhIKCmdpdmVuX25hbWUYBCABKAkSEwoLZmFtaWx5X25hbWUYBSABKAkSEgoKYXZhdGFyX3VybBgGIAEoCRINCgVhZG1pbhgHIAEoCCIXChVHZXRDdXJyZW50VXNlclJlcXVlc3QiNgoWR2V0Q3VycmVudFVzZXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlciKJAQoIQVBJVG9rZW4SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIvCgtjcmVhdGVfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMgoObGFzdF91c2VkX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiUKFUNyZWF0ZUFQSVRva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJIksKFkNyZWF0ZUFQSVRva2VuUmVzcG9uc2USIQoFdG9rZW4YASABKAsyEi51c2Vycy52MS5BUElUb2tlbhIOCgZzZWNyZXQYAiABKAkiFgoUTGlzdEFQSVRva2Vuc1JlcXVlc3QiOwoVTGlzdEFQSVRva2Vuc1Jlc3BvbnNlEiIKBnRva2VucxgBIAMoCzISLnVzZXJzLnYxLkFQSVRva2VuIiMKFURlbGV0ZUFQSVRva2VuUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVBUElUb2tlblJlc3BvbnNlMvYCCgtVc2VyU2VydmljZRJTCg5HZXRDdXJyZW50VXNlchIfLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVxdWVzdBogLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVzcG9uc2USWwoOQ3JlYXRlQVBJVG9rZW4SHy51c2Vycy52MS5DcmVhdGVBUElUb2tlblJlcXVlc3QaIC51c2Vycy52MS5DcmVhdGVBUElUb2tlblJlc3BvbnNlIgainxkCCAESWAoNTGlzdEFQSVRva2VucxIeLnVzZXJzLnYxLkxpc3RBUElUb2tlbnNSZXF1ZXN0Gh8udXNlcnMudjEuTGlzdEFQSVRva2Vuc1Jlc3BvbnNlIgainxkCCAESWwoORGVsZXRlQVBJVG9rZW4SHy51c2Vycy52MS5EZWxldGVBUElUb2tlblJlcXVlc3QaIC51c2Vycy52MS5EZWxldGVBUElUb2tlblJlc3BvbnNlIgainxkCCAFCmgEKDGNvbS51c2Vycy52MUIKVXNlcnNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi91c2Vycy92MTt1c2Vyc3YxogIDVVhYqgIIVXNlcnMuVjHKAghVc2Vyc1xWMeICFFVzZXJzXFYxXEdQQk1ldGFkYXRh6gIJVXNlcnM6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChR1c2Vycy92MS91c2Vycy5wcm90bxIIdXNlcnMudjEiewoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIMCgRuYW1lGAMgASgJEhIKCmdpdmVuX25hbWUYBCABKAkSEwoLZmFtaWx5X25hbWUYBSABKAkSEgoKYXZhdGFyX3VybBgGIAEoCRINCgVhZG1pbhgHIAEoCCIXChVHZXRDdXJyZW50VXNlclJlcXVlc3QiNgoWR2V0Q3VycmVudFVzZXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlciKJAQoIQVBJVG9rZW4SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIvCgtjcmVhdGVfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMgoObGFzdF91c2VkX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiUKFUNyZWF0ZUFQSVRva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJIksKFkNyZWF0ZUFQSVRva2VuUmVzcG9uc2USIQoFdG9rZW4YASABKAsyEi51c2Vycy52MS5BUElUb2tlbhIOCgZzZWNyZXQYAiABKAkiFgoUTGlzdEFQSVRva2Vuc1JlcXVlc3QiOwoVTGlzdEFQSVRva2Vuc1Jlc3BvbnNlEiIKBnRva2VucxgBIAMoCzISLnVzZXJzLnYxLkFQSVRva2VuIiMKFURlbGV0ZUFQSVRva2VuUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVBUElUb2tlblJlc3BvbnNlIiMKE1VwbG9hZEF2YXRhclJlcXVlc3QSDAoEZGF0YRgBIAEoDCI0ChRVcGxvYWRBdmF0YXJSZXNwb25zZRIcCgR1c2VyGAEgASgLMg4udXNlcnMudjEuVXNlciIVChNEZWxldGVBdmF0YXJSZXF1ZXN0IjQKFERlbGV0ZUF2YXRhclJlc3BvbnNlEhwKBHVzZXIYASABKAsyDi51c2Vycy52MS5Vc2VyMqQECgtVc2VyU2VydmljZRJTCg5HZXRDdXJyZW50VXNlchIfLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVxdWVzdBogLnVzZXJzLnYxLkdldEN1cnJlbnRVc2VyUmVzcG9uc2USWwoOQ3JlYXRlQVBJVG9rZW4SHy51c2Vycy52MS5DcmVhdGVBUElUb2tlblJlcXVlc3QaIC51c2Vycy52MS5DcmVhdGVBUElUb2tlblJlc3BvbnNlIgainxkCCAESWAoNTGlzdEFQSVRva2VucxIeLnVzZXJzLnYxLkxpc3RBUElUb2tlbnNSZXF1ZXN0Gh8udXNlcnMudjEuTGlzdEFQSVRva2Vuc1Jlc3BvbnNlIgainxkCCAESWwoORGVsZXRlQVBJVG9rZW4SHy51c2Vycy52MS5EZWxldGVBUElUb2tlblJlcXVlc3QaIC51c2Vycy52MS5EZWxldGVBUElUb2tlblJlc3BvbnNlIgainxkCCAESVQoMVXBsb2FkQXZhdGFyEh0udXNlcnMudjEuVXBsb2FkQXZhdGFyUmVxdWVzdBoeLnVzZXJzLnYxLlVwbG9hZEF2YXRhclJlc3BvbnNlIgainxkCCAESVQoMRGVsZXRlQXZhdGFyEh0udXNlcnMudjEuRGVsZXRlQXZhdGFyUmVxdWVzdBoeLnVzZXJzLnYxLkRlbGV0ZUF2YXRhclJlc3BvbnNlIgainxkCCAFCmgEKDGNvbS51c2Vycy52MUIKVXNlcnNQcm90b1ABWj1naXRodWIuY29tL2NhdHprb3JuL3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi91c2Vycy92MTt1c2Vyc3YxogIDVVhYqgIIVXNlcnMuVjHKAghVc2Vyc1xWMeICFFVzZXJzXFYxXEdQQk1ldGFkYXRh6gIJVXNlcnM6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * @generated from message users.v1.User
@@ -45,6 +45,9 @@ export type User = Message<"users.v1.User"> & {
   familyName: string;
 
   /**
+   * The URL of the user's avatar image, relative to the site. Empty if the
+   * user has no avatar.
+   *
    * @generated from field: string avatar_url = 6;
    */
   avatarUrl: string;
@@ -246,6 +249,76 @@ export const DeleteAPITokenResponseSchema: GenMessage<DeleteAPITokenResponse> = 
   messageDesc(file_users_v1_users, 9);
 
 /**
+ * @generated from message users.v1.UploadAvatarRequest
+ */
+export type UploadAvatarRequest = Message<"users.v1.UploadAvatarRequest"> & {
+  /**
+   * The picture, a JPEG, PNG or WebP image.
+   *
+   * @generated from field: bytes data = 1;
+   */
+  data: Uint8Array;
+};
+
+/**
+ * Describes the message users.v1.UploadAvatarRequest.
+ * Use `create(UploadAvatarRequestSchema)` to create a new message.
+ */
+export const UploadAvatarRequestSchema: GenMessage<UploadAvatarRequest> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 10);
+
+/**
+ * @generated from message users.v1.UploadAvatarResponse
+ */
+export type UploadAvatarResponse = Message<"users.v1.UploadAvatarResponse"> & {
+  /**
+   * The user, with the new avatar.
+   *
+   * @generated from field: users.v1.User user = 1;
+   */
+  user?: User | undefined;
+};
+
+/**
+ * Describes the message users.v1.UploadAvatarResponse.
+ * Use `create(UploadAvatarResponseSchema)` to create a new message.
+ */
+export const UploadAvatarResponseSchema: GenMessage<UploadAvatarResponse> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 11);
+
+/**
+ * @generated from message users.v1.DeleteAvatarRequest
+ */
+export type DeleteAvatarRequest = Message<"users.v1.DeleteAvatarRequest"> & {
+};
+
+/**
+ * Describes the message users.v1.DeleteAvatarRequest.
+ * Use `create(DeleteAvatarRequestSchema)` to create a new message.
+ */
+export const DeleteAvatarRequestSchema: GenMessage<DeleteAvatarRequest> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 12);
+
+/**
+ * @generated from message users.v1.DeleteAvatarResponse
+ */
+export type DeleteAvatarResponse = Message<"users.v1.DeleteAvatarResponse"> & {
+  /**
+   * The user, without an avatar.
+   *
+   * @generated from field: users.v1.User user = 1;
+   */
+  user?: User | undefined;
+};
+
+/**
+ * Describes the message users.v1.DeleteAvatarResponse.
+ * Use `create(DeleteAvatarResponseSchema)` to create a new message.
+ */
+export const DeleteAvatarResponseSchema: GenMessage<DeleteAvatarResponse> = /*@__PURE__*/
+  messageDesc(file_users_v1_users, 13);
+
+/**
  * UserService provides information about the signed in user.
  *
  * @generated from service users.v1.UserService
@@ -291,6 +364,27 @@ export const UserService: GenService<{
     methodKind: "unary";
     input: typeof DeleteAPITokenRequestSchema;
     output: typeof DeleteAPITokenResponseSchema;
+  },
+  /**
+   * Upload a picture to use as the user's avatar, replacing any previous
+   * one. The middle square of the picture is used.
+   *
+   * @generated from rpc users.v1.UserService.UploadAvatar
+   */
+  uploadAvatar: {
+    methodKind: "unary";
+    input: typeof UploadAvatarRequestSchema;
+    output: typeof UploadAvatarResponseSchema;
+  },
+  /**
+   * Remove the user's avatar.
+   *
+   * @generated from rpc users.v1.UserService.DeleteAvatar
+   */
+  deleteAvatar: {
+    methodKind: "unary";
+    input: typeof DeleteAvatarRequestSchema;
+    output: typeof DeleteAvatarResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_users_v1_users, 0);
