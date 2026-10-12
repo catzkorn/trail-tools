@@ -37,8 +37,7 @@ import {
 } from "./race-day-utils";
 import RaceDayVisuals from "./race-day-visuals";
 import SplitDialog from "./split-dialog";
-import type { PlanRef } from "./use-race-day";
-import { useRaceDay } from "./use-race-day";
+import type { RaceDayState } from "./use-race-day";
 
 interface UndoAction {
   message: string;
@@ -143,7 +142,11 @@ const Summary: React.FC<SummaryProps> = ({ status, totalMeters, now }) => {
 };
 
 interface RaceDayPanelProps {
-  planRef: PlanRef;
+  /**
+   * The race day state from useRaceDay, which the page calls so the status
+   * loads alongside the plan.
+   */
+  raceDay: RaceDayState;
   plan: RacePlan;
   race: Race | undefined;
   course: RoutePoint[];
@@ -157,13 +160,12 @@ interface RaceDayPanelProps {
  * all checkpoint times, the LiveTrack link and the runner's position.
  */
 const RaceDayPanel: React.FC<RaceDayPanelProps> = ({
-  planRef,
+  raceDay,
   plan,
   race,
   course,
   shared,
 }) => {
-  const raceDay = useRaceDay(planRef);
   const now = useNow();
   const [expanded, setExpanded] = useState<boolean | null>(null);
   const [editing, setEditing] = useState<CheckpointEstimate | null>(null);

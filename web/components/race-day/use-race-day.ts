@@ -1,5 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import type { ConnectError } from "@connectrpc/connect";
+import { Code } from "@connectrpc/connect";
 import {
   createConnectQueryKey,
   useMutation,
@@ -38,9 +39,17 @@ export interface RaceDayState {
   saveSplit: (split: CheckpointSplit) => Promise<void>;
 }
 
+// Gone reports whether the plan doesn't exist or is no longer shared.
+const gone = (err: ConnectError | null): boolean =>
+  err?.code === Code.InvalidArgument ||
+  err?.code === Code.NotFound ||
+  err?.code === Code.PermissionDenied;
+
 /**
  * UseRaceDay loads the race day status, polling every minute and on window
- * focus, and saves race day updates into the query cache.
+ * focus, and saves race day updates into the query cache. Pages call it next
+ * to their plan query so both load together. It stops polling once the plan
+ * turns out to be gone, which the page reports.
  */
 export const useRaceDay = (ref: PlanRef): RaceDayState => {
   const queryClient = useQueryClient();
@@ -50,8 +59,10 @@ export const useRaceDay = (ref: PlanRef): RaceDayState => {
       ? { plan: { case: "planId" as const, value: ref.planId } }
       : { plan: { case: "shareToken" as const, value: ref.shareToken } };
   const query = useQuery(getRaceDayStatus, input, {
-    refetchInterval: 60 * 1000,
+    refetchInterval: (statusQuery) =>
+      gone(statusQuery.state.error) ? false : 60 * 1000,
     refetchOnWindowFocus: true,
+    retry: (failureCount, err) => !gone(err) && failureCount < 3,
   });
   const update = useMutation(updateRaceDay);
   const updateSplit = useMutation(setCheckpointSplit);

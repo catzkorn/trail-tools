@@ -1,5 +1,6 @@
 import Loading from "@components/loading";
 import RaceDayPanel from "@components/race-day/race-day-panel";
+import { useRaceDay } from "@components/race-day/use-race-day";
 import PlanDocument, { RaceHeader } from "@components/race-plan/plan-document";
 import QueryError from "@components/ui/query-error";
 import { secondaryButton } from "@components/ui/styles";
@@ -27,6 +28,7 @@ const SharedRacePlanPage: React.FC = () => {
         failureCount < 3,
     }
   );
+  const raceDay = useRaceDay({ planId: "", shareToken: token });
 
   if (isPending) {
     return <Loading />;
@@ -76,7 +78,7 @@ const SharedRacePlanPage: React.FC = () => {
         </button>
       </div>
       <RaceDayPanel
-        planRef={{ planId: "", shareToken: token }}
+        raceDay={raceDay}
         plan={plan}
         race={race}
         course={course}
