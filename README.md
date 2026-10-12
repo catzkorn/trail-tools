@@ -52,9 +52,10 @@ To start Postgres and run the server locally, use:
 $ make run
 ```
 
-On a database without an administrator, this opens
-http://localhost:8080/invite/local-admin to create the administrator account
-with a passkey (`make watch` does too). Trail Tools is invite only: invite
+On a database without an administrator, opening http://localhost:8080 on the
+same machine goes to the invitation to create the administrator account with a
+passkey (`make watch` works the same way). It's
+http://localhost:8080/invite/local-admin, if you need the link. Trail Tools is invite only: invite
 other users, or yourself to add a passkey on another device, from the settings
 page.
 

@@ -535,7 +535,9 @@ func run(
 	mux.Handle("/img/", fileServer)
 	// For all other requests, serve the contents of index.html
 	indexHandler := html.ServeIndexHTML(serveDir != "")
-	mux.Handle("/", indexHandler)
+	// A local server without an administrator sends its first visitor to
+	// the invitation to create one.
+	mux.Handle("/", authService.BootstrapHandler(indexHandler))
 	// Serve the OAuth endpoints, with the frontend's consent page for valid
 	// authorization requests.
 	oauthServer.RegisterHandlers(mux, indexHandler)

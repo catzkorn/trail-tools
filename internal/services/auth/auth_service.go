@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -411,6 +413,49 @@ func (s *Service) isBootstrap(ctx context.Context, token string) (bool, error) {
 		return false, err
 	}
 	return !hasAdmin, nil
+}
+
+// BootstrapHandler sends visitors of the home page to the invitation to
+// create the first administrator, while there is none, if they are on the
+// same machine as the server. This way, whichever browser opens a local
+// server, e.g. the one of an editor, creates the administrator, and the
+// bootstrap token isn't revealed to anyone else. Other requests are served
+// by next.
+func (s *Service) BootstrapHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.bootstrapToken != "" && r.Method == http.MethodGet && r.URL.Path == "/" && isLocal(r) {
+			hasAdmin, err := s.repo.HasAdmin(r.Context())
+			switch {
+			case err != nil:
+				s.log.ErrorContext(r.Context(), "Failed to check for administrators", slogor.Err(err))
+			case !hasAdmin:
+				http.Redirect(w, r, "/invite/"+url.PathEscape(s.bootstrapToken), http.StatusFound)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// isLocal returns whether a request comes from the same machine, for a
+// local address.
+func isLocal(r *http.Request) bool {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return false
+	}
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return false
+	}
+	name := r.Host
+	if h, _, err := net.SplitHostPort(r.Host); err == nil {
+		name = h
+	}
+	if name == "localhost" || strings.HasSuffix(name, ".localhost") {
+		return true
+	}
+	ip := net.ParseIP(name)
+	return ip != nil && ip.IsLoopback()
 }
 
 // userHandle returns the WebAuthn user handle and name of an existing user.
