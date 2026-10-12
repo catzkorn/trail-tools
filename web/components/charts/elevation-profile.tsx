@@ -259,9 +259,12 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
   }
   const elevationRange = Math.max(maxElevation - minElevation, 50);
   const elevationStep = chooseStep(elevationRange * 1.2, 4, ELEVATION_STEPS);
-  const yMin =
+  // The axis only goes below sea level when the profile does.
+  const yMin = Math.max(
     Math.floor((minElevation - elevationRange * 0.05) / elevationStep) *
-    elevationStep;
+      elevationStep,
+    Math.min(minElevation, 0)
+  );
   const yMax =
     Math.ceil((maxElevation + elevationRange * 0.05) / elevationStep) *
     elevationStep;
