@@ -112,7 +112,7 @@ const SignInDialog: React.FC = () => {
             <button
               type="button"
               disabled={pending}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:opacity-50"
               onClick={signIn}
             >
               <KeyIcon className="size-5" />

@@ -62,7 +62,7 @@ const Targets: React.FC<TargetsProps> = ({ actual, target, planned }) => (
       target={target.distanceMeters}
       planned={planned?.distanceMeters ?? 0}
       format={km}
-      barClass="bg-emerald-500"
+      barClass="bg-brand-500"
     />
     <TargetRow
       label="Gain"

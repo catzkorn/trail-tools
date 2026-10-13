@@ -192,7 +192,7 @@ const RaceRow: React.FC<RaceRowProps> = ({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             {dayLabel !== undefined && (
-              <p className="text-[11px] font-semibold tracking-wide text-emerald-700 uppercase">
+              <p className="text-[11px] font-semibold tracking-wide text-brand-600 uppercase">
                 {dayLabel}
               </p>
             )}
@@ -390,7 +390,7 @@ const EventGroup: React.FC<EventGroupProps> = ({
       : undefined;
 
   return (
-    <li className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-2">
+    <li className="flex flex-col gap-2 rounded-lg border border-brand-200 bg-brand-50/50 p-2">
       <div className="flex items-start justify-between gap-2 px-1 pt-1">
         <div className="min-w-0">
           <h3 className="leading-snug font-semibold text-gray-900">

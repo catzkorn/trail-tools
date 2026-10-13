@@ -137,7 +137,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
                 description="Everything goes right"
                 seconds={goals.aFinishSeconds}
                 distanceMeters={distanceMeters}
-                className="border-emerald-300 bg-emerald-50 text-emerald-900"
+                className="border-brand-300 bg-brand-50 text-brand-800"
               />
               <GoalCard
                 label="B goal"

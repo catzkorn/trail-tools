@@ -6,6 +6,17 @@
   --color-ink: #111111;
   --color-ember: #d2601a;
   --color-ember-dark: #b4500f;
+  /* The burnt orange as a scale, for tints and text: 500 is ember. */
+  --color-brand-50: #fdf4ec;
+  --color-brand-100: #fbe6d4;
+  --color-brand-200: #f5c9a6;
+  --color-brand-300: #eda56f;
+  --color-brand-400: #e2803f;
+  --color-brand-500: #d2601a;
+  --color-brand-600: #b4500f;
+  --color-brand-700: #8f400d;
+  --color-brand-800: #6f3410;
+  --color-brand-900: #592b10;
   --font-brand: "Lexend Giga", ui-sans-serif, system-ui, sans-serif;
   --font-ui: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --color-google-text-gray: #3c4043;

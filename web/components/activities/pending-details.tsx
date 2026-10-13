@@ -91,7 +91,7 @@ const PendingDetails: React.FC<PendingDetailsProps> = ({ activityId }) => {
         Detailed data for this activity has not been synced yet.{" "}
         <Link
           to="/settings"
-          className="font-medium text-emerald-700 hover:underline"
+          className="font-medium text-brand-600 hover:underline"
         >
           Connect Strava
         </Link>{" "}

@@ -195,7 +195,7 @@ const McpInstructions: React.FC = () => {
             href="https://modelcontextprotocol.io"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-emerald-700 hover:underline"
+            className="font-medium text-brand-600 hover:underline"
           >
             MCP server
           </a>

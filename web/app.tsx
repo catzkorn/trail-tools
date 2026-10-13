@@ -54,7 +54,7 @@ const RequireUser: React.FC<RequireUserProps> = ({ user, children }) => {
 const NotFound: React.FC = () => (
   <div className="flex grow flex-col items-center gap-2 py-10">
     <h1 className="text-xl font-semibold">Page not found</h1>
-    <Link to="/" className="text-emerald-700 hover:underline">
+    <Link to="/" className="text-brand-600 hover:underline">
       Back to the dashboard
     </Link>
   </div>

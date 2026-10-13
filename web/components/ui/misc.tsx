@@ -92,7 +92,7 @@ interface ProgressBarProps {
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   value,
   target,
-  className = "bg-emerald-500",
+  className = "bg-brand-500",
 }) => {
   if (target <= 0) {
     return null;

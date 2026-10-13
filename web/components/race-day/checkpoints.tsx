@@ -131,7 +131,7 @@ export const NextCheckpoint: React.FC<NextCheckpointProps> = ({
         <button
           type="button"
           disabled={saving || estimate.arrivalRecorded}
-          className="h-14 rounded-lg bg-emerald-700 text-lg font-semibold text-white shadow active:bg-emerald-800 disabled:opacity-40"
+          className="h-14 rounded-lg bg-ink text-lg font-semibold text-white shadow active:bg-neutral-800 disabled:opacity-40"
           onClick={onArrived}
         >
           {finish ? "Finished now" : "Arrived now"}

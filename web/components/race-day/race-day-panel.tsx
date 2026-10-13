@@ -133,7 +133,7 @@ const Summary: React.FC<SummaryProps> = ({ status, totalMeters, now }) => {
           <ProgressBar
             value={status.estimatedDistanceMeters}
             target={totalMeters}
-            className="bg-emerald-500"
+            className="bg-brand-500"
           />
         )}
       </div>
@@ -211,7 +211,7 @@ const RaceDayPanel: React.FC<RaceDayPanelProps> = ({
         className={`${cardClass} flex flex-wrap items-center justify-between gap-3 p-4 print:hidden`}
       >
         <div className="flex items-start gap-3">
-          <SignalIcon className="mt-0.5 size-6 shrink-0 text-emerald-700" />
+          <SignalIcon className="mt-0.5 size-6 shrink-0 text-brand-600" />
           <div>
             <h2 className="font-semibold text-gray-900">Race day tracking</h2>
             <p className="text-sm text-gray-600">
@@ -276,7 +276,7 @@ const RaceDayPanel: React.FC<RaceDayPanelProps> = ({
       <div className={`${cardClass} flex flex-col gap-3 p-4`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <SignalIcon className="size-5 text-emerald-700" />
+            <SignalIcon className="size-5 text-brand-600" />
             Race day
           </h2>
           <button

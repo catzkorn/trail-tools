@@ -214,7 +214,7 @@ export const GearSection: React.FC<SectionComponentProps> = ({
                       checked={item.packed}
                       disabled={onSave === undefined || toggling}
                       aria-label={`Packed ${item.name}`}
-                      className="mt-0.5 size-4 accent-emerald-700"
+                      className="mt-0.5 size-4 accent-brand-700"
                       onChange={(event) => {
                         togglePacked(item, event.target.checked);
                       }}
@@ -497,13 +497,13 @@ export const RaceMorningSection: React.FC<SectionComponentProps> = ({
         <EmptyText>No race morning timeline yet.</EmptyText>
       )}
       {!edit.editing && plan.raceMorning.length > 0 && (
-        <ol className="relative flex flex-col gap-2 border-l-2 border-emerald-200 pl-4">
+        <ol className="relative flex flex-col gap-2 border-l-2 border-brand-200 pl-4">
           {plan.raceMorning.map((item) => (
             <li
               key={`${item.time}-${item.description}`}
               className="relative text-sm"
             >
-              <span className="absolute top-1.5 -left-[1.3rem] size-2.5 rounded-full bg-emerald-600" />
+              <span className="absolute top-1.5 -left-[1.3rem] size-2.5 rounded-full bg-ink" />
               <span className="mr-2 font-semibold text-gray-900 tabular-nums">
                 {item.time}
               </span>

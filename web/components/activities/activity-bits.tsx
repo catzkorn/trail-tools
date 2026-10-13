@@ -14,7 +14,7 @@ export const ActivityChip: React.FC<ActivityChipProps> = ({ activity }) => (
   <Link
     to={`/activities/${activity.id}`}
     title={`${activity.name} (${sportLabel(activity.sportType)}, ${formatHoursMinutes(activity.movingTimeSeconds)})`}
-    className="flex flex-col rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] leading-tight text-gray-700 hover:border-emerald-500 hover:bg-emerald-50"
+    className="flex flex-col rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] leading-tight text-gray-700 hover:border-brand-500 hover:bg-brand-50"
   >
     <span className="truncate font-medium">{activity.name}</span>
     <span className="tabular-nums text-gray-500">
@@ -78,7 +78,7 @@ export const RouteThumbnail: React.FC<RouteThumbnailProps> = ({
     <svg
       width={size}
       height={size}
-      className="shrink-0 rounded bg-emerald-50"
+      className="shrink-0 rounded bg-brand-50"
       aria-hidden="true"
     >
       <polyline

@@ -437,7 +437,7 @@ const ForecastPage: React.FC = () => {
                 <input
                   type="file"
                   accept=".gpx,application/gpx+xml"
-                  className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-emerald-800 hover:file:bg-emerald-100"
+                  className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-brand-700 hover:file:bg-brand-100"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file !== undefined) {
@@ -451,7 +451,7 @@ const ForecastPage: React.FC = () => {
           {mode === "route" && routeId !== "" && (
             <Link
               to={`/routes/${routeId}`}
-              className="-mt-2 text-xs text-emerald-700 hover:underline"
+              className="-mt-2 text-xs text-brand-600 hover:underline"
             >
               View route
             </Link>

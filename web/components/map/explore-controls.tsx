@@ -30,7 +30,7 @@ const Toggle: React.FC<ToggleProps> = ({ label, checked, onChange, note }) => (
   <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-800">
     <input
       type="checkbox"
-      className="size-3.5 accent-emerald-700"
+      className="size-3.5 accent-brand-700"
       checked={checked}
       onChange={(event) => {
         onChange(event.target.checked);
@@ -123,7 +123,7 @@ const PlaceSearch: React.FC = () => {
             >
               <button
                 type="button"
-                className="w-full px-2 py-1.5 text-left hover:bg-emerald-50"
+                className="w-full px-2 py-1.5 text-left hover:bg-brand-50"
                 onClick={() => {
                   goTo(place);
                 }}

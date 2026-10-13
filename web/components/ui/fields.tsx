@@ -136,7 +136,7 @@ export const CheckboxField: React.FC<CheckboxFieldProps> = ({
     <input
       type="checkbox"
       checked={checked}
-      className="size-4 rounded border-gray-300 accent-emerald-700"
+      className="size-4 rounded border-gray-300 accent-brand-700"
       onChange={(event) => {
         onChange(event.target.checked);
       }}

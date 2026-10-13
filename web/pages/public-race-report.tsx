@@ -92,7 +92,7 @@ const PublicRaceReportPage: React.FC = () => {
         </div>
       )}
       <header className="flex flex-col gap-2 text-center">
-        <p className="text-sm font-medium tracking-wide text-emerald-700 uppercase">
+        <p className="text-sm font-medium tracking-wide text-brand-600 uppercase">
           Race report · {report.raceName}
         </p>
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">

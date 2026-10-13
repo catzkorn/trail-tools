@@ -97,7 +97,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           role="radio"
           aria-checked={mode === option.value}
           title={option.description}
-          className={`px-2 py-1 text-xs font-medium ${mode === option.value ? "bg-emerald-700 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+          className={`px-2 py-1 text-xs font-medium ${mode === option.value ? "bg-ink text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
           onClick={() => {
             onModeChange(option.value);
           }}
@@ -195,7 +195,7 @@ export const LiveStats: React.FC<LiveStatsProps> = ({ stats, updating }) => (
       </span>
     )}
     {updating && (
-      <span className="size-3 animate-spin rounded-full border-2 border-emerald-700 border-t-transparent" />
+      <span className="size-3 animate-spin rounded-full border-2 border-brand-700 border-t-transparent" />
     )}
   </div>
 );

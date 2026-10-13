@@ -84,7 +84,7 @@ const PublicProfilePage: React.FC = () => {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-16">
       <header className="flex flex-col items-center gap-3 pt-6 text-center sm:pt-10">
-        <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-sky-700 text-2xl font-bold text-white shadow-md">
+        <div className="flex size-20 items-center justify-center rounded-full bg-ink text-2xl font-bold text-white shadow-[0_0_0_4px_#ffffff,0_0_0_8px_var(--color-ember)]">
           {initials(profile.displayName)}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">

@@ -93,7 +93,7 @@ export const RaceHeader: React.FC<RaceHeaderProps> = ({ race, children }) => {
             href={race.websiteUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-emerald-700 hover:underline print:hidden"
+            className="text-brand-600 hover:underline print:hidden"
           >
             Race website
           </a>

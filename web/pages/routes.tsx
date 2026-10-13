@@ -40,7 +40,7 @@ const RoutesPage: React.FC = () => {
           <Link
             key={route.id}
             to={`/routes/${route.id}`}
-            className={`${cardClass} flex flex-col gap-2 p-4 hover:border-emerald-400`}
+            className={`${cardClass} flex flex-col gap-2 p-4 hover:border-brand-400`}
           >
             <div className="flex items-start justify-between gap-2">
               <h2 className="font-semibold text-gray-900">{route.name}</h2>

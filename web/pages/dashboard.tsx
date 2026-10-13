@@ -395,7 +395,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-        <TrophyIcon className="size-6 text-emerald-700" />
+        <TrophyIcon className="size-6 text-brand-600" />
         Hi {user.givenName === "" ? user.name : user.givenName}
       </h1>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

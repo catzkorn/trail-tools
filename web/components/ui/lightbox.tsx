@@ -341,7 +341,7 @@ const Lightbox = <Photo extends LightboxPhoto>({
                 {photo.location !== undefined && onShowOnMap !== undefined && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-emerald-300 hover:text-emerald-200"
+                    className="inline-flex items-center gap-1 text-brand-300 hover:text-brand-200"
                     onClick={() => {
                       onShowOnMap(photo);
                     }}

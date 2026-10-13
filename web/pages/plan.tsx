@@ -366,10 +366,7 @@ const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods, races }) => {
                       {formatShortDate(endOfWeek(monday))}
                     </span>
                     {period !== undefined && period.title !== "" && (
-                      <span className="text-emerald-800">
-                        {" "}
-                        · {period.title}
-                      </span>
+                      <span className="text-brand-700"> · {period.title}</span>
                     )}
                   </h3>
                   {period !== undefined && period.notes !== "" && (
