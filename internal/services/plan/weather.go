@@ -111,14 +111,20 @@ func (s *Service) GetWorkoutWeather(ctx context.Context, req *plansv1.GetWorkout
 	return resp.Build(), nil
 }
 
+// indoors reports whether a workout doesn't need a forecast: rest days
+// and strength training.
+func indoors(w *plans.Workout) bool {
+	return w.Type == plans.WorkoutTypeRest || w.Type == plans.WorkoutTypeStrength
+}
+
 // weatherLocation is where a workout's forecast is for.
 type weatherLocation struct {
 	point  geo.Point
 	source plansv1.WeatherLocationSource
 }
 
-// workoutWeather forecasts the weather of the days of workouts, except rest
-// days and workouts without a location. hourly includes the forecast for
+// workoutWeather forecasts the weather of the days of workouts, except
+// those indoors or without a location. hourly includes the forecast for
 // each hour of the daytime.
 func (s *Service) workoutWeather(ctx context.Context, userID pgtype.UUID, workouts []*plans.Workout, hourly bool) ([]*plansv1.WorkoutWeather, error) {
 	// Workouts at the same location share a forecast.
@@ -132,7 +138,7 @@ func (s *Service) workoutWeather(ctx context.Context, userID pgtype.UUID, workou
 	groupOf := make(map[*plans.Workout]*group, len(workouts))
 	var fallback *weatherLocation
 	for _, w := range workouts {
-		if w.Type == plans.WorkoutTypeRest {
+		if indoors(w) {
 			continue
 		}
 		location, ok, err := s.workoutLocation(ctx, userID, w, &fallback)

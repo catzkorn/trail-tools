@@ -51,7 +51,8 @@ service TrainingPlanService {
   rpc DeleteWorkouts(DeleteWorkoutsRequest) returns (DeleteWorkoutsResponse);
   // List the weather forecast for the days of the user's workouts in a date
   // range, without hourly forecasts. Forecasts are available up to 15 days
-  // ahead, so workouts after that, before today and rest days are left out.
+  // ahead, so workouts after that and before today are left out, as are rest
+  // days and strength training, which don't need one.
   rpc ListWorkoutWeather(ListWorkoutWeatherRequest) returns (ListWorkoutWeatherResponse);
   // Get the weather forecast for the day of a workout, with the forecast
   // for each hour of the daytime.
@@ -357,8 +358,8 @@ message GetWorkoutWeatherRequest {
 }
 
 message GetWorkoutWeatherResponse {
-  // The forecast. Unset if there is none yet, e.g. for workouts more than 15
-  // days ahead, or without a location.
+  // The forecast. Unset if there is none, e.g. for workouts more than 15
+  // days ahead, without a location, or for rest days and strength training.
   WorkoutWeather weather = 1;
 }
 

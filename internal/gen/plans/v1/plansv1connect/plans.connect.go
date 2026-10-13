@@ -202,7 +202,8 @@ type TrainingPlanServiceClient interface {
 	DeleteWorkouts(context.Context, *v1.DeleteWorkoutsRequest) (*v1.DeleteWorkoutsResponse, error)
 	// List the weather forecast for the days of the user's workouts in a date
 	// range, without hourly forecasts. Forecasts are available up to 15 days
-	// ahead, so workouts after that, before today and rest days are left out.
+	// ahead, so workouts after that and before today are left out, as are rest
+	// days and strength training, which don't need one.
 	ListWorkoutWeather(context.Context, *v1.ListWorkoutWeatherRequest) (*v1.ListWorkoutWeatherResponse, error)
 	// Get the weather forecast for the day of a workout, with the forecast
 	// for each hour of the daytime.
@@ -248,7 +249,8 @@ type TrainingPlanServiceHandler interface {
 	DeleteWorkouts(context.Context, *v1.DeleteWorkoutsRequest) (*v1.DeleteWorkoutsResponse, error)
 	// List the weather forecast for the days of the user's workouts in a date
 	// range, without hourly forecasts. Forecasts are available up to 15 days
-	// ahead, so workouts after that, before today and rest days are left out.
+	// ahead, so workouts after that and before today are left out, as are rest
+	// days and strength training, which don't need one.
 	ListWorkoutWeather(context.Context, *v1.ListWorkoutWeatherRequest) (*v1.ListWorkoutWeatherResponse, error)
 	// Get the weather forecast for the day of a workout, with the forecast
 	// for each hour of the daytime.

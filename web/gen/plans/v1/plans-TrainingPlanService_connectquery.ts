@@ -96,7 +96,8 @@ export const deleteWorkouts = TrainingPlanService.method.deleteWorkouts;
 /**
  * List the weather forecast for the days of the user's workouts in a date
  * range, without hourly forecasts. Forecasts are available up to 15 days
- * ahead, so workouts after that, before today and rest days are left out.
+ * ahead, so workouts after that and before today are left out, as are rest
+ * days and strength training, which don't need one.
  *
  * @generated from rpc plans.v1.TrainingPlanService.ListWorkoutWeather
  */

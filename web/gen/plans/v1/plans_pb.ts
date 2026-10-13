@@ -906,8 +906,8 @@ export const GetWorkoutWeatherRequestSchema: GenMessage<GetWorkoutWeatherRequest
  */
 export type GetWorkoutWeatherResponse = Message<"plans.v1.GetWorkoutWeatherResponse"> & {
   /**
-   * The forecast. Unset if there is none yet, e.g. for workouts more than 15
-   * days ahead, or without a location.
+   * The forecast. Unset if there is none, e.g. for workouts more than 15
+   * days ahead, without a location, or for rest days and strength training.
    *
    * @generated from field: plans.v1.WorkoutWeather weather = 1;
    */
@@ -1386,7 +1386,8 @@ export const TrainingPlanService: GenService<{
   /**
    * List the weather forecast for the days of the user's workouts in a date
    * range, without hourly forecasts. Forecasts are available up to 15 days
-   * ahead, so workouts after that, before today and rest days are left out.
+   * ahead, so workouts after that and before today are left out, as are rest
+   * days and strength training, which don't need one.
    *
    * @generated from rpc plans.v1.TrainingPlanService.ListWorkoutWeather
    */

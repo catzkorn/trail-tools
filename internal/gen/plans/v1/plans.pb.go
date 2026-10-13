@@ -2775,8 +2775,8 @@ func (x *GetWorkoutWeatherResponse) ClearWeather() {
 type GetWorkoutWeatherResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The forecast. Unset if there is none yet, e.g. for workouts more than 15
-	// days ahead, or without a location.
+	// The forecast. Unset if there is none, e.g. for workouts more than 15
+	// days ahead, without a location, or for rest days and strength training.
 	Weather *WorkoutWeather
 }
 

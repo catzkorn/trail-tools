@@ -33,6 +33,13 @@ import { terrainStyle, workoutStyle } from "helpers/labels";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
+/**
+ * Outdoors reports whether a workout is outside, so it has a route and the
+ * weather matters: not rest days or strength training.
+ */
+const outdoors = (workout: Workout): boolean =>
+  workout.type !== WorkoutType.REST && workout.type !== WorkoutType.STRENGTH;
+
 // FORECAST_DAYS is how many days ahead workouts have a forecast.
 const FORECAST_DAYS = 15;
 
@@ -171,13 +178,13 @@ const noForecast = (date: string): string => {
 
 // WeatherCard shows the forecast for the workout's day.
 const WeatherCard: React.FC<{ workout: Workout }> = ({ workout }) => {
-  const isRest = workout.type === WorkoutType.REST;
+  const outside = outdoors(workout);
   const weather = useQuery(
     getWorkoutWeather,
-    isRest ? skipToken : { workoutId: workout.id },
+    outside ? { workoutId: workout.id } : skipToken,
     { retry: false, staleTime: WEATHER_STALE_MS }
   );
-  if (isRest) {
+  if (!outside) {
     return null;
   }
   let content: React.ReactNode = <Loading />;
@@ -341,7 +348,7 @@ const WorkoutPage: React.FC = () => {
           {route.data?.route !== undefined && (
             <RouteCard route={route.data.route} />
           )}
-          {workout.routeId === "" && workout.type !== WorkoutType.REST && (
+          {workout.routeId === "" && outdoors(workout) && (
             <Card title="Route">
               <p className="text-sm text-gray-600">
                 No route yet.{" "}
