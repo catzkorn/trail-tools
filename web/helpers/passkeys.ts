@@ -17,19 +17,6 @@ const bytes = (value: Uint8Array): Uint8Array<ArrayBuffer> =>
 export const passkeysSupported = (): boolean =>
   typeof globalThis.PublicKeyCredential !== "undefined";
 
-// ConditionalMediationAvailable reports whether passkey autofill works.
-export const conditionalMediationAvailable = async (): Promise<boolean> => {
-  if (!passkeysSupported()) {
-    return false;
-  }
-  if (
-    typeof PublicKeyCredential.isConditionalMediationAvailable !== "function"
-  ) {
-    return false;
-  }
-  return PublicKeyCredential.isConditionalMediationAvailable();
-};
-
 /**
  * IsCancelled reports whether the user cancelled the passkey prompt, or the
  * request was aborted. These are not errors worth showing.
@@ -52,29 +39,16 @@ export const errorMessage = (error: unknown): string => {
   return "Something went wrong.";
 };
 
-/**
- * SignInWithPasskey asks the browser for a passkey and signs in with it. With
- * conditional mediation the browser offers passkeys in the autofill of an
- * input with autocomplete="username webauthn" instead of showing a dialog.
- */
-export const signInWithPasskey = async (
-  client: AuthClient,
-  mediation: CredentialMediationRequirement,
-  signal: AbortSignal | undefined
-): Promise<void> => {
+// SignInWithPasskey asks the browser for a passkey and signs in with it.
+export const signInWithPasskey = async (client: AuthClient): Promise<void> => {
   const begin = await client.beginPasskeyLogin({});
-  const options: CredentialRequestOptions = {
-    mediation,
+  const credential = await navigator.credentials.get({
     publicKey: {
       challenge: bytes(begin.challenge),
       rpId: begin.rpId,
       userVerification: "required",
     },
-  };
-  if (signal !== undefined) {
-    options.signal = signal;
-  }
-  const credential = await navigator.credentials.get(options);
+  });
   if (
     !(credential instanceof PublicKeyCredential) ||
     !(credential.response instanceof AuthenticatorAssertionResponse)
