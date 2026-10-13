@@ -131,6 +131,21 @@ message ListActivitiesRequest {
   int32 page_size = 4;
   // The next_page_token from a previous response, to get the next page.
   string page_token = 5;
+  // How to order the activities. Defaults to the most recent first. Use the
+  // others to find the biggest days, e.g. by elevation gain.
+  ActivitySort sort = 6;
+}
+
+// ActivitySort is the order to list activities in.
+enum ActivitySort {
+  // The most recent first.
+  ACTIVITY_SORT_UNSPECIFIED = 0;
+  // The longest distance first.
+  ACTIVITY_SORT_DISTANCE = 1;
+  // The most elevation gain first.
+  ACTIVITY_SORT_ELEVATION_GAIN = 2;
+  // The longest moving time first.
+  ACTIVITY_SORT_MOVING_TIME = 3;
 }
 
 message ListActivitiesResponse {

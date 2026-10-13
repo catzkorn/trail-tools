@@ -142,7 +142,11 @@ where user_id = $1
   and ($4::date is null or start_date_local >= $4::date)
   and ($5::date is null or start_date_local <= $5::date)
   and (cardinality($6::text[]) = 0 or sport_type = any($6::text[]))
-order by start_time desc, id
+order by
+  case when $7::text = 'distance' then distance_meters end desc nulls last,
+  case when $7::text = 'elevation_gain' then elevation_gain_meters end desc nulls last,
+  case when $7::text = 'moving_time' then moving_time_seconds end desc nulls last,
+  start_time desc, id
 limit $2 offset $3
 `
 
@@ -153,6 +157,7 @@ type ListActivitiesParams struct {
 	StartDate  pgtype.Date
 	EndDate    pgtype.Date
 	SportTypes []string
+	Sort       string
 }
 
 type ListActivitiesRow struct {
@@ -188,6 +193,7 @@ func (q *Queries) ListActivities(ctx context.Context, arg *ListActivitiesParams)
 		arg.StartDate,
 		arg.EndDate,
 		arg.SportTypes,
+		arg.Sort,
 	)
 	if err != nil {
 		return nil, err

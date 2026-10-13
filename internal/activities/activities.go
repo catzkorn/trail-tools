@@ -221,11 +221,25 @@ type ListActivitiesFilter struct {
 	StartDate, EndDate time.Time
 	// Sport types to include. Empty includes all.
 	SportTypes []string
+	Sort       Sort
 	Limit      int32
 	Offset     int32
 }
 
-// ListActivities lists the user's activities, most recent first.
+// Sort is the order to list activities in.
+type Sort string
+
+// Activity orders. The zero value lists the most recent first, the others
+// the biggest first.
+const (
+	SortRecent        Sort = ""
+	SortDistance      Sort = "distance"
+	SortElevationGain Sort = "elevation_gain"
+	SortMovingTime    Sort = "moving_time"
+)
+
+// ListActivities lists the user's activities in the filter's order, most
+// recent first by default.
 func (r *Repository) ListActivities(ctx context.Context, userID pgtype.UUID, filter ListActivitiesFilter) ([]*Activity, error) {
 	sportTypes := filter.SportTypes
 	if sportTypes == nil {
@@ -238,6 +252,7 @@ func (r *Repository) ListActivities(ctx context.Context, userID pgtype.UUID, fil
 		StartDate:  store.DateToPG(filter.StartDate),
 		EndDate:    store.DateToPG(filter.EndDate),
 		SportTypes: sportTypes,
+		Sort:       string(filter.Sort),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list activities: %w", err)

@@ -119,7 +119,11 @@ where user_id = $1
   and (sqlc.narg(start_date)::date is null or start_date_local >= sqlc.narg(start_date)::date)
   and (sqlc.narg(end_date)::date is null or start_date_local <= sqlc.narg(end_date)::date)
   and (cardinality(sqlc.arg(sport_types)::text[]) = 0 or sport_type = any(sqlc.arg(sport_types)::text[]))
-order by start_time desc, id
+order by
+  case when sqlc.arg(sort)::text = 'distance' then distance_meters end desc nulls last,
+  case when sqlc.arg(sort)::text = 'elevation_gain' then elevation_gain_meters end desc nulls last,
+  case when sqlc.arg(sort)::text = 'moving_time' then moving_time_seconds end desc nulls last,
+  start_time desc, id
 limit $2 offset $3;
 
 -- name: GetActivity :one
