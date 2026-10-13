@@ -1,6 +1,7 @@
 // Package mapdata contains clients for the public map data services used to
-// plan routes: Overpass and Nominatim for OpenStreetMap data and Open-Meteo
-// for elevation and weather. Routing uses the internal/routing package.
+// plan routes: Nominatim for place search, the elevation tiles and
+// Open-Meteo for weather. Routing, trails and points of interest use the
+// OpenStreetMap data imported by the internal/routing package.
 package mapdata
 
 import (
@@ -23,8 +24,6 @@ const UserAgent = "trail-tools/0.1 (+https://github.com/catzkorn/trail-tools)"
 // Config configures the map data clients. Zero values use the public
 // services.
 type Config struct {
-	// Overpass API interpreter URLs, tried in order until one succeeds.
-	OverpassURLs []string
 	// The Nominatim base URL, e.g. https://nominatim.openstreetmap.org.
 	NominatimURL string
 	// Looks up ground elevations. Defaults to the public elevation tiles.
@@ -35,17 +34,7 @@ type Config struct {
 	HTTPClient *http.Client
 }
 
-// DefaultOverpassURLs are public Overpass API instances.
-var DefaultOverpassURLs = []string{
-	"https://overpass-api.de/api/interpreter",
-	"https://overpass.private.coffee/api/interpreter",
-	"https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-}
-
 func (c Config) withDefaults() Config {
-	if len(c.OverpassURLs) == 0 {
-		c.OverpassURLs = DefaultOverpassURLs
-	}
 	if c.NominatimURL == "" {
 		c.NominatimURL = "https://nominatim.openstreetmap.org"
 	}

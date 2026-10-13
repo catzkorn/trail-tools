@@ -1,10 +1,17 @@
+import type { ConnectError } from "@connectrpc/connect";
+import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
+import type { UseQueryResult } from "@tanstack/react-query";
 import { keepPreviousData, skipToken } from "@tanstack/react-query";
 import {
   findPointsOfInterest,
   findTrails,
   getPersonalHeatmap,
 } from "gen/geo/v1/geo-GeoService_connectquery";
+import type {
+  FindPointsOfInterestResponse,
+  FindTrailsResponse,
+} from "gen/geo/v1/geo_pb";
 import { formatKm } from "helpers/format";
 import { poiStyle, terrainStyle } from "helpers/labels";
 import * as leaflet from "leaflet";
@@ -64,6 +71,63 @@ const heatColor = (count: number, maxCount: number): string => {
 interface OverlayProps {
   viewport: Viewport;
 }
+
+/**
+ * NotImported reports whether finding trails or points of interest failed
+ * because no map data has been imported for the area.
+ */
+export const notImported = (error: ConnectError | null): boolean =>
+  error?.code === Code.FailedPrecondition;
+
+// Retry retries failed queries, except where no map data has been imported.
+const retry = (failureCount: number, error: ConnectError): boolean =>
+  !notImported(error) && failureCount < 3;
+
+/**
+ * UseTrails finds the trails around the map center, if shown and zoomed in
+ * enough. Calls with the same viewport share the query.
+ */
+export const useTrails = (
+  viewport: Viewport,
+  shown: boolean
+): UseQueryResult<FindTrailsResponse, ConnectError> => {
+  const { center, zoom } = viewport;
+  return useQuery(
+    findTrails,
+    shown && zoom >= TRAILS_MIN_ZOOM
+      ? {
+          center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
+          includeGeometry: true,
+          limit: 300,
+          radiusMeters: searchRadius(viewport),
+        }
+      : skipToken,
+    { placeholderData: keepPreviousData, retry }
+  );
+};
+
+/**
+ * UsePointsOfInterest finds the points of interest around the map center,
+ * if shown and zoomed in enough. Calls with the same viewport share the
+ * query.
+ */
+export const usePointsOfInterest = (
+  viewport: Viewport,
+  shown: boolean
+): UseQueryResult<FindPointsOfInterestResponse, ConnectError> => {
+  const { center, zoom } = viewport;
+  return useQuery(
+    findPointsOfInterest,
+    shown && zoom >= POI_MIN_ZOOM
+      ? {
+          center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
+          limit: 200,
+          radiusMeters: searchRadius(viewport),
+        }
+      : skipToken,
+    { placeholderData: keepPreviousData, retry }
+  );
+};
 
 // HeatmapOverlay draws the user's personal heatmap for the visible area.
 export const HeatmapOverlay: React.FC<OverlayProps> = ({ viewport }) => {
@@ -134,20 +198,8 @@ export const HeatmapOverlay: React.FC<OverlayProps> = ({ viewport }) => {
 // TrailsOverlay draws OpenStreetMap trails around the map center.
 export const TrailsOverlay: React.FC<OverlayProps> = ({ viewport }) => {
   const map = useMap();
-  const { center, zoom } = viewport;
-  const enabled = zoom >= TRAILS_MIN_ZOOM;
-  const { data } = useQuery(
-    findTrails,
-    enabled
-      ? {
-          center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
-          includeGeometry: true,
-          limit: 300,
-          radiusMeters: searchRadius(viewport),
-        }
-      : skipToken,
-    { placeholderData: keepPreviousData }
-  );
+  const enabled = viewport.zoom >= TRAILS_MIN_ZOOM;
+  const { data } = useTrails(viewport, true);
 
   useEffect(() => {
     if (data === undefined || !enabled) {
@@ -212,19 +264,8 @@ const poiIcon = (symbol: string, color: string, name: string): HTMLElement => {
 // PoiOverlay draws points of interest such as peaks, water and parking.
 export const PoiOverlay: React.FC<OverlayProps> = ({ viewport }) => {
   const map = useMap();
-  const { center, zoom } = viewport;
-  const enabled = zoom >= POI_MIN_ZOOM;
-  const { data } = useQuery(
-    findPointsOfInterest,
-    enabled
-      ? {
-          center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
-          limit: 200,
-          radiusMeters: searchRadius(viewport),
-        }
-      : skipToken,
-    { placeholderData: keepPreviousData }
-  );
+  const enabled = viewport.zoom >= POI_MIN_ZOOM;
+  const { data } = usePointsOfInterest(viewport, true);
 
   useEffect(() => {
     if (data === undefined || !enabled) {

@@ -61,8 +61,8 @@ type Region struct {
 	Name      string
 	Bounds    geo.Bounds
 	EdgeCount int
-	// The space the region takes, estimated from its share of the edges
-	// table and its indexes.
+	// The space the region takes, estimated from its share of the edges,
+	// counting the points of interest and the indexes.
 	SizeBytes  int64
 	ImportTime time.Time
 }
@@ -251,8 +251,8 @@ func ListRegions(ctx context.Context, db *store.DB) ([]Region, error) {
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to list regions: %w", err)
 	}
-	var edgesSize int64
-	if err := db.QueryRow(ctx, `select pg_total_relation_size('routing_edges')`).Scan(&edgesSize); err != nil {
+	var size int64
+	if err := db.QueryRow(ctx, `select pg_total_relation_size('routing_edges') + pg_total_relation_size('points_of_interest')`).Scan(&size); err != nil {
 		return nil, fmt.Errorf("failed to get the routing graph's size: %w", err)
 	}
 	total := 0
@@ -261,13 +261,14 @@ func ListRegions(ctx context.Context, db *store.DB) ([]Region, error) {
 	}
 	if total > 0 {
 		for i := range regions {
-			regions[i].SizeBytes = edgesSize * int64(regions[i].EdgeCount) / int64(total)
+			regions[i].SizeBytes = size * int64(regions[i].EdgeCount) / int64(total)
 		}
 	}
 	return regions, nil
 }
 
-// DeleteRegion deletes a region and its edges from the routing graph.
+// DeleteRegion deletes a region, its edges and its points of interest from
+// the routing graph.
 func DeleteRegion(ctx context.Context, db *store.DB, name string) error {
 	tag, err := db.Exec(ctx, `delete from routing_regions where name = $1`, name)
 	if err != nil {

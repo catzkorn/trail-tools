@@ -164,7 +164,7 @@ func newEnv(t *testing.T) *env {
 	activityService := activity.NewService(log, activityRepo, strava.WebURL)
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil, strava.WebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
-	geoService := geosvc.NewService(log, e.mapData, activityRepo)
+	geoService := geosvc.NewService(log, e.mapData, e.mapData, activityRepo)
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	e.liveTrack = &fakeLiveTrack{}
@@ -393,21 +393,28 @@ func (f *fakeMapData) Search(_ context.Context, query string, limit int) ([]mapd
 	return []mapdata.Place{{Name: query, Lat: 1, Lng: 2, Category: "natural", Type: "peak", BoundingBox: []float64{0.9, 1.1, 1.9, 2.1}}}, nil
 }
 
-func (f *fakeMapData) FindTrails(_ context.Context, center geo.Point, radius float64) ([]mapdata.Element, error) {
-	way := mapdata.Element{Type: "way", ID: 42, Tags: map[string]string{"highway": "path", "name": "Ridge Trail", "surface": "dirt"}}
-	for i := range 5 {
-		way.Geometry = append(way.Geometry, struct {
-			Lat float64 `json:"lat"`
-			Lng float64 `json:"lon"`
-		}{Lat: center.Lat + float64(i)*0.001, Lng: center.Lng})
+// FindTrails returns a trail north from the center. Areas south of 60°S
+// haven't been imported.
+func (f *fakeMapData) FindTrails(_ context.Context, center geo.Point, radius float64) ([]routing.Trail, error) {
+	if center.Lat < -60 {
+		return nil, routing.ErrNoMapData
 	}
-	return []mapdata.Element{way}, nil
+	trail := routing.Trail{WayID: 42, Name: "Ridge Trail", Highway: "path", Surface: "dirt", Terrain: geo.TerrainTrail}
+	for i := range 5 {
+		trail.Points = append(trail.Points, geo.Point{Lat: center.Lat + float64(i)*0.001, Lng: center.Lng})
+	}
+	return []routing.Trail{trail}, nil
 }
 
-func (f *fakeMapData) FindFeatures(_ context.Context, center geo.Point, radius float64, filters []string) ([]mapdata.Element, error) {
-	return []mapdata.Element{
-		{Type: "node", ID: 1, Lat: center.Lat + 0.01, Lng: center.Lng, Tags: map[string]string{"natural": "peak", "name": "Far Peak", "ele": "1234"}},
-		{Type: "node", ID: 2, Lat: center.Lat + 0.001, Lng: center.Lng, Tags: map[string]string{"amenity": "drinking_water"}},
+// FindFeatures returns a peak and a water source north of the center, of
+// any kind. Areas south of 60°S haven't been imported.
+func (f *fakeMapData) FindFeatures(_ context.Context, center geo.Point, radius float64, kinds []geo.FeatureKind) ([]routing.Feature, error) {
+	if center.Lat < -60 {
+		return nil, routing.ErrNoMapData
+	}
+	return []routing.Feature{
+		{ID: 1, Kind: geo.FeaturePeak, Name: "Far Peak", Point: geo.Point{Lat: center.Lat + 0.01, Lng: center.Lng, Ele: 1234}},
+		{ID: 2, Kind: geo.FeatureWater, Point: geo.Point{Lat: center.Lat + 0.001, Lng: center.Lng, Ele: math.NaN()}},
 	}, nil
 }
 

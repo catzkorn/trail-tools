@@ -20,6 +20,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -29,9 +30,14 @@ var _ geov1connect.GeoServiceHandler = (*Service)(nil)
 
 type MapData interface {
 	Search(ctx context.Context, query string, limit int) ([]mapdata.Place, error)
-	FindTrails(ctx context.Context, center geo.Point, radius float64) ([]mapdata.Element, error)
-	FindFeatures(ctx context.Context, center geo.Point, radius float64, filters []string) ([]mapdata.Element, error)
 	Elevations(ctx context.Context, points []geo.Point) ([]float64, error)
+}
+
+// Finder finds trails and points of interest in the imported OpenStreetMap
+// data.
+type Finder interface {
+	FindTrails(ctx context.Context, center geo.Point, radius float64) ([]routing.Trail, error)
+	FindFeatures(ctx context.Context, center geo.Point, radius float64, kinds []geo.FeatureKind) ([]routing.Feature, error)
 }
 
 type TrackRepository interface {
@@ -42,14 +48,16 @@ type TrackRepository interface {
 type Service struct {
 	log     *slog.Logger
 	mapData MapData
+	finder  Finder
 	tracks  TrackRepository
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, mapData MapData, tracks TrackRepository) *Service {
+func NewService(log *slog.Logger, mapData MapData, finder Finder, tracks TrackRepository) *Service {
 	return &Service{
 		log:     log,
 		mapData: mapData,
+		finder:  finder,
 		tracks:  tracks,
 	}
 }
@@ -102,9 +110,9 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 	}
 	limit := clamp(int(req.GetLimit()), 50, 500)
-	ways, err := s.mapData.FindTrails(ctx, center, radius)
+	ways, err := s.finder.FindTrails(ctx, center, radius)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeUnavailable, err.Error()).WithCause(err)
+		return nil, findError(err)
 	}
 	type trail struct {
 		proto  *geov1.Trail
@@ -112,7 +120,7 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 	}
 	var trails []trail
 	for _, way := range ways {
-		points := way.Points()
+		points := way.Points
 		if len(points) < 2 {
 			continue
 		}
@@ -128,12 +136,12 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 		}
 		nearest, nearestDist := geo.NearestIndex(points, center)
 		b := geov1.Trail_builder{
-			OsmId:                    strconv.FormatInt(way.ID, 10),
-			Name:                     way.Tags["name"],
-			Highway:                  way.Tags["highway"],
-			Surface:                  way.Tags["surface"],
-			SacScale:                 way.Tags["sac_scale"],
-			Terrain:                  route.TerrainToProto(geo.ClassifyTerrain(way.Tags)),
+			OsmId:                    strconv.FormatInt(way.WayID, 10),
+			Name:                     way.Name,
+			Highway:                  way.Highway,
+			Surface:                  way.Surface,
+			SacScale:                 way.SacScale,
+			Terrain:                  route.TerrainToProto(way.Terrain),
 			LengthMeters:             math.Round(length),
 			Start:                    latLng(points[0].Lat, points[0].Lng),
 			End:                      latLng(points[len(points)-1].Lat, points[len(points)-1].Lng),
@@ -155,40 +163,35 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 	return geov1.FindTrailsResponse_builder{Trails: result}.Build(), nil
 }
 
-// poiFilters are the Overpass tag filters for each kind of point of
-// interest.
-var poiFilters = map[geov1.PointOfInterestKind][]string{
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PEAK:      {`["natural"="peak"]`, `["natural"="volcano"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_WATER:     {`["amenity"="drinking_water"]`, `["natural"="spring"]`, `["man_made"="water_tap"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PARKING:   {`["amenity"="parking"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_VIEWPOINT: {`["tourism"="viewpoint"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_SHELTER:   {`["amenity"="shelter"]`, `["tourism"="alpine_hut"]`, `["tourism"="wilderness_hut"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_TOILETS:   {`["amenity"="toilets"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_SADDLE:    {`["natural"="saddle"]`, `["mountain_pass"="yes"]`},
-	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_TRAILHEAD: {`["highway"="trailhead"]`},
+// poiKinds are the kinds of points of interest.
+var poiKinds = map[geov1.PointOfInterestKind]geo.FeatureKind{
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PEAK:      geo.FeaturePeak,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_WATER:     geo.FeatureWater,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PARKING:   geo.FeatureParking,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_VIEWPOINT: geo.FeatureViewpoint,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_SHELTER:   geo.FeatureShelter,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_TOILETS:   geo.FeatureToilets,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_SADDLE:    geo.FeatureSaddle,
+	geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_TRAILHEAD: geo.FeatureTrailhead,
 }
 
-// classifyPOI returns the kind of a point of interest from its tags.
-func classifyPOI(tags map[string]string) geov1.PointOfInterestKind {
-	switch {
-	case tags["natural"] == "peak" || tags["natural"] == "volcano":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PEAK
-	case tags["amenity"] == "drinking_water" || tags["natural"] == "spring" || tags["man_made"] == "water_tap":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_WATER
-	case tags["amenity"] == "parking":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PARKING
-	case tags["tourism"] == "viewpoint":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_VIEWPOINT
-	case tags["amenity"] == "shelter" || tags["tourism"] == "alpine_hut" || tags["tourism"] == "wilderness_hut":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_SHELTER
-	case tags["amenity"] == "toilets":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_TOILETS
-	case tags["natural"] == "saddle" || tags["mountain_pass"] == "yes":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_SADDLE
-	case tags["highway"] == "trailhead":
-		return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_TRAILHEAD
+// poiKindToProto returns the proto kind of a point of interest.
+func poiKindToProto(kind geo.FeatureKind) geov1.PointOfInterestKind {
+	for k, v := range poiKinds {
+		if v == kind {
+			return k
+		}
 	}
 	return geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_UNSPECIFIED
+}
+
+// findError returns the API error for a failure to find trails or points
+// of interest.
+func findError(err error) error {
+	if errors.Is(err, routing.ErrNoMapData) {
+		return connect.NewError(connect.CodeFailedPrecondition, "no map data has been imported for this area; import it on the map data page first").WithCause(err)
+	}
+	return connect.NewError(connect.CodeInternal, "failed to query the map data").WithCause(err)
 }
 
 func (s *Service) FindPointsOfInterest(ctx context.Context, req *geov1.FindPointsOfInterestRequest) (*geov1.FindPointsOfInterestResponse, error) {
@@ -202,38 +205,33 @@ func (s *Service) FindPointsOfInterest(ctx context.Context, req *geov1.FindPoint
 	limit := clamp(int(req.GetLimit()), 100, 500)
 	kinds := req.GetKinds()
 	if len(kinds) == 0 {
-		for kind := range poiFilters {
+		for kind := range poiKinds {
 			kinds = append(kinds, kind)
 		}
 	}
-	wanted := map[geov1.PointOfInterestKind]bool{}
-	var filters []string
+	var featureKinds []geo.FeatureKind
 	for _, kind := range kinds {
-		f, ok := poiFilters[kind]
+		k, ok := poiKinds[kind]
 		if !ok {
 			return nil, connect.Errorf(connect.CodeInvalidArgument, "unknown kind %v", kind)
 		}
-		if !wanted[kind] {
-			filters = append(filters, f...)
-			wanted[kind] = true
-		}
+		featureKinds = append(featureKinds, k)
 	}
-	elements, err := s.mapData.FindFeatures(ctx, center, radius, filters)
+	features, err := s.finder.FindFeatures(ctx, center, radius, featureKinds)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeUnavailable, err.Error()).WithCause(err)
+		return nil, findError(err)
 	}
 	var points []*geov1.PointOfInterest
-	for _, e := range elements {
-		kind := classifyPOI(e.Tags)
-		loc, ok := e.Location()
-		if !ok || !wanted[kind] {
-			continue
+	for _, f := range features {
+		loc := geo.Point{Lat: f.Point.Lat, Lng: f.Point.Lng}
+		var ele float64
+		if !math.IsNaN(f.Point.Ele) {
+			ele = f.Point.Ele
 		}
-		ele, _ := strconv.ParseFloat(strings.TrimSuffix(strings.TrimSpace(e.Tags["ele"]), " m"), 64)
 		points = append(points, geov1.PointOfInterest_builder{
-			OsmId:                    strconv.FormatInt(e.ID, 10),
-			Kind:                     kind,
-			Name:                     e.Tags["name"],
+			OsmId:                    strconv.FormatInt(f.ID, 10),
+			Kind:                     poiKindToProto(f.Kind),
+			Name:                     f.Name,
 			Location:                 latLng(loc.Lat, loc.Lng),
 			ElevationMeters:          ele,
 			DistanceFromCenterMeters: math.Round(geo.Distance(center, loc)),

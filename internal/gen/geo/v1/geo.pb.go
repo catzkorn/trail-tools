@@ -713,7 +713,8 @@ func (b0 FindTrailsRequest_builder) Build() *FindTrailsRequest {
 	return m0
 }
 
-// A trail is a single OpenStreetMap way, such as a path or track.
+// A trail is a single OpenStreetMap way, such as a path or track. A way that's
+// only partly imported is returned as a trail for each part.
 type Trail struct {
 	state                               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_OsmId                    string                 `protobuf:"bytes,1,opt,name=osm_id,json=osmId,proto3"`
@@ -1266,15 +1267,16 @@ func (x *PointOfInterest) ClearLocation() {
 type PointOfInterest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// The OpenStreetMap node ID.
+	// The OpenStreetMap node ID, or way ID for an area such as a car park.
 	OsmId string
 	// The kind of point.
 	Kind PointOfInterestKind
 	// The name of the point, if it has one.
 	Name string
-	// The location of the point.
+	// The location of the point, the center of an area.
 	Location *LatLng
-	// The elevation in meters, if known.
+	// The elevation in meters, from OpenStreetMap or else the elevation model. 0
+	// if unknown.
 	ElevationMeters float64
 	// Distance from the search center in meters.
 	DistanceFromCenterMeters float64

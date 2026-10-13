@@ -61,6 +61,8 @@ type Way struct {
 	// The tags that affect routing.
 	Highway, SacScale string
 	Terrain           geo.Terrain
+	// The tags that describe the way, for finding trails.
+	Name, Surface string
 }
 
 func wayFromOSM(w *osmpbf.Way) Way {
@@ -70,7 +72,46 @@ func wayFromOSM(w *osmpbf.Way) Way {
 		Highway:  w.Tags["highway"],
 		SacScale: w.Tags["sac_scale"],
 		Terrain:  geo.ClassifyTerrain(w.Tags),
+		Name:     w.Tags["name"],
+		Surface:  w.Tags["surface"],
 	}
+}
+
+// Feature is a point of interest from OpenStreetMap, such as a peak, a
+// spring or a car park.
+type Feature struct {
+	// The OpenStreetMap ID of the node or way.
+	ID int64
+	// Whether the feature is a way, such as the outline of a car park,
+	// rather than a node. A way is located at the center of its bounding
+	// box.
+	Way  bool
+	Kind geo.FeatureKind
+	Name string
+	// The location. The elevation is NaN if it's unknown.
+	Point geo.Point
+}
+
+// featureFromTags returns the feature an OpenStreetMap node or way is, if
+// any, without its location.
+func featureFromTags(id int64, way bool, tags map[string]string) (Feature, bool) {
+	kind := geo.ClassifyFeature(tags)
+	if kind == geo.FeatureNone {
+		return Feature{}, false
+	}
+	f := Feature{ID: id, Way: way, Kind: kind, Name: tags["name"], Point: geo.Point{Ele: math.NaN()}}
+	if ele, ok := geo.ParseElevation(tags["ele"]); ok {
+		f.Point.Ele = ele
+	}
+	return f, true
+}
+
+// OSM is the OpenStreetMap data of an area: its foot accessible ways, the
+// nodes they use and its points of interest.
+type OSM struct {
+	Ways     []Way
+	Nodes    *Nodes
+	Features []Feature
 }
 
 // Nodes are the coordinates of OpenStreetMap nodes, sorted by ID.
@@ -88,24 +129,34 @@ func (n *Nodes) find(id int64) int {
 	return i
 }
 
-// ReadPBF reads the foot accessible ways of an OpenStreetMap PBF extract and
-// the coordinates of their nodes. The extract is read twice, as nodes come
-// before the ways that use them.
+// ReadPBF reads the foot accessible ways of an OpenStreetMap PBF extract,
+// the coordinates of their nodes, and its points of interest. The extract is
+// read twice, as nodes come before the ways that use them.
 //
-// If bounds are set, only ways with a node inside them are read. The extract
-// is then read a third time first, to find the nodes inside the bounds, so
-// memory grows with the area rather than the extract.
-func ReadPBF(ctx context.Context, path string, bounds geo.Bounds) ([]Way, *Nodes, error) {
+// If bounds are set, only ways with a node inside them, and points of
+// interest inside them, are read. The extract is then read a third time
+// first, to find the nodes inside the bounds, so memory grows with the area
+// rather than the extract.
+func ReadPBF(ctx context.Context, path string, bounds geo.Bounds) (*OSM, error) {
+	return readOSM(bounds, func(handle func(any)) error {
+		return scanPBF(ctx, path, handle)
+	})
+}
+
+// readOSM reads OpenStreetMap data with scan, which passes each node, way
+// and relation to handle, in the order of a PBF extract: nodes, then ways,
+// then relations.
+func readOSM(bounds geo.Bounds, scan func(handle func(any)) error) (*OSM, error) {
 	bounded := bounds != (geo.Bounds{})
 	var inside []int64
 	if bounded {
-		err := scanPBF(ctx, path, func(v any) {
+		err := scan(func(v any) {
 			if n, ok := v.(*osmpbf.Node); ok && bounds.Contains(geo.Point{Lat: n.Lat, Lng: n.Lon}) {
 				inside = append(inside, n.ID)
 			}
 		})
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		slices.Sort(inside)
 	}
@@ -118,15 +169,62 @@ func ReadPBF(ctx context.Context, path string, bounds geo.Bounds) ([]Way, *Nodes
 		return false
 	}
 	var ways []Way
-	err := scanPBF(ctx, path, func(v any) {
-		if w, ok := v.(*osmpbf.Way); ok && isFootWay(w.Tags) && (!bounded || entersBounds(w.NodeIDs)) {
+	// Ways that are points of interest, such as car parks, with their nodes.
+	var featureWays []Way
+	var wayFeatures []Feature
+	err := scan(func(v any) {
+		w, ok := v.(*osmpbf.Way)
+		if !ok || bounded && !entersBounds(w.NodeIDs) {
+			return
+		}
+		if isFootWay(w.Tags) {
 			ways = append(ways, wayFromOSM(w))
+		}
+		if f, ok := featureFromTags(w.ID, true, w.Tags); ok {
+			featureWays = append(featureWays, Way{ID: w.ID, Nodes: w.NodeIDs})
+			wayFeatures = append(wayFeatures, f)
 		}
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	inside = nil
+	nodes := newNodes(ways)
+	featureNodes := newNodes(featureWays)
+	var features []Feature
+	err = scan(func(v any) {
+		n, ok := v.(*osmpbf.Node)
+		if !ok {
+			return
+		}
+		if i := nodes.find(n.ID); i >= 0 {
+			nodes.Lats[i], nodes.Lngs[i] = n.Lat, n.Lon
+		}
+		if i := featureNodes.find(n.ID); i >= 0 {
+			featureNodes.Lats[i], featureNodes.Lngs[i] = n.Lat, n.Lon
+		}
+		p := geo.Point{Lat: n.Lat, Lng: n.Lon}
+		if f, ok := featureFromTags(n.ID, false, n.Tags); ok && (!bounded || bounds.Contains(p)) {
+			f.Point.Lat, f.Point.Lng = p.Lat, p.Lng
+			features = append(features, f)
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	for i, w := range featureWays {
+		f := wayFeatures[i]
+		center, ok := featureNodes.center(w.Nodes)
+		if ok && (!bounded || bounds.Contains(center)) {
+			f.Point.Lat, f.Point.Lng = center.Lat, center.Lng
+			features = append(features, f)
+		}
+	}
+	return &OSM{Ways: ways, Nodes: nodes, Features: features}, nil
+}
+
+// newNodes returns the nodes used by ways, without coordinates.
+func newNodes(ways []Way) *Nodes {
 	var ids []int64
 	for _, w := range ways {
 		ids = append(ids, w.Nodes...)
@@ -137,33 +235,60 @@ func ReadPBF(ctx context.Context, path string, bounds geo.Bounds) ([]Way, *Nodes
 	for i := range ids {
 		nodes.Lats[i], nodes.Lngs[i] = math.NaN(), math.NaN()
 	}
-	err = scanPBF(ctx, path, func(v any) {
-		if n, ok := v.(*osmpbf.Node); ok {
-			if i := nodes.find(n.ID); i >= 0 {
-				nodes.Lats[i], nodes.Lngs[i] = n.Lat, n.Lon
-			}
-		}
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	return ways, nodes, nil
+	return nodes
 }
 
-// MergeExtracts merges the ways and nodes read from an extract into those
-// read from other extracts. Neighboring extracts overlap at their borders, so
-// ways already read are left out. OpenStreetMap IDs are global, so nodes are
-// kept once, with coordinates from whichever extract has them.
-func MergeExtracts(ways []Way, nodes *Nodes, moreWays []Way, moreNodes *Nodes) ([]Way, *Nodes) {
+// center returns the center of the bounding box of nodes, leaving out those
+// without coordinates. It returns false if none have coordinates.
+func (n *Nodes) center(ids []int64) (geo.Point, bool) {
+	b := geo.Bounds{MinLat: 90, MinLng: 180, MaxLat: -90, MaxLng: -180}
+	found := false
+	for _, id := range ids {
+		i := n.find(id)
+		if i < 0 || math.IsNaN(n.Lats[i]) {
+			continue
+		}
+		found = true
+		b.MinLat, b.MaxLat = math.Min(b.MinLat, n.Lats[i]), math.Max(b.MaxLat, n.Lats[i])
+		b.MinLng, b.MaxLng = math.Min(b.MinLng, n.Lngs[i]), math.Max(b.MaxLng, n.Lngs[i])
+	}
+	return geo.Point{Lat: (b.MinLat + b.MaxLat) / 2, Lng: (b.MinLng + b.MaxLng) / 2}, found
+}
+
+// MergeExtracts merges the data read from an extract into that read from
+// other extracts. Neighboring extracts overlap at their borders, so ways and
+// features already read are left out. OpenStreetMap IDs are global, so nodes
+// are kept once, with coordinates from whichever extract has them.
+func MergeExtracts(data, more *OSM) *OSM {
+	ways := data.Ways
 	seen := make(map[int64]bool, len(ways))
 	for _, w := range ways {
 		seen[w.ID] = true
 	}
-	for _, w := range moreWays {
+	for _, w := range more.Ways {
 		if !seen[w.ID] {
 			seen[w.ID] = true
 			ways = append(ways, w)
 		}
+	}
+	features := data.Features
+	type featureID struct {
+		id  int64
+		way bool
+	}
+	seenFeatures := make(map[featureID]bool, len(features))
+	for _, f := range features {
+		seenFeatures[featureID{f.ID, f.Way}] = true
+	}
+	for _, f := range more.Features {
+		if id := (featureID{f.ID, f.Way}); !seenFeatures[id] {
+			seenFeatures[id] = true
+			features = append(features, f)
+		}
+	}
+	nodes, moreNodes := data.Nodes, more.Nodes
+	if nodes == nil {
+		nodes = &Nodes{}
 	}
 	// Merge the nodes, both sorted by ID.
 	merged := &Nodes{
@@ -197,7 +322,7 @@ func MergeExtracts(ways []Way, nodes *Nodes, moreWays []Way, moreNodes *Nodes) (
 			j++
 		}
 	}
-	return ways, merged
+	return &OSM{Ways: ways, Nodes: merged, Features: features}
 }
 
 func scanPBF(ctx context.Context, path string, handle func(any)) error {
@@ -232,6 +357,9 @@ type Edge struct {
 	Highway        string
 	SacScale       string
 	Terrain        geo.Terrain
+	// The way the edge is a section of, and its tags.
+	WayID         int64
+	Name, Surface string
 }
 
 // simplifyMeters is the tolerance edge geometries are simplified with, to
@@ -288,6 +416,9 @@ func buildEdges(ways []Way, nodes *Nodes, elevations []float64, bounds geo.Bound
 				Highway:  w.Highway,
 				SacScale: w.SacScale,
 				Terrain:  w.Terrain,
+				WayID:    w.ID,
+				Name:     w.Name,
+				Surface:  w.Surface,
 			}
 			for _, i := range idxs[start : k+1] {
 				edge.Points = append(edge.Points, geo.Point{Lat: nodes.Lats[i], Lng: nodes.Lngs[i], Ele: elevations[i]})

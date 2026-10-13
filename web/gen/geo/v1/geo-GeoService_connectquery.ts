@@ -15,7 +15,9 @@ export const searchPlaces = GeoService.method.searchPlaces;
 /**
  * Find footpaths, tracks and trails within a radius of a point. Results are
  * OpenStreetMap ways with their name, type, surface and difficulty, sorted by
- * length, longest first.
+ * length, longest first. Only areas whose map data has been imported can be
+ * searched, the same areas routes can be routed in; elsewhere this fails
+ * with FAILED_PRECONDITION.
  *
  * @generated from rpc geo.v1.GeoService.FindTrails
  */
@@ -24,6 +26,8 @@ export const findTrails = GeoService.method.findTrails;
 /**
  * Find points of interest useful for trail running, such as peaks, water
  * sources, parking, viewpoints and shelters, within a radius of a point.
+ * Only areas whose map data has been imported can be searched; elsewhere
+ * this fails with FAILED_PRECONDITION.
  *
  * @generated from rpc geo.v1.GeoService.FindPointsOfInterest
  */

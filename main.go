@@ -193,11 +193,6 @@ var (
 		"A secret that can be used as an invitation to create the first administrator,"+
 			" at /invite/<token>, while there are no administrators",
 	)
-	overpassURLs = flag.String(
-		"overpass-urls",
-		strings.Join(mapdata.DefaultOverpassURLs, ","),
-		"Comma separated Overpass API URLs used to query OpenStreetMap, tried in order",
-	)
 	importJob = flag.String(
 		"import-job",
 		"",
@@ -257,9 +252,7 @@ func main() {
 		*importJob,
 		*photoBucket,
 		*photoDir,
-		mapdata.Config{
-			OverpassURLs: strings.Split(*overpassURLs, ","),
-		},
+		mapdata.Config{},
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
 		os.Exit(1)
@@ -452,7 +445,7 @@ func run(
 	activityService := activity.NewService(log, activityRepo, stravaWebURL)
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
-	geoService := geosvc.NewService(log, mapData, activityRepo)
+	geoService := geosvc.NewService(log, mapData, routing.NewFinder(db), activityRepo)
 	planService := plan.NewService(log, planRepo)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)

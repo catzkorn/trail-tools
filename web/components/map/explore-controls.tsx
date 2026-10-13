@@ -6,13 +6,17 @@ import { readStorageFlag, writeStorageFlag } from "helpers/storage";
 import React, { useState } from "react";
 
 import { useViewport } from "./layers";
+import type { Viewport } from "./layers";
 import { useMap } from "./map-view";
 import {
   HeatmapOverlay,
+  notImported,
   POI_MIN_ZOOM,
   PoiOverlay,
   TRAILS_MIN_ZOOM,
   TrailsOverlay,
+  usePointsOfInterest,
+  useTrails,
 } from "./overlays";
 
 const HEATMAP_KEY = "trail-tools.overlay.heatmap";
@@ -149,6 +153,22 @@ interface ExploreControlsProps {
   showHeatmap?: boolean;
 }
 
+// OverlayNote explains why a shown overlay of map data is empty.
+const overlayNote = (
+  shown: boolean,
+  viewport: Viewport,
+  minZoom: number,
+  notImportedHere: boolean
+): string | undefined => {
+  if (!shown) {
+    return undefined;
+  }
+  if (viewport.zoom < minZoom) {
+    return "zoom in";
+  }
+  return notImportedHere ? "not imported here" : undefined;
+};
+
 /**
  * ExploreControls adds a place search and toggles for the heatmap, trail and
  * point of interest overlays. It must be rendered inside a MapView.
@@ -169,6 +189,8 @@ const ExploreControls: React.FC<ExploreControlsProps> = ({
   }
   const [trails, setTrails] = useState(() => readStorageFlag(TRAILS_KEY));
   const [poi, setPoi] = useState(() => readStorageFlag(POI_KEY));
+  const trailsQuery = useTrails(viewport, trails);
+  const poiQuery = usePointsOfInterest(viewport, poi);
 
   return (
     <>
@@ -187,9 +209,12 @@ const ExploreControls: React.FC<ExploreControlsProps> = ({
         <Toggle
           label="Trails"
           checked={trails}
-          note={
-            trails && viewport.zoom < TRAILS_MIN_ZOOM ? "zoom in" : undefined
-          }
+          note={overlayNote(
+            trails,
+            viewport,
+            TRAILS_MIN_ZOOM,
+            notImported(trailsQuery.error)
+          )}
           onChange={(checked) => {
             setTrails(checked);
             writeStorageFlag(TRAILS_KEY, checked);
@@ -198,7 +223,12 @@ const ExploreControls: React.FC<ExploreControlsProps> = ({
         <Toggle
           label="Points of interest"
           checked={poi}
-          note={poi && viewport.zoom < POI_MIN_ZOOM ? "zoom in" : undefined}
+          note={overlayNote(
+            poi,
+            viewport,
+            POI_MIN_ZOOM,
+            notImported(poiQuery.error)
+          )}
           onChange={(checked) => {
             setPoi(checked);
             writeStorageFlag(POI_KEY, checked);

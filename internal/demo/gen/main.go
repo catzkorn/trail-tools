@@ -1,38 +1,35 @@
-// Command gen writes the demo data: the trails of Squamish from the Overpass
-// API, and their elevations from the elevation tiles.
+// Command gen writes the demo data: the trails and points of interest of
+// Squamish from the Geofabrik extract covering it, and their elevations from
+// the elevation tiles.
 package main
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
+	"slices"
 
 	"github.com/catzkorn/trail-tools/internal/demo"
 	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
 	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/qedus/osmpbf"
 )
 
 func main() {
 	ctx := context.Background()
 	b := demo.Bounds
-	ways, nodes, err := overpassWays(ctx, b)
+	data, err := readExtract(ctx, b)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := write("squamish-trails.bin.gz", func(w io.Writer) error { return routing.WriteWays(w, ways, nodes) }); err != nil {
+	data = clip(data, b)
+	if err := write("squamish-osm.bin.gz", func(w io.Writer) error { return routing.WriteOSM(w, data) }); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Wrote %d ways with %d nodes\n", len(ways), len(nodes.IDs))
+	fmt.Printf("Wrote %d ways with %d nodes and %d points of interest\n", len(data.Ways), len(data.Nodes.IDs), len(data.Features))
 	patch, err := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir).Patch(ctx, b)
 	if err != nil {
 		log.Fatal(err)
@@ -43,84 +40,77 @@ func main() {
 	fmt.Println("Wrote the elevations")
 }
 
-// overpassWays queries the Overpass API for the ways within the bounds, and
-// returns the foot accessible ones. The public servers are tried in turn, as
-// they're often busy.
-func overpassWays(ctx context.Context, b geo.Bounds) ([]routing.Way, *routing.Nodes, error) {
-	query := fmt.Sprintf(`[out:json][timeout:180];way["highway"](%g,%g,%g,%g);(._;>;);out body;`, b.MinLat, b.MinLng, b.MaxLat, b.MaxLng)
-	var errs []error
-	for _, server := range mapdata.DefaultOverpassURLs {
-		ways, nodes, err := queryOverpass(ctx, server, query, b)
-		if err == nil {
-			return ways, nodes, nil
-		}
-		log.Printf("%s: %v", server, err)
-		errs = append(errs, err)
+// readExtract downloads the Geofabrik extract covering the bounds, and reads
+// the foot accessible ways and points of interest within them, as an import
+// does.
+func readExtract(ctx context.Context, b geo.Bounds) (*routing.OSM, error) {
+	extracts, err := routing.NewExtracts(routing.DefaultGeofabrikIndexURL).Find(ctx, b)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil, errors.Join(errs...)
+	if len(extracts) != 1 {
+		return nil, fmt.Errorf("got extracts %+v, want one", extracts)
+	}
+	fmt.Printf("Downloading %s\n", extracts[0].URL)
+	path, err := download(ctx, extracts[0].URL)
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(path)
+	return routing.ReadPBF(ctx, path, b)
 }
 
-// queryOverpass runs a query for ways on an Overpass server, and returns
-// the foot accessible ways within the bounds.
-func queryOverpass(ctx context.Context, server, query string, b geo.Bounds) ([]routing.Way, *routing.Nodes, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, server, strings.NewReader(url.Values{"data": {query}}.Encode()))
+func download(ctx context.Context, url string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", mapdata.UserAgent)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("status %d", resp.StatusCode)
+		return "", fmt.Errorf("failed to download %s: status %d", url, resp.StatusCode)
 	}
-	var data struct {
-		Elements []struct {
-			Type  string            `json:"type"`
-			ID    int64             `json:"id"`
-			Lat   float64           `json:"lat"`
-			Lon   float64           `json:"lon"`
-			Nodes []int64           `json:"nodes"`
-			Tags  map[string]string `json:"tags"`
-		} `json:"elements"`
+	f, err := os.CreateTemp("", "demo-*.osm.pbf")
+	if err != nil {
+		return "", err
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return nil, nil, err
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		os.Remove(f.Name())
+		return "", err
 	}
-	nodes := map[int64]geo.Point{}
-	var ways []*osmpbf.Way
-	for _, e := range data.Elements {
-		switch e.Type {
-		case "node":
-			nodes[e.ID] = geo.Point{Lat: e.Lat, Lng: e.Lon}
-		case "way":
-			ways = append(ways, &osmpbf.Way{ID: e.ID, Tags: e.Tags, NodeIDs: e.Nodes})
-		}
-	}
-	footWays, footNodes := routing.WaysFromOSM(clip(ways, nodes, b), nodes)
-	return footWays, footNodes, nil
+	return f.Name(), f.Close()
 }
 
 // clip returns the pieces of the ways within the bounds, so that the
-// elevations of the bounds cover all their nodes. Pieces of a way get IDs
-// made from its ID.
-func clip(ways []*osmpbf.Way, nodes map[int64]geo.Point, b geo.Bounds) []*osmpbf.Way {
-	var result []*osmpbf.Way
-	for _, w := range ways {
+// elevations of the bounds cover all their nodes. The pieces of a way keep
+// its ID.
+func clip(data *routing.OSM, b geo.Bounds) *routing.OSM {
+	nodes := data.Nodes
+	inside := func(id int64) bool {
+		i, ok := slices.BinarySearch(nodes.IDs, id)
+		return ok && b.Contains(geo.Point{Lat: nodes.Lats[i], Lng: nodes.Lngs[i]})
+	}
+	var ways []routing.Way
+	used := map[int64]bool{}
+	for _, w := range data.Ways {
 		var piece []int64
-		pieces := 0
 		flush := func() {
 			if len(piece) >= 2 {
-				result = append(result, &osmpbf.Way{ID: w.ID*16 + int64(pieces), Tags: w.Tags, NodeIDs: piece})
-				pieces++
+				clipped := w
+				clipped.Nodes = piece
+				ways = append(ways, clipped)
+				for _, id := range piece {
+					used[id] = true
+				}
 			}
 			piece = nil
 		}
-		for _, id := range w.NodeIDs {
-			if p, ok := nodes[id]; ok && b.Contains(p) {
+		for _, id := range w.Nodes {
+			if inside(id) {
 				piece = append(piece, id)
 			} else {
 				flush()
@@ -128,7 +118,15 @@ func clip(ways []*osmpbf.Way, nodes map[int64]geo.Point, b geo.Bounds) []*osmpbf
 		}
 		flush()
 	}
-	return result
+	clipped := &routing.Nodes{}
+	for i, id := range nodes.IDs {
+		if used[id] {
+			clipped.IDs = append(clipped.IDs, id)
+			clipped.Lats = append(clipped.Lats, nodes.Lats[i])
+			clipped.Lngs = append(clipped.Lngs, nodes.Lngs[i])
+		}
+	}
+	return &routing.OSM{Ways: ways, Nodes: clipped, Features: data.Features}
 }
 
 func write(name string, fn func(io.Writer) error) error {

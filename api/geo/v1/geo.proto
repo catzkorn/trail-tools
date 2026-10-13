@@ -13,10 +13,14 @@ service GeoService {
   rpc SearchPlaces(SearchPlacesRequest) returns (SearchPlacesResponse);
   // Find footpaths, tracks and trails within a radius of a point. Results are
   // OpenStreetMap ways with their name, type, surface and difficulty, sorted by
-  // length, longest first.
+  // length, longest first. Only areas whose map data has been imported can be
+  // searched, the same areas routes can be routed in; elsewhere this fails
+  // with FAILED_PRECONDITION.
   rpc FindTrails(FindTrailsRequest) returns (FindTrailsResponse);
   // Find points of interest useful for trail running, such as peaks, water
   // sources, parking, viewpoints and shelters, within a radius of a point.
+  // Only areas whose map data has been imported can be searched; elsewhere
+  // this fails with FAILED_PRECONDITION.
   rpc FindPointsOfInterest(FindPointsOfInterestRequest) returns (FindPointsOfInterestResponse);
   // Look up the ground elevation of up to 100 points.
   rpc GetElevation(GetElevationRequest) returns (GetElevationResponse);
@@ -84,7 +88,8 @@ message FindTrailsRequest {
   bool include_geometry = 4;
 }
 
-// A trail is a single OpenStreetMap way, such as a path or track.
+// A trail is a single OpenStreetMap way, such as a path or track. A way that's
+// only partly imported is returned as a trail for each part.
 message Trail {
   // The OpenStreetMap way ID.
   string osm_id = 1;
@@ -166,15 +171,16 @@ message FindPointsOfInterestRequest {
 
 // A point of interest.
 message PointOfInterest {
-  // The OpenStreetMap node ID.
+  // The OpenStreetMap node ID, or way ID for an area such as a car park.
   string osm_id = 1;
   // The kind of point.
   PointOfInterestKind kind = 2;
   // The name of the point, if it has one.
   string name = 3;
-  // The location of the point.
+  // The location of the point, the center of an area.
   LatLng location = 4;
-  // The elevation in meters, if known.
+  // The elevation in meters, from OpenStreetMap or else the elevation model. 0
+  // if unknown.
   double elevation_meters = 5;
   // Distance from the search center in meters.
   double distance_from_center_meters = 6;
