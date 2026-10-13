@@ -20,7 +20,6 @@ const PublicFooter: React.FC<PublicFooterProps> = ({ author }) => (
         <Link to="/" className="hover:underline">
           <Wordmark className="text-[12px] text-ink" />
         </Link>
-        , a trail running planner.
       </span>
     </span>
     {author !== undefined && (
