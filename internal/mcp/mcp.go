@@ -113,7 +113,7 @@ func NewServer(log *slog.Logger, services ...Service) (*Server, error) {
 
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    implementationName,
-		Title:   "Trail Tools",
+		Title:   "trailrunn.ing",
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		Instructions: strings.Join(instructions, "\n\n"),

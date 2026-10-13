@@ -12,7 +12,7 @@ const AthletesPage: React.FC<AthletesPageProps> = ({ user }) => {
     return (
       <div className="flex grow flex-col items-center">
         <div className="pb-5">
-          <h1 className="text-4xl text-center">Welcome to Trail Tools!</h1>
+          <h1 className="text-4xl text-center">Welcome to trailrunn.ing!</h1>
           <p className="text-lg text-center">Please sign in to continue.</p>
         </div>
         <SignInDialog />

@@ -107,7 +107,7 @@ const ApiTokens: React.FC = () => {
     <Card title="API tokens">
       <div className="flex flex-col gap-4">
         <p className="text-sm text-gray-600">
-          API tokens let AI agents and other clients use Trail Tools on your
+          API tokens let AI agents and other clients use trailrunn.ing on your
           behalf with an{" "}
           <code className="rounded bg-gray-100 px-1">
             Authorization: Bearer &lt;token&gt;
@@ -190,7 +190,7 @@ const McpInstructions: React.FC = () => {
     <Card title="Connect your AI agent (MCP)">
       <div className="flex flex-col gap-4 text-sm text-gray-700">
         <p>
-          Trail Tools is also an{" "}
+          trailrunn.ing is also an{" "}
           <a
             href="https://modelcontextprotocol.io"
             target="_blank"
@@ -214,7 +214,7 @@ const McpInstructions: React.FC = () => {
           </span>
           <p>
             Add a custom connector with the endpoint above. You&apos;ll be asked
-            to sign in to Trail Tools and approve the connection, and the app
+            to sign in to trailrunn.ing and approve the connection, and the app
             shows up under connected apps.
           </p>
         </div>

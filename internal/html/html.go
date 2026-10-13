@@ -14,7 +14,7 @@ import (
 const templateName = "index.html"
 
 // defaultTitle is the title of pages without their own.
-const defaultTitle = "Trail tools"
+const defaultTitle = "trailrunn.ing"
 
 var indexTemplate = template.Must(template.New(templateName).Parse(
 	fmt.Sprintf(
@@ -34,7 +34,7 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
     {{- end }}
     {{- if .URL }}
     <link rel="canonical" href="{{ .URL }}" />
-    <meta property="og:site_name" content="Trail Tools" />
+    <meta property="og:site_name" content="trailrunn.ing" />
     <meta property="og:type" content="{{ or .Type "website" }}" />
     <meta property="og:title" content="{{ .Title }}" />
     <meta property="og:url" content="{{ .URL }}" />
@@ -71,7 +71,7 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
 // Page describes a page for search engines and link previews, which don't
 // run the single page application.
 type Page struct {
-	// The title of the page. Defaults to "Trail tools".
+	// The title of the page. Defaults to "trailrunn.ing".
 	Title string
 	// A short description of the page.
 	Description string

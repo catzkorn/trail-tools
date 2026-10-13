@@ -30,7 +30,7 @@ func (s *Service) PageHandler(watch bool, next http.Handler) http.Handler {
 				s.log.ErrorContext(r.Context(), "Failed to get public race report", slogor.Err(err))
 			}
 			// The frontend shows its own error page.
-			html.Render(w, watch, http.StatusNotFound, html.Page{Title: "Not found · Trail Tools", NoIndex: true})
+			html.Render(w, watch, http.StatusNotFound, html.Page{Title: "Not found · trailrunn.ing", NoIndex: true})
 			return
 		}
 		description := trip.Excerpt(report.Sections.Summary, 200)

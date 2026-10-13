@@ -41,7 +41,7 @@ const inviteTitle = (invitation: Invitation): string => {
   if (invitation.bootstrap) {
     return "Create the administrator account";
   }
-  return `${invitation.createdByName} invited you to Trail Tools`;
+  return `${invitation.createdByName} invited you to trailrunn.ing`;
 };
 
 interface InviteFormProps {
@@ -93,7 +93,7 @@ const InviteForm: React.FC<InviteFormProps> = ({ token, invitation }) => {
       )}
       <p className="text-sm text-gray-600">
         {newUser
-          ? "Trail Tools signs you in with a passkey instead of a password: your device's fingerprint, face or screen lock."
+          ? "trailrunn.ing signs you in with a passkey instead of a password: your device's fingerprint, face or screen lock."
           : "Create a passkey on this device to sign in here with your fingerprint, face or screen lock."}
       </p>
       {passkeysSupported() ? (

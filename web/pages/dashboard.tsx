@@ -380,7 +380,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
       <div className="flex grow flex-col items-center gap-6 py-10">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900">
-            Welcome to Trail Tools!
+            Welcome to trailrunn.ing!
           </h1>
           <p className="mt-2 text-lg text-gray-600">
             Plan your training, design routes and prepare for race day.

@@ -120,7 +120,7 @@ func RequireUser(resourceMetadataURL string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := GetUser(r.Context()); !ok {
 			w.Header().Set("WWW-Authenticate", bearerChallenge(resourceMetadataURL, ""))
-			http.Error(w, "authentication required: connect with OAuth, or create an API token in the Trail Tools settings and send it in an \"Authorization: Bearer <token>\" header", http.StatusUnauthorized)
+			http.Error(w, "authentication required: connect with OAuth, or create an API token in the trailrunn.ing settings and send it in an \"Authorization: Bearer <token>\" header", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)

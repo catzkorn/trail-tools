@@ -46,7 +46,7 @@ func TestRenderDefault(t *testing.T) {
 	rec := httptest.NewRecorder()
 	ServeIndexHTML(false).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/anything", nil))
 	body := rec.Body.String()
-	if !strings.Contains(body, "<title>Trail tools</title>") {
+	if !strings.Contains(body, "<title>trailrunn.ing</title>") {
 		t.Errorf("page has no default title:\n%s", body)
 	}
 	if strings.Contains(body, "og:") || strings.Contains(body, "description") {

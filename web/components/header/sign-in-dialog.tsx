@@ -83,7 +83,7 @@ const SignInDialog: React.FC = () => {
            * be used alike, so say both.
            */
           setError(
-            "Signing in didn't finish: it was cancelled, or this device has no passkey for Trail Tools. Try again, or use a device with your passkey."
+            "Signing in didn't finish: it was cancelled, or this device has no passkey for trailrunn.ing. Try again, or use a device with your passkey."
           );
         } else if (!isCancelled(error_)) {
           setError(errorMessage(error_));
@@ -126,7 +126,7 @@ const SignInDialog: React.FC = () => {
         )}
         {error !== "" && <p className="text-sm text-red-700">{error}</p>}
         <p className="text-xs text-gray-500">
-          Trail Tools is invite only. To create an account, ask for an
+          trailrunn.ing is invite only. To create an account, ask for an
           invitation link.
         </p>
       </div>
