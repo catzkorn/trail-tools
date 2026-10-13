@@ -22,7 +22,8 @@ service RouteService {
   // route statistics and, optionally, the full path. Use this to iterate on a
   // route design before calling CreateRoute, or to try out changes to a saved
   // route (set route_id to reuse its unchanged legs) before calling
-  // UpdateRoute.
+  // UpdateRoute. To check that a loop doesn't double back on itself, compare
+  // the stats' repeated_distance_meters with distance_meters.
   rpc PreviewRoute(PreviewRouteRequest) returns (PreviewRouteResponse);
   // Create and save a new route from waypoints, a GPX file, an existing
   // activity or another route. A recorded track can be kept exactly, or
@@ -154,6 +155,12 @@ message RouteStats {
   // Distance by terrain type. Terrain is unknown for straight legs, GPX imports
   // and activity routes.
   repeated TerrainShare terrain = 8;
+  // Distance in meters that retraces ground the route already covered, in
+  // either direction: about half of an out-and-back, the return along a
+  // loop's stem, and close to 0 for a loop. Approximate: separate trails
+  // within about 15 m of each other count as the same. Unset in ListRoutes
+  // for routes saved before it was computed.
+  optional double repeated_distance_meters = 9;
 }
 
 // A route between waypoints.

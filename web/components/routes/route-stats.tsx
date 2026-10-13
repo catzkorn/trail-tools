@@ -86,6 +86,17 @@ export const RouteStatsPanel: React.FC<RouteStatsPanelProps> = ({ stats }) => {
           label="Elevation loss"
           value={formatMeters(stats.elevationLossMeters)}
         />
+        {stats.repeatedDistanceMeters !== undefined && (
+          <Stat
+            label="Repeated"
+            value={formatKm(stats.repeatedDistanceMeters)}
+            sub={
+              stats.distanceMeters > 0
+                ? `${formatPercent(stats.repeatedDistanceMeters / stats.distanceMeters)} retraces the route`
+                : undefined
+            }
+          />
+        )}
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-xs font-medium tracking-wide text-gray-500 uppercase">

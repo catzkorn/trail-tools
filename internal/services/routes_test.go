@@ -52,6 +52,20 @@ func TestRoutes(t *testing.T) {
 	if preview.GetRoute().GetId() != "" {
 		t.Error("preview should not be saved")
 	}
+	if !stats.HasRepeatedDistanceMeters() || stats.GetRepeatedDistanceMeters() != 0 {
+		t.Errorf("a route one way repeats %v m", stats.GetRepeatedDistanceMeters())
+	}
+
+	// An out-and-back repeats about half its distance.
+	outAndBack, err := e.routes.PreviewRoute(ctx, routesv1.PreviewRouteRequest_builder{
+		Waypoints: latLngs(0, 0, 0.02, 0, 0, 0),
+	}.Build())
+	if err != nil {
+		t.Fatalf("PreviewRoute: %v", err)
+	}
+	if repeated := outAndBack.GetRoute().GetStats().GetRepeatedDistanceMeters(); !approx(repeated, 2224, 200) {
+		t.Errorf("an out-and-back of 4.4 km repeats %v m, want about 2.2 km", repeated)
+	}
 
 	// Unroutable waypoints are an invalid argument.
 	_, err = e.routes.PreviewRoute(ctx, routesv1.PreviewRouteRequest_builder{
