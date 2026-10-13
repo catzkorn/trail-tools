@@ -5,6 +5,7 @@ import {
   RaceResult,
   SECTIONS,
 } from "@components/races/race-report-bits";
+import PublicFooter from "@components/ui/public-footer";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
@@ -92,7 +93,7 @@ const PublicRaceReportPage: React.FC = () => {
         </div>
       )}
       <header className="flex flex-col gap-2 text-center">
-        <p className="text-sm font-medium tracking-wide text-emerald-700 uppercase">
+        <p className="text-sm font-medium tracking-wide text-brand-600 uppercase">
           Race report · {report.raceName}
         </p>
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
@@ -138,6 +139,7 @@ const PublicRaceReportPage: React.FC = () => {
           </div>
         </section>
       ))}
+      <PublicFooter author={{ displayName: data.authorName, handle }} />
     </article>
   );
 };

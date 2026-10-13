@@ -18,6 +18,7 @@ import {
 } from "@components/trips/trip-bits";
 import TripMap from "@components/trips/trip-map";
 import Lightbox from "@components/ui/lightbox";
+import PublicFooter from "@components/ui/public-footer";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
@@ -83,7 +84,7 @@ const PhotoFigure: React.FC<PhotoFigureProps> = ({
   >
     <button
       type="button"
-      className={`block cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${layout === "single" ? "mx-auto w-fit" : "w-full"}`}
+      className={`block cursor-zoom-in rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${layout === "single" ? "mx-auto w-fit" : "w-full"}`}
       onClick={onOpen}
       aria-label={`Open photo ${number}`}
     >
@@ -97,14 +98,14 @@ const PhotoFigure: React.FC<PhotoFigureProps> = ({
       />
     </button>
     <figcaption className="mt-2 flex items-start gap-2 px-1 text-sm text-gray-600">
-      <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-[11px] font-bold text-white">
+      <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold text-white">
         {number}
       </span>
       <span className="grow">{photo.caption}</span>
       {photo.location !== undefined && (
         <button
           type="button"
-          className="inline-flex shrink-0 items-center gap-1 text-emerald-700 hover:text-emerald-900"
+          className="inline-flex shrink-0 items-center gap-1 text-brand-600 hover:text-brand-800"
           onClick={() => {
             onShowOnMap(photo);
           }}
@@ -180,7 +181,7 @@ const SectionView: React.FC<SectionViewProps> = ({
             {section.title}
           </h2>
           {range !== undefined && (
-            <p className="text-sm font-medium text-emerald-700 tabular-nums">
+            <p className="text-sm font-medium text-brand-600 tabular-nums">
               {sectionSummary(track, range)}
             </p>
           )}
@@ -413,7 +414,7 @@ const PublicTripReportPage: React.FC = () => {
         </div>
       )}
       <header className="mx-auto flex max-w-3xl flex-col items-center gap-3 pt-4 text-center sm:pt-8">
-        <p className="text-sm font-semibold tracking-wide text-emerald-700 uppercase">
+        <p className="text-sm font-semibold tracking-wide text-brand-600 uppercase">
           {tripKicker(report)}
         </p>
         <h1 className="text-3xl font-bold tracking-tight text-balance text-gray-900 sm:text-5xl">
@@ -423,7 +424,7 @@ const PublicTripReportPage: React.FC = () => {
           by{" "}
           <Link
             to={`/u/${author.handle}`}
-            className="font-medium text-gray-900 hover:text-emerald-800 hover:underline"
+            className="font-medium text-gray-900 hover:text-brand-700 hover:underline"
           >
             {author.displayName}
           </Link>
@@ -495,15 +496,7 @@ const PublicTripReportPage: React.FC = () => {
           ))}
         </div>
       </div>
-      <footer className="border-t border-gray-200 pt-6 text-center text-sm text-gray-500">
-        More trip reports by{" "}
-        <Link
-          to={`/u/${author.handle}`}
-          className="font-medium text-emerald-700 hover:underline"
-        >
-          {author.displayName}
-        </Link>
-      </footer>
+      <PublicFooter author={author} />
       <Lightbox
         photos={photos}
         index={lightboxIndex}

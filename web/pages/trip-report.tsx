@@ -374,7 +374,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
               <label className="flex min-w-0 flex-col gap-1">
                 <span className={labelClass}>Address</span>
-                <div className="flex items-center rounded-md border border-gray-300 bg-white shadow-sm focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600">
+                <div className="flex items-center rounded-md border border-gray-300 bg-white shadow-sm focus-within:border-brand-600 focus-within:ring-1 focus-within:ring-brand-600">
                   <span className="shrink-0 truncate pl-2.5 text-sm text-gray-500">
                     /u/{handle ?? "<handle>"}/
                   </span>

@@ -2,11 +2,47 @@
 @import "leaflet/dist/leaflet.css";
 
 @theme {
+  /* The trailrunn.ing brand: ink, and a burnt orange that isn't Strava's. */
+  --color-ink: #111111;
+  --color-ember: #d2601a;
+  --color-ember-dark: #b4500f;
+  /* The burnt orange as a scale, for tints and text: 500 is ember. */
+  --color-brand-50: #fdf4ec;
+  --color-brand-100: #fbe6d4;
+  --color-brand-200: #f5c9a6;
+  --color-brand-300: #eda56f;
+  --color-brand-400: #e2803f;
+  --color-brand-500: #d2601a;
+  --color-brand-600: #b4500f;
+  --color-brand-700: #8f400d;
+  --color-brand-800: #6f3410;
+  --color-brand-900: #592b10;
+  --font-brand: "Lexend Giga", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  /* Lexend is the app's typeface. */
+  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --color-google-text-gray: #3c4043;
   --color-google-logo-blue: #4285f4;
   --color-google-logo-green: #34a853;
   --color-google-logo-yellow: #fbbc05;
   --color-google-logo-red: #ea4335;
+}
+
+/* Lexend and Lexend Giga, self-hosted from @fontsource by make fonts. */
+@font-face {
+  font-family: "Lexend";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/lexend-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Lexend Giga";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("/fonts/lexend-giga-latin-700-normal.woff2") format("woff2");
 }
 
 /*
@@ -68,7 +104,7 @@
   padding: 0 4px;
   border-radius: 9999px;
   border: 1.5px solid #ffffff;
-  background: #047857;
+  background: #111111;
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;
@@ -87,7 +123,7 @@
 }
 
 .photo-marker-count {
-  background: #1f2937;
+  background: #d2601a;
 }
 
 .photo-marker-draggable {
@@ -115,7 +151,7 @@
   height: 22px;
   border-radius: 9999px;
   border: 2px solid #ffffff;
-  background: #0f766e;
+  background: #111111;
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;
@@ -141,7 +177,7 @@
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  border: 3px solid #047857;
+  border: 3px solid #d2601a;
   background: #ffffff;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
   cursor: grab;

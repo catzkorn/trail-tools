@@ -158,8 +158,8 @@ const Invitations: React.FC<InvitationsProps> = ({ admin }) => {
             }}
           >
             <p className="text-sm text-gray-600">
-              Trail Tools is invite only. Invite someone by sending them a link;
-              they create their account with a passkey.
+              trailrunn.ing is invite only. Invite someone by sending them a
+              link; they create their account with a passkey.
             </p>
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex min-w-48 grow flex-col gap-1">

@@ -313,7 +313,7 @@ export const MentalSection: React.FC<SectionComponentProps> = ({
                   {(mental?.mantras ?? []).map((mantra) => (
                     <li
                       key={mantra}
-                      className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900 ring-1 ring-emerald-200"
+                      className="rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800 ring-1 ring-brand-200"
                     >
                       “{mantra}”
                     </li>

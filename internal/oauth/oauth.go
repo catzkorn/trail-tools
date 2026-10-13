@@ -151,7 +151,7 @@ func (s *Server) handleProtectedResourceMetadata(w http.ResponseWriter, r *http.
 		Resource:               s.resource,
 		AuthorizationServers:   []string{s.issuer},
 		BearerMethodsSupported: []string{"header"},
-		ResourceName:           "Trail Tools",
+		ResourceName:           "trailrunn.ing",
 	})
 }
 

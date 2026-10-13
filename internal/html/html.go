@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/johanbrandhorst/reload"
@@ -14,7 +15,14 @@ import (
 const templateName = "index.html"
 
 // defaultTitle is the title of pages without their own.
-const defaultTitle = "Trail tools"
+const defaultTitle = "trailrunn.ing"
+
+// defaultDescription describes pages without their own description.
+const defaultDescription = "Training plans, race day plans and trip reports for trail runners."
+
+// defaultImagePath is the path of the link preview image of pages without
+// their own: the app's mark and name.
+const defaultImagePath = "/img/og.png"
 
 var indexTemplate = template.Must(template.New(templateName).Parse(
 	fmt.Sprintf(
@@ -34,7 +42,7 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
     {{- end }}
     {{- if .URL }}
     <link rel="canonical" href="{{ .URL }}" />
-    <meta property="og:site_name" content="Trail Tools" />
+    <meta property="og:site_name" content="trailrunn.ing" />
     <meta property="og:type" content="{{ or .Type "website" }}" />
     <meta property="og:title" content="{{ .Title }}" />
     <meta property="og:url" content="{{ .URL }}" />
@@ -71,14 +79,16 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
 // Page describes a page for search engines and link previews, which don't
 // run the single page application.
 type Page struct {
-	// The title of the page. Defaults to "Trail tools".
+	// The title of the page. Defaults to "trailrunn.ing".
 	Title string
-	// A short description of the page.
+	// A short description of the page. Defaults to a description of the
+	// app.
 	Description string
 	// The canonical URL of the page. The Open Graph tags are only added
 	// for pages with a URL.
 	URL string
-	// The URL of an image representing the page.
+	// The URL of an image representing the page. Pages with a URL default
+	// to the app's preview image.
 	Image string
 	// The Open Graph type, e.g. "article" or "profile". Defaults to
 	// "website".
@@ -94,6 +104,14 @@ type Page struct {
 func Render(w http.ResponseWriter, watch bool, status int, page Page) {
 	if page.Title == "" {
 		page.Title = defaultTitle
+	}
+	if page.Description == "" {
+		page.Description = defaultDescription
+	}
+	if page.Image == "" && page.URL != "" {
+		if u, err := url.Parse(page.URL); err == nil {
+			page.Image = (&url.URL{Scheme: u.Scheme, Host: u.Host, Path: defaultImagePath}).String()
+		}
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)

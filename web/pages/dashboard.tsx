@@ -1,6 +1,5 @@
 import { RouteThumbnail } from "@components/activities/activity-bits";
 import VolumeChart from "@components/charts/volume-chart";
-import SignInDialog from "@components/header/sign-in-dialog";
 import Loading from "@components/loading";
 import {
   groupActivitiesByDate,
@@ -371,46 +370,27 @@ const RecentActivitiesCard: React.FC = () => {
 };
 
 interface DashboardPageProps {
-  user: User | null;
+  user: User;
 }
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
-  if (user === null) {
-    return (
-      <div className="flex grow flex-col items-center gap-6 py-10">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900">
-            Welcome to Trail Tools!
-          </h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Plan your training, design routes and prepare for race day.
-          </p>
-          <p className="text-lg text-gray-600">Please sign in to continue.</p>
-        </div>
-        <SignInDialog />
+const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => (
+  <div className="flex flex-col gap-4">
+    <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+      <TrophyIcon className="size-6 text-brand-600" />
+      Hi {user.givenName === "" ? user.name : user.givenName}
+    </h1>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="flex flex-col gap-4 lg:col-span-2">
+        <PlanCard />
+        <VolumeCard />
       </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-        <TrophyIcon className="size-6 text-emerald-700" />
-        Hi {user.givenName === "" ? user.name : user.givenName}
-      </h1>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
-          <PlanCard />
-          <VolumeCard />
-        </div>
-        <div className="flex flex-col gap-4">
-          <StravaCard />
-          <UpcomingRacesCard />
-          <RecentActivitiesCard />
-        </div>
+      <div className="flex flex-col gap-4">
+        <StravaCard />
+        <UpcomingRacesCard />
+        <RecentActivitiesCard />
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 export default DashboardPage;

@@ -107,7 +107,7 @@ const ApiTokens: React.FC = () => {
     <Card title="API tokens">
       <div className="flex flex-col gap-4">
         <p className="text-sm text-gray-600">
-          API tokens let AI agents and other clients use Trail Tools on your
+          API tokens let AI agents and other clients use trailrunn.ing on your
           behalf with an{" "}
           <code className="rounded bg-gray-100 px-1">
             Authorization: Bearer &lt;token&gt;
@@ -190,12 +190,12 @@ const McpInstructions: React.FC = () => {
     <Card title="Connect your AI agent (MCP)">
       <div className="flex flex-col gap-4 text-sm text-gray-700">
         <p>
-          Trail Tools is also an{" "}
+          trailrunn.ing is also an{" "}
           <a
             href="https://modelcontextprotocol.io"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-emerald-700 hover:underline"
+            className="font-medium text-brand-600 hover:underline"
           >
             MCP server
           </a>
@@ -214,7 +214,7 @@ const McpInstructions: React.FC = () => {
           </span>
           <p>
             Add a custom connector with the endpoint above. You&apos;ll be asked
-            to sign in to Trail Tools and approve the connection, and the app
+            to sign in to trailrunn.ing and approve the connection, and the app
             shows up under connected apps.
           </p>
         </div>
@@ -245,7 +245,7 @@ const McpInstructions: React.FC = () => {
 };
 
 interface SettingsPageProps {
-  user: User | null;
+  user: User;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
@@ -253,9 +253,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
     <PageHeader title="Settings" />
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-4">
-        {user !== null && <AvatarCard user={user} />}
+        <AvatarCard user={user} />
         <Passkeys />
-        <Invitations admin={user !== null && user.admin} />
+        <Invitations admin={user.admin} />
         <StravaCard showDisconnect />
       </div>
       <div className="flex flex-col gap-4">

@@ -160,7 +160,7 @@ const ImportGpx: React.FC = () => {
         <input
           type="file"
           accept=".gpx,application/gpx+xml"
-          className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-emerald-800 hover:file:bg-emerald-100"
+          className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-brand-700 hover:file:bg-brand-100"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file === undefined) {
@@ -217,7 +217,7 @@ const FromActivity: React.FC = () => {
     return (
       <p className="text-sm text-gray-500">
         No activities with GPS data yet. Connect Strava in{" "}
-        <Link to="/settings" className="text-emerald-700 hover:underline">
+        <Link to="/settings" className="text-brand-600 hover:underline">
           Settings
         </Link>
         .
@@ -335,13 +335,13 @@ const NewRoute: React.FC = () => {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">New route</h1>
           {workoutId !== "" && (
-            <div className="mt-1 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900 ring-1 ring-emerald-200">
+            <div className="mt-1 rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-800 ring-1 ring-brand-200">
               {workout === undefined ? (
                 "Designing a route for a workout."
               ) : (
                 <WorkoutContext workout={workout} />
               )}{" "}
-              <span className="text-emerald-700">
+              <span className="text-brand-600">
                 The route is assigned to the workout when saved.
               </span>
             </div>

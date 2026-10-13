@@ -14,7 +14,7 @@ export const ActivityChip: React.FC<ActivityChipProps> = ({ activity }) => (
   <Link
     to={`/activities/${activity.id}`}
     title={`${activity.name} (${sportLabel(activity.sportType)}, ${formatHoursMinutes(activity.movingTimeSeconds)})`}
-    className="flex flex-col rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] leading-tight text-gray-700 hover:border-emerald-500 hover:bg-emerald-50"
+    className="flex flex-col rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] leading-tight text-gray-700 hover:border-brand-500 hover:bg-brand-50"
   >
     <span className="truncate font-medium">{activity.name}</span>
     <span className="tabular-nums text-gray-500">
@@ -62,32 +62,34 @@ export const RouteThumbnail: React.FC<RouteThumbnailProps> = ({
   const spanX = Math.max((maxLng - minLng) * scaleLng, 1e-6);
   const spanY = Math.max(maxLat - minLat, 1e-6);
   const span = Math.max(spanX, spanY);
-  const padding = 3;
+  // Room for the start dot at the edges.
+  const padding = 4;
   const inner = size - padding * 2;
   const offsetX = (inner - (spanX / span) * inner) / 2;
   const offsetY = (inner - (spanY / span) * inner) / 2;
-  const path = points
-    .map(([lat, lng]) => {
-      const xValue =
-        padding + offsetX + (((lng - minLng) * scaleLng) / span) * inner;
-      const yValue = padding + offsetY + ((maxLat - lat) / span) * inner;
-      return `${xValue.toFixed(1)},${yValue.toFixed(1)}`;
-    })
+  const coords = points.map(([lat, lng]): [number, number] => [
+    padding + offsetX + (((lng - minLng) * scaleLng) / span) * inner,
+    padding + offsetY + ((maxLat - lat) / span) * inner,
+  ]);
+  const path = coords
+    .map(([xValue, yValue]) => `${xValue.toFixed(1)},${yValue.toFixed(1)}`)
     .join(" ");
+  const [startX, startY] = coords[0] ?? [0, 0];
   return (
     <svg
       width={size}
       height={size}
-      className="shrink-0 rounded bg-emerald-50"
+      className="shrink-0 rounded bg-stone-100"
       aria-hidden="true"
     >
       <polyline
         points={path}
         fill="none"
-        stroke="#047857"
+        stroke="#292524"
         strokeWidth={1.5}
         strokeLinejoin="round"
       />
+      <circle cx={startX} cy={startY} r={2.5} className="fill-ember" />
     </svg>
   );
 };

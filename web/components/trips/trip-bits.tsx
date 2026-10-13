@@ -188,11 +188,11 @@ export const ReportCard: React.FC<ReportCardProps> = ({
   return (
     <Link
       to={to}
-      className={`${cardClass} group flex flex-col overflow-hidden hover:border-emerald-400`}
+      className={`${cardClass} group flex flex-col overflow-hidden hover:border-brand-400`}
     >
-      <div className="relative aspect-[16/9] bg-gradient-to-br from-emerald-100 to-sky-100">
+      <div className="relative aspect-[16/9] bg-stone-100">
         {cover === undefined ? (
-          <div className="flex h-full items-center justify-center text-emerald-700/50">
+          <div className="flex h-full items-center justify-center text-stone-400">
             {report.hasTrack ? (
               <MapIcon className="size-12" />
             ) : (
@@ -222,10 +222,10 @@ export const ReportCard: React.FC<ReportCardProps> = ({
         )}
       </div>
       <div className="flex grow flex-col gap-1.5 p-4">
-        <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">
+        <p className="text-xs font-semibold tracking-wide text-brand-600 uppercase">
           {tripKicker(report)}
         </p>
-        <h2 className="text-lg leading-snug font-semibold text-gray-900 group-hover:text-emerald-800">
+        <h2 className="text-lg leading-snug font-semibold text-gray-900 group-hover:text-brand-700">
           {report.title}
         </h2>
         {stats.length > 0 && (

@@ -69,10 +69,10 @@ const WeekDays: React.FC<WeekDaysProps> = ({
         return (
           <div
             key={day}
-            className={`group min-h-24 flex-col gap-1 rounded-md border p-1 ${cellClass} ${inMonth && inPlan ? "" : "opacity-60"} ${isToday ? "ring-2 ring-emerald-500" : ""} ${hideEmptyDays && empty && !isToday ? "hidden sm:flex" : "flex"}`}
+            className={`group min-h-24 flex-col gap-1 rounded-md border p-1 ${cellClass} ${inMonth && inPlan ? "" : "opacity-60"} ${isToday ? "ring-2 ring-brand-500" : ""} ${hideEmptyDays && empty && !isToday ? "hidden sm:flex" : "flex"}`}
           >
             <div className="flex items-center justify-between text-[11px] text-gray-500">
-              <span className={isToday ? "font-bold text-emerald-700" : ""}>
+              <span className={isToday ? "font-bold text-brand-600" : ""}>
                 {WEEKDAY_NAMES[index]} {parseDate(day).getDate()}
                 {isToday && " · Today"}
               </span>

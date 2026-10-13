@@ -66,7 +66,7 @@ const Connections: React.FC = () => {
               className={ghostDangerButton}
               title="Disconnect app?"
               confirmLabel="Disconnect"
-              message={`"${connection.clientName}" will no longer be able to use Trail Tools. You can connect it again later.`}
+              message={`"${connection.clientName}" will no longer be able to use trailrunn.ing. You can connect it again later.`}
               disabled={remove.isPending}
               onConfirm={() => {
                 remove.mutate({ id: connection.id });
@@ -85,7 +85,7 @@ const Connections: React.FC = () => {
       <div className="flex flex-col gap-4">
         <p className="text-sm text-gray-600">
           Apps you connected with OAuth, like claude.ai custom connectors, use
-          Trail Tools on your behalf. Disconnecting an app revokes its access.
+          trailrunn.ing on your behalf. Disconnecting an app revokes its access.
         </p>
         <ErrorText error={remove.error} />
         {list}

@@ -132,8 +132,8 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         type="button"
         className={`flex flex-col items-center gap-1 rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm transition-colors ${
           dragging
-            ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-            : "border-gray-300 bg-gray-50 text-gray-600 hover:border-emerald-400 hover:bg-emerald-50/50"
+            ? "border-brand-500 bg-brand-50 text-brand-700"
+            : "border-gray-300 bg-gray-50 text-gray-600 hover:border-brand-400 hover:bg-brand-50/50"
         }`}
         onClick={() => {
           inputRef.current?.click();

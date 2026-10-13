@@ -317,7 +317,7 @@ export const RaceReportCard: React.FC<RaceReportCardProps> = ({
 }) => (
   <Link
     to={to}
-    className={`${cardClass} flex flex-col gap-2 p-4 hover:border-emerald-400 hover:shadow`}
+    className={`${cardClass} flex flex-col gap-2 p-4 hover:border-brand-400 hover:shadow`}
   >
     <div className="flex items-start justify-between gap-2">
       <h2 className="leading-snug font-semibold text-gray-900">

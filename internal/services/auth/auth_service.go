@@ -92,7 +92,7 @@ func NewService(log *slog.Logger, repo Repository, baseURL, bootstrapToken strin
 			ID:     u.Hostname(),
 			Origin: u.Scheme + "://" + u.Host,
 		},
-		rpName:         "Trail Tools",
+		rpName:         "trailrunn.ing",
 		baseURL:        strings.TrimSuffix(baseURL, "/"),
 		bootstrapToken: bootstrapToken,
 		nowFn:          time.Now,
@@ -466,7 +466,7 @@ func (s *Service) userHandle(ctx context.Context, userID pgtype.UUID) ([]byte, s
 	case err == nil:
 		return user.UserHandle, user.Name, nil
 	case errors.Is(err, store.ErrNotFound):
-		return userID.Bytes[:], "Trail Tools user", nil
+		return userID.Bytes[:], "trailrunn.ing user", nil
 	default:
 		return nil, "", s.internalError(ctx, "failed to get user", err)
 	}

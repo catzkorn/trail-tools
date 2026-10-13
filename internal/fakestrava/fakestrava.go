@@ -1,11 +1,11 @@
-// Package fakestrava is a stand-in for Strava, for running Trail Tools
+// Package fakestrava is a stand-in for Strava, for running trailrunn.ing
 // locally without a Strava API application. It has one athlete, who lives in
 // Squamish, BC, with about four months of generated runs, trail runs and
 // races, hikes, ski tours, and road and mountain bike rides up to today:
 // tracks with elevation, heart rate and cadence, and photos on the longer
 // outings.
 //
-// It serves the parts of Strava's OAuth flow and API that Trail Tools uses.
+// It serves the parts of Strava's OAuth flow and API that trailrunn.ing uses.
 // Authorizing always succeeds, after a click on a page that says it's fake.
 package fakestrava
 
@@ -141,8 +141,8 @@ a { border-radius: 6px; padding: 10px 16px; text-decoration: none; font-weight: 
 <body>
 <main>
 <h1>Fake Strava</h1>
-<p>This isn't Strava. It's a stand-in for running Trail Tools locally, with a made-up athlete and about four months of generated activities around Squamish.</p>
-<p>Trail Tools asks to read your activities.</p>
+<p>This isn't Strava. It's a stand-in for running trailrunn.ing locally, with a made-up athlete and about four months of generated activities around Squamish.</p>
+<p>trailrunn.ing asks to read your activities.</p>
 <div class="actions">
 <a class="authorize" href="{{.Authorize}}">Authorize</a>
 <a class="cancel" href="{{.Cancel}}">Cancel</a>

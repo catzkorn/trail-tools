@@ -71,7 +71,7 @@ interface AddButtonProps {
 export const AddButton: React.FC<AddButtonProps> = ({ label, onClick }) => (
   <button
     type="button"
-    className="self-start rounded-md border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-emerald-500 hover:text-emerald-700"
+    className="self-start rounded-md border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-brand-500 hover:text-brand-600"
     onClick={onClick}
   >
     + {label}

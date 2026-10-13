@@ -17,14 +17,14 @@ export interface WorkoutStyle {
 
 export const WORKOUT_STYLES: WorkoutStyle[] = [
   {
-    cardClass: "bg-emerald-50 border-emerald-300 text-emerald-900",
-    dotClass: "bg-emerald-500",
+    cardClass: "bg-stone-100 border-stone-300 text-stone-900",
+    dotClass: "bg-stone-500",
     label: "Base",
     type: WorkoutType.BASE,
   },
   {
-    cardClass: "bg-amber-50 border-amber-300 text-amber-900",
-    dotClass: "bg-amber-500",
+    cardClass: "bg-brand-50 border-brand-300 text-brand-800",
+    dotClass: "bg-brand-500",
     label: "Intensity",
     type: WorkoutType.INTENSITY,
   },
@@ -35,20 +35,20 @@ export const WORKOUT_STYLES: WorkoutStyle[] = [
     type: WorkoutType.CROSS_TRAINING,
   },
   {
-    cardClass: "bg-pink-50 border-pink-300 text-pink-900",
-    dotClass: "bg-pink-500",
+    cardClass: "bg-violet-50 border-violet-300 text-violet-900",
+    dotClass: "bg-violet-500",
     label: "Strength",
     type: WorkoutType.STRENGTH,
   },
   {
-    cardClass: "bg-yellow-50 border-yellow-400 text-yellow-900",
-    dotClass: "bg-yellow-500",
+    cardClass: "bg-ink border-ink text-white",
+    dotClass: "bg-ink",
     label: "Race",
     type: WorkoutType.RACE,
   },
   {
-    cardClass: "bg-gray-50 border-gray-300 text-gray-600",
-    dotClass: "bg-gray-400",
+    cardClass: "bg-white border-dashed border-gray-300 text-gray-500",
+    dotClass: "bg-gray-300",
     label: "Rest",
     type: WorkoutType.REST,
   },
@@ -123,13 +123,13 @@ export const priorityLabel = (priority: RacePriority): string => {
 export const priorityClass = (priority: RacePriority): string => {
   switch (priority) {
     case RacePriority.A: {
-      return "bg-rose-100 text-rose-800 ring-rose-300";
+      return "bg-brand-50 text-brand-800 ring-brand-300";
     }
     case RacePriority.B: {
-      return "bg-amber-100 text-amber-800 ring-amber-300";
+      return "bg-stone-100 text-stone-800 ring-stone-300";
     }
     case RacePriority.C: {
-      return "bg-sky-100 text-sky-800 ring-sky-300";
+      return "bg-white text-gray-700 ring-gray-300";
     }
     default: {
       return "bg-gray-100 text-gray-700 ring-gray-300";

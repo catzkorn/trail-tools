@@ -34,7 +34,7 @@ const searchRadius = (viewport: Viewport): number => {
 };
 
 // HEAT_COLOR is the color of the heatmap's tracks, darker where they overlap.
-const HEAT_COLOR = "#ea580c";
+const HEAT_COLOR = "#6f3410";
 
 // MetersPerPixel is the size of a screen pixel on the map at a latitude.
 const metersPerPixel = (lat: number, zoom: number): number =>

@@ -42,15 +42,35 @@ func TestRender(t *testing.T) {
 	}
 }
 
+func TestRenderDefaultImage(t *testing.T) {
+	rec := httptest.NewRecorder()
+	Render(rec, false, http.StatusOK, Page{
+		Title: "Trip reports by Jane",
+		URL:   "https://trail.example/u/jane",
+	})
+	body := rec.Body.String()
+	for _, want := range []string{
+		`<meta property="og:image" content="https://trail.example/img/og.png" />`,
+		`<meta name="twitter:card" content="summary_large_image" />`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page does not contain %q:\n%s", want, body)
+		}
+	}
+}
+
 func TestRenderDefault(t *testing.T) {
 	rec := httptest.NewRecorder()
 	ServeIndexHTML(false).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/anything", nil))
 	body := rec.Body.String()
-	if !strings.Contains(body, "<title>Trail tools</title>") {
+	if !strings.Contains(body, "<title>trailrunn.ing</title>") {
 		t.Errorf("page has no default title:\n%s", body)
 	}
-	if strings.Contains(body, "og:") || strings.Contains(body, "description") {
-		t.Errorf("page without metadata has metadata:\n%s", body)
+	if !strings.Contains(body, `<meta name="description" content="Training plans, race day plans and trip reports for trail runners." />`) {
+		t.Errorf("page has no default description:\n%s", body)
+	}
+	if strings.Contains(body, "og:") {
+		t.Errorf("page without a URL has Open Graph tags:\n%s", body)
 	}
 
 	rec = httptest.NewRecorder()

@@ -80,7 +80,7 @@ const WaypointMarkers: React.FC<WaypointMarkersProps> = ({
   useEffect(() => {
     const group = leaflet.layerGroup();
     const rubberBand = leaflet.polyline([], {
-      color: "#047857",
+      color: "#d2601a",
       dashArray: "4 6",
       interactive: false,
       weight: 3,

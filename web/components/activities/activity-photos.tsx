@@ -150,7 +150,7 @@ const ActivityPhotos: React.FC<ActivityPhotosProps> = ({
           <li key={photo.id} className="flex min-w-0 flex-col gap-1">
             <button
               type="button"
-              className="relative block overflow-hidden rounded-md bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              className="relative block overflow-hidden rounded-md bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
               aria-label={`Open photo ${index + 1}`}
               onClick={() => {
                 onOpen(index);
@@ -163,7 +163,7 @@ const ActivityPhotos: React.FC<ActivityPhotosProps> = ({
                 decoding="async"
                 className="aspect-[4/3] w-full object-cover transition-transform hover:scale-105"
               />
-              <span className="absolute top-1 left-1 inline-flex size-5 items-center justify-center rounded-full border-2 border-white bg-emerald-700 text-[10px] font-bold text-white">
+              <span className="absolute top-1 left-1 inline-flex size-5 items-center justify-center rounded-full border-2 border-white bg-ink text-[10px] font-bold text-white">
                 {index + 1}
               </span>
             </button>

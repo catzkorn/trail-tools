@@ -88,7 +88,7 @@ func ParseGPX(r io.Reader) (*GPXTrack, error) {
 func WriteGPX(w io.Writer, name string, points []Point) error {
 	var buf bytes.Buffer
 	buf.WriteString(xml.Header)
-	buf.WriteString(`<gpx version="1.1" creator="Trail Tools" xmlns="http://www.topografix.com/GPX/1/1">` + "\n")
+	buf.WriteString(`<gpx version="1.1" creator="trailrunn.ing" xmlns="http://www.topografix.com/GPX/1/1">` + "\n")
 	buf.WriteString("  <metadata><name>")
 	xml.EscapeText(&buf, []byte(name))
 	buf.WriteString("</name></metadata>\n  <trk>\n    <name>")

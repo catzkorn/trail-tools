@@ -116,7 +116,7 @@ func (s *Service) PageHandler(watch bool) http.Handler {
 				s.log.ErrorContext(r.Context(), "Failed to get public page", slogor.Err(err))
 			}
 			// The frontend shows its own error page.
-			html.Render(w, watch, http.StatusNotFound, html.Page{Title: "Not found · Trail Tools", NoIndex: true})
+			html.Render(w, watch, http.StatusNotFound, html.Page{Title: "Not found · trailrunn.ing", NoIndex: true})
 			return
 		}
 		html.Render(w, watch, http.StatusOK, page)
@@ -139,11 +139,11 @@ func (s *Service) profilePage(r *http.Request, handle string) (html.Page, error)
 	}
 	switch len(reports) {
 	case 0:
-		page.Description = fmt.Sprintf("Trip reports by %s on Trail Tools.", profile.DisplayName)
+		page.Description = fmt.Sprintf("Trip reports by %s on trailrunn.ing.", profile.DisplayName)
 	case 1:
-		page.Description = fmt.Sprintf("Trip reports by %s on Trail Tools, most recently %s.", profile.DisplayName, reports[0].Title)
+		page.Description = fmt.Sprintf("Trip reports by %s on trailrunn.ing, most recently %s.", profile.DisplayName, reports[0].Title)
 	default:
-		page.Description = fmt.Sprintf("%d trip reports by %s on Trail Tools, most recently %s.", len(reports), profile.DisplayName, reports[0].Title)
+		page.Description = fmt.Sprintf("%d trip reports by %s on trailrunn.ing, most recently %s.", len(reports), profile.DisplayName, reports[0].Title)
 	}
 	// Use the first photo of the most recent report with photos.
 	if len(reports) > 0 {

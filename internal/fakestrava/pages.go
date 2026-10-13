@@ -48,7 +48,7 @@ a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-<header><b>Fake Strava</b><span>A stand-in for Strava, for running Trail Tools locally. Nothing here is real.</span></header>
+<header><b>Fake Strava</b><span>A stand-in for Strava, for running trailrunn.ing locally. Nothing here is real.</span></header>
 <main>
 {{if .Activity}}{{with .Activity}}
 <section class="card">

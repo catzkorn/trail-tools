@@ -51,7 +51,7 @@ const MonthStrip: React.FC<MonthStripProps> = ({
             }}
             className={`flex w-36 shrink-0 flex-col gap-1 rounded-lg border p-2 text-left transition ${
               isSelected
-                ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600"
+                ? "border-brand-600 bg-brand-50 ring-1 ring-brand-600"
                 : "border-gray-200 bg-white hover:border-gray-400"
             }`}
           >
@@ -60,7 +60,7 @@ const MonthStrip: React.FC<MonthStripProps> = ({
                 {formatShortMonth(month)} {month.slice(0, 4)}
               </span>
               {isCurrent && (
-                <span className="rounded bg-emerald-600 px-1 text-[10px] text-white">
+                <span className="rounded bg-ink px-1 text-[10px] text-white">
                   now
                 </span>
               )}

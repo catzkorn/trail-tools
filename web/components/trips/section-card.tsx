@@ -127,7 +127,7 @@ const PhotoRow: React.FC<PhotoRowProps> = ({
           alt=""
           className="size-20 rounded-md object-cover sm:size-24"
         />
-        <span className="absolute -top-1.5 -left-1.5 inline-flex size-5 items-center justify-center rounded-full border-2 border-white bg-emerald-700 text-[10px] font-bold text-white">
+        <span className="absolute -top-1.5 -left-1.5 inline-flex size-5 items-center justify-center rounded-full border-2 border-white bg-ink text-[10px] font-bold text-white">
           {number}
         </span>
       </button>
@@ -319,7 +319,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
       aria-label={sectionLabel(section, index)}
       className={`flex flex-col gap-3 rounded-lg border p-3 transition-colors ${
         active
-          ? "border-emerald-400 bg-emerald-50/40 ring-1 ring-emerald-300"
+          ? "border-brand-400 bg-brand-50/40 ring-1 ring-brand-300"
           : "border-gray-200"
       }`}
       onFocusCapture={onActivate}

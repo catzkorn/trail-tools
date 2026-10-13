@@ -16,8 +16,10 @@ import { formatRedirectTarget } from "helpers/format";
 import React, { useState } from "react";
 import { useLocation } from "react-router";
 
-// OAuthConsentPage asks the user to approve an OAuth client that wants to use
-// Trail Tools on their behalf, such as a custom connector of claude.ai.
+/**
+ * OAuthConsentPage asks the user to approve an OAuth client that wants to use
+ * trailrunn.ing on their behalf, such as a custom connector of claude.ai.
+ */
 // The server validates the authorization request before serving this page.
 const OAuthConsentPage: React.FC = () => {
   const query = useLocation().search.replace(/^\?/u, "");
@@ -54,7 +56,7 @@ const OAuthConsentPage: React.FC = () => {
     content = (
       <>
         <h1 className="text-xl font-bold text-gray-900">
-          Connect {data.clientName} to Trail Tools?
+          Connect {data.clientName} to trailrunn.ing?
         </h1>
         <p className="text-sm text-gray-700">
           <span className="font-semibold">{data.clientName}</span> will be able

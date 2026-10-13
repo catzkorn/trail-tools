@@ -373,7 +373,7 @@ const RaceDialog: React.FC<RaceDialogProps> = ({
                 {" "}
                 <button
                   type="button"
-                  className="font-medium text-emerald-700 hover:underline"
+                  className="font-medium text-brand-600 hover:underline"
                   onClick={applyCourseStats}
                 >
                   Use course distance and gain

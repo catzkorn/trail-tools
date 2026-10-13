@@ -19,7 +19,7 @@ const statusBadge = (status: PlanStatus): React.ReactNode => {
   switch (status) {
     case "active": {
       return (
-        <Badge className="bg-emerald-100 text-emerald-800 ring-emerald-300">
+        <Badge className="bg-brand-100 text-brand-700 ring-brand-300">
           Active
         </Badge>
       );
@@ -76,7 +76,7 @@ const PlansPage: React.FC = () => {
             <Link
               key={plan.id}
               to={`/plans/${plan.id}`}
-              className={`${cardClass} flex flex-col gap-2 p-4 hover:border-emerald-400`}
+              className={`${cardClass} flex flex-col gap-2 p-4 hover:border-brand-400`}
             >
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-semibold text-gray-900">{plan.name}</h2>

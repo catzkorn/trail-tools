@@ -62,7 +62,7 @@ const SharedRacePlanPage: React.FC = () => {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <RaceHeader race={race}>
-          <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">
+          <p className="text-xs font-semibold tracking-wide text-brand-600 uppercase">
             Race plan
           </p>
         </RaceHeader>
