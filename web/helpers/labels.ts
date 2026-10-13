@@ -123,10 +123,10 @@ export const priorityLabel = (priority: RacePriority): string => {
 export const priorityClass = (priority: RacePriority): string => {
   switch (priority) {
     case RacePriority.A: {
-      return "bg-brand-500 text-ink ring-brand-500";
+      return "bg-brand-50 text-brand-800 ring-brand-300";
     }
     case RacePriority.B: {
-      return "bg-ink text-white ring-ink";
+      return "bg-stone-100 text-stone-800 ring-stone-300";
     }
     case RacePriority.C: {
       return "bg-white text-gray-700 ring-gray-300";
