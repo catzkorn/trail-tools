@@ -57,7 +57,7 @@ const daySummary = (day: DayWeather): string => {
 // WeatherBadge is a one line summary of a day's weather, for workout cards.
 export const WeatherBadge: React.FC<{ day: DayWeather }> = ({ day }) => (
   <span
-    className="flex items-center gap-1 tabular-nums"
+    className="flex min-w-0 flex-wrap items-center gap-x-1 tabular-nums"
     title={daySummary(day)}
   >
     <span aria-hidden="true">{weatherSymbol(day.weatherCode, true)}</span>
