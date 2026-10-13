@@ -1,5 +1,11 @@
 import Loading from "@components/loading";
 import { RaceReportCard } from "@components/races/race-report-bits";
+import {
+  ALL_TAGS,
+  TagFilter,
+  tagFromSlug,
+  tagSlug,
+} from "@components/trips/tags";
 import { ReportCard } from "@components/trips/trip-bits";
 import { EmptyState } from "@components/ui/misc";
 import PublicFooter from "@components/ui/public-footer";
@@ -9,7 +15,7 @@ import { useQuery } from "@connectrpc/connect-query";
 import { listPublicRaceReports } from "gen/races/v1/race_reports-RaceReportService_connectquery";
 import { getPublicProfile } from "gen/trips/v1/trips-TripReportService_connectquery";
 import React, { useEffect } from "react";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 
 // Initials returns up to two initials of a name, for the avatar.
 const initials = (name: string): string =>
@@ -27,6 +33,8 @@ const initials = (name: string): string =>
  */
 const PublicProfilePage: React.FC = () => {
   const { handle = "" } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tagFilter = tagFromSlug(searchParams.get("tag"));
   const { isPending, isError, data, error, refetch } = useQuery(
     getPublicProfile,
     { handle },
@@ -81,6 +89,18 @@ const PublicProfilePage: React.FC = () => {
     races.length === 1 ? "1 race report" : `${races.length} race reports`,
     reports.length === 1 ? "1 trip report" : `${reports.length} trip reports`,
   ];
+  /**
+   * The tags of the trip reports, to filter by. Race reports have none, so
+   * they're hidden while filtering.
+   */
+  const usedTags = ALL_TAGS.filter((tag) =>
+    reports.some((report) => report.tags.includes(tag))
+  );
+  const shownReports =
+    tagFilter === undefined
+      ? reports
+      : reports.filter((report) => report.tags.includes(tagFilter));
+  const shownRaces = tagFilter === undefined ? races : [];
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-16">
@@ -95,11 +115,22 @@ const PublicProfilePage: React.FC = () => {
           @{profile.handle} · {counts.join(" · ")}
         </p>
       </header>
-      {races.length > 0 && (
+      {usedTags.length > 0 && (
+        <TagFilter
+          tags={usedTags}
+          selected={tagFilter}
+          onSelect={(tag) => {
+            setSearchParams(tag === undefined ? {} : { tag: tagSlug(tag) }, {
+              replace: true,
+            });
+          }}
+        />
+      )}
+      {shownRaces.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="text-xl font-semibold text-gray-900">Race reports</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {races.map((report) => (
+            {shownRaces.map((report) => (
               <RaceReportCard
                 key={report.id}
                 report={report}
@@ -109,18 +140,18 @@ const PublicProfilePage: React.FC = () => {
           </div>
         </section>
       )}
-      {races.length > 0 && reports.length > 0 && (
+      {shownRaces.length > 0 && shownReports.length > 0 && (
         <h2 className="-mb-5 text-xl font-semibold text-gray-900">
           Trip reports
         </h2>
       )}
-      {reports.length === 0 && races.length === 0 ? (
+      {shownReports.length === 0 && shownRaces.length === 0 ? (
         <EmptyState title="No reports yet">
           Published race and trip reports will show up here.
         </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {reports.map((report) => (
+          {shownReports.map((report) => (
             <ReportCard
               key={report.id}
               report={report}

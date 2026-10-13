@@ -1,7 +1,7 @@
 import { ActivityChip } from "@components/activities/activity-bits";
 import { PlusIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import type { Activity } from "gen/activities/v1/activities_pb";
-import type { Workout } from "gen/plans/v1/plans_pb";
+import type { Workout, WorkoutWeather } from "gen/plans/v1/plans_pb";
 import type { Race } from "gen/races/v1/races_pb";
 import { WEEKDAY_NAMES, isWithin, parseDate, today } from "helpers/dates";
 import React from "react";
@@ -20,8 +20,10 @@ interface WeekDaysProps {
   // Days outside the month are dimmed but still editable.
   monthStart?: string;
   monthEnd?: string;
+  // The forecasts of workouts by workout ID.
+  weather?: Map<string, WorkoutWeather>;
   onAddWorkout?: (date: string) => void;
-  onEditWorkout?: (workout: Workout) => void;
+  onOpenWorkout?: (workout: Workout) => void;
   // Hide days with nothing on them on small screens, where days are stacked.
   hideEmptyDays?: boolean;
 }
@@ -39,8 +41,9 @@ const WeekDays: React.FC<WeekDaysProps> = ({
   rangeEnd,
   monthStart,
   monthEnd,
+  weather,
   onAddWorkout,
-  onEditWorkout,
+  onOpenWorkout,
   hideEmptyDays = false,
 }) => {
   const now = today();
@@ -99,11 +102,12 @@ const WeekDays: React.FC<WeekDaysProps> = ({
               <WorkoutCard
                 key={workout.id}
                 workout={workout}
+                weather={weather?.get(workout.id)}
                 onClick={
-                  onEditWorkout === undefined
+                  onOpenWorkout === undefined
                     ? undefined
                     : () => {
-                        onEditWorkout(workout);
+                        onOpenWorkout(workout);
                       }
                 }
               />

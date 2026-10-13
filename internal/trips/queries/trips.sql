@@ -56,7 +56,8 @@ where user_id = $1 and slug = $2;
 select
   id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time,
   distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters,
-  (track is not null)::boolean as has_track, published, publish_time, create_time, update_time
+  (track is not null)::boolean as has_track, cover_photo_id, tags, published, publish_time,
+  create_time, update_time
 from trip_reports
 where user_id = $1
   and (sqlc.narg(activity_id)::uuid is null or activity_id = sqlc.narg(activity_id)::uuid)
@@ -69,6 +70,11 @@ update trip_reports set
   slug = coalesce(sqlc.narg(slug), slug),
   date = coalesce(sqlc.narg(date), date),
   hidden_ends_meters = coalesce(sqlc.narg(hidden_ends_meters), hidden_ends_meters),
+  cover_photo_id = case
+    when sqlc.arg(set_cover_photo)::boolean then sqlc.narg(cover_photo_id)::uuid
+    else cover_photo_id
+  end,
+  tags = coalesce(sqlc.narg(tags)::text[], tags),
   update_time = now()
 where id = sqlc.arg(id) and user_id = sqlc.arg(user_id)
 returning *;

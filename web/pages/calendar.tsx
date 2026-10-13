@@ -4,6 +4,7 @@ import {
   groupWorkoutsByDate,
 } from "@components/plans/plan-utils";
 import WeekDays from "@components/plans/week-days";
+import { useWorkoutWeather } from "@components/plans/workout-weather";
 import { PageHeader } from "@components/ui/misc";
 import QueryError from "@components/ui/query-error";
 import {
@@ -76,6 +77,7 @@ const CalendarPage: React.FC = () => {
     pageSize: 500,
     startDate: viewStart,
   });
+  const weather = useWorkoutWeather(viewStart, viewEnd);
 
   let content: React.ReactNode = null;
   const error = races.error ?? workouts.error ?? activities.error;
@@ -107,9 +109,7 @@ const CalendarPage: React.FC = () => {
       (race) => race.date >= month && race.date <= monthEnd
     );
     const openWorkout = (workout: Workout) => {
-      void navigate(
-        `/plans/${workout.planId}?month=${startOfMonth(workout.date).slice(0, 7)}`
-      );
+      void navigate(`/workouts/${workout.id}`);
     };
     content = (
       <div className="flex flex-col gap-3">
@@ -159,7 +159,8 @@ const CalendarPage: React.FC = () => {
                 rangeEnd={viewEnd}
                 monthStart={month}
                 monthEnd={monthEnd}
-                onEditWorkout={openWorkout}
+                weather={weather}
+                onOpenWorkout={openWorkout}
                 hideEmptyDays
               />
             </section>

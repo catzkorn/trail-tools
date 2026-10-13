@@ -132,6 +132,23 @@ func (r *Repository) LatestActivityStartTime(ctx context.Context, userID pgtype.
 	return t.Time, nil
 }
 
+// LatestStartPoint returns where the user's most recent activity with a
+// track started. It returns false if there is none.
+func (r *Repository) LatestStartPoint(ctx context.Context, userID pgtype.UUID) (geo.Point, bool, error) {
+	polyline, err := r.q.GetLatestActivityPolyline(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return geo.Point{}, false, nil
+		}
+		return geo.Point{}, false, fmt.Errorf("failed to get latest activity: %w", err)
+	}
+	points, err := geo.DecodePolyline(polyline)
+	if err != nil || len(points) == 0 {
+		return geo.Point{}, false, nil
+	}
+	return points[0], true, nil
+}
+
 // PendingStreams is an activity whose streams have not been synced.
 type PendingStreams struct {
 	ID       pgtype.UUID

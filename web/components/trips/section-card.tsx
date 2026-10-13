@@ -12,9 +12,11 @@ import {
   ArrowsPointingInIcon,
   MapPinIcon,
   ScissorsIcon,
+  StarIcon,
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { StarIcon as SolidStarIcon } from "@heroicons/react/24/solid";
 import type { RoutePoint } from "gen/routes/v1/routes_pb";
 import {
   deleteTripPhoto,
@@ -73,12 +75,15 @@ interface PhotoRowProps {
   last: boolean;
   selected: boolean;
   placing: boolean;
+  // Whether the photo is the report's cover photo.
+  cover: boolean;
   // The other sections the photo can move to.
   sections: { key: string; label: string }[];
   onSelect: () => void;
   onPlace: () => void;
   onMove: (delta: number) => void;
   onMoveToSection: (key: string) => void;
+  onSetCover: () => void;
   onChanged: () => Promise<void>;
 }
 
@@ -93,11 +98,13 @@ const PhotoRow: React.FC<PhotoRowProps> = ({
   last,
   selected,
   placing,
+  cover,
   sections,
   onSelect,
   onPlace,
   onMove,
   onMoveToSection,
+  onSetCover,
   onChanged,
 }) => {
   const [caption, setCaption] = useState(photo.caption);
@@ -130,6 +137,11 @@ const PhotoRow: React.FC<PhotoRowProps> = ({
         <span className="absolute -top-1.5 -left-1.5 inline-flex size-5 items-center justify-center rounded-full border-2 border-white bg-ink text-[10px] font-bold text-white">
           {number}
         </span>
+        {cover && (
+          <span className="absolute inset-x-0 bottom-0 rounded-b-md bg-ink/80 py-0.5 text-center text-[10px] font-semibold tracking-wide text-white uppercase">
+            Cover
+          </span>
+        )}
       </button>
       <div className="flex min-w-0 grow flex-col gap-1.5">
         <textarea
@@ -200,6 +212,21 @@ const PhotoRow: React.FC<PhotoRowProps> = ({
             )}
             <button
               type="button"
+              className={`${iconButton} ${cover ? "text-ember" : ""}`}
+              title={cover ? "The cover photo" : "Use as the cover photo"}
+              aria-label={cover ? "The cover photo" : "Use as the cover photo"}
+              aria-pressed={cover}
+              disabled={cover}
+              onClick={onSetCover}
+            >
+              {cover ? (
+                <SolidStarIcon className="size-4" />
+              ) : (
+                <StarIcon className="size-4" />
+              )}
+            </button>
+            <button
+              type="button"
               className={iconButton}
               aria-label="Move photo up"
               disabled={first}
@@ -257,6 +284,7 @@ interface SectionCardProps {
   splitting: boolean;
   selectedPhotoId: string | null;
   placingPhotoId: string | null;
+  coverPhotoId: string;
   onActivate: () => void;
   onChange: (section: DraftSection) => void;
   onMove: (delta: number) => void;
@@ -267,6 +295,7 @@ interface SectionCardProps {
   onPlacePhoto: (id: string) => void;
   onMovePhoto: (id: string, delta: number) => void;
   onMovePhotoToSection: (id: string, key: string) => void;
+  onSetCover: (id: string) => void;
   onPhotoChanged: () => Promise<void>;
 }
 
@@ -286,6 +315,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   splitting,
   selectedPhotoId,
   placingPhotoId,
+  coverPhotoId,
   onActivate,
   onChange,
   onMove,
@@ -296,6 +326,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   onPlacePhoto,
   onMovePhoto,
   onMovePhotoToSection,
+  onSetCover,
   onPhotoChanged,
 }) => {
   const range = draftRange(section);
@@ -449,6 +480,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
               last={position === sectionPhotos.length - 1}
               selected={photo.id === selectedPhotoId}
               placing={photo.id === placingPhotoId}
+              cover={photo.id === coverPhotoId}
               sections={otherSections}
               onSelect={() => {
                 onSelectPhoto(photo.id);
@@ -461,6 +493,9 @@ export const SectionCard: React.FC<SectionCardProps> = ({
               }}
               onMoveToSection={(key) => {
                 onMovePhotoToSection(photo.id, key);
+              }}
+              onSetCover={() => {
+                onSetCover(photo.id);
               }}
               onChanged={onPhotoChanged}
             />

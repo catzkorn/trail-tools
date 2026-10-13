@@ -1,5 +1,6 @@
 import type { ProfilePoint } from "@components/charts/elevation-profile";
 import type { MapPhoto } from "@components/map/photo-markers";
+import { TagList } from "@components/trips/tags";
 import { Badge } from "@components/ui/misc";
 import { cardClass } from "@components/ui/styles";
 import { MapIcon, PhotoIcon } from "@heroicons/react/24/outline";
@@ -183,7 +184,9 @@ export const ReportCard: React.FC<ReportCardProps> = ({
   to,
   showStatus = false,
 }) => {
-  const [cover] = report.photos;
+  const cover =
+    report.photos.find((photo) => photo.id === report.coverPhotoId) ??
+    report.photos.at(0);
   const stats = report.stats === undefined ? [] : statItems(report.stats);
   return (
     <Link
@@ -239,6 +242,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({
         {report.excerpt !== "" && (
           <p className="line-clamp-3 text-sm text-gray-500">{report.excerpt}</p>
         )}
+        <TagList tags={report.tags} className="mt-auto pt-2" />
       </div>
     </Link>
   );

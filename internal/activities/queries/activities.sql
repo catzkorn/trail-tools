@@ -56,6 +56,12 @@ on conflict (user_id, strava_id) do update set
   update_time = now()
 returning id;
 
+-- name: GetLatestActivityPolyline :one
+select summary_polyline from strava_activities
+where user_id = $1 and summary_polyline <> ''
+order by start_date_local desc, start_time desc
+limit 1;
+
 -- name: GetLatestActivityStartTime :one
 select max(start_time)::timestamptz from strava_activities
 where user_id = $1;

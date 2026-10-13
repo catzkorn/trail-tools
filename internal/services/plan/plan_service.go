@@ -47,15 +47,22 @@ type PlanRepository interface {
 
 // Service implements API handlers for the training plan service.
 type Service struct {
-	log   *slog.Logger
-	plans PlanRepository
+	log        *slog.Logger
+	plans      PlanRepository
+	routes     RouteSource
+	activities ActivitySource
+	weather    WeatherSource
 }
 
-// NewService creates a new Service.
-func NewService(log *slog.Logger, plans PlanRepository) *Service {
+// NewService creates a new Service. The routes, activities and weather
+// forecast the weather of workouts.
+func NewService(log *slog.Logger, plans PlanRepository, routes RouteSource, activities ActivitySource, weather WeatherSource) *Service {
 	return &Service{
-		log:   log,
-		plans: plans,
+		log:        log,
+		plans:      plans,
+		routes:     routes,
+		activities: activities,
+		weather:    weather,
 	}
 }
 

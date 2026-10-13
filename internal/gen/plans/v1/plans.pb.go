@@ -183,6 +183,54 @@ func (x WorkoutType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// WeatherLocationSource is where a workout's forecast is for.
+type WeatherLocationSource int32
+
+const (
+	WeatherLocationSource_WEATHER_LOCATION_SOURCE_UNSPECIFIED WeatherLocationSource = 0
+	// The start of the workout's route.
+	WeatherLocationSource_WEATHER_LOCATION_SOURCE_ROUTE_START WeatherLocationSource = 1
+	// Where the user's most recent activity started, for workouts without a
+	// route.
+	WeatherLocationSource_WEATHER_LOCATION_SOURCE_LATEST_ACTIVITY WeatherLocationSource = 2
+)
+
+// Enum value maps for WeatherLocationSource.
+var (
+	WeatherLocationSource_name = map[int32]string{
+		0: "WEATHER_LOCATION_SOURCE_UNSPECIFIED",
+		1: "WEATHER_LOCATION_SOURCE_ROUTE_START",
+		2: "WEATHER_LOCATION_SOURCE_LATEST_ACTIVITY",
+	}
+	WeatherLocationSource_value = map[string]int32{
+		"WEATHER_LOCATION_SOURCE_UNSPECIFIED":     0,
+		"WEATHER_LOCATION_SOURCE_ROUTE_START":     1,
+		"WEATHER_LOCATION_SOURCE_LATEST_ACTIVITY": 2,
+	}
+)
+
+func (x WeatherLocationSource) Enum() *WeatherLocationSource {
+	p := new(WeatherLocationSource)
+	*p = x
+	return p
+}
+
+func (x WeatherLocationSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WeatherLocationSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_plans_v1_plans_proto_enumTypes[2].Descriptor()
+}
+
+func (WeatherLocationSource) Type() protoreflect.EnumType {
+	return &file_plans_v1_plans_proto_enumTypes[2]
+}
+
+func (x WeatherLocationSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // A training plan.
 type TrainingPlan struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
@@ -1940,6 +1988,806 @@ func (b0 GetWorkoutResponse_builder) Build() *GetWorkoutResponse {
 	return m0
 }
 
+// The weather forecast for the day of a workout.
+type WorkoutWeather struct {
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_WorkoutId      string                 `protobuf:"bytes,1,opt,name=workout_id,json=workoutId,proto3"`
+	xxx_hidden_Date           string                 `protobuf:"bytes,2,opt,name=date,proto3"`
+	xxx_hidden_Location       *v1.LatLng             `protobuf:"bytes,3,opt,name=location,proto3"`
+	xxx_hidden_LocationSource WeatherLocationSource  `protobuf:"varint,4,opt,name=location_source,json=locationSource,proto3,enum=plans.v1.WeatherLocationSource"`
+	xxx_hidden_Day            *DayWeather            `protobuf:"bytes,5,opt,name=day,proto3"`
+	xxx_hidden_Hours          *[]*HourWeather        `protobuf:"bytes,6,rep,name=hours,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *WorkoutWeather) Reset() {
+	*x = WorkoutWeather{}
+	mi := &file_plans_v1_plans_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkoutWeather) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkoutWeather) ProtoMessage() {}
+
+func (x *WorkoutWeather) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *WorkoutWeather) GetWorkoutId() string {
+	if x != nil {
+		return x.xxx_hidden_WorkoutId
+	}
+	return ""
+}
+
+func (x *WorkoutWeather) GetDate() string {
+	if x != nil {
+		return x.xxx_hidden_Date
+	}
+	return ""
+}
+
+func (x *WorkoutWeather) GetLocation() *v1.LatLng {
+	if x != nil {
+		return x.xxx_hidden_Location
+	}
+	return nil
+}
+
+func (x *WorkoutWeather) GetLocationSource() WeatherLocationSource {
+	if x != nil {
+		return x.xxx_hidden_LocationSource
+	}
+	return WeatherLocationSource_WEATHER_LOCATION_SOURCE_UNSPECIFIED
+}
+
+func (x *WorkoutWeather) GetDay() *DayWeather {
+	if x != nil {
+		return x.xxx_hidden_Day
+	}
+	return nil
+}
+
+func (x *WorkoutWeather) GetHours() []*HourWeather {
+	if x != nil {
+		if x.xxx_hidden_Hours != nil {
+			return *x.xxx_hidden_Hours
+		}
+	}
+	return nil
+}
+
+func (x *WorkoutWeather) SetWorkoutId(v string) {
+	x.xxx_hidden_WorkoutId = v
+}
+
+func (x *WorkoutWeather) SetDate(v string) {
+	x.xxx_hidden_Date = v
+}
+
+func (x *WorkoutWeather) SetLocation(v *v1.LatLng) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *WorkoutWeather) SetLocationSource(v WeatherLocationSource) {
+	x.xxx_hidden_LocationSource = v
+}
+
+func (x *WorkoutWeather) SetDay(v *DayWeather) {
+	x.xxx_hidden_Day = v
+}
+
+func (x *WorkoutWeather) SetHours(v []*HourWeather) {
+	x.xxx_hidden_Hours = &v
+}
+
+func (x *WorkoutWeather) HasLocation() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Location != nil
+}
+
+func (x *WorkoutWeather) HasDay() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Day != nil
+}
+
+func (x *WorkoutWeather) ClearLocation() {
+	x.xxx_hidden_Location = nil
+}
+
+func (x *WorkoutWeather) ClearDay() {
+	x.xxx_hidden_Day = nil
+}
+
+type WorkoutWeather_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the workout.
+	WorkoutId string
+	// The date of the workout (YYYY-MM-DD).
+	Date string
+	// Where the forecast is for.
+	Location *v1.LatLng
+	// Where the location comes from.
+	LocationSource WeatherLocationSource
+	// The weather during the daytime, from 06:00 to 21:00 local time.
+	Day *DayWeather
+	// The forecast for each hour of the daytime. Only set by
+	// GetWorkoutWeather.
+	Hours []*HourWeather
+}
+
+func (b0 WorkoutWeather_builder) Build() *WorkoutWeather {
+	m0 := &WorkoutWeather{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_WorkoutId = b.WorkoutId
+	x.xxx_hidden_Date = b.Date
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_LocationSource = b.LocationSource
+	x.xxx_hidden_Day = b.Day
+	x.xxx_hidden_Hours = &b.Hours
+	return m0
+}
+
+// The weather of a day.
+type DayWeather struct {
+	state                                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_MinTemperatureCelsius       float64                `protobuf:"fixed64,1,opt,name=min_temperature_celsius,json=minTemperatureCelsius,proto3"`
+	xxx_hidden_MaxTemperatureCelsius       float64                `protobuf:"fixed64,2,opt,name=max_temperature_celsius,json=maxTemperatureCelsius,proto3"`
+	xxx_hidden_MaxPrecipitationProbability int32                  `protobuf:"varint,3,opt,name=max_precipitation_probability,json=maxPrecipitationProbability,proto3"`
+	xxx_hidden_PrecipitationMm             float64                `protobuf:"fixed64,4,opt,name=precipitation_mm,json=precipitationMm,proto3"`
+	xxx_hidden_SnowfallCm                  float64                `protobuf:"fixed64,5,opt,name=snowfall_cm,json=snowfallCm,proto3"`
+	xxx_hidden_MaxWindSpeedKmh             float64                `protobuf:"fixed64,6,opt,name=max_wind_speed_kmh,json=maxWindSpeedKmh,proto3"`
+	xxx_hidden_MaxWindGustsKmh             float64                `protobuf:"fixed64,7,opt,name=max_wind_gusts_kmh,json=maxWindGustsKmh,proto3"`
+	xxx_hidden_WeatherCode                 int32                  `protobuf:"varint,8,opt,name=weather_code,json=weatherCode,proto3"`
+	xxx_hidden_Description                 string                 `protobuf:"bytes,9,opt,name=description,proto3"`
+	unknownFields                          protoimpl.UnknownFields
+	sizeCache                              protoimpl.SizeCache
+}
+
+func (x *DayWeather) Reset() {
+	*x = DayWeather{}
+	mi := &file_plans_v1_plans_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DayWeather) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DayWeather) ProtoMessage() {}
+
+func (x *DayWeather) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *DayWeather) GetMinTemperatureCelsius() float64 {
+	if x != nil {
+		return x.xxx_hidden_MinTemperatureCelsius
+	}
+	return 0
+}
+
+func (x *DayWeather) GetMaxTemperatureCelsius() float64 {
+	if x != nil {
+		return x.xxx_hidden_MaxTemperatureCelsius
+	}
+	return 0
+}
+
+func (x *DayWeather) GetMaxPrecipitationProbability() int32 {
+	if x != nil {
+		return x.xxx_hidden_MaxPrecipitationProbability
+	}
+	return 0
+}
+
+func (x *DayWeather) GetPrecipitationMm() float64 {
+	if x != nil {
+		return x.xxx_hidden_PrecipitationMm
+	}
+	return 0
+}
+
+func (x *DayWeather) GetSnowfallCm() float64 {
+	if x != nil {
+		return x.xxx_hidden_SnowfallCm
+	}
+	return 0
+}
+
+func (x *DayWeather) GetMaxWindSpeedKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_MaxWindSpeedKmh
+	}
+	return 0
+}
+
+func (x *DayWeather) GetMaxWindGustsKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_MaxWindGustsKmh
+	}
+	return 0
+}
+
+func (x *DayWeather) GetWeatherCode() int32 {
+	if x != nil {
+		return x.xxx_hidden_WeatherCode
+	}
+	return 0
+}
+
+func (x *DayWeather) GetDescription() string {
+	if x != nil {
+		return x.xxx_hidden_Description
+	}
+	return ""
+}
+
+func (x *DayWeather) SetMinTemperatureCelsius(v float64) {
+	x.xxx_hidden_MinTemperatureCelsius = v
+}
+
+func (x *DayWeather) SetMaxTemperatureCelsius(v float64) {
+	x.xxx_hidden_MaxTemperatureCelsius = v
+}
+
+func (x *DayWeather) SetMaxPrecipitationProbability(v int32) {
+	x.xxx_hidden_MaxPrecipitationProbability = v
+}
+
+func (x *DayWeather) SetPrecipitationMm(v float64) {
+	x.xxx_hidden_PrecipitationMm = v
+}
+
+func (x *DayWeather) SetSnowfallCm(v float64) {
+	x.xxx_hidden_SnowfallCm = v
+}
+
+func (x *DayWeather) SetMaxWindSpeedKmh(v float64) {
+	x.xxx_hidden_MaxWindSpeedKmh = v
+}
+
+func (x *DayWeather) SetMaxWindGustsKmh(v float64) {
+	x.xxx_hidden_MaxWindGustsKmh = v
+}
+
+func (x *DayWeather) SetWeatherCode(v int32) {
+	x.xxx_hidden_WeatherCode = v
+}
+
+func (x *DayWeather) SetDescription(v string) {
+	x.xxx_hidden_Description = v
+}
+
+type DayWeather_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The lowest and highest air temperature in degrees Celsius.
+	MinTemperatureCelsius float64
+	MaxTemperatureCelsius float64
+	// The highest chance of precipitation in percent.
+	MaxPrecipitationProbability int32
+	// The total precipitation in millimeters.
+	PrecipitationMm float64
+	// The total snowfall in centimeters.
+	SnowfallCm float64
+	// The strongest wind and gusts in kilometers per hour.
+	MaxWindSpeedKmh float64
+	MaxWindGustsKmh float64
+	// The most severe WMO weather code of the day, as used by Open-Meteo.
+	WeatherCode int32
+	// A description of the weather code, e.g. "Light rain".
+	Description string
+}
+
+func (b0 DayWeather_builder) Build() *DayWeather {
+	m0 := &DayWeather{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_MinTemperatureCelsius = b.MinTemperatureCelsius
+	x.xxx_hidden_MaxTemperatureCelsius = b.MaxTemperatureCelsius
+	x.xxx_hidden_MaxPrecipitationProbability = b.MaxPrecipitationProbability
+	x.xxx_hidden_PrecipitationMm = b.PrecipitationMm
+	x.xxx_hidden_SnowfallCm = b.SnowfallCm
+	x.xxx_hidden_MaxWindSpeedKmh = b.MaxWindSpeedKmh
+	x.xxx_hidden_MaxWindGustsKmh = b.MaxWindGustsKmh
+	x.xxx_hidden_WeatherCode = b.WeatherCode
+	x.xxx_hidden_Description = b.Description
+	return m0
+}
+
+// The weather forecast for an hour.
+type HourWeather struct {
+	state                                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Time                       *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3"`
+	xxx_hidden_TemperatureCelsius         float64                `protobuf:"fixed64,2,opt,name=temperature_celsius,json=temperatureCelsius,proto3"`
+	xxx_hidden_ApparentTemperatureCelsius float64                `protobuf:"fixed64,3,opt,name=apparent_temperature_celsius,json=apparentTemperatureCelsius,proto3"`
+	xxx_hidden_PrecipitationProbability   int32                  `protobuf:"varint,4,opt,name=precipitation_probability,json=precipitationProbability,proto3"`
+	xxx_hidden_PrecipitationMm            float64                `protobuf:"fixed64,5,opt,name=precipitation_mm,json=precipitationMm,proto3"`
+	xxx_hidden_WeatherCode                int32                  `protobuf:"varint,6,opt,name=weather_code,json=weatherCode,proto3"`
+	xxx_hidden_WindSpeedKmh               float64                `protobuf:"fixed64,7,opt,name=wind_speed_kmh,json=windSpeedKmh,proto3"`
+	xxx_hidden_WindGustsKmh               float64                `protobuf:"fixed64,8,opt,name=wind_gusts_kmh,json=windGustsKmh,proto3"`
+	xxx_hidden_WindDirectionDegrees       int32                  `protobuf:"varint,9,opt,name=wind_direction_degrees,json=windDirectionDegrees,proto3"`
+	xxx_hidden_IsDay                      bool                   `protobuf:"varint,10,opt,name=is_day,json=isDay,proto3"`
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
+}
+
+func (x *HourWeather) Reset() {
+	*x = HourWeather{}
+	mi := &file_plans_v1_plans_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HourWeather) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HourWeather) ProtoMessage() {}
+
+func (x *HourWeather) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *HourWeather) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_Time
+	}
+	return nil
+}
+
+func (x *HourWeather) GetTemperatureCelsius() float64 {
+	if x != nil {
+		return x.xxx_hidden_TemperatureCelsius
+	}
+	return 0
+}
+
+func (x *HourWeather) GetApparentTemperatureCelsius() float64 {
+	if x != nil {
+		return x.xxx_hidden_ApparentTemperatureCelsius
+	}
+	return 0
+}
+
+func (x *HourWeather) GetPrecipitationProbability() int32 {
+	if x != nil {
+		return x.xxx_hidden_PrecipitationProbability
+	}
+	return 0
+}
+
+func (x *HourWeather) GetPrecipitationMm() float64 {
+	if x != nil {
+		return x.xxx_hidden_PrecipitationMm
+	}
+	return 0
+}
+
+func (x *HourWeather) GetWeatherCode() int32 {
+	if x != nil {
+		return x.xxx_hidden_WeatherCode
+	}
+	return 0
+}
+
+func (x *HourWeather) GetWindSpeedKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_WindSpeedKmh
+	}
+	return 0
+}
+
+func (x *HourWeather) GetWindGustsKmh() float64 {
+	if x != nil {
+		return x.xxx_hidden_WindGustsKmh
+	}
+	return 0
+}
+
+func (x *HourWeather) GetWindDirectionDegrees() int32 {
+	if x != nil {
+		return x.xxx_hidden_WindDirectionDegrees
+	}
+	return 0
+}
+
+func (x *HourWeather) GetIsDay() bool {
+	if x != nil {
+		return x.xxx_hidden_IsDay
+	}
+	return false
+}
+
+func (x *HourWeather) SetTime(v *timestamppb.Timestamp) {
+	x.xxx_hidden_Time = v
+}
+
+func (x *HourWeather) SetTemperatureCelsius(v float64) {
+	x.xxx_hidden_TemperatureCelsius = v
+}
+
+func (x *HourWeather) SetApparentTemperatureCelsius(v float64) {
+	x.xxx_hidden_ApparentTemperatureCelsius = v
+}
+
+func (x *HourWeather) SetPrecipitationProbability(v int32) {
+	x.xxx_hidden_PrecipitationProbability = v
+}
+
+func (x *HourWeather) SetPrecipitationMm(v float64) {
+	x.xxx_hidden_PrecipitationMm = v
+}
+
+func (x *HourWeather) SetWeatherCode(v int32) {
+	x.xxx_hidden_WeatherCode = v
+}
+
+func (x *HourWeather) SetWindSpeedKmh(v float64) {
+	x.xxx_hidden_WindSpeedKmh = v
+}
+
+func (x *HourWeather) SetWindGustsKmh(v float64) {
+	x.xxx_hidden_WindGustsKmh = v
+}
+
+func (x *HourWeather) SetWindDirectionDegrees(v int32) {
+	x.xxx_hidden_WindDirectionDegrees = v
+}
+
+func (x *HourWeather) SetIsDay(v bool) {
+	x.xxx_hidden_IsDay = v
+}
+
+func (x *HourWeather) HasTime() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Time != nil
+}
+
+func (x *HourWeather) ClearTime() {
+	x.xxx_hidden_Time = nil
+}
+
+type HourWeather_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The start of the hour.
+	Time *timestamppb.Timestamp
+	// Air temperature in degrees Celsius.
+	TemperatureCelsius float64
+	// Apparent (feels like) temperature in degrees Celsius.
+	ApparentTemperatureCelsius float64
+	// The chance of precipitation in percent.
+	PrecipitationProbability int32
+	// Precipitation in millimeters.
+	PrecipitationMm float64
+	// The WMO weather code, as used by Open-Meteo.
+	WeatherCode int32
+	// Wind and gusts in kilometers per hour, and where the wind comes from in
+	// degrees.
+	WindSpeedKmh         float64
+	WindGustsKmh         float64
+	WindDirectionDegrees int32
+	// Whether it is daylight.
+	IsDay bool
+}
+
+func (b0 HourWeather_builder) Build() *HourWeather {
+	m0 := &HourWeather{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Time = b.Time
+	x.xxx_hidden_TemperatureCelsius = b.TemperatureCelsius
+	x.xxx_hidden_ApparentTemperatureCelsius = b.ApparentTemperatureCelsius
+	x.xxx_hidden_PrecipitationProbability = b.PrecipitationProbability
+	x.xxx_hidden_PrecipitationMm = b.PrecipitationMm
+	x.xxx_hidden_WeatherCode = b.WeatherCode
+	x.xxx_hidden_WindSpeedKmh = b.WindSpeedKmh
+	x.xxx_hidden_WindGustsKmh = b.WindGustsKmh
+	x.xxx_hidden_WindDirectionDegrees = b.WindDirectionDegrees
+	x.xxx_hidden_IsDay = b.IsDay
+	return m0
+}
+
+type ListWorkoutWeatherRequest struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_StartDate string                 `protobuf:"bytes,1,opt,name=start_date,json=startDate,proto3"`
+	xxx_hidden_EndDate   string                 `protobuf:"bytes,2,opt,name=end_date,json=endDate,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ListWorkoutWeatherRequest) Reset() {
+	*x = ListWorkoutWeatherRequest{}
+	mi := &file_plans_v1_plans_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorkoutWeatherRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorkoutWeatherRequest) ProtoMessage() {}
+
+func (x *ListWorkoutWeatherRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ListWorkoutWeatherRequest) GetStartDate() string {
+	if x != nil {
+		return x.xxx_hidden_StartDate
+	}
+	return ""
+}
+
+func (x *ListWorkoutWeatherRequest) GetEndDate() string {
+	if x != nil {
+		return x.xxx_hidden_EndDate
+	}
+	return ""
+}
+
+func (x *ListWorkoutWeatherRequest) SetStartDate(v string) {
+	x.xxx_hidden_StartDate = v
+}
+
+func (x *ListWorkoutWeatherRequest) SetEndDate(v string) {
+	x.xxx_hidden_EndDate = v
+}
+
+type ListWorkoutWeatherRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The first and last date of the range (YYYY-MM-DD).
+	StartDate string
+	EndDate   string
+}
+
+func (b0 ListWorkoutWeatherRequest_builder) Build() *ListWorkoutWeatherRequest {
+	m0 := &ListWorkoutWeatherRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_StartDate = b.StartDate
+	x.xxx_hidden_EndDate = b.EndDate
+	return m0
+}
+
+type ListWorkoutWeatherResponse struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Weather *[]*WorkoutWeather     `protobuf:"bytes,1,rep,name=weather,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ListWorkoutWeatherResponse) Reset() {
+	*x = ListWorkoutWeatherResponse{}
+	mi := &file_plans_v1_plans_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorkoutWeatherResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorkoutWeatherResponse) ProtoMessage() {}
+
+func (x *ListWorkoutWeatherResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ListWorkoutWeatherResponse) GetWeather() []*WorkoutWeather {
+	if x != nil {
+		if x.xxx_hidden_Weather != nil {
+			return *x.xxx_hidden_Weather
+		}
+	}
+	return nil
+}
+
+func (x *ListWorkoutWeatherResponse) SetWeather(v []*WorkoutWeather) {
+	x.xxx_hidden_Weather = &v
+}
+
+type ListWorkoutWeatherResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The forecasts of the workouts that have one, in date order.
+	Weather []*WorkoutWeather
+}
+
+func (b0 ListWorkoutWeatherResponse_builder) Build() *ListWorkoutWeatherResponse {
+	m0 := &ListWorkoutWeatherResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Weather = &b.Weather
+	return m0
+}
+
+type GetWorkoutWeatherRequest struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_WorkoutId string                 `protobuf:"bytes,1,opt,name=workout_id,json=workoutId,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GetWorkoutWeatherRequest) Reset() {
+	*x = GetWorkoutWeatherRequest{}
+	mi := &file_plans_v1_plans_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorkoutWeatherRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorkoutWeatherRequest) ProtoMessage() {}
+
+func (x *GetWorkoutWeatherRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetWorkoutWeatherRequest) GetWorkoutId() string {
+	if x != nil {
+		return x.xxx_hidden_WorkoutId
+	}
+	return ""
+}
+
+func (x *GetWorkoutWeatherRequest) SetWorkoutId(v string) {
+	x.xxx_hidden_WorkoutId = v
+}
+
+type GetWorkoutWeatherRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the workout.
+	WorkoutId string
+}
+
+func (b0 GetWorkoutWeatherRequest_builder) Build() *GetWorkoutWeatherRequest {
+	m0 := &GetWorkoutWeatherRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_WorkoutId = b.WorkoutId
+	return m0
+}
+
+type GetWorkoutWeatherResponse struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Weather *WorkoutWeather        `protobuf:"bytes,1,opt,name=weather,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GetWorkoutWeatherResponse) Reset() {
+	*x = GetWorkoutWeatherResponse{}
+	mi := &file_plans_v1_plans_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorkoutWeatherResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorkoutWeatherResponse) ProtoMessage() {}
+
+func (x *GetWorkoutWeatherResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_plans_v1_plans_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetWorkoutWeatherResponse) GetWeather() *WorkoutWeather {
+	if x != nil {
+		return x.xxx_hidden_Weather
+	}
+	return nil
+}
+
+func (x *GetWorkoutWeatherResponse) SetWeather(v *WorkoutWeather) {
+	x.xxx_hidden_Weather = v
+}
+
+func (x *GetWorkoutWeatherResponse) HasWeather() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Weather != nil
+}
+
+func (x *GetWorkoutWeatherResponse) ClearWeather() {
+	x.xxx_hidden_Weather = nil
+}
+
+type GetWorkoutWeatherResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The forecast. Unset if there is none, e.g. for workouts more than 15
+	// days ahead, without a location, or for rest days and strength training.
+	Weather *WorkoutWeather
+}
+
+func (b0 GetWorkoutWeatherResponse_builder) Build() *GetWorkoutWeatherResponse {
+	m0 := &GetWorkoutWeatherResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Weather = b.Weather
+	return m0
+}
+
 type CreateWorkoutsRequest struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_PlanId   string                 `protobuf:"bytes,1,opt,name=plan_id,json=planId,proto3"`
@@ -1950,7 +2798,7 @@ type CreateWorkoutsRequest struct {
 
 func (x *CreateWorkoutsRequest) Reset() {
 	*x = CreateWorkoutsRequest{}
-	mi := &file_plans_v1_plans_proto_msgTypes[21]
+	mi := &file_plans_v1_plans_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1962,7 +2810,7 @@ func (x *CreateWorkoutsRequest) String() string {
 func (*CreateWorkoutsRequest) ProtoMessage() {}
 
 func (x *CreateWorkoutsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plans_v1_plans_proto_msgTypes[21]
+	mi := &file_plans_v1_plans_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2024,7 +2872,7 @@ type CreateWorkoutsResponse struct {
 
 func (x *CreateWorkoutsResponse) Reset() {
 	*x = CreateWorkoutsResponse{}
-	mi := &file_plans_v1_plans_proto_msgTypes[22]
+	mi := &file_plans_v1_plans_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2036,7 +2884,7 @@ func (x *CreateWorkoutsResponse) String() string {
 func (*CreateWorkoutsResponse) ProtoMessage() {}
 
 func (x *CreateWorkoutsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plans_v1_plans_proto_msgTypes[22]
+	mi := &file_plans_v1_plans_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2085,7 +2933,7 @@ type UpdateWorkoutRequest struct {
 
 func (x *UpdateWorkoutRequest) Reset() {
 	*x = UpdateWorkoutRequest{}
-	mi := &file_plans_v1_plans_proto_msgTypes[23]
+	mi := &file_plans_v1_plans_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2097,7 +2945,7 @@ func (x *UpdateWorkoutRequest) String() string {
 func (*UpdateWorkoutRequest) ProtoMessage() {}
 
 func (x *UpdateWorkoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plans_v1_plans_proto_msgTypes[23]
+	mi := &file_plans_v1_plans_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2180,7 +3028,7 @@ type UpdateWorkoutResponse struct {
 
 func (x *UpdateWorkoutResponse) Reset() {
 	*x = UpdateWorkoutResponse{}
-	mi := &file_plans_v1_plans_proto_msgTypes[24]
+	mi := &file_plans_v1_plans_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2192,7 +3040,7 @@ func (x *UpdateWorkoutResponse) String() string {
 func (*UpdateWorkoutResponse) ProtoMessage() {}
 
 func (x *UpdateWorkoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plans_v1_plans_proto_msgTypes[24]
+	mi := &file_plans_v1_plans_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2250,7 +3098,7 @@ type DeleteWorkoutsRequest struct {
 
 func (x *DeleteWorkoutsRequest) Reset() {
 	*x = DeleteWorkoutsRequest{}
-	mi := &file_plans_v1_plans_proto_msgTypes[25]
+	mi := &file_plans_v1_plans_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2262,7 +3110,7 @@ func (x *DeleteWorkoutsRequest) String() string {
 func (*DeleteWorkoutsRequest) ProtoMessage() {}
 
 func (x *DeleteWorkoutsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plans_v1_plans_proto_msgTypes[25]
+	mi := &file_plans_v1_plans_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2321,7 +3169,7 @@ type DeleteWorkoutsResponse struct {
 
 func (x *DeleteWorkoutsResponse) Reset() {
 	*x = DeleteWorkoutsResponse{}
-	mi := &file_plans_v1_plans_proto_msgTypes[26]
+	mi := &file_plans_v1_plans_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2333,7 +3181,7 @@ func (x *DeleteWorkoutsResponse) String() string {
 func (*DeleteWorkoutsResponse) ProtoMessage() {}
 
 func (x *DeleteWorkoutsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plans_v1_plans_proto_msgTypes[26]
+	mi := &file_plans_v1_plans_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2438,7 +3286,50 @@ const file_plans_v1_plans_proto_rawDesc = "" +
 	"\x11GetWorkoutRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"A\n" +
 	"\x12GetWorkoutResponse\x12+\n" +
-	"\aworkout\x18\x01 \x01(\v2\x11.plans.v1.WorkoutR\aworkout\"_\n" +
+	"\aworkout\x18\x01 \x01(\v2\x11.plans.v1.WorkoutR\aworkout\"\x8e\x02\n" +
+	"\x0eWorkoutWeather\x12\x1d\n" +
+	"\n" +
+	"workout_id\x18\x01 \x01(\tR\tworkoutId\x12\x12\n" +
+	"\x04date\x18\x02 \x01(\tR\x04date\x12*\n" +
+	"\blocation\x18\x03 \x01(\v2\x0e.geo.v1.LatLngR\blocation\x12H\n" +
+	"\x0flocation_source\x18\x04 \x01(\x0e2\x1f.plans.v1.WeatherLocationSourceR\x0elocationSource\x12&\n" +
+	"\x03day\x18\x05 \x01(\v2\x14.plans.v1.DayWeatherR\x03day\x12+\n" +
+	"\x05hours\x18\x06 \x03(\v2\x15.plans.v1.HourWeatherR\x05hours\"\xab\x03\n" +
+	"\n" +
+	"DayWeather\x126\n" +
+	"\x17min_temperature_celsius\x18\x01 \x01(\x01R\x15minTemperatureCelsius\x126\n" +
+	"\x17max_temperature_celsius\x18\x02 \x01(\x01R\x15maxTemperatureCelsius\x12B\n" +
+	"\x1dmax_precipitation_probability\x18\x03 \x01(\x05R\x1bmaxPrecipitationProbability\x12)\n" +
+	"\x10precipitation_mm\x18\x04 \x01(\x01R\x0fprecipitationMm\x12\x1f\n" +
+	"\vsnowfall_cm\x18\x05 \x01(\x01R\n" +
+	"snowfallCm\x12+\n" +
+	"\x12max_wind_speed_kmh\x18\x06 \x01(\x01R\x0fmaxWindSpeedKmh\x12+\n" +
+	"\x12max_wind_gusts_kmh\x18\a \x01(\x01R\x0fmaxWindGustsKmh\x12!\n" +
+	"\fweather_code\x18\b \x01(\x05R\vweatherCode\x12 \n" +
+	"\vdescription\x18\t \x01(\tR\vdescription\"\xd4\x03\n" +
+	"\vHourWeather\x12.\n" +
+	"\x04time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12/\n" +
+	"\x13temperature_celsius\x18\x02 \x01(\x01R\x12temperatureCelsius\x12@\n" +
+	"\x1capparent_temperature_celsius\x18\x03 \x01(\x01R\x1aapparentTemperatureCelsius\x12;\n" +
+	"\x19precipitation_probability\x18\x04 \x01(\x05R\x18precipitationProbability\x12)\n" +
+	"\x10precipitation_mm\x18\x05 \x01(\x01R\x0fprecipitationMm\x12!\n" +
+	"\fweather_code\x18\x06 \x01(\x05R\vweatherCode\x12$\n" +
+	"\x0ewind_speed_kmh\x18\a \x01(\x01R\fwindSpeedKmh\x12$\n" +
+	"\x0ewind_gusts_kmh\x18\b \x01(\x01R\fwindGustsKmh\x124\n" +
+	"\x16wind_direction_degrees\x18\t \x01(\x05R\x14windDirectionDegrees\x12\x15\n" +
+	"\x06is_day\x18\n" +
+	" \x01(\bR\x05isDay\"U\n" +
+	"\x19ListWorkoutWeatherRequest\x12\x1d\n" +
+	"\n" +
+	"start_date\x18\x01 \x01(\tR\tstartDate\x12\x19\n" +
+	"\bend_date\x18\x02 \x01(\tR\aendDate\"P\n" +
+	"\x1aListWorkoutWeatherResponse\x122\n" +
+	"\aweather\x18\x01 \x03(\v2\x18.plans.v1.WorkoutWeatherR\aweather\"9\n" +
+	"\x18GetWorkoutWeatherRequest\x12\x1d\n" +
+	"\n" +
+	"workout_id\x18\x01 \x01(\tR\tworkoutId\"O\n" +
+	"\x19GetWorkoutWeatherResponse\x122\n" +
+	"\aweather\x18\x01 \x01(\v2\x18.plans.v1.WorkoutWeatherR\aweather\"_\n" +
 	"\x15CreateWorkoutsRequest\x12\x17\n" +
 	"\aplan_id\x18\x01 \x01(\tR\x06planId\x12-\n" +
 	"\bworkouts\x18\x02 \x03(\v2\x11.plans.v1.WorkoutR\bworkouts\"G\n" +
@@ -2474,7 +3365,11 @@ const file_plans_v1_plans_proto_rawDesc = "" +
 	"\x19WORKOUT_TYPE_HILL_REPEATS\x10\x05\x1a\x02\b\x01\x12\x19\n" +
 	"\x11WORKOUT_TYPE_VERT\x10\x06\x1a\x02\b\x01\x12\x1d\n" +
 	"\x15WORKOUT_TYPE_RECOVERY\x10\a\x1a\x02\b\x01\x12\x1a\n" +
-	"\x12WORKOUT_TYPE_OTHER\x10\f\x1a\x02\b\x012\xb5\b\n" +
+	"\x12WORKOUT_TYPE_OTHER\x10\f\x1a\x02\b\x01*\x96\x01\n" +
+	"\x15WeatherLocationSource\x12'\n" +
+	"#WEATHER_LOCATION_SOURCE_UNSPECIFIED\x10\x00\x12'\n" +
+	"#WEATHER_LOCATION_SOURCE_ROUTE_START\x10\x01\x12+\n" +
+	"'WEATHER_LOCATION_SOURCE_LATEST_ACTIVITY\x10\x022\xf4\t\n" +
 	"\x13TrainingPlanService\x12_\n" +
 	"\x12CreateTrainingPlan\x12#.plans.v1.CreateTrainingPlanRequest\x1a$.plans.v1.CreateTrainingPlanResponse\x12V\n" +
 	"\x0fGetTrainingPlan\x12 .plans.v1.GetTrainingPlanRequest\x1a!.plans.v1.GetTrainingPlanResponse\x12\\\n" +
@@ -2488,98 +3383,120 @@ const file_plans_v1_plans_proto_rawDesc = "" +
 	"GetWorkout\x12\x1b.plans.v1.GetWorkoutRequest\x1a\x1c.plans.v1.GetWorkoutResponse\x12S\n" +
 	"\x0eCreateWorkouts\x12\x1f.plans.v1.CreateWorkoutsRequest\x1a .plans.v1.CreateWorkoutsResponse\x12P\n" +
 	"\rUpdateWorkout\x12\x1e.plans.v1.UpdateWorkoutRequest\x1a\x1f.plans.v1.UpdateWorkoutResponse\x12S\n" +
-	"\x0eDeleteWorkouts\x12\x1f.plans.v1.DeleteWorkoutsRequest\x1a .plans.v1.DeleteWorkoutsResponseB\x9a\x01\n" +
+	"\x0eDeleteWorkouts\x12\x1f.plans.v1.DeleteWorkoutsRequest\x1a .plans.v1.DeleteWorkoutsResponse\x12_\n" +
+	"\x12ListWorkoutWeather\x12#.plans.v1.ListWorkoutWeatherRequest\x1a$.plans.v1.ListWorkoutWeatherResponse\x12\\\n" +
+	"\x11GetWorkoutWeather\x12\".plans.v1.GetWorkoutWeatherRequest\x1a#.plans.v1.GetWorkoutWeatherResponseB\x9a\x01\n" +
 	"\fcom.plans.v1B\n" +
 	"PlansProtoP\x01Z=github.com/catzkorn/trail-tools/internal/gen/plans/v1;plansv1\xa2\x02\x03PXX\xaa\x02\bPlans.V1\xca\x02\bPlans\\V1\xe2\x02\x14Plans\\V1\\GPBMetadata\xea\x02\tPlans::V1b\x06proto3"
 
-var file_plans_v1_plans_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_plans_v1_plans_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_plans_v1_plans_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_plans_v1_plans_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_plans_v1_plans_proto_goTypes = []any{
 	(PeriodGranularity)(0),             // 0: plans.v1.PeriodGranularity
 	(WorkoutType)(0),                   // 1: plans.v1.WorkoutType
-	(*TrainingPlan)(nil),               // 2: plans.v1.TrainingPlan
-	(*PlanPeriod)(nil),                 // 3: plans.v1.PlanPeriod
-	(*Workout)(nil),                    // 4: plans.v1.Workout
-	(*CreateTrainingPlanRequest)(nil),  // 5: plans.v1.CreateTrainingPlanRequest
-	(*CreateTrainingPlanResponse)(nil), // 6: plans.v1.CreateTrainingPlanResponse
-	(*GetTrainingPlanRequest)(nil),     // 7: plans.v1.GetTrainingPlanRequest
-	(*GetTrainingPlanResponse)(nil),    // 8: plans.v1.GetTrainingPlanResponse
-	(*ListTrainingPlansRequest)(nil),   // 9: plans.v1.ListTrainingPlansRequest
-	(*ListTrainingPlansResponse)(nil),  // 10: plans.v1.ListTrainingPlansResponse
-	(*UpdateTrainingPlanRequest)(nil),  // 11: plans.v1.UpdateTrainingPlanRequest
-	(*UpdateTrainingPlanResponse)(nil), // 12: plans.v1.UpdateTrainingPlanResponse
-	(*DeleteTrainingPlanRequest)(nil),  // 13: plans.v1.DeleteTrainingPlanRequest
-	(*DeleteTrainingPlanResponse)(nil), // 14: plans.v1.DeleteTrainingPlanResponse
-	(*SetPlanPeriodsRequest)(nil),      // 15: plans.v1.SetPlanPeriodsRequest
-	(*SetPlanPeriodsResponse)(nil),     // 16: plans.v1.SetPlanPeriodsResponse
-	(*DeletePlanPeriodsRequest)(nil),   // 17: plans.v1.DeletePlanPeriodsRequest
-	(*DeletePlanPeriodsResponse)(nil),  // 18: plans.v1.DeletePlanPeriodsResponse
-	(*ListWorkoutsRequest)(nil),        // 19: plans.v1.ListWorkoutsRequest
-	(*ListWorkoutsResponse)(nil),       // 20: plans.v1.ListWorkoutsResponse
-	(*GetWorkoutRequest)(nil),          // 21: plans.v1.GetWorkoutRequest
-	(*GetWorkoutResponse)(nil),         // 22: plans.v1.GetWorkoutResponse
-	(*CreateWorkoutsRequest)(nil),      // 23: plans.v1.CreateWorkoutsRequest
-	(*CreateWorkoutsResponse)(nil),     // 24: plans.v1.CreateWorkoutsResponse
-	(*UpdateWorkoutRequest)(nil),       // 25: plans.v1.UpdateWorkoutRequest
-	(*UpdateWorkoutResponse)(nil),      // 26: plans.v1.UpdateWorkoutResponse
-	(*DeleteWorkoutsRequest)(nil),      // 27: plans.v1.DeleteWorkoutsRequest
-	(*DeleteWorkoutsResponse)(nil),     // 28: plans.v1.DeleteWorkoutsResponse
-	(*timestamppb.Timestamp)(nil),      // 29: google.protobuf.Timestamp
-	(v1.Terrain)(0),                    // 30: geo.v1.Terrain
-	(*fieldmaskpb.FieldMask)(nil),      // 31: google.protobuf.FieldMask
+	(WeatherLocationSource)(0),         // 2: plans.v1.WeatherLocationSource
+	(*TrainingPlan)(nil),               // 3: plans.v1.TrainingPlan
+	(*PlanPeriod)(nil),                 // 4: plans.v1.PlanPeriod
+	(*Workout)(nil),                    // 5: plans.v1.Workout
+	(*CreateTrainingPlanRequest)(nil),  // 6: plans.v1.CreateTrainingPlanRequest
+	(*CreateTrainingPlanResponse)(nil), // 7: plans.v1.CreateTrainingPlanResponse
+	(*GetTrainingPlanRequest)(nil),     // 8: plans.v1.GetTrainingPlanRequest
+	(*GetTrainingPlanResponse)(nil),    // 9: plans.v1.GetTrainingPlanResponse
+	(*ListTrainingPlansRequest)(nil),   // 10: plans.v1.ListTrainingPlansRequest
+	(*ListTrainingPlansResponse)(nil),  // 11: plans.v1.ListTrainingPlansResponse
+	(*UpdateTrainingPlanRequest)(nil),  // 12: plans.v1.UpdateTrainingPlanRequest
+	(*UpdateTrainingPlanResponse)(nil), // 13: plans.v1.UpdateTrainingPlanResponse
+	(*DeleteTrainingPlanRequest)(nil),  // 14: plans.v1.DeleteTrainingPlanRequest
+	(*DeleteTrainingPlanResponse)(nil), // 15: plans.v1.DeleteTrainingPlanResponse
+	(*SetPlanPeriodsRequest)(nil),      // 16: plans.v1.SetPlanPeriodsRequest
+	(*SetPlanPeriodsResponse)(nil),     // 17: plans.v1.SetPlanPeriodsResponse
+	(*DeletePlanPeriodsRequest)(nil),   // 18: plans.v1.DeletePlanPeriodsRequest
+	(*DeletePlanPeriodsResponse)(nil),  // 19: plans.v1.DeletePlanPeriodsResponse
+	(*ListWorkoutsRequest)(nil),        // 20: plans.v1.ListWorkoutsRequest
+	(*ListWorkoutsResponse)(nil),       // 21: plans.v1.ListWorkoutsResponse
+	(*GetWorkoutRequest)(nil),          // 22: plans.v1.GetWorkoutRequest
+	(*GetWorkoutResponse)(nil),         // 23: plans.v1.GetWorkoutResponse
+	(*WorkoutWeather)(nil),             // 24: plans.v1.WorkoutWeather
+	(*DayWeather)(nil),                 // 25: plans.v1.DayWeather
+	(*HourWeather)(nil),                // 26: plans.v1.HourWeather
+	(*ListWorkoutWeatherRequest)(nil),  // 27: plans.v1.ListWorkoutWeatherRequest
+	(*ListWorkoutWeatherResponse)(nil), // 28: plans.v1.ListWorkoutWeatherResponse
+	(*GetWorkoutWeatherRequest)(nil),   // 29: plans.v1.GetWorkoutWeatherRequest
+	(*GetWorkoutWeatherResponse)(nil),  // 30: plans.v1.GetWorkoutWeatherResponse
+	(*CreateWorkoutsRequest)(nil),      // 31: plans.v1.CreateWorkoutsRequest
+	(*CreateWorkoutsResponse)(nil),     // 32: plans.v1.CreateWorkoutsResponse
+	(*UpdateWorkoutRequest)(nil),       // 33: plans.v1.UpdateWorkoutRequest
+	(*UpdateWorkoutResponse)(nil),      // 34: plans.v1.UpdateWorkoutResponse
+	(*DeleteWorkoutsRequest)(nil),      // 35: plans.v1.DeleteWorkoutsRequest
+	(*DeleteWorkoutsResponse)(nil),     // 36: plans.v1.DeleteWorkoutsResponse
+	(*timestamppb.Timestamp)(nil),      // 37: google.protobuf.Timestamp
+	(v1.Terrain)(0),                    // 38: geo.v1.Terrain
+	(*fieldmaskpb.FieldMask)(nil),      // 39: google.protobuf.FieldMask
+	(*v1.LatLng)(nil),                  // 40: geo.v1.LatLng
 }
 var file_plans_v1_plans_proto_depIdxs = []int32{
-	29, // 0: plans.v1.TrainingPlan.create_time:type_name -> google.protobuf.Timestamp
-	29, // 1: plans.v1.TrainingPlan.update_time:type_name -> google.protobuf.Timestamp
+	37, // 0: plans.v1.TrainingPlan.create_time:type_name -> google.protobuf.Timestamp
+	37, // 1: plans.v1.TrainingPlan.update_time:type_name -> google.protobuf.Timestamp
 	0,  // 2: plans.v1.PlanPeriod.granularity:type_name -> plans.v1.PeriodGranularity
 	1,  // 3: plans.v1.Workout.type:type_name -> plans.v1.WorkoutType
-	30, // 4: plans.v1.Workout.target_terrain:type_name -> geo.v1.Terrain
-	2,  // 5: plans.v1.CreateTrainingPlanRequest.plan:type_name -> plans.v1.TrainingPlan
-	2,  // 6: plans.v1.CreateTrainingPlanResponse.plan:type_name -> plans.v1.TrainingPlan
-	2,  // 7: plans.v1.GetTrainingPlanResponse.plan:type_name -> plans.v1.TrainingPlan
-	3,  // 8: plans.v1.GetTrainingPlanResponse.periods:type_name -> plans.v1.PlanPeriod
-	2,  // 9: plans.v1.ListTrainingPlansResponse.plans:type_name -> plans.v1.TrainingPlan
-	2,  // 10: plans.v1.UpdateTrainingPlanRequest.plan:type_name -> plans.v1.TrainingPlan
-	31, // 11: plans.v1.UpdateTrainingPlanRequest.update_mask:type_name -> google.protobuf.FieldMask
-	2,  // 12: plans.v1.UpdateTrainingPlanResponse.plan:type_name -> plans.v1.TrainingPlan
-	3,  // 13: plans.v1.SetPlanPeriodsRequest.periods:type_name -> plans.v1.PlanPeriod
-	3,  // 14: plans.v1.SetPlanPeriodsResponse.periods:type_name -> plans.v1.PlanPeriod
-	4,  // 15: plans.v1.ListWorkoutsResponse.workouts:type_name -> plans.v1.Workout
-	4,  // 16: plans.v1.GetWorkoutResponse.workout:type_name -> plans.v1.Workout
-	4,  // 17: plans.v1.CreateWorkoutsRequest.workouts:type_name -> plans.v1.Workout
-	4,  // 18: plans.v1.CreateWorkoutsResponse.workouts:type_name -> plans.v1.Workout
-	4,  // 19: plans.v1.UpdateWorkoutRequest.workout:type_name -> plans.v1.Workout
-	31, // 20: plans.v1.UpdateWorkoutRequest.update_mask:type_name -> google.protobuf.FieldMask
-	4,  // 21: plans.v1.UpdateWorkoutResponse.workout:type_name -> plans.v1.Workout
-	5,  // 22: plans.v1.TrainingPlanService.CreateTrainingPlan:input_type -> plans.v1.CreateTrainingPlanRequest
-	7,  // 23: plans.v1.TrainingPlanService.GetTrainingPlan:input_type -> plans.v1.GetTrainingPlanRequest
-	9,  // 24: plans.v1.TrainingPlanService.ListTrainingPlans:input_type -> plans.v1.ListTrainingPlansRequest
-	11, // 25: plans.v1.TrainingPlanService.UpdateTrainingPlan:input_type -> plans.v1.UpdateTrainingPlanRequest
-	13, // 26: plans.v1.TrainingPlanService.DeleteTrainingPlan:input_type -> plans.v1.DeleteTrainingPlanRequest
-	15, // 27: plans.v1.TrainingPlanService.SetPlanPeriods:input_type -> plans.v1.SetPlanPeriodsRequest
-	17, // 28: plans.v1.TrainingPlanService.DeletePlanPeriods:input_type -> plans.v1.DeletePlanPeriodsRequest
-	19, // 29: plans.v1.TrainingPlanService.ListWorkouts:input_type -> plans.v1.ListWorkoutsRequest
-	21, // 30: plans.v1.TrainingPlanService.GetWorkout:input_type -> plans.v1.GetWorkoutRequest
-	23, // 31: plans.v1.TrainingPlanService.CreateWorkouts:input_type -> plans.v1.CreateWorkoutsRequest
-	25, // 32: plans.v1.TrainingPlanService.UpdateWorkout:input_type -> plans.v1.UpdateWorkoutRequest
-	27, // 33: plans.v1.TrainingPlanService.DeleteWorkouts:input_type -> plans.v1.DeleteWorkoutsRequest
-	6,  // 34: plans.v1.TrainingPlanService.CreateTrainingPlan:output_type -> plans.v1.CreateTrainingPlanResponse
-	8,  // 35: plans.v1.TrainingPlanService.GetTrainingPlan:output_type -> plans.v1.GetTrainingPlanResponse
-	10, // 36: plans.v1.TrainingPlanService.ListTrainingPlans:output_type -> plans.v1.ListTrainingPlansResponse
-	12, // 37: plans.v1.TrainingPlanService.UpdateTrainingPlan:output_type -> plans.v1.UpdateTrainingPlanResponse
-	14, // 38: plans.v1.TrainingPlanService.DeleteTrainingPlan:output_type -> plans.v1.DeleteTrainingPlanResponse
-	16, // 39: plans.v1.TrainingPlanService.SetPlanPeriods:output_type -> plans.v1.SetPlanPeriodsResponse
-	18, // 40: plans.v1.TrainingPlanService.DeletePlanPeriods:output_type -> plans.v1.DeletePlanPeriodsResponse
-	20, // 41: plans.v1.TrainingPlanService.ListWorkouts:output_type -> plans.v1.ListWorkoutsResponse
-	22, // 42: plans.v1.TrainingPlanService.GetWorkout:output_type -> plans.v1.GetWorkoutResponse
-	24, // 43: plans.v1.TrainingPlanService.CreateWorkouts:output_type -> plans.v1.CreateWorkoutsResponse
-	26, // 44: plans.v1.TrainingPlanService.UpdateWorkout:output_type -> plans.v1.UpdateWorkoutResponse
-	28, // 45: plans.v1.TrainingPlanService.DeleteWorkouts:output_type -> plans.v1.DeleteWorkoutsResponse
-	34, // [34:46] is the sub-list for method output_type
-	22, // [22:34] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	38, // 4: plans.v1.Workout.target_terrain:type_name -> geo.v1.Terrain
+	3,  // 5: plans.v1.CreateTrainingPlanRequest.plan:type_name -> plans.v1.TrainingPlan
+	3,  // 6: plans.v1.CreateTrainingPlanResponse.plan:type_name -> plans.v1.TrainingPlan
+	3,  // 7: plans.v1.GetTrainingPlanResponse.plan:type_name -> plans.v1.TrainingPlan
+	4,  // 8: plans.v1.GetTrainingPlanResponse.periods:type_name -> plans.v1.PlanPeriod
+	3,  // 9: plans.v1.ListTrainingPlansResponse.plans:type_name -> plans.v1.TrainingPlan
+	3,  // 10: plans.v1.UpdateTrainingPlanRequest.plan:type_name -> plans.v1.TrainingPlan
+	39, // 11: plans.v1.UpdateTrainingPlanRequest.update_mask:type_name -> google.protobuf.FieldMask
+	3,  // 12: plans.v1.UpdateTrainingPlanResponse.plan:type_name -> plans.v1.TrainingPlan
+	4,  // 13: plans.v1.SetPlanPeriodsRequest.periods:type_name -> plans.v1.PlanPeriod
+	4,  // 14: plans.v1.SetPlanPeriodsResponse.periods:type_name -> plans.v1.PlanPeriod
+	5,  // 15: plans.v1.ListWorkoutsResponse.workouts:type_name -> plans.v1.Workout
+	5,  // 16: plans.v1.GetWorkoutResponse.workout:type_name -> plans.v1.Workout
+	40, // 17: plans.v1.WorkoutWeather.location:type_name -> geo.v1.LatLng
+	2,  // 18: plans.v1.WorkoutWeather.location_source:type_name -> plans.v1.WeatherLocationSource
+	25, // 19: plans.v1.WorkoutWeather.day:type_name -> plans.v1.DayWeather
+	26, // 20: plans.v1.WorkoutWeather.hours:type_name -> plans.v1.HourWeather
+	37, // 21: plans.v1.HourWeather.time:type_name -> google.protobuf.Timestamp
+	24, // 22: plans.v1.ListWorkoutWeatherResponse.weather:type_name -> plans.v1.WorkoutWeather
+	24, // 23: plans.v1.GetWorkoutWeatherResponse.weather:type_name -> plans.v1.WorkoutWeather
+	5,  // 24: plans.v1.CreateWorkoutsRequest.workouts:type_name -> plans.v1.Workout
+	5,  // 25: plans.v1.CreateWorkoutsResponse.workouts:type_name -> plans.v1.Workout
+	5,  // 26: plans.v1.UpdateWorkoutRequest.workout:type_name -> plans.v1.Workout
+	39, // 27: plans.v1.UpdateWorkoutRequest.update_mask:type_name -> google.protobuf.FieldMask
+	5,  // 28: plans.v1.UpdateWorkoutResponse.workout:type_name -> plans.v1.Workout
+	6,  // 29: plans.v1.TrainingPlanService.CreateTrainingPlan:input_type -> plans.v1.CreateTrainingPlanRequest
+	8,  // 30: plans.v1.TrainingPlanService.GetTrainingPlan:input_type -> plans.v1.GetTrainingPlanRequest
+	10, // 31: plans.v1.TrainingPlanService.ListTrainingPlans:input_type -> plans.v1.ListTrainingPlansRequest
+	12, // 32: plans.v1.TrainingPlanService.UpdateTrainingPlan:input_type -> plans.v1.UpdateTrainingPlanRequest
+	14, // 33: plans.v1.TrainingPlanService.DeleteTrainingPlan:input_type -> plans.v1.DeleteTrainingPlanRequest
+	16, // 34: plans.v1.TrainingPlanService.SetPlanPeriods:input_type -> plans.v1.SetPlanPeriodsRequest
+	18, // 35: plans.v1.TrainingPlanService.DeletePlanPeriods:input_type -> plans.v1.DeletePlanPeriodsRequest
+	20, // 36: plans.v1.TrainingPlanService.ListWorkouts:input_type -> plans.v1.ListWorkoutsRequest
+	22, // 37: plans.v1.TrainingPlanService.GetWorkout:input_type -> plans.v1.GetWorkoutRequest
+	31, // 38: plans.v1.TrainingPlanService.CreateWorkouts:input_type -> plans.v1.CreateWorkoutsRequest
+	33, // 39: plans.v1.TrainingPlanService.UpdateWorkout:input_type -> plans.v1.UpdateWorkoutRequest
+	35, // 40: plans.v1.TrainingPlanService.DeleteWorkouts:input_type -> plans.v1.DeleteWorkoutsRequest
+	27, // 41: plans.v1.TrainingPlanService.ListWorkoutWeather:input_type -> plans.v1.ListWorkoutWeatherRequest
+	29, // 42: plans.v1.TrainingPlanService.GetWorkoutWeather:input_type -> plans.v1.GetWorkoutWeatherRequest
+	7,  // 43: plans.v1.TrainingPlanService.CreateTrainingPlan:output_type -> plans.v1.CreateTrainingPlanResponse
+	9,  // 44: plans.v1.TrainingPlanService.GetTrainingPlan:output_type -> plans.v1.GetTrainingPlanResponse
+	11, // 45: plans.v1.TrainingPlanService.ListTrainingPlans:output_type -> plans.v1.ListTrainingPlansResponse
+	13, // 46: plans.v1.TrainingPlanService.UpdateTrainingPlan:output_type -> plans.v1.UpdateTrainingPlanResponse
+	15, // 47: plans.v1.TrainingPlanService.DeleteTrainingPlan:output_type -> plans.v1.DeleteTrainingPlanResponse
+	17, // 48: plans.v1.TrainingPlanService.SetPlanPeriods:output_type -> plans.v1.SetPlanPeriodsResponse
+	19, // 49: plans.v1.TrainingPlanService.DeletePlanPeriods:output_type -> plans.v1.DeletePlanPeriodsResponse
+	21, // 50: plans.v1.TrainingPlanService.ListWorkouts:output_type -> plans.v1.ListWorkoutsResponse
+	23, // 51: plans.v1.TrainingPlanService.GetWorkout:output_type -> plans.v1.GetWorkoutResponse
+	32, // 52: plans.v1.TrainingPlanService.CreateWorkouts:output_type -> plans.v1.CreateWorkoutsResponse
+	34, // 53: plans.v1.TrainingPlanService.UpdateWorkout:output_type -> plans.v1.UpdateWorkoutResponse
+	36, // 54: plans.v1.TrainingPlanService.DeleteWorkouts:output_type -> plans.v1.DeleteWorkoutsResponse
+	28, // 55: plans.v1.TrainingPlanService.ListWorkoutWeather:output_type -> plans.v1.ListWorkoutWeatherResponse
+	30, // 56: plans.v1.TrainingPlanService.GetWorkoutWeather:output_type -> plans.v1.GetWorkoutWeatherResponse
+	43, // [43:57] is the sub-list for method output_type
+	29, // [29:43] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_plans_v1_plans_proto_init() }
@@ -2592,8 +3509,8 @@ func file_plans_v1_plans_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_plans_v1_plans_proto_rawDesc), len(file_plans_v1_plans_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   27,
+			NumEnums:      3,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -156,8 +156,8 @@ func (s *Service) profilePage(r *http.Request, handle string) (html.Page, error)
 			return html.Page{}, err
 		}
 		for _, report := range reports {
-			if p := photos[report.ID]; len(p) > 0 {
-				page.Image = s.photoURL(store.UUIDToString(p[0].ID), sizeLarge)
+			if cover := trips.CoverPhoto(report, photos[report.ID]); cover != nil {
+				page.Image = s.photoURL(store.UUIDToString(cover.ID), sizeLarge)
 				break
 			}
 		}
@@ -190,8 +190,8 @@ func (s *Service) reportPage(r *http.Request, handle, slug string) (html.Page, e
 	if err != nil {
 		return html.Page{}, err
 	}
-	if p := photos[report.ID]; len(p) > 0 {
-		page.Image = s.photoURL(store.UUIDToString(p[0].ID), sizeLarge)
+	if cover := trips.CoverPhoto(report, photos[report.ID]); cover != nil {
+		page.Image = s.photoURL(store.UUIDToString(cover.ID), sizeLarge)
 	}
 	return page, nil
 }

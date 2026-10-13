@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -215,6 +216,52 @@ func TestTripReports(t *testing.T) {
 	wantCode(t, err, connect.CodeInvalidArgument)
 	_, err = e.otherTrips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), Title: new("Mine")}.Build())
 	wantCode(t, err, connect.CodeNotFound)
+
+	// Tags are kept in order without duplicates, and every tag can be
+	// stored.
+	setTags := func(tags ...tripsv1.TripTag) (*tripsv1.UpdateTripReportResponse, error) {
+		return e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{
+			Id:   report.GetId(),
+			Tags: tripsv1.TripTags_builder{Tags: tags}.Build(),
+		}.Build())
+	}
+	tagged, err := setTags(tripsv1.TripTag_TRIP_TAG_LOOP, tripsv1.TripTag_TRIP_TAG_TECHNICAL, tripsv1.TripTag_TRIP_TAG_CHALLENGING, tripsv1.TripTag_TRIP_TAG_LOOP)
+	if err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
+	if got, want := tagged.GetReport().GetTags(), []tripsv1.TripTag{tripsv1.TripTag_TRIP_TAG_CHALLENGING, tripsv1.TripTag_TRIP_TAG_TECHNICAL, tripsv1.TripTag_TRIP_TAG_LOOP}; !slices.Equal(got, want) {
+		t.Errorf("tags %v, want %v", got, want)
+	}
+	for value := range tripsv1.TripTag_name {
+		if value == 0 {
+			continue
+		}
+		if _, err := setTags(tripsv1.TripTag(value)); err != nil {
+			t.Errorf("UpdateTripReport with tag %v: %v", tripsv1.TripTag(value), err)
+		}
+	}
+	for name, tags := range map[string][]tripsv1.TripTag{
+		"unspecified":      {tripsv1.TripTag_TRIP_TAG_UNSPECIFIED},
+		"unknown":          {tripsv1.TripTag(99)},
+		"two difficulties": {tripsv1.TripTag_TRIP_TAG_MODERATE, tripsv1.TripTag_TRIP_TAG_CHALLENGING},
+		"two shapes":       {tripsv1.TripTag_TRIP_TAG_LOOP, tripsv1.TripTag_TRIP_TAG_POINT_TO_POINT},
+	} {
+		if _, err := setTags(tags...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			t.Errorf("UpdateTripReport with %s tags: got %v, want invalid argument", name, err)
+		}
+	}
+	// Other updates leave the tags as they are, and an empty list clears
+	// them.
+	if _, err := setTags(tripsv1.TripTag_TRIP_TAG_SNOW); err != nil {
+		t.Fatal(err)
+	}
+	kept, err := e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), Title: new("Up the ridge")}.Build())
+	if err != nil || !slices.Equal(kept.GetReport().GetTags(), []tripsv1.TripTag{tripsv1.TripTag_TRIP_TAG_SNOW}) {
+		t.Errorf("tags after another update: %v, %v", kept.GetReport().GetTags(), err)
+	}
+	if cleared, err := setTags(); err != nil || len(cleared.GetReport().GetTags()) != 0 {
+		t.Errorf("clearing tags: %v, %v", cleared.GetReport().GetTags(), err)
+	}
 
 	// Publishing requires a public profile.
 	_, err = e.trips.PublishTripReport(ctx, tripsv1.PublishTripReportRequest_builder{Id: report.GetId()}.Build())
@@ -610,12 +657,61 @@ func TestTripPhotos(t *testing.T) {
 		}
 	}
 
+	// The cover photo is the first photo, until the author chooses one.
+	if cover := reordered.GetReport().GetCoverPhotoId(); cover != unplaced.GetId() {
+		t.Errorf("default cover photo %q, want the first photo %q", cover, unplaced.GetId())
+	}
+	setCover := func(id string) (*tripsv1.UpdateTripReportResponse, error) {
+		return e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: reportID, CoverPhotoId: new(id)}.Build())
+	}
+	chosen, err := setCover(local.GetId())
+	if err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
+	if cover := chosen.GetReport().GetCoverPhotoId(); cover != local.GetId() {
+		t.Errorf("chosen cover photo %q, want %q", cover, local.GetId())
+	}
+	coverImage := `<meta property="og:image" content="` + local.GetUrl() + `" />`
+	for _, path := range []string{reportPath, "/u/jane-doe"} {
+		if _, body := e.get(path, ""); !strings.Contains(string(body), coverImage) {
+			t.Errorf("%s does not show the cover photo:\n%s", path, body)
+		}
+	}
+	listed, err := e.trips.ListTripReports(ctx, tripsv1.ListTripReportsRequest_builder{}.Build())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cover := listed.GetReports()[0].GetCoverPhotoId(); cover != local.GetId() {
+		t.Errorf("listed cover photo %q, want %q", cover, local.GetId())
+	}
+	for _, id := range []string{"00000000-0000-0000-0000-000000000000", "nope"} {
+		_, err = setCover(id)
+		wantCode(t, err, connect.CodeInvalidArgument)
+	}
+	_, err = e.otherTrips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: reportID, CoverPhotoId: new(local.GetId())}.Build())
+	wantCode(t, err, connect.CodeNotFound)
+	// An empty ID goes back to the first photo.
+	if resp, err := setCover(""); err != nil || resp.GetReport().GetCoverPhotoId() != unplaced.GetId() {
+		t.Errorf("clearing the cover photo: %v, %v", resp.GetReport().GetCoverPhotoId(), err)
+	}
+
 	// Deleting photos and reports deletes their images.
+	if _, err := setCover(gps.GetId()); err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
 	if _, err := e.trips.DeleteTripPhoto(ctx, tripsv1.DeleteTripPhotoRequest_builder{Id: gps.GetId()}.Build()); err != nil {
 		t.Fatalf("DeleteTripPhoto: %v", err)
 	}
 	if n := e.storedImages(); n != 6 {
 		t.Errorf("%d images stored after deleting a photo, want 6", n)
+	}
+	// Deleting the cover photo goes back to the first photo.
+	after, err := e.trips.GetTripReport(ctx, tripsv1.GetTripReportRequest_builder{Id: reportID}.Build())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cover := after.GetReport().GetCoverPhotoId(); cover != unplaced.GetId() {
+		t.Errorf("cover photo after deleting it %q, want %q", cover, unplaced.GetId())
 	}
 	_, err = e.otherTrips.DeleteTripPhoto(ctx, tripsv1.DeleteTripPhotoRequest_builder{Id: timed.GetId()}.Build())
 	wantCode(t, err, connect.CodeNotFound)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -142,41 +143,78 @@ func (c *Client) forecastBatch(ctx context.Context, queries []ForecastQuery) ([]
 	}
 	weather := make([]Weather, len(queries))
 	for i, q := range queries {
-		hourly := responses[i].Hourly
 		hour := q.Time.UTC().Truncate(time.Hour).Unix()
-		idx := -1
-		for j, t := range hourly.Time {
-			if t == hour {
-				idx = j
-				break
-			}
-		}
+		idx := slices.Index(responses[i].Hourly.Time, hour)
 		if idx < 0 {
 			return nil, fmt.Errorf("no forecast available for %s", q.Time.UTC().Format(time.RFC3339))
 		}
-		at := func(values []*float64) float64 {
-			if idx >= len(values) || values[idx] == nil {
-				return 0
-			}
-			return *values[idx]
+		weather[i] = responses[i].hour(idx)
+	}
+	return weather, nil
+}
+
+// hour returns the weather of the hour at index idx.
+func (r *forecastResponse) hour(idx int) Weather {
+	hourly := r.Hourly
+	at := func(values []*float64) float64 {
+		if idx >= len(values) || values[idx] == nil {
+			return 0
 		}
-		weather[i] = Weather{
-			Time:                     time.Unix(hour, 0).UTC(),
-			UTCOffset:                time.Duration(responses[i].UTCOffsetSeconds) * time.Second,
-			TemperatureCelsius:       at(hourly.Temperature),
-			ApparentTemperature:      at(hourly.ApparentTemperature),
-			PrecipitationProbability: int(at(hourly.PrecipitationProbability)),
-			PrecipitationMM:          at(hourly.Precipitation),
-			SnowfallCM:               at(hourly.Snowfall),
-			WeatherCode:              int(at(hourly.WeatherCode)),
-			CloudCoverPercent:        int(at(hourly.CloudCover)),
-			WindSpeedKMH:             at(hourly.WindSpeed),
-			WindGustsKMH:             at(hourly.WindGusts),
-			WindDirectionDegrees:     int(at(hourly.WindDirection)),
-			FreezingLevelMeters:      at(hourly.FreezingLevel),
-			UVIndex:                  at(hourly.UVIndex),
-			IsDay:                    at(hourly.IsDay) == 1,
-		}
+		return *values[idx]
+	}
+	return Weather{
+		Time:                     time.Unix(hourly.Time[idx], 0).UTC(),
+		UTCOffset:                time.Duration(r.UTCOffsetSeconds) * time.Second,
+		TemperatureCelsius:       at(hourly.Temperature),
+		ApparentTemperature:      at(hourly.ApparentTemperature),
+		PrecipitationProbability: int(at(hourly.PrecipitationProbability)),
+		PrecipitationMM:          at(hourly.Precipitation),
+		SnowfallCM:               at(hourly.Snowfall),
+		WeatherCode:              int(at(hourly.WeatherCode)),
+		CloudCoverPercent:        int(at(hourly.CloudCover)),
+		WindSpeedKMH:             at(hourly.WindSpeed),
+		WindGustsKMH:             at(hourly.WindGusts),
+		WindDirectionDegrees:     int(at(hourly.WindDirection)),
+		FreezingLevelMeters:      at(hourly.FreezingLevel),
+		UVIndex:                  at(hourly.UVIndex),
+		IsDay:                    at(hourly.IsDay) == 1,
+	}
+}
+
+// HourlyForecast returns the hourly weather forecast at a point for the
+// local dates from start to end, inclusive, using Open-Meteo. Dates past the
+// end of the forecast are left out. The forecast is downscaled to the
+// elevation of the point if it is known.
+func (c *Client) HourlyForecast(ctx context.Context, point geo.Point, start, end time.Time) ([]Weather, error) {
+	if maxEnd := time.Now().UTC().AddDate(0, 0, MaxForecastDays-1); end.After(maxEnd) {
+		end = maxEnd
+	}
+	if end.Before(start) {
+		return nil, nil
+	}
+	v := url.Values{}
+	v.Set("latitude", strconv.FormatFloat(point.Lat, 'f', 5, 64))
+	v.Set("longitude", strconv.FormatFloat(point.Lng, 'f', 5, 64))
+	if point.Ele == point.Ele {
+		v.Set("elevation", strconv.FormatFloat(point.Ele, 'f', 0, 64))
+	}
+	v.Set("hourly", forecastHourlyVariables)
+	// With the local time zone the dates are local dates.
+	v.Set("timezone", "auto")
+	v.Set("timeformat", "unixtime")
+	v.Set("start_date", start.Format(time.DateOnly))
+	v.Set("end_date", end.Format(time.DateOnly))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.conf.ForecastURL+"?"+v.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+	var resp forecastResponse
+	if err := c.do(req, &resp); err != nil {
+		return nil, fmt.Errorf("weather forecast failed: %w", err)
+	}
+	weather := make([]Weather, len(resp.Hourly.Time))
+	for i := range resp.Hourly.Time {
+		weather[i] = resp.hour(i)
 	}
 	return weather, nil
 }
