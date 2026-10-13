@@ -104,7 +104,7 @@
   padding: 0 4px;
   border-radius: 9999px;
   border: 1.5px solid #ffffff;
-  background: #047857;
+  background: #111111;
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;
@@ -123,7 +123,7 @@
 }
 
 .photo-marker-count {
-  background: #1f2937;
+  background: #d2601a;
 }
 
 .photo-marker-draggable {
@@ -151,7 +151,7 @@
   height: 22px;
   border-radius: 9999px;
   border: 2px solid #ffffff;
-  background: #0f766e;
+  background: #111111;
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;
@@ -177,7 +177,7 @@
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  border: 3px solid #047857;
+  border: 3px solid #d2601a;
   background: #ffffff;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
   cursor: grab;

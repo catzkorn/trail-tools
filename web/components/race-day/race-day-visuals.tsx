@@ -83,7 +83,7 @@ const RaceDayVisuals: React.FC<RaceDayVisualsProps> = ({
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <MapView className="h-72 lg:h-full lg:min-h-72">
           {tuples.length > 1 && (
-            <PolylineLayer positions={tuples} color="#047857" weight={4} />
+            <PolylineLayer positions={tuples} color="#d2601a" weight={4} />
           )}
           {status.checkpoints.map((estimate) => {
             const point = pointAt(course, estimate.distanceMeters);
@@ -103,7 +103,7 @@ const RaceDayVisuals: React.FC<RaceDayVisualsProps> = ({
           {position !== null && (
             <PointMarker
               position={position}
-              color="#10b981"
+              color="#111111"
               radius={9}
               tooltip="Runner (estimated position)"
             />

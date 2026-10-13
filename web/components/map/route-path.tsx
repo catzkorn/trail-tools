@@ -26,7 +26,7 @@ interface LegSection {
  * insert handle.
  */
 const HOVER_DISTANCE_PIXELS = 14;
-const PATH_COLOR = "#047857";
+const PATH_COLOR = "#d2601a";
 
 const squaredDistance = (first: LatLngTuple, second: LatLng): number => {
   const scale = Math.cos((first[0] * Math.PI) / 180);

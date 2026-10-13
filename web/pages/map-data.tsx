@@ -484,7 +484,7 @@ const MapDataPage: React.FC = () => {
                 <AreaLayer
                   key={region.name}
                   bounds={bounds}
-                  color="#047857"
+                  color="#d2601a"
                   label={`${region.name} · ${formatBytes(Number(region.sizeBytes))}`}
                 />
               ))}

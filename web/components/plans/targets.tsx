@@ -62,7 +62,7 @@ const Targets: React.FC<TargetsProps> = ({ actual, target, planned }) => (
       target={target.distanceMeters}
       planned={planned?.distanceMeters ?? 0}
       format={km}
-      barClass="bg-brand-500"
+      barClass="bg-stone-800"
     />
     <TargetRow
       label="Gain"
@@ -70,7 +70,7 @@ const Targets: React.FC<TargetsProps> = ({ actual, target, planned }) => (
       target={target.elevationGainMeters}
       planned={planned?.elevationGainMeters ?? 0}
       format={meters}
-      barClass="bg-violet-500"
+      barClass="bg-brand-500"
     />
     <TargetRow
       label="Time"
@@ -78,7 +78,7 @@ const Targets: React.FC<TargetsProps> = ({ actual, target, planned }) => (
       target={target.durationSeconds}
       planned={planned?.durationSeconds ?? 0}
       format={formatHoursMinutes}
-      barClass="bg-sky-500"
+      barClass="bg-stone-400"
     />
   </div>
 );

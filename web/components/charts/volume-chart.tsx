@@ -98,7 +98,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
                 y={yDistance(distanceTop * fraction)}
                 textAnchor="end"
                 dominantBaseline="middle"
-                className="fill-emerald-700 text-[10px]"
+                className="fill-stone-600 text-[10px]"
               >
                 {Math.round(distanceTop * fraction)}
               </text>
@@ -106,7 +106,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
                 x={marginLeft + plotWidth + 6}
                 y={yElevation(elevationTop * fraction)}
                 dominantBaseline="middle"
-                className="fill-violet-700 text-[10px]"
+                className="fill-brand-600 text-[10px]"
               >
                 {Math.round(elevationTop * fraction)}
               </text>
@@ -116,14 +116,14 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
             x={marginLeft - 6}
             y={10}
             textAnchor="end"
-            className="fill-emerald-700 text-[10px] font-medium"
+            className="fill-stone-600 text-[10px] font-medium"
           >
             km
           </text>
           <text
             x={marginLeft + plotWidth + 6}
             y={10}
-            className="fill-violet-700 text-[10px] font-medium"
+            className="fill-brand-600 text-[10px] font-medium"
           >
             m gain
           </text>
@@ -150,7 +150,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
                   width={barWidth}
                   height={Math.max(marginTop + plotHeight - yDistance(km), 0)}
                   rx={2}
-                  className="fill-emerald-500"
+                  className="fill-stone-800"
                 />
                 {index % labelEvery === 0 && (
                   <text
@@ -168,7 +168,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
           <polyline
             points={elevationLine}
             fill="none"
-            stroke="#7c3aed"
+            stroke="#d2601a"
             strokeWidth={2}
             pointerEvents="none"
           />
@@ -178,7 +178,7 @@ const VolumeChart: React.FC<VolumeChartProps> = ({
               cx={marginLeft + slot * (index + 0.5)}
               cy={yElevation(summary.elevationGainMeters)}
               r={2.5}
-              fill="#7c3aed"
+              fill="#d2601a"
               pointerEvents="none"
             />
           ))}

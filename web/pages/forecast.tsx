@@ -286,7 +286,7 @@ const ForecastResult: React.FC<ForecastResultProps> = ({ forecast }) => {
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <MapView className="h-[45vh] min-h-72">
           {pathTuples.length > 1 && (
-            <PolylineLayer positions={pathTuples} color="#047857" weight={4} />
+            <PolylineLayer positions={pathTuples} color="#d2601a" weight={4} />
           )}
           <ForecastMarkers points={forecast.points} />
           <HoverMarker position={hoverPosition} />

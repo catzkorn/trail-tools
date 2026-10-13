@@ -88,15 +88,15 @@ const NO_LEVELS: ProfilePoint[] = [];
 
 const NO_POINT: ProfilePoint = { distanceMeters: 0, elevationMeters: 0 };
 
-// BAND_FILLS are the colors ranges cycle through, so neighbors differ.
-const BAND_FILLS = ["#e0f2fe", "#fef3c7", "#ede9fe"];
+// BAND_FILLS are the colors ranges alternate between, so neighbors differ.
+const BAND_FILLS = ["#f5f5f4", "#fdf0e6"];
 
 // BandFill is the color of a range: active ranges stand out, others cycle.
 const bandFill = (range: ProfileRange, index: number): string => {
   if (range.active === true) {
-    return "#a7f3d0";
+    return "#f5c9a6";
   }
-  return BAND_FILLS[index % BAND_FILLS.length] ?? "#f1f5f9";
+  return BAND_FILLS[index % BAND_FILLS.length] ?? "#f5f5f4";
 };
 
 // FitLabel shortens a label to about the width in pixels, with an ellipsis.
@@ -467,7 +467,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   x2={band.x1}
                   y1={marginTop}
                   y2={baseline}
-                  stroke="#475569"
+                  stroke="#78716c"
                   strokeWidth={1.5}
                 />
               )}
@@ -493,11 +493,11 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
               </text>
             </g>
           ))}
-          <path d={area} fill="#e2e8f0" stroke="none" />
+          <path d={area} fill="#292524" fillOpacity={0.12} stroke="none" />
           <polyline
             points={outline.join(" ")}
             fill="none"
-            stroke="#475569"
+            stroke="#292524"
             strokeWidth={1.5}
             strokeLinejoin="round"
           />
@@ -512,11 +512,11 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                 />
               </clipPath>
               <g clipPath={`url(#${clipId})`}>
-                <path d={area} fill="#6ee7b7" opacity={0.7} stroke="none" />
+                <path d={area} fill="#d2601a" opacity={0.35} stroke="none" />
                 <polyline
                   points={outline.join(" ")}
                   fill="none"
-                  stroke="#047857"
+                  stroke="#b4500f"
                   strokeWidth={2}
                   strokeLinejoin="round"
                 />
@@ -531,7 +531,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   key={`label-${band.startMeters}-${band.endMeters}`}
                   x={band.x1 + 4}
                   y={marginTop + 11}
-                  className={`text-[10px] ${band.active === true ? "fill-emerald-900 font-semibold" : "fill-gray-700 font-medium"}`}
+                  className={`text-[10px] ${band.active === true ? "fill-brand-800 font-semibold" : "fill-gray-700 font-medium"}`}
                 >
                   {fitLabel(band.label, band.x2 - band.x1 - 8)}
                 </text>
@@ -622,14 +622,14 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   x2={xFor(positionMeters)}
                   y1={marginTop}
                   y2={baseline}
-                  stroke="#047857"
+                  stroke="#b4500f"
                   strokeWidth={2}
                 />
                 <circle
                   cx={xFor(positionMeters)}
                   cy={yFor(elevationAt(points, positionMeters))}
                   r={6}
-                  fill="#10b981"
+                  fill="#d2601a"
                   stroke="#ffffff"
                   strokeWidth={2}
                 />
@@ -637,7 +637,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   <text
                     x={xFor(positionMeters) + 8}
                     y={yFor(elevationAt(points, positionMeters)) - 8}
-                    className="fill-emerald-800 text-[11px] font-semibold"
+                    className="fill-brand-700 text-[11px] font-semibold"
                   >
                     {positionLabel}
                   </text>

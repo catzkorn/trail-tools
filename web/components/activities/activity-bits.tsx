@@ -78,13 +78,13 @@ export const RouteThumbnail: React.FC<RouteThumbnailProps> = ({
     <svg
       width={size}
       height={size}
-      className="shrink-0 rounded bg-brand-50"
+      className="shrink-0 rounded bg-stone-100"
       aria-hidden="true"
     >
       <polyline
         points={path}
         fill="none"
-        stroke="#047857"
+        stroke="#292524"
         strokeWidth={1.5}
         strokeLinejoin="round"
       />
