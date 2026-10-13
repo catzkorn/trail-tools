@@ -5,16 +5,30 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/binary"
+	"errors"
+	"log/slog"
 	"math"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
+	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
 )
 
 func writeTile(t *testing.T, dir, name string, size int, sample func(row, col int) int16) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(dir, name), gzipTile(t, size, sample), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// gzipTile returns a gzipped HGT tile of size samples a side.
+func gzipTile(t *testing.T, size int, sample func(row, col int) int16) []byte {
 	t.Helper()
 	var raw bytes.Buffer
 	for row := range size {
@@ -32,9 +46,7 @@ func writeTile(t *testing.T, dir, name string, size int, sample func(row, col in
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, name), gz.Bytes(), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	return gz.Bytes()
 }
 
 func TestDEM(t *testing.T) {
@@ -122,4 +134,114 @@ func TestPatch(t *testing.T) {
 	if _, err := withPatch.Elevations(ctx, []float64{46.9}, []float64{7.9}); err == nil {
 		t.Error("Elevations outside the patch didn't use the tiles")
 	}
+}
+
+// serveTiles serves the tiles by path, e.g. /N46/N46E007.hgt.gz, and 404 for
+// others. It returns the server's URL and a function returning the number of
+// requests for a path.
+func serveTiles(t *testing.T, tiles map[string][]byte) (string, func(path string) int) {
+	t.Helper()
+	var mu sync.Mutex
+	requests := map[string]int{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests[r.URL.Path]++
+		mu.Unlock()
+		tile, ok := tiles[r.URL.Path]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write(tile)
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL, func(path string) int {
+		mu.Lock()
+		defer mu.Unlock()
+		return requests[path]
+	}
+}
+
+// failingStore fails every operation, like an unreachable bucket.
+type failingStore struct{}
+
+func (failingStore) Put(context.Context, string, []byte, string) error {
+	return errors.New("bucket unavailable")
+}
+
+func (failingStore) Get(context.Context, string) ([]byte, error) {
+	return nil, errors.New("bucket unavailable")
+}
+
+func (failingStore) Delete(context.Context, string) error {
+	return errors.New("bucket unavailable")
+}
+
+func TestDEMTileStore(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	log := slog.New(slog.DiscardHandler)
+	// A tile rising 100m per sample to the east. N00E000 doesn't exist.
+	tile := gzipTile(t, 3, func(row, col int) int16 { return int16(col * 100) })
+	const tilePath, missingPath = "/N46/N46E007.hgt.gz", "/N00/N00E000.hgt.gz"
+	url, requests := serveTiles(t, map[string][]byte{tilePath: tile})
+	store, err := blob.NewDir(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkElevations := func(t *testing.T, dem *elevation.DEM) {
+		t.Helper()
+		elevations, err := dem.Elevations(ctx, []float64{46.5, 0.5}, []float64{7.25, 0.5})
+		if err != nil {
+			t.Fatalf("Elevations: %v", err)
+		}
+		if math.Abs(elevations[0]-50) > 0.01 {
+			t.Errorf("got %v, want 50 a quarter of the way east", elevations[0])
+		}
+		if !math.IsNaN(elevations[1]) {
+			t.Errorf("got %v for a missing tile, want NaN", elevations[1])
+		}
+	}
+	checkRequests := func(t *testing.T, want int) {
+		t.Helper()
+		for _, path := range []string{tilePath, missingPath} {
+			if got := requests(path); got != want {
+				t.Errorf("got %d requests for %s, want %d", got, path, want)
+			}
+		}
+	}
+
+	// Downloaded tiles are added to the store, and missing tiles recorded
+	// as empty objects.
+	dem := elevation.NewDEM(url, t.TempDir())
+	dem.SetTileStore(store, log)
+	checkElevations(t, dem)
+	checkRequests(t, 1)
+	stored, err := store.Get(ctx, "skadi/N46/N46E007.hgt.gz")
+	if err != nil {
+		t.Fatalf("the downloaded tile isn't in the store: %v", err)
+	}
+	if !bytes.Equal(stored, tile) {
+		t.Error("the stored tile differs from the downloaded one")
+	}
+	missing, err := store.Get(ctx, "skadi/N00/N00E000.hgt.gz")
+	if err != nil {
+		t.Fatalf("the missing tile isn't recorded in the store: %v", err)
+	}
+	if len(missing) != 0 {
+		t.Errorf("got %d bytes recording a missing tile, want none", len(missing))
+	}
+
+	// A DEM with an empty cache directory, like after a restart, gets the
+	// tiles from the store without downloading them.
+	restarted := elevation.NewDEM(url, t.TempDir())
+	restarted.SetTileStore(store, log)
+	checkElevations(t, restarted)
+	checkRequests(t, 1)
+
+	// When the store fails, the tiles are downloaded.
+	failing := elevation.NewDEM(url, t.TempDir())
+	failing.SetTileStore(failingStore{}, log)
+	checkElevations(t, failing)
+	checkRequests(t, 2)
 }

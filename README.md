@@ -279,6 +279,15 @@ straight legs and routes from GPX files, come from the same elevation tiles
 as imports, downloaded as needed and cached, so they don't depend on a rate
 limited API.
 
+Elevation tiles are cached in a directory under the system's temporary
+directory. Set `-dem-bucket` (`TRAIL_TOOLS_DEM_BUCKET`) to also cache them in
+a Google Cloud Storage bucket with the application default credentials, for
+servers whose disk doesn't outlive them, like Cloud Run. Tiles missing from
+the directory are read from the bucket before downloading them, downloaded
+tiles are added to it, and tiles that don't exist, e.g. over the sea, are
+recorded in it as empty objects. If the bucket can't be read or written, the
+tiles are downloaded instead. The `import-osm` command takes the same flag.
+
 ## Deploying
 
 Trail Tools runs on [Cloud Run](https://cloud.google.com/run) with a
@@ -364,6 +373,17 @@ itself, so only the Cloud Run service account can read and write them
 account's application default credentials. Photos of published reports
 are served with long cache lifetimes, so they're mostly fetched once per
 visitor.
+
+### Elevation tiles
+
+Elevation tiles are cached in the `<project>-dem-tiles` Cloud Storage
+bucket, so they're downloaded from AWS once rather than on every cold start
+of the service and every import. It's set up like the photos bucket, private
+and in `us-west1`, and Terraform passes it to the service and the import job
+as `TRAIL_TOOLS_DEM_BUCKET`. Both run as the Cloud Run service account, which
+can read and write its objects (`roles/storage.objectUser`). Tiles are
+stored gzipped as downloaded, at the same paths as on AWS, e.g.
+`skadi/N46/N46E007.hgt.gz`.
 
 ### Custom domain
 

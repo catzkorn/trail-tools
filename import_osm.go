@@ -38,6 +38,7 @@ func importOSM(args []string) int {
 	bounds := fs.String("bounds", "", "Only import ways within south,west,north,east, e.g. 46.8,8.2,47.6,9.0. Defaults to the whole extract")
 	demURL := fs.String("dem-url", elevation.DefaultURL, "The base URL of the HGT elevation tiles")
 	demCache := fs.String("dem-cache", elevation.DefaultCacheDir, "The directory to cache elevation tiles in")
+	demBucket := fs.String("dem-bucket", "", "The Google Cloud Storage bucket to cache elevation tiles in, using the application default credentials. If unset, they're only cached in -dem-cache")
 	logLevel := fs.String("log-level", "info", "The log level to use")
 	logFormat := fs.String("log-format", "text", "The log format: \"text\" for terminals, or \"json\" for Cloud Logging")
 	_ = fs.Parse(args)
@@ -52,14 +53,14 @@ func importOSM(args []string) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := runImportOSM(ctx, log, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache); err != nil {
+	if err := runImportOSM(ctx, log, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache, *demBucket); err != nil {
 		log.ErrorContext(ctx, "Failed to import the OpenStreetMap extract", slogor.Err(err))
 		return 1
 	}
 	return 0
 }
 
-func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, region, source, rawBounds, demURL, demCache string) error {
+func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, region, source, rawBounds, demURL, demCache, demBucket string) error {
 	switch {
 	case databaseURL == "":
 		return errors.New("database-url is required")
@@ -84,7 +85,10 @@ func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, 
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 	defer db.Close()
-	dem := elevation.NewDEM(demURL, demCache)
+	dem, err := newDEM(ctx, log, demURL, demCache, demBucket)
+	if err != nil {
+		return err
+	}
 	if importID != "" {
 		id, err := store.StringToUUID(importID)
 		if err != nil {

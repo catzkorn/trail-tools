@@ -210,6 +210,12 @@ var (
 		"photos",
 		"The local directory to store trip report photos in, if -photo-bucket is unset",
 	)
+	demBucket = flag.String(
+		"dem-bucket",
+		"",
+		"The Google Cloud Storage bucket to cache elevation tiles in, using the application default credentials,"+
+			" so they're downloaded once rather than after every restart. If unset, they're only cached on local disk",
+	)
 )
 
 func main() {
@@ -252,6 +258,7 @@ func main() {
 		*importJob,
 		*photoBucket,
 		*photoDir,
+		*demBucket,
 		mapdata.Config{},
 	); err != nil {
 		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
@@ -282,6 +289,7 @@ func run(
 	importJob string,
 	photoBucket string,
 	photoDir string,
+	demBucket string,
 	mapConfig mapdata.Config,
 ) error {
 	switch {
@@ -371,7 +379,10 @@ func run(
 	}
 	// Elevations come from public elevation tiles, for routes and for imports
 	// run in the server.
-	dem := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir)
+	dem, err := newDEM(ctx, log, elevation.DefaultURL, elevation.DefaultCacheDir, demBucket)
+	if err != nil {
+		return err
+	}
 	mapConfig.Elevation = dem
 	mapData := mapdata.New(mapConfig)
 
@@ -677,6 +688,22 @@ func setFlagsFromEnv(fs *flag.FlagSet) error {
 		}
 	})
 	return err
+}
+
+// newDEM creates a DEM that downloads tiles from baseURL into cacheDir, and
+// caches them in the Cloud Storage bucket, if set. On Cloud Run, the cache
+// directory is in memory and lost when an instance or job stops.
+func newDEM(ctx context.Context, log *slog.Logger, baseURL, cacheDir, bucket string) (*elevation.DEM, error) {
+	dem := elevation.NewDEM(baseURL, cacheDir)
+	if bucket != "" {
+		tiles, err := blob.NewGCS(ctx, bucket)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the elevation tile bucket client: %w", err)
+		}
+		dem.SetTileStore(tiles, log)
+		log.InfoContext(ctx, "Caching elevation tiles in Cloud Storage", slog.String("bucket", bucket))
+	}
+	return dem, nil
 }
 
 // newLogger returns a logger logging at level in format: "text" for
