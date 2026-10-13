@@ -62,18 +62,19 @@ export const RouteThumbnail: React.FC<RouteThumbnailProps> = ({
   const spanX = Math.max((maxLng - minLng) * scaleLng, 1e-6);
   const spanY = Math.max(maxLat - minLat, 1e-6);
   const span = Math.max(spanX, spanY);
-  const padding = 3;
+  // Room for the start dot at the edges.
+  const padding = 4;
   const inner = size - padding * 2;
   const offsetX = (inner - (spanX / span) * inner) / 2;
   const offsetY = (inner - (spanY / span) * inner) / 2;
-  const path = points
-    .map(([lat, lng]) => {
-      const xValue =
-        padding + offsetX + (((lng - minLng) * scaleLng) / span) * inner;
-      const yValue = padding + offsetY + ((maxLat - lat) / span) * inner;
-      return `${xValue.toFixed(1)},${yValue.toFixed(1)}`;
-    })
+  const coords = points.map(([lat, lng]): [number, number] => [
+    padding + offsetX + (((lng - minLng) * scaleLng) / span) * inner,
+    padding + offsetY + ((maxLat - lat) / span) * inner,
+  ]);
+  const path = coords
+    .map(([xValue, yValue]) => `${xValue.toFixed(1)},${yValue.toFixed(1)}`)
     .join(" ");
+  const [startX, startY] = coords[0] ?? [0, 0];
   return (
     <svg
       width={size}
@@ -88,6 +89,7 @@ export const RouteThumbnail: React.FC<RouteThumbnailProps> = ({
         strokeWidth={1.5}
         strokeLinejoin="round"
       />
+      <circle cx={startX} cy={startY} r={2.5} className="fill-ember" />
     </svg>
   );
 };
