@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -215,6 +216,52 @@ func TestTripReports(t *testing.T) {
 	wantCode(t, err, connect.CodeInvalidArgument)
 	_, err = e.otherTrips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), Title: new("Mine")}.Build())
 	wantCode(t, err, connect.CodeNotFound)
+
+	// Tags are kept in order without duplicates, and every tag can be
+	// stored.
+	setTags := func(tags ...tripsv1.TripTag) (*tripsv1.UpdateTripReportResponse, error) {
+		return e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{
+			Id:   report.GetId(),
+			Tags: tripsv1.TripTags_builder{Tags: tags}.Build(),
+		}.Build())
+	}
+	tagged, err := setTags(tripsv1.TripTag_TRIP_TAG_LOOP, tripsv1.TripTag_TRIP_TAG_TECHNICAL, tripsv1.TripTag_TRIP_TAG_CHALLENGING, tripsv1.TripTag_TRIP_TAG_LOOP)
+	if err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
+	if got, want := tagged.GetReport().GetTags(), []tripsv1.TripTag{tripsv1.TripTag_TRIP_TAG_CHALLENGING, tripsv1.TripTag_TRIP_TAG_TECHNICAL, tripsv1.TripTag_TRIP_TAG_LOOP}; !slices.Equal(got, want) {
+		t.Errorf("tags %v, want %v", got, want)
+	}
+	for value := range tripsv1.TripTag_name {
+		if value == 0 {
+			continue
+		}
+		if _, err := setTags(tripsv1.TripTag(value)); err != nil {
+			t.Errorf("UpdateTripReport with tag %v: %v", tripsv1.TripTag(value), err)
+		}
+	}
+	for name, tags := range map[string][]tripsv1.TripTag{
+		"unspecified":      {tripsv1.TripTag_TRIP_TAG_UNSPECIFIED},
+		"unknown":          {tripsv1.TripTag(99)},
+		"two difficulties": {tripsv1.TripTag_TRIP_TAG_MODERATE, tripsv1.TripTag_TRIP_TAG_CHALLENGING},
+		"two shapes":       {tripsv1.TripTag_TRIP_TAG_LOOP, tripsv1.TripTag_TRIP_TAG_POINT_TO_POINT},
+	} {
+		if _, err := setTags(tags...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			t.Errorf("UpdateTripReport with %s tags: got %v, want invalid argument", name, err)
+		}
+	}
+	// Other updates leave the tags as they are, and an empty list clears
+	// them.
+	if _, err := setTags(tripsv1.TripTag_TRIP_TAG_SNOW); err != nil {
+		t.Fatal(err)
+	}
+	kept, err := e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), Title: new("Up the ridge")}.Build())
+	if err != nil || !slices.Equal(kept.GetReport().GetTags(), []tripsv1.TripTag{tripsv1.TripTag_TRIP_TAG_SNOW}) {
+		t.Errorf("tags after another update: %v, %v", kept.GetReport().GetTags(), err)
+	}
+	if cleared, err := setTags(); err != nil || len(cleared.GetReport().GetTags()) != 0 {
+		t.Errorf("clearing tags: %v, %v", cleared.GetReport().GetTags(), err)
+	}
 
 	// Publishing requires a public profile.
 	_, err = e.trips.PublishTripReport(ctx, tripsv1.PublishTripReportRequest_builder{Id: report.GetId()}.Build())

@@ -113,7 +113,7 @@ insert into trip_reports (
 ) values (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
-returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id
+returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id, tags
 `
 
 type CreateReportParams struct {
@@ -170,6 +170,7 @@ func (q *Queries) CreateReport(ctx context.Context, arg *CreateReportParams) (*T
 		&i.UpdateTime,
 		&i.HiddenEndsMeters,
 		&i.CoverPhotoID,
+		&i.Tags,
 	)
 	return &i, err
 }
@@ -370,7 +371,7 @@ func (q *Queries) GetProfileByHandle(ctx context.Context, handle string) (*GetPr
 }
 
 const getReport = `-- name: GetReport :one
-select id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id from trip_reports
+select id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id, tags from trip_reports
 where id = $1 and user_id = $2
 `
 
@@ -403,12 +404,13 @@ func (q *Queries) GetReport(ctx context.Context, arg *GetReportParams) (*TripRep
 		&i.UpdateTime,
 		&i.HiddenEndsMeters,
 		&i.CoverPhotoID,
+		&i.Tags,
 	)
 	return &i, err
 }
 
 const getReportBySlug = `-- name: GetReportBySlug :one
-select id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id from trip_reports
+select id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id, tags from trip_reports
 where user_id = $1 and slug = $2
 `
 
@@ -441,6 +443,7 @@ func (q *Queries) GetReportBySlug(ctx context.Context, arg *GetReportBySlugParam
 		&i.UpdateTime,
 		&i.HiddenEndsMeters,
 		&i.CoverPhotoID,
+		&i.Tags,
 	)
 	return &i, err
 }
@@ -562,7 +565,7 @@ const listReports = `-- name: ListReports :many
 select
   id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time,
   distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters,
-  (track is not null)::boolean as has_track, cover_photo_id, published, publish_time,
+  (track is not null)::boolean as has_track, cover_photo_id, tags, published, publish_time,
   create_time, update_time
 from trip_reports
 where user_id = $1
@@ -593,6 +596,7 @@ type ListReportsRow struct {
 	ElevationGainMeters float64
 	HasTrack            bool
 	CoverPhotoID        pgtype.UUID
+	Tags                []string
 	Published           bool
 	PublishTime         pgtype.Timestamptz
 	CreateTime          pgtype.Timestamptz
@@ -624,6 +628,7 @@ func (q *Queries) ListReports(ctx context.Context, arg *ListReportsParams) ([]*L
 			&i.ElevationGainMeters,
 			&i.HasTrack,
 			&i.CoverPhotoID,
+			&i.Tags,
 			&i.Published,
 			&i.PublishTime,
 			&i.CreateTime,
@@ -769,7 +774,7 @@ update trip_reports set
   publish_time = case when $1 then coalesce(publish_time, now()) else publish_time end,
   update_time = now()
 where id = $2 and user_id = $3
-returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id
+returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id, tags
 `
 
 type SetReportPublishedParams struct {
@@ -802,6 +807,7 @@ func (q *Queries) SetReportPublished(ctx context.Context, arg *SetReportPublishe
 		&i.UpdateTime,
 		&i.HiddenEndsMeters,
 		&i.CoverPhotoID,
+		&i.Tags,
 	)
 	return &i, err
 }
@@ -914,9 +920,10 @@ update trip_reports set
     when $5::boolean then $6::uuid
     else cover_photo_id
   end,
+  tags = coalesce($7::text[], tags),
   update_time = now()
-where id = $7 and user_id = $8
-returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id
+where id = $8 and user_id = $9
+returning id, user_id, activity_id, title, slug, date, timezone, sport_type, start_time, distance_meters, moving_time_seconds, elapsed_time_seconds, elevation_gain_meters, track, published, publish_time, create_time, update_time, hidden_ends_meters, cover_photo_id, tags
 `
 
 type UpdateReportParams struct {
@@ -926,6 +933,7 @@ type UpdateReportParams struct {
 	HiddenEndsMeters pgtype.Int4
 	SetCoverPhoto    bool
 	CoverPhotoID     pgtype.UUID
+	Tags             []string
 	ID               pgtype.UUID
 	UserID           pgtype.UUID
 }
@@ -938,6 +946,7 @@ func (q *Queries) UpdateReport(ctx context.Context, arg *UpdateReportParams) (*T
 		arg.HiddenEndsMeters,
 		arg.SetCoverPhoto,
 		arg.CoverPhotoID,
+		arg.Tags,
 		arg.ID,
 		arg.UserID,
 	)
@@ -963,6 +972,7 @@ func (q *Queries) UpdateReport(ctx context.Context, arg *UpdateReportParams) (*T
 		&i.UpdateTime,
 		&i.HiddenEndsMeters,
 		&i.CoverPhotoID,
+		&i.Tags,
 	)
 	return &i, err
 }

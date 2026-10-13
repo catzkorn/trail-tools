@@ -346,6 +346,12 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 		}
 		update.CoverPhotoID = &cover
 	}
+	if req.HasTags() {
+		update.Tags, err = tagNames(req.GetTags().GetTags())
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
+		}
+	}
 	report, err := s.repo.UpdateReport(ctx, update)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to update trip report")

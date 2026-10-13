@@ -156,6 +156,41 @@ message TripReport {
   // in link previews: the one chosen, or the first photo if none was
   // chosen. Empty for a report without photos.
   string cover_photo_id = 18 [(mcp.v1.field).output_only = true];
+  // The tags, for readers to find reports, in the order of TripTag.
+  repeated TripTag tags = 19;
+}
+
+// TripTag is a tag of a trip report.
+enum TripTag {
+  TRIP_TAG_UNSPECIFIED = 0;
+  // Good for beginners. A report has at most one of the difficulty tags:
+  // beginner friendly, moderate and challenging.
+  TRIP_TAG_BEGINNER_FRIENDLY = 1;
+  // Moderate difficulty.
+  TRIP_TAG_MODERATE = 2;
+  // Challenging.
+  TRIP_TAG_CHALLENGING = 3;
+  // Mostly runnable terrain.
+  TRIP_TAG_RUNNABLE = 4;
+  // Technical terrain, e.g. roots, rocks or steep descents.
+  TRIP_TAG_TECHNICAL = 5;
+  // Scrambling, using hands.
+  TRIP_TAG_SCRAMBLING = 6;
+  // Snow on the route.
+  TRIP_TAG_SNOW = 7;
+  // A loop. A report has at most one of the route shape tags: loop, out and
+  // back, and point to point.
+  TRIP_TAG_LOOP = 8;
+  // Out and back.
+  TRIP_TAG_OUT_AND_BACK = 9;
+  // Point to point.
+  TRIP_TAG_POINT_TO_POINT = 10;
+}
+
+// TripTags is a list of tags, to set them.
+message TripTags {
+  // The tags.
+  repeated TripTag tags = 1;
 }
 
 // A section of a trip report's story, like a chapter of a blog post.
@@ -297,6 +332,9 @@ message UpdateTripReportRequest {
   // and in link previews, if set: one of the report's photos, or empty to
   // use the first photo.
   optional string cover_photo_id = 7;
+  // The new tags, if set. A report has at most one difficulty tag and one
+  // route shape tag.
+  TripTags tags = 8;
 }
 
 message UpdateTripReportResponse {

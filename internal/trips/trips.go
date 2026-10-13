@@ -86,6 +86,9 @@ type Report struct {
 	// The photo shown on top of the report, if one was chosen. Use
 	// CoverPhoto for the photo to show.
 	CoverPhotoID pgtype.UUID
+	// The tags, the names of trips.v1.TripTag without the prefix in
+	// lowercase, e.g. "beginner_friendly".
+	Tags []string
 	// Whether the report is published, and when it was first published.
 	Published   bool
 	PublishTime time.Time
@@ -327,6 +330,7 @@ func (r *Repository) ListReports(ctx context.Context, userID pgtype.UUID, filter
 			ElevationGainMeters: row.ElevationGainMeters,
 			HasTrack:            row.HasTrack,
 			CoverPhotoID:        row.CoverPhotoID,
+			Tags:                row.Tags,
 			Published:           row.Published,
 			PublishTime:         timestampFromPG(row.PublishTime),
 			CreateTime:          row.CreateTime.Time,
@@ -346,6 +350,8 @@ type ReportUpdate struct {
 	// The photo shown on top of the report, or an invalid UUID to use the
 	// first photo.
 	CoverPhotoID *pgtype.UUID
+	// The tags. Nil to leave them unchanged.
+	Tags []string
 }
 
 // UpdateReport updates one of the user's reports. It returns ErrSlugTaken if
@@ -367,6 +373,9 @@ func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report
 	if u.CoverPhotoID != nil {
 		params.SetCoverPhoto = true
 		params.CoverPhotoID = *u.CoverPhotoID
+	}
+	if u.Tags != nil {
+		params.Tags = u.Tags
 	}
 	row, err := r.q.UpdateReport(ctx, params)
 	if err != nil {
@@ -746,6 +755,7 @@ func reportFromDB(row *gen.TripReport) *Report {
 		HasTrack:            row.Track != nil,
 		HiddenEndsMeters:    row.HiddenEndsMeters,
 		CoverPhotoID:        row.CoverPhotoID,
+		Tags:                row.Tags,
 		Published:           row.Published,
 		PublishTime:         timestampFromPG(row.PublishTime),
 		CreateTime:          row.CreateTime.Time,

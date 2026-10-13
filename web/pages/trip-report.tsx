@@ -21,6 +21,7 @@ import {
   splitSection,
 } from "@components/trips/section-draft";
 import { formatRange, trackSlice } from "@components/trips/sections";
+import { TagPicker } from "@components/trips/tags";
 import {
   TripStatsRow,
   mapPhotos,
@@ -159,6 +160,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
   );
   const [date, setDate] = useState(report.date);
   const [hiddenEnds, setHiddenEnds] = useState(String(report.hiddenEndsMeters));
+  const [tags, setTags] = useState(report.tags);
   const [draft, setDraft] = useState(() => draftSections(report.sections));
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [splittingKey, setSplittingKey] = useState<string | null>(null);
@@ -267,7 +269,8 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     trimmedTitle !== report.title ||
     slug !== report.slug ||
     date !== report.date ||
-    Number(hiddenEnds) !== report.hiddenEndsMeters;
+    Number(hiddenEnds) !== report.hiddenEndsMeters ||
+    tags.join() !== report.tags.join();
   const sectionsDirty = !sameSections(sections, saved);
   const dirty = detailsDirty || sectionsDirty;
   const slugValid = isValidSlug(slug);
@@ -300,6 +303,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
             : Number(hiddenEnds),
         id: report.id,
         slug: slug === report.slug ? undefined : slug,
+        tags: tags.join() === report.tags.join() ? undefined : { tags },
         title: trimmedTitle === report.title ? undefined : trimmedTitle,
       });
     }
@@ -319,6 +323,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     setSlug(report.slug);
     setDate(report.date);
     setHiddenEnds(String(report.hiddenEndsMeters));
+    setTags(report.tags);
     setDraft(draftSections(report.sections));
     setSuggestion(null);
     setSplittingKey(null);
@@ -420,6 +425,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
                 className="sm:max-w-sm"
               />
             )}
+            <TagPicker tags={tags} onChange={setTags} />
           </div>
         </Card>
 

@@ -1140,6 +1140,7 @@ type TripReport struct {
 	UpdateTime          pgtype.Timestamptz
 	HiddenEndsMeters    int32
 	CoverPhotoID        pgtype.UUID
+	Tags                []string
 }
 
 type TripReportSection struct {

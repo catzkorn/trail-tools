@@ -8,6 +8,7 @@ import {
   sectionSummary,
   trackSlice,
 } from "@components/trips/sections";
+import { TagList } from "@components/trips/tags";
 import {
   Story,
   TripStatsRow,
@@ -433,6 +434,7 @@ const PublicTripReportPage: React.FC = () => {
             {author.displayName}
           </Link>
         </p>
+        <TagList tags={report.tags} className="justify-center" />
       </header>
 
       {cover !== undefined && (

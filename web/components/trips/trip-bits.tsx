@@ -1,5 +1,6 @@
 import type { ProfilePoint } from "@components/charts/elevation-profile";
 import type { MapPhoto } from "@components/map/photo-markers";
+import { TagList } from "@components/trips/tags";
 import { Badge } from "@components/ui/misc";
 import { cardClass } from "@components/ui/styles";
 import { MapIcon, PhotoIcon } from "@heroicons/react/24/outline";
@@ -241,6 +242,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({
         {report.excerpt !== "" && (
           <p className="line-clamp-3 text-sm text-gray-500">{report.excerpt}</p>
         )}
+        <TagList tags={report.tags} className="mt-auto pt-2" />
       </div>
     </Link>
   );
