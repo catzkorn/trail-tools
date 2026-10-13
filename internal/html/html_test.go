@@ -42,6 +42,23 @@ func TestRender(t *testing.T) {
 	}
 }
 
+func TestRenderDefaultImage(t *testing.T) {
+	rec := httptest.NewRecorder()
+	Render(rec, false, http.StatusOK, Page{
+		Title: "Trip reports by Jane",
+		URL:   "https://trail.example/u/jane",
+	})
+	body := rec.Body.String()
+	for _, want := range []string{
+		`<meta property="og:image" content="https://trail.example/img/og.png" />`,
+		`<meta name="twitter:card" content="summary_large_image" />`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page does not contain %q:\n%s", want, body)
+		}
+	}
+}
+
 func TestRenderDefault(t *testing.T) {
 	rec := httptest.NewRecorder()
 	ServeIndexHTML(false).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/anything", nil))

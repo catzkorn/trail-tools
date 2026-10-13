@@ -18,6 +18,7 @@ import {
 } from "@components/trips/trip-bits";
 import TripMap from "@components/trips/trip-map";
 import Lightbox from "@components/ui/lightbox";
+import PublicFooter from "@components/ui/public-footer";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
@@ -495,15 +496,7 @@ const PublicTripReportPage: React.FC = () => {
           ))}
         </div>
       </div>
-      <footer className="border-t border-gray-200 pt-6 text-center text-sm text-gray-500">
-        More trip reports by{" "}
-        <Link
-          to={`/u/${author.handle}`}
-          className="font-medium text-brand-600 hover:underline"
-        >
-          {author.displayName}
-        </Link>
-      </footer>
+      <PublicFooter author={author} />
       <Lightbox
         photos={photos}
         index={lightboxIndex}

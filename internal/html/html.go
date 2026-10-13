@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/johanbrandhorst/reload"
@@ -15,6 +16,10 @@ const templateName = "index.html"
 
 // defaultTitle is the title of pages without their own.
 const defaultTitle = "trailrunn.ing"
+
+// defaultImagePath is the path of the link preview image of pages without
+// their own: the app's mark and name.
+const defaultImagePath = "/img/og.png"
 
 var indexTemplate = template.Must(template.New(templateName).Parse(
 	fmt.Sprintf(
@@ -78,7 +83,8 @@ type Page struct {
 	// The canonical URL of the page. The Open Graph tags are only added
 	// for pages with a URL.
 	URL string
-	// The URL of an image representing the page.
+	// The URL of an image representing the page. Pages with a URL default
+	// to the app's preview image.
 	Image string
 	// The Open Graph type, e.g. "article" or "profile". Defaults to
 	// "website".
@@ -94,6 +100,11 @@ type Page struct {
 func Render(w http.ResponseWriter, watch bool, status int, page Page) {
 	if page.Title == "" {
 		page.Title = defaultTitle
+	}
+	if page.Image == "" && page.URL != "" {
+		if u, err := url.Parse(page.URL); err == nil {
+			page.Image = (&url.URL{Scheme: u.Scheme, Host: u.Host, Path: defaultImagePath}).String()
+		}
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)

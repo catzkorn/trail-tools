@@ -109,7 +109,7 @@ const App: React.FC = () => {
   return (
     <div className="flex min-h-full flex-col">
       <Header user={user} />
-      <main className="flex grow justify-center bg-slate-50 print:bg-white">
+      <main className="flex grow justify-center bg-stone-50 print:bg-white">
         <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
           <Routes>
             <Route path="/" element={<DashboardPage user={user} />} />

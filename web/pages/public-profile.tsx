@@ -2,6 +2,7 @@ import Loading from "@components/loading";
 import { RaceReportCard } from "@components/races/race-report-bits";
 import { ReportCard } from "@components/trips/trip-bits";
 import { EmptyState } from "@components/ui/misc";
+import PublicFooter from "@components/ui/public-footer";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
@@ -128,6 +129,7 @@ const PublicProfilePage: React.FC = () => {
           ))}
         </div>
       )}
+      <PublicFooter />
     </div>
   );
 };

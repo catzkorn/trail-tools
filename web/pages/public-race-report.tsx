@@ -5,6 +5,7 @@ import {
   RaceResult,
   SECTIONS,
 } from "@components/races/race-report-bits";
+import PublicFooter from "@components/ui/public-footer";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
@@ -138,6 +139,7 @@ const PublicRaceReportPage: React.FC = () => {
           </div>
         </section>
       ))}
+      <PublicFooter author={{ displayName: data.authorName, handle }} />
     </article>
   );
 };
