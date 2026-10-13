@@ -6,7 +6,7 @@ import { keepPreviousData, skipToken } from "@tanstack/react-query";
 import {
   findPointsOfInterest,
   findTrails,
-  getPersonalHeatmap,
+  listHeatmapTracks,
 } from "gen/geo/v1/geo-GeoService_connectquery";
 import type {
   FindPointsOfInterestResponse,
@@ -14,6 +14,7 @@ import type {
 } from "gen/geo/v1/geo_pb";
 import { formatKm } from "helpers/format";
 import { poiStyle, terrainStyle } from "helpers/labels";
+import { decodePolyline } from "helpers/polyline";
 import * as leaflet from "leaflet";
 import React, { useEffect } from "react";
 
@@ -24,7 +25,6 @@ import { useMap } from "./map-view";
 export const TRAILS_MIN_ZOOM = 13;
 export const POI_MIN_ZOOM = 12;
 const MAX_RADIUS_METERS = 15_000;
-const METERS_PER_DEGREE = 111_320;
 
 const round = (value: number, decimals: number): number => {
   const factor = 10 ** decimals;
@@ -38,35 +38,12 @@ const searchRadius = (viewport: Viewport): number => {
   return Math.round(Math.min(MAX_RADIUS_METERS, width / 2));
 };
 
-const cellSizeForZoom = (zoom: number): number => {
-  if (zoom >= 15) {
-    return 25;
-  }
-  if (zoom >= 14) {
-    return 50;
-  }
-  if (zoom >= 12) {
-    return 100;
-  }
-  if (zoom >= 10) {
-    return 250;
-  }
-  return 1000;
-};
+// HEAT_COLOR is the color of the heatmap's tracks, darker where they overlap.
+const HEAT_COLOR = "#ea580c";
 
-const HEAT_COLORS = ["#fde68a", "#fbbf24", "#f97316", "#dc2626", "#7f1d1d"];
-
-const heatColor = (count: number, maxCount: number): string => {
-  if (maxCount <= 1) {
-    return "#f97316";
-  }
-  const intensity = Math.log(count) / Math.log(maxCount);
-  const index = Math.min(
-    HEAT_COLORS.length - 1,
-    Math.floor(intensity * HEAT_COLORS.length)
-  );
-  return HEAT_COLORS[index] ?? "#f97316";
-};
+// MetersPerPixel is the size of a screen pixel on the map at a latitude.
+const metersPerPixel = (lat: number, zoom: number): number =>
+  (40_075_016 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 8);
 
 interface OverlayProps {
   viewport: Viewport;
@@ -129,22 +106,29 @@ export const usePointsOfInterest = (
   );
 };
 
-// HeatmapOverlay draws the user's personal heatmap for the visible area.
+/**
+ * HeatmapOverlay draws the user's activity tracks in the visible area as thin
+ * translucent lines, darker where the user goes often.
+ */
 export const HeatmapOverlay: React.FC<OverlayProps> = ({ viewport }) => {
   const map = useMap();
   const { bounds, zoom } = viewport;
-  const cellSize = cellSizeForZoom(zoom);
+  // A little beyond the edges, so tracks don't stop short while panning.
+  const area = bounds.pad(0.1);
   const { data } = useQuery(
-    getPersonalHeatmap,
+    listHeatmapTracks,
     {
       bounds: {
-        east: round(bounds.getEast(), 3),
-        north: round(bounds.getNorth(), 3),
-        south: round(bounds.getSouth(), 3),
-        west: round(bounds.getWest(), 3),
+        east: round(area.getEast(), 3),
+        north: round(area.getNorth(), 3),
+        south: round(area.getSouth(), 3),
+        west: round(area.getWest(), 3),
       },
-      cellSizeMeters: cellSize,
-      limit: 5000,
+      // Simplified to about a pixel.
+      toleranceMeters: Math.max(
+        1,
+        Math.round(metersPerPixel(bounds.getCenter().lat, zoom))
+      ),
     },
     { placeholderData: keepPreviousData }
   );
@@ -155,35 +139,17 @@ export const HeatmapOverlay: React.FC<OverlayProps> = ({ viewport }) => {
     }
     const renderer = leaflet.canvas({ padding: 0.2 });
     const group = leaflet.layerGroup();
-    let maxCount = 1;
-    for (const cell of data.cells) {
-      maxCount = Math.max(maxCount, cell.activityCount);
-    }
-    const half = data.cellSizeMeters / 2;
-    for (const cell of data.cells) {
-      if (cell.center === undefined) {
-        continue;
-      }
-      const { lat, lng } = cell.center;
-      const latOffset = half / METERS_PER_DEGREE;
-      const lngOffset =
-        half / (METERS_PER_DEGREE * Math.cos((lat * Math.PI) / 180));
-      const color = heatColor(cell.activityCount, maxCount);
+    for (const polyline of data.polylines) {
       group.addLayer(
-        leaflet.rectangle(
-          [
-            [lat - latOffset, lng - lngOffset],
-            [lat + latOffset, lng + lngOffset],
-          ],
-          {
-            color,
-            fillColor: color,
-            fillOpacity: 0.55,
-            interactive: false,
-            renderer,
-            weight: 0,
-          }
-        )
+        leaflet.polyline(decodePolyline(polyline), {
+          color: HEAT_COLOR,
+          interactive: false,
+          lineCap: "round",
+          lineJoin: "round",
+          opacity: 0.35,
+          renderer,
+          weight: 2,
+        })
       );
     }
     group.addTo(map);

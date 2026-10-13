@@ -48,3 +48,11 @@ export const getElevation = GeoService.method.getElevation;
  * @generated from rpc geo.v1.GeoService.GetPersonalHeatmap
  */
 export const getPersonalHeatmap = GeoService.method.getPersonalHeatmap;
+
+/**
+ * List the parts of the user's GPS tracks inside a bounding box, simplified,
+ * for drawing them as a heatmap.
+ *
+ * @generated from rpc geo.v1.GeoService.ListHeatmapTracks
+ */
+export const listHeatmapTracks = GeoService.method.listHeatmapTracks;

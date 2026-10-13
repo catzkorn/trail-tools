@@ -48,8 +48,8 @@ func (s *Service) loadHeatmap(ctx context.Context, userID pgtype.UUID, points []
 			s.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(track.ActivityID)))
 			continue
 		}
-		for _, part := range clip(points, bounds) {
-			heat.tracks = append(heat.tracks, simplify(part, heatmapSimplifyMeters))
+		for _, part := range Clip(points, bounds) {
+			heat.tracks = append(heat.tracks, Simplify(part, heatmapSimplifyMeters))
 		}
 	}
 	return heat, nil
@@ -75,9 +75,9 @@ func overlaps(a, b geo.Bounds) bool {
 	return a.MinLat <= b.MaxLat && b.MinLat <= a.MaxLat && a.MinLng <= b.MaxLng && b.MinLng <= a.MaxLng
 }
 
-// clip returns the parts of a track inside bounds, each with at least two
+// Clip returns the parts of a track inside bounds, each with at least two
 // points.
-func clip(points []geo.Point, b geo.Bounds) [][]geo.Point {
+func Clip(points []geo.Point, b geo.Bounds) [][]geo.Point {
 	var parts [][]geo.Point
 	var part []geo.Point
 	for _, p := range points {
@@ -96,9 +96,9 @@ func clip(points []geo.Point, b geo.Bounds) [][]geo.Point {
 	return parts
 }
 
-// simplify removes points of a track that are within tolerance meters of the
+// Simplify removes points of a track that are within tolerance meters of the
 // line through their neighbors (the Douglas-Peucker algorithm).
-func simplify(points []geo.Point, tolerance float64) []geo.Point {
+func Simplify(points []geo.Point, tolerance float64) []geo.Point {
 	if len(points) < 3 {
 		return points
 	}
@@ -112,8 +112,8 @@ func simplify(points []geo.Point, tolerance float64) []geo.Point {
 	if worst <= tolerance {
 		return []geo.Point{points[0], points[last]}
 	}
-	first := simplify(points[:worstIndex+1], tolerance)
-	return append(first[:len(first)-1], simplify(points[worstIndex:], tolerance)...)
+	first := Simplify(points[:worstIndex+1], tolerance)
+	return append(first[:len(first)-1], Simplify(points[worstIndex:], tolerance)...)
 }
 
 // padBounds grows bounds by about padding meters on each side.

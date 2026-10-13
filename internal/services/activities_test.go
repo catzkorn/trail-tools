@@ -344,6 +344,26 @@ func TestStravaSyncAndActivities(t *testing.T) {
 	if heatmap.GetActivityCount() != 2 || len(heatmap.GetCells()) == 0 || heatmap.GetCells()[0].GetActivityCount() != 2 {
 		t.Errorf("unexpected heatmap: %d activities, %d cells", heatmap.GetActivityCount(), len(heatmap.GetCells()))
 	}
+	// The tracks for drawing it are clipped to the bounds and simplified:
+	// the straight tracks become two points each.
+	heatTracks, err := e.geo.ListHeatmapTracks(ctx, geov1.ListHeatmapTracksRequest_builder{
+		Bounds: geov1.BoundingBox_builder{South: -0.001, West: -0.001, North: 0.005, East: 0.001}.Build(),
+	}.Build())
+	if err != nil {
+		t.Fatalf("ListHeatmapTracks: %v", err)
+	}
+	if len(heatTracks.GetPolylines()) != 2 || heatTracks.GetTruncated() {
+		t.Fatalf("got %d heatmap tracks, want 2", len(heatTracks.GetPolylines()))
+	}
+	for _, polyline := range heatTracks.GetPolylines() {
+		points, err := geo.DecodePolyline(polyline)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(points) != 2 || points[1].Lat > 0.005 {
+			t.Errorf("unexpected heatmap track %v", points)
+		}
+	}
 
 	// An activity can become a route.
 	route, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
