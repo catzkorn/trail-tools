@@ -12,7 +12,7 @@ const UserNav: React.FC<UserNavProps> = ({ user }) => (
   <div className="ml-4 flex items-center gap-3 md:ml-6">
     <span className="hidden text-sm text-gray-200 lg:block">{user.name}</span>
     <Menu as="div" className="relative">
-      <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800">
+      <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-hidden data-[focus]:ring-2 data-[focus]:ring-white data-[focus]:ring-offset-2 data-[focus]:ring-offset-gray-800">
         <span className="absolute -inset-1.5" />
         <span className="sr-only">Open user menu</span>
         <Avatar avatarUrl={user.avatarUrl} />
