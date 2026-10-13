@@ -70,12 +70,13 @@ rides. They have GPS tracks with elevation, heart rate and cadence, and the
 longer outings have photos, for trip reports.
 
 The tracks follow real trails and roads. The fake Strava comes with the map
-data of Squamish embedded (`internal/demo`): its trails from OpenStreetMap,
-loaded into the routing graph at startup unless an imported region covers
-Squamish already, and its elevations. So routing, snapping activities to
-trails and elevation profiles work around Squamish without importing or
-downloading map data. `go generate ./internal/demo` updates the data from the
-Overpass API and the elevation tiles.
+data of Squamish embedded (`internal/demo`): its trails and points of
+interest from OpenStreetMap, loaded into the routing graph at startup unless
+an imported region covers Squamish already, and its elevations. So routing,
+snapping activities to trails, the trails layer and elevation profiles work
+around Squamish without importing or downloading map data.
+`go generate ./internal/demo` updates the data from the Geofabrik extract
+covering Squamish and the elevation tiles.
 
 To sync real activities, create a Strava API application at
 https://www.strava.com/settings/api with the "Authorization Callback Domain"
@@ -235,12 +236,19 @@ the area shown in the middle of the map. The server picks the
 [Geofabrik](https://download.geofabrik.de) extracts to read from their
 outlines in Geofabrik's index: at points across the area, the smallest
 extract containing each, so an area across a border reads the extracts on
-both sides, up to 4. It reads only the paths inside the area, and looks up
-elevations from the SRTM derived tiles of the
+both sides, up to 4. It reads only the paths and points of interest (peaks,
+water, parking, viewpoints, shelters, toilets, saddles and trailheads) inside
+the area, and looks up elevations from the SRTM derived tiles of the
 [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) dataset.
 Locally, imports run in the server. On Cloud Run they run as executions of the
 `trail-tools-import` job, set with `-import-job`, as they need more memory than
 the service has.
+
+Finding trails and points of interest, in the API and the map's trails layer,
+uses the same imported data, with PostGIS queries. They only work in imported
+areas, like routing, and report that the area needs importing elsewhere.
+Regions imported before trails were found this way have no trail names or
+points of interest until they are imported again.
 
 Imports can also be run from the command line, e.g. to import a whole
 extract:
@@ -255,24 +263,21 @@ an area across a border. Importing a region again replaces it.
 
 Storage grows with the area and density of paths: all of Switzerland takes
 about 715 MB, a 100 by 100 km box of it about 230 MB and Liechtenstein about
-4.5 MB. Neon's free plan has 0.5 GB of storage. Memory grows with the area
+4.5 MB, plus about 15% for trail names and points of interest. Neon's free
+plan has 0.5 GB of storage. Memory grows with the area
 imported, as only the paths inside it are kept: a 100 km² area of the
 Switzerland extract peaks at under 400 MB, plus the largest downloaded
 extract, which Cloud Run keeps in memory.
 
 ### Map data services
 
-Trails, points of interest, place search and weather come from public
-services that are fine for personal use. Elevations, e.g. of straight legs
-and routes from GPX files, come from the same elevation tiles as imports,
-downloaded as needed and cached, so they don't depend on a rate limited API:
-
-| Flag             | Default                         | Used for                        |
-| ---------------- | ------------------------------- | ------------------------------- |
-| `-overpass-urls` | Public Overpass API instances   | Trails and points of interest   |
-
-Public Overpass instances are often overloaded; trail and point of interest
-lookups return an error asking to retry when they all fail.
+Place search ([Nominatim](https://nominatim.org)) and weather
+([Open-Meteo](https://open-meteo.com)) come from public services that are
+fine for personal use. Trails and points of interest come from the imported
+OpenStreetMap data (see [Routing data](#routing-data)). Elevations, e.g. of
+straight legs and routes from GPX files, come from the same elevation tiles
+as imports, downloaded as needed and cached, so they don't depend on a rate
+limited API.
 
 ## Deploying
 

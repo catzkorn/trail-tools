@@ -791,6 +791,16 @@ type PlanPeriod struct {
 	TargetDurationSeconds     int32
 }
 
+type PointsOfInterest struct {
+	RegionID        int16
+	OsmID           int64
+	IsWay           bool
+	Kind            string
+	Name            string
+	Location        interface{}
+	ElevationMeters pgtype.Float4
+}
+
 type PublicProfile struct {
 	UserID      pgtype.UUID
 	Handle      string
@@ -985,6 +995,9 @@ type RoutingEdge struct {
 	Highway       string
 	SacScale      string
 	Terrain       string
+	WayID         pgtype.Int8
+	Name          string
+	Surface       string
 }
 
 type RoutingImport struct {

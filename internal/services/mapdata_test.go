@@ -109,7 +109,7 @@ func TestMapData(t *testing.T) {
 		{Source: 1, Target: 2, Points: []geo.Point{{Lat: 47, Lng: 8, Ele: 500}, {Lat: 47.01, Lng: 8, Ele: 520}}, Highway: "path", Terrain: geo.TerrainTrail},
 		{Source: 2, Target: 3, Points: []geo.Point{{Lat: 47.01, Lng: 8, Ele: 520}, {Lat: 47.02, Lng: 8, Ele: 510}}, Highway: "track", Terrain: geo.TerrainGravel},
 	})
-	if _, err := routing.SaveRegion(ctx, e.db, "central-switzerland", bounds, edges); err != nil {
+	if _, err := routing.SaveRegion(ctx, e.db, "central-switzerland", bounds, edges, nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := routing.FailImport(ctx, e.db, id, "the download failed"); err != nil {

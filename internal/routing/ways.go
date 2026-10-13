@@ -17,41 +17,21 @@ import (
 	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/qedus/osmpbf"
 )
 
-// WaysFromOSM returns the foot accessible ways among OpenStreetMap ways, such
-// as ones from the Overpass API, with the nodes they use.
-func WaysFromOSM(osmWays []*osmpbf.Way, nodes map[int64]geo.Point) ([]Way, *Nodes) {
-	var ways []Way
-	var ids []int64
-	for _, w := range osmWays {
-		if isFootWay(w.Tags) {
-			ways = append(ways, wayFromOSM(w))
-			ids = append(ids, w.NodeIDs...)
-		}
-	}
-	slices.Sort(ids)
-	ids = slices.Compact(ids)
-	result := &Nodes{}
-	for _, id := range ids {
-		if p, ok := nodes[id]; ok {
-			result.IDs = append(result.IDs, id)
-			result.Lats = append(result.Lats, p.Lat)
-			result.Lngs = append(result.Lngs, p.Lng)
-		}
-	}
-	return ways, result
-}
-
-// ImportWays loads ways into the routing graph as a region, with their
-// elevations from the DEM, and returns the number of edges imported.
+// ImportOSM loads OpenStreetMap data into the routing graph as a region,
+// with elevations from the DEM, and returns the number of edges imported.
 // Importing a region again replaces it.
-func ImportWays(ctx context.Context, log *slog.Logger, db *store.DB, region string, bounds geo.Bounds, ways []Way, nodes *Nodes, dem *elevation.DEM) (int, error) {
+func ImportOSM(ctx context.Context, log *slog.Logger, db *store.DB, region string, bounds geo.Bounds, data *OSM, dem *elevation.DEM) (int, error) {
 	start := time.Now()
+	ways, nodes := data.Ways, data.Nodes
 	elevations, err := dem.Elevations(ctx, nodes.Lats, nodes.Lngs)
 	if err != nil {
 		return 0, fmt.Errorf("failed to look up elevations: %w", err)
+	}
+	features, err := featureElevations(ctx, data.Features, dem)
+	if err != nil {
+		return 0, err
 	}
 	if bounds == (geo.Bounds{}) {
 		bounds = geo.Bounds{MinLat: 90, MinLng: 180, MaxLat: -90, MaxLng: -180}
@@ -62,27 +42,51 @@ func ImportWays(ctx context.Context, log *slog.Logger, db *store.DB, region stri
 			}
 		}
 	}
-	count, err := SaveRegion(ctx, db, region, bounds, BuildEdges(ways, nodes, elevations, bounds))
+	count, err := SaveRegion(ctx, db, region, bounds, BuildEdges(ways, nodes, elevations, bounds), features)
 	if err != nil {
 		return 0, err
 	}
 	if count == 0 {
 		return 0, fmt.Errorf("there are no foot accessible ways within the bounds")
 	}
-	log.InfoContext(ctx, "Imported the region", slog.String("region", region), slog.Int("edges", count), slog.Duration("duration", time.Since(start)))
+	log.InfoContext(ctx, "Imported the region", slog.String("region", region), slog.Int("edges", count),
+		slog.Int("points_of_interest", len(features)), slog.Duration("duration", time.Since(start)))
 	return count, nil
 }
 
-// waysMagic starts ways files.
-const waysMagic = "TTWAYS1"
+// featureElevations returns the features with the elevations of those
+// without an ele tag from the DEM.
+func featureElevations(ctx context.Context, features []Feature, dem *elevation.DEM) ([]Feature, error) {
+	features = slices.Clone(features)
+	var lats, lngs []float64
+	var missing []int
+	for i, f := range features {
+		if math.IsNaN(f.Point.Ele) {
+			lats, lngs = append(lats, f.Point.Lat), append(lngs, f.Point.Lng)
+			missing = append(missing, i)
+		}
+	}
+	elevations, err := dem.Elevations(ctx, lats, lngs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to look up the elevations of points of interest: %w", err)
+	}
+	for j, i := range missing {
+		features[i].Point.Ele = math.Round(elevations[j])
+	}
+	return features, nil
+}
+
+// osmMagic starts OpenStreetMap data files.
+const osmMagic = "TTOSM1"
 
 // coordinateScale is the precision coordinates are stored with, about 10 cm.
 const coordinateScale = 1e6
 
-// WriteWays writes ways and their nodes gzipped, compactly: IDs and
-// coordinates are stored as differences to the ones before, and node
-// references as differences between node indexes.
-func WriteWays(w io.Writer, ways []Way, nodes *Nodes) error {
+// WriteOSM writes OpenStreetMap data gzipped, compactly: IDs and coordinates
+// are stored as differences to the ones before, and node references as
+// differences between node indexes.
+func WriteOSM(w io.Writer, data *OSM) error {
+	nodes := data.Nodes
 	zw, err := gzip.NewWriterLevel(w, gzip.BestCompression)
 	if err != nil {
 		return err
@@ -97,7 +101,7 @@ func WriteWays(w io.Writer, ways []Way, nodes *Nodes) error {
 		varint(int64(len(s)))
 		_, _ = bw.WriteString(s)
 	}
-	_, _ = bw.WriteString(waysMagic)
+	_, _ = bw.WriteString(osmMagic)
 
 	varint(int64(len(nodes.IDs)))
 	var prevID, prevLat, prevLng int64
@@ -109,7 +113,7 @@ func WriteWays(w io.Writer, ways []Way, nodes *Nodes) error {
 		prevID, prevLat, prevLng = id, lat, lng
 	}
 
-	sorted := slices.Clone(ways)
+	sorted := slices.Clone(data.Ways)
 	slices.SortFunc(sorted, func(a, b Way) int { return cmp.Compare(a.ID, b.ID) })
 	varint(int64(len(sorted)))
 	prevID = 0
@@ -120,6 +124,8 @@ func WriteWays(w io.Writer, ways []Way, nodes *Nodes) error {
 		str(way.Highway)
 		str(way.SacScale)
 		str(string(way.Terrain))
+		str(way.Name)
+		str(way.Surface)
 		varint(int64(len(way.Nodes)))
 		for _, id := range way.Nodes {
 			index := int64(nodes.find(id))
@@ -130,22 +136,48 @@ func WriteWays(w io.Writer, ways []Way, nodes *Nodes) error {
 			prevIndex = index
 		}
 	}
+
+	features := slices.Clone(data.Features)
+	slices.SortFunc(features, func(a, b Feature) int { return cmp.Compare(a.ID, b.ID) })
+	varint(int64(len(features)))
+	prevID, prevLat, prevLng = 0, 0, 0
+	for _, f := range features {
+		lat, lng := int64(math.Round(f.Point.Lat*coordinateScale)), int64(math.Round(f.Point.Lng*coordinateScale))
+		varint(f.ID - prevID)
+		varint(lat - prevLat)
+		varint(lng - prevLng)
+		prevID, prevLat, prevLng = f.ID, lat, lng
+		// Flags: 1 for a way, 2 if the elevation is known.
+		flags := int64(0)
+		if f.Way {
+			flags |= 1
+		}
+		if !math.IsNaN(f.Point.Ele) {
+			flags |= 2
+		}
+		varint(flags)
+		if flags&2 != 0 {
+			varint(int64(math.Round(f.Point.Ele)))
+		}
+		str(string(f.Kind))
+		str(f.Name)
+	}
 	if err := bw.Flush(); err != nil {
 		return err
 	}
 	return zw.Close()
 }
 
-// ReadWays reads ways and their nodes written by WriteWays.
-func ReadWays(r io.Reader) ([]Way, *Nodes, error) {
+// ReadOSM reads OpenStreetMap data written by WriteOSM.
+func ReadOSM(r io.Reader) (*OSM, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read the ways: %w", err)
+		return nil, fmt.Errorf("failed to read the OpenStreetMap data: %w", err)
 	}
 	br := bufio.NewReader(zr)
-	magic := make([]byte, len(waysMagic))
-	if _, err := io.ReadFull(br, magic); err != nil || string(magic) != waysMagic {
-		return nil, nil, errors.New("not a ways file")
+	magic := make([]byte, len(osmMagic))
+	if _, err := io.ReadFull(br, magic); err != nil || string(magic) != osmMagic {
+		return nil, errors.New("not an OpenStreetMap data file")
 	}
 	var readErr error
 	varint := func() int64 {
@@ -172,6 +204,9 @@ func ReadWays(r io.Reader) ([]Way, *Nodes, error) {
 		}
 		return string(b)
 	}
+	failed := func() (*OSM, error) {
+		return nil, fmt.Errorf("failed to read the OpenStreetMap data: %w", readErr)
+	}
 
 	n := count()
 	nodes := &Nodes{IDs: make([]int64, n), Lats: make([]float64, n), Lngs: make([]float64, n)}
@@ -187,22 +222,41 @@ func ReadWays(r io.Reader) ([]Way, *Nodes, error) {
 	index := int64(0)
 	for i := range ways {
 		id += varint()
-		way := Way{ID: id, Highway: str(), SacScale: str(), Terrain: geo.Terrain(str())}
+		way := Way{ID: id, Highway: str(), SacScale: str(), Terrain: geo.Terrain(str()), Name: str(), Surface: str()}
 		way.Nodes = make([]int64, count())
 		for j := range way.Nodes {
 			index += varint()
 			if index < 0 || index >= int64(n) {
-				return nil, nil, errors.New("a way refers to a missing node")
+				return nil, errors.New("a way refers to a missing node")
 			}
 			way.Nodes[j] = nodes.IDs[index]
 		}
 		ways[i] = way
 		if readErr != nil {
-			break
+			return failed()
+		}
+	}
+	features := make([]Feature, count())
+	id, lat, lng = 0, 0, 0
+	for i := range features {
+		id += varint()
+		lat += varint()
+		lng += varint()
+		f := Feature{ID: id, Point: geo.Point{Lat: float64(lat) / coordinateScale, Lng: float64(lng) / coordinateScale, Ele: math.NaN()}}
+		flags := varint()
+		f.Way = flags&1 != 0
+		if flags&2 != 0 {
+			f.Point.Ele = float64(varint())
+		}
+		f.Kind = geo.FeatureKind(str())
+		f.Name = str()
+		features[i] = f
+		if readErr != nil {
+			return failed()
 		}
 	}
 	if readErr != nil {
-		return nil, nil, fmt.Errorf("failed to read the ways: %w", readErr)
+		return failed()
 	}
-	return ways, nodes, nil
+	return &OSM{Ways: ways, Nodes: nodes, Features: features}, nil
 }

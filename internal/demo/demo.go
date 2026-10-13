@@ -1,11 +1,11 @@
 // Package demo embeds map data of Squamish, BC, where the fake Strava's
-// athlete lives: its trails and roads from OpenStreetMap, and its
-// elevations. A local server loads them, so routes, snapping and the fake
-// Strava's activities work around Squamish without importing or downloading
-// anything.
+// athlete lives: its trails, roads and points of interest from
+// OpenStreetMap, and its elevations. A local server loads them, so routes,
+// snapping, finding trails and the fake Strava's activities work around
+// Squamish without importing or downloading anything.
 //
-// Regenerate the data with go generate, which queries the Overpass API and
-// downloads elevation tiles.
+// Regenerate the data with go generate, which downloads the Geofabrik
+// extract covering Squamish and elevation tiles.
 package demo
 
 //go:generate go run ./gen
@@ -32,8 +32,8 @@ const Region = "squamish-demo"
 
 // The files are written by go generate.
 var (
-	//go:embed squamish-trails.bin.gz
-	trails []byte
+	//go:embed squamish-osm.bin.gz
+	osm []byte
 	//go:embed squamish-elevation.bin.gz
 	elevations []byte
 )
@@ -43,14 +43,15 @@ func Elevation() (*elevation.Patch, error) {
 	return elevation.ReadPatch(bytes.NewReader(elevations))
 }
 
-// Trails returns the foot accessible ways of Squamish, with their nodes.
-func Trails() ([]routing.Way, *routing.Nodes, error) {
-	return routing.ReadWays(bytes.NewReader(trails))
+// OSM returns the foot accessible ways of Squamish, with their nodes, and
+// its points of interest.
+func OSM() (*routing.OSM, error) {
+	return routing.ReadOSM(bytes.NewReader(osm))
 }
 
 // Load adds the elevations of Squamish to the DEM, and imports its trails
-// into the routing graph, unless an imported region covers Squamish
-// already.
+// and points of interest into the routing graph, unless an imported region
+// covers Squamish already.
 func Load(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevation.DEM) error {
 	patch, err := Elevation()
 	if err != nil {
@@ -67,12 +68,12 @@ func Load(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevation.DE
 			return nil
 		}
 	}
-	ways, nodes, err := Trails()
+	data, err := OSM()
 	if err != nil {
 		return fmt.Errorf("failed to read the trails: %w", err)
 	}
 	log.InfoContext(ctx, "Importing the trails of Squamish for the fake Strava")
-	if _, err := routing.ImportWays(ctx, log, db, Region, Bounds, ways, nodes, dem); err != nil {
+	if _, err := routing.ImportOSM(ctx, log, db, Region, Bounds, data, dem); err != nil {
 		return fmt.Errorf("failed to import the trails: %w", err)
 	}
 	return nil

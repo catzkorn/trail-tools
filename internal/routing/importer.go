@@ -30,25 +30,26 @@ type ImportConfig struct {
 	DEM *elevation.DEM
 }
 
-// Import loads the foot accessible ways of OpenStreetMap extracts into the
-// routing graph, and returns the number of edges imported.
+// Import loads the foot accessible ways and points of interest of
+// OpenStreetMap extracts into the routing graph, and returns the number of
+// edges imported.
 func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConfig) (int, error) {
 	if len(conf.Sources) == 0 {
 		return 0, errors.New("no OpenStreetMap extract to import")
 	}
-	var ways []Way
-	nodes := &Nodes{}
+	data := &OSM{Nodes: &Nodes{}}
 	// Extracts are read one at a time, and only what's inside the bounds is
 	// kept, so memory grows with the area rather than the extracts.
 	for _, source := range conf.Sources {
-		moreWays, moreNodes, err := readSource(ctx, log, source, conf.Bounds)
+		more, err := readSource(ctx, log, source, conf.Bounds)
 		if err != nil {
 			return 0, err
 		}
-		log.InfoContext(ctx, "Read the OpenStreetMap extract", slog.String("source", source), slog.Int("ways", len(moreWays)), slog.Int("nodes", len(moreNodes.IDs)))
-		ways, nodes = MergeExtracts(ways, nodes, moreWays, moreNodes)
+		log.InfoContext(ctx, "Read the OpenStreetMap extract", slog.String("source", source), slog.Int("ways", len(more.Ways)),
+			slog.Int("nodes", len(more.Nodes.IDs)), slog.Int("points_of_interest", len(more.Features)))
+		data = MergeExtracts(data, more)
 	}
-	count, err := ImportWays(ctx, log, db, conf.Region, conf.Bounds, ways, nodes, conf.DEM)
+	count, err := ImportOSM(ctx, log, db, conf.Region, conf.Bounds, data, conf.DEM)
 	if err != nil {
 		return 0, err
 	}
@@ -57,13 +58,13 @@ func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConf
 
 // readSource reads an OpenStreetMap extract from a file or URL with ReadPBF.
 // A downloaded extract is removed once read.
-func readSource(ctx context.Context, log *slog.Logger, source string, bounds geo.Bounds) ([]Way, *Nodes, error) {
+func readSource(ctx context.Context, log *slog.Logger, source string, bounds geo.Bounds) (*OSM, error) {
 	path := source
 	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
 		log.InfoContext(ctx, "Downloading the OpenStreetMap extract", slog.String("url", source))
 		downloaded, err := download(ctx, source)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		defer os.Remove(downloaded)
 		path = downloaded

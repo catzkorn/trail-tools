@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"slices"
 	"testing"
 
 	"github.com/catzkorn/trail-tools/internal/demo"
@@ -26,12 +27,13 @@ func TestData(t *testing.T) {
 		b.MinLng > demo.Bounds.MinLng || b.MaxLng < demo.Bounds.MaxLng {
 		t.Errorf("the elevations cover %+v, want all of %+v", b, demo.Bounds)
 	}
-	ways, nodes, err := demo.Trails()
+	data, err := demo.OSM()
 	if err != nil {
-		t.Fatalf("Trails: %v", err)
+		t.Fatalf("OSM: %v", err)
 	}
-	if len(ways) < 1000 || len(nodes.IDs) < 10_000 {
-		t.Errorf("got %d ways and %d nodes, want the trails of Squamish", len(ways), len(nodes.IDs))
+	if len(data.Ways) < 1000 || len(data.Nodes.IDs) < 10_000 || len(data.Features) < 100 {
+		t.Errorf("got %d ways, %d nodes and %d points of interest, want the trails of Squamish",
+			len(data.Ways), len(data.Nodes.IDs), len(data.Features))
 	}
 }
 
@@ -60,6 +62,22 @@ func TestLoad(t *testing.T) {
 	}
 	if last := path.Points[len(path.Points)-1]; geo.Distance(last, chief) > 300 || last.Ele < 400 {
 		t.Errorf("the route ends at %+v, want the summit", last)
+	}
+	// Named trails and peaks are found around the Chief.
+	finder := routing.NewFinder(db)
+	trails, err := finder.FindTrails(ctx, chief, 1000)
+	if err != nil {
+		t.Fatalf("FindTrails: %v", err)
+	}
+	if !slices.ContainsFunc(trails, func(t routing.Trail) bool { return t.Name != "" }) {
+		t.Errorf("got %d trails, want named trails", len(trails))
+	}
+	peaks, err := finder.FindFeatures(ctx, chief, 1000, []geo.FeatureKind{geo.FeaturePeak})
+	if err != nil {
+		t.Fatalf("FindFeatures: %v", err)
+	}
+	if !slices.ContainsFunc(peaks, func(f routing.Feature) bool { return f.Point.Ele > 400 }) {
+		t.Errorf("got peaks %+v, want the Chief's", peaks)
 	}
 	// Loading again keeps the region.
 	if err := demo.Load(ctx, log, db, dem); err != nil {

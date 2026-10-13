@@ -16,9 +16,10 @@ import (
 // The routing queries use PostGIS and pgRouting functions that sqlc doesn't
 // know about, so they are written with pgx directly.
 
-// SaveRegion replaces the edges of a region in the routing graph. The edges
-// are streamed into the database, so they don't all need to be in memory.
-func SaveRegion(ctx context.Context, db *store.DB, region string, bounds geo.Bounds, edges iter.Seq[Edge]) (int, error) {
+// SaveRegion replaces the edges and points of interest of a region in the
+// routing graph. The edges are streamed into the database, so they don't all
+// need to be in memory.
+func SaveRegion(ctx context.Context, db *store.DB, region string, bounds geo.Bounds, edges iter.Seq[Edge], features []Feature) (int, error) {
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return 0, err
@@ -34,28 +35,57 @@ func SaveRegion(ctx context.Context, db *store.DB, region string, bounds geo.Bou
 	if _, err := tx.Exec(ctx, `delete from routing_edges where region_id = $1`, regionID); err != nil {
 		return 0, fmt.Errorf("failed to delete the region's edges: %w", err)
 	}
+	if _, err := tx.Exec(ctx, `delete from points_of_interest where region_id = $1`, regionID); err != nil {
+		return 0, fmt.Errorf("failed to delete the region's points of interest: %w", err)
+	}
 	// Geometries are copied as text into a staging table, as pgx can't encode
 	// PostGIS types.
 	if _, err := tx.Exec(ctx, `create temporary table staged_edges (
 		source bigint, target bigint, wkt text, elevations smallint[], length_meters real,
-		climb_meters real, descent_meters real, highway text, sac_scale text, terrain text
+		climb_meters real, descent_meters real, highway text, sac_scale text, terrain text,
+		way_id bigint, name text, surface text
 	) on commit drop`); err != nil {
 		return 0, fmt.Errorf("failed to create the staging table: %w", err)
 	}
 	next, stop := iter.Pull(edges)
 	defer stop()
 	source := &edgeSource{next: next}
-	columns := []string{"source", "target", "wkt", "elevations", "length_meters", "climb_meters", "descent_meters", "highway", "sac_scale", "terrain"}
+	columns := []string{"source", "target", "wkt", "elevations", "length_meters", "climb_meters", "descent_meters", "highway", "sac_scale", "terrain", "way_id", "name", "surface"}
 	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"staged_edges"}, columns, source); err != nil {
 		return 0, fmt.Errorf("failed to copy edges: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `insert into routing_edges (
 		region_id, source, target, geom, elevations, length_meters, climb_meters,
-		descent_meters, highway, sac_scale, terrain
+		descent_meters, highway, sac_scale, terrain, way_id, name, surface
 	) select $1, source, target, ST_GeomFromText(wkt, 4326), elevations, length_meters,
-		climb_meters, descent_meters, highway, sac_scale, terrain
+		climb_meters, descent_meters, highway, sac_scale, terrain, way_id, name, surface
 	from staged_edges`, regionID); err != nil {
 		return 0, fmt.Errorf("failed to insert edges: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `create temporary table staged_points_of_interest (
+		osm_id bigint, is_way boolean, kind text, name text, lat double precision,
+		lng double precision, elevation_meters real
+	) on commit drop`); err != nil {
+		return 0, fmt.Errorf("failed to create the staging table: %w", err)
+	}
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"staged_points_of_interest"},
+		[]string{"osm_id", "is_way", "kind", "name", "lat", "lng", "elevation_meters"},
+		pgx.CopyFromSlice(len(features), func(i int) ([]any, error) {
+			f := features[i]
+			var ele *float32
+			if !math.IsNaN(f.Point.Ele) {
+				v := float32(f.Point.Ele)
+				ele = &v
+			}
+			return []any{f.ID, f.Way, string(f.Kind), f.Name, f.Point.Lat, f.Point.Lng, ele}, nil
+		})); err != nil {
+		return 0, fmt.Errorf("failed to copy points of interest: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `insert into points_of_interest (
+		region_id, osm_id, is_way, kind, name, location, elevation_meters
+	) select $1, osm_id, is_way, kind, name, ST_SetSRID(ST_MakePoint(lng, lat), 4326), elevation_meters
+	from staged_points_of_interest`, regionID); err != nil {
+		return 0, fmt.Errorf("failed to insert points of interest: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `update routing_regions set edge_count = $2 where id = $1`, regionID, source.count); err != nil {
 		return 0, fmt.Errorf("failed to save the region: %w", err)
@@ -83,7 +113,7 @@ func (s *edgeSource) Next() bool {
 	}
 	s.row = []any{
 		e.Source, e.Target, lineWKT(e.Points), rounded, float32(pathLength(e.Points)),
-		climb, descent, e.Highway, e.SacScale, string(e.Terrain),
+		climb, descent, e.Highway, e.SacScale, string(e.Terrain), e.WayID, e.Name, e.Surface,
 	}
 	s.count++
 	return true

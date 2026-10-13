@@ -25,8 +25,8 @@ func testGraph() ([]routing.Way, *routing.Nodes, geo.Bounds) {
 	}
 	ways := []routing.Way{
 		{ID: 10, Nodes: []int64{1, 5, 2}, Highway: "primary", Terrain: geo.TerrainPaved},
-		{ID: 11, Nodes: []int64{1, 3, 2}, Highway: "path", Terrain: geo.TerrainTrail},
-		{ID: 12, Nodes: []int64{1, 4, 2}, Highway: "path", Terrain: geo.TerrainTrail},
+		{ID: 11, Nodes: []int64{1, 3, 2}, Highway: "path", Terrain: geo.TerrainTrail, Name: "East Trail", Surface: "dirt"},
+		{ID: 12, Nodes: []int64{1, 4, 2}, Highway: "path", Terrain: geo.TerrainTrail, Name: "West Trail"},
 		{ID: 13, Nodes: []int64{5, 6}, Highway: "path", Terrain: geo.TerrainTrail},
 		{ID: 14, Nodes: []int64{7, 8}, Highway: "path", Terrain: geo.TerrainTrail},
 	}
@@ -45,7 +45,8 @@ func TestBuildEdges(t *testing.T) {
 	if e := edges[0]; e.Highway != "primary" || e.Source != 1 || e.Target != 5 || len(e.Points) != 2 {
 		t.Errorf("unexpected first edge %+v", e)
 	}
-	if e := edges[2]; e.Highway != "path" || e.Source != 1 || e.Target != 2 || len(e.Points) != 3 {
+	if e := edges[2]; e.Highway != "path" || e.Source != 1 || e.Target != 2 || len(e.Points) != 3 ||
+		e.WayID != 11 || e.Name != "East Trail" || e.Surface != "dirt" {
 		t.Errorf("unexpected path edge %+v", e)
 	}
 }
@@ -54,19 +55,30 @@ func TestMergeExtracts(t *testing.T) {
 	t.Parallel()
 	// Two extracts meeting at a border, which way 11 crosses: both have it,
 	// and the first misses the coordinates of its node across the border.
-	ways := []routing.Way{{ID: 10, Nodes: []int64{1, 3}}, {ID: 11, Nodes: []int64{3, 5}}}
-	nodes := &routing.Nodes{
-		IDs:  []int64{1, 3, 5},
-		Lats: []float64{0, 1, math.NaN()},
-		Lngs: []float64{0, 1, math.NaN()},
+	// The peak is in both, and a way has the same ID as a node.
+	data := &routing.OSM{
+		Ways: []routing.Way{{ID: 10, Nodes: []int64{1, 3}}, {ID: 11, Nodes: []int64{3, 5}}},
+		Nodes: &routing.Nodes{
+			IDs:  []int64{1, 3, 5},
+			Lats: []float64{0, 1, math.NaN()},
+			Lngs: []float64{0, 1, math.NaN()},
+		},
+		Features: []routing.Feature{{ID: 7, Kind: geo.FeaturePeak}},
 	}
-	moreWays := []routing.Way{{ID: 11, Nodes: []int64{3, 5}}, {ID: 12, Nodes: []int64{4, 5}}}
-	moreNodes := &routing.Nodes{
-		IDs:  []int64{3, 4, 5},
-		Lats: []float64{1, 2, 3},
-		Lngs: []float64{1, 2, 3},
+	more := &routing.OSM{
+		Ways: []routing.Way{{ID: 11, Nodes: []int64{3, 5}}, {ID: 12, Nodes: []int64{4, 5}}},
+		Nodes: &routing.Nodes{
+			IDs:  []int64{3, 4, 5},
+			Lats: []float64{1, 2, 3},
+			Lngs: []float64{1, 2, 3},
+		},
+		Features: []routing.Feature{{ID: 7, Kind: geo.FeaturePeak}, {ID: 7, Way: true, Kind: geo.FeatureParking}},
 	}
-	ways, nodes = routing.MergeExtracts(ways, nodes, moreWays, moreNodes)
+	merged := routing.MergeExtracts(data, more)
+	ways, nodes := merged.Ways, merged.Nodes
+	if len(merged.Features) != 2 || merged.Features[1].Kind != geo.FeatureParking {
+		t.Errorf("got features %+v, want the peak and the car park", merged.Features)
+	}
 	var ids []int64
 	for _, w := range ways {
 		ids = append(ids, w.ID)
@@ -87,9 +99,9 @@ func TestMergeExtracts(t *testing.T) {
 	}
 
 	// Merging into nothing keeps the extract.
-	ways, nodes = routing.MergeExtracts(nil, &routing.Nodes{}, moreWays, moreNodes)
-	if len(ways) != 2 || !slices.Equal(nodes.IDs, moreNodes.IDs) {
-		t.Errorf("got %d ways and nodes %v, want the extract's", len(ways), nodes.IDs)
+	merged = routing.MergeExtracts(&routing.OSM{Nodes: &routing.Nodes{}}, more)
+	if len(merged.Ways) != 2 || len(merged.Features) != 2 || !slices.Equal(merged.Nodes.IDs, more.Nodes.IDs) {
+		t.Errorf("got %+v, want the extract's data", merged)
 	}
 }
 
@@ -100,11 +112,11 @@ func newRouter(t *testing.T) *routing.Router {
 	elevations := make([]float64, len(nodes.IDs))
 	edges := routing.BuildEdges(ways, nodes, elevations, bounds)
 	ctx := context.Background()
-	if _, err := routing.SaveRegion(ctx, db, "test", bounds, edges); err != nil {
+	if _, err := routing.SaveRegion(ctx, db, "test", bounds, edges, nil); err != nil {
 		t.Fatalf("SaveRegion: %v", err)
 	}
 	// Importing again replaces the region.
-	if count, err := routing.SaveRegion(ctx, db, "test", bounds, edges); err != nil || count != 5 {
+	if count, err := routing.SaveRegion(ctx, db, "test", bounds, edges, nil); err != nil || count != 5 {
 		t.Fatalf("SaveRegion: %d edges, %v", count, err)
 	}
 	return routing.NewRouter(db)

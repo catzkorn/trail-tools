@@ -83,10 +83,14 @@ type GeoServiceClient interface {
 	SearchPlaces(context.Context, *v1.SearchPlacesRequest) (*v1.SearchPlacesResponse, error)
 	// Find footpaths, tracks and trails within a radius of a point. Results are
 	// OpenStreetMap ways with their name, type, surface and difficulty, sorted by
-	// length, longest first.
+	// length, longest first. Only areas whose map data has been imported can be
+	// searched, the same areas routes can be routed in; elsewhere this fails
+	// with FAILED_PRECONDITION.
 	FindTrails(context.Context, *v1.FindTrailsRequest) (*v1.FindTrailsResponse, error)
 	// Find points of interest useful for trail running, such as peaks, water
 	// sources, parking, viewpoints and shelters, within a radius of a point.
+	// Only areas whose map data has been imported can be searched; elsewhere
+	// this fails with FAILED_PRECONDITION.
 	FindPointsOfInterest(context.Context, *v1.FindPointsOfInterestRequest) (*v1.FindPointsOfInterestResponse, error)
 	// Look up the ground elevation of up to 100 points.
 	GetElevation(context.Context, *v1.GetElevationRequest) (*v1.GetElevationResponse, error)
@@ -109,10 +113,14 @@ type GeoServiceHandler interface {
 	SearchPlaces(context.Context, *v1.SearchPlacesRequest) (*v1.SearchPlacesResponse, error)
 	// Find footpaths, tracks and trails within a radius of a point. Results are
 	// OpenStreetMap ways with their name, type, surface and difficulty, sorted by
-	// length, longest first.
+	// length, longest first. Only areas whose map data has been imported can be
+	// searched, the same areas routes can be routed in; elsewhere this fails
+	// with FAILED_PRECONDITION.
 	FindTrails(context.Context, *v1.FindTrailsRequest) (*v1.FindTrailsResponse, error)
 	// Find points of interest useful for trail running, such as peaks, water
 	// sources, parking, viewpoints and shelters, within a radius of a point.
+	// Only areas whose map data has been imported can be searched; elsewhere
+	// this fails with FAILED_PRECONDITION.
 	FindPointsOfInterest(context.Context, *v1.FindPointsOfInterestRequest) (*v1.FindPointsOfInterestResponse, error)
 	// Look up the ground elevation of up to 100 points.
 	GetElevation(context.Context, *v1.GetElevationRequest) (*v1.GetElevationResponse, error)

@@ -367,8 +367,19 @@ func TestGeo(t *testing.T) {
 		t.Errorf("unexpected points %v", points)
 	}
 
+	if points[0].GetElevationMeters() != 0 || points[1].GetOsmId() != "1" {
+		t.Errorf("unexpected points %v", points)
+	}
+
 	_, err = e.geo.FindTrails(ctx, geov1.FindTrailsRequest_builder{Center: center, RadiusMeters: 50000}.Build())
 	wantCode(t, err, connect.CodeInvalidArgument)
+
+	// Areas without imported map data are reported as such.
+	antarctica := geov1.LatLng_builder{Lat: -75, Lng: 0}.Build()
+	_, err = e.geo.FindTrails(ctx, geov1.FindTrailsRequest_builder{Center: antarctica}.Build())
+	wantCode(t, err, connect.CodeFailedPrecondition)
+	_, err = e.geo.FindPointsOfInterest(ctx, geov1.FindPointsOfInterestRequest_builder{Center: antarctica}.Build())
+	wantCode(t, err, connect.CodeFailedPrecondition)
 }
 
 func TestScheduledStravaSync(t *testing.T) {

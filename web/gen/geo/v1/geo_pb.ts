@@ -218,7 +218,8 @@ export const FindTrailsRequestSchema: GenMessage<FindTrailsRequest> = /*@__PURE_
   messageDesc(file_geo_v1_geo, 5);
 
 /**
- * A trail is a single OpenStreetMap way, such as a path or track.
+ * A trail is a single OpenStreetMap way, such as a path or track. A way that's
+ * only partly imported is returned as a trail for each part.
  *
  * @generated from message geo.v1.Trail
  */
@@ -383,7 +384,7 @@ export const FindPointsOfInterestRequestSchema: GenMessage<FindPointsOfInterestR
  */
 export type PointOfInterest = Message<"geo.v1.PointOfInterest"> & {
   /**
-   * The OpenStreetMap node ID.
+   * The OpenStreetMap node ID, or way ID for an area such as a car park.
    *
    * @generated from field: string osm_id = 1;
    */
@@ -404,14 +405,15 @@ export type PointOfInterest = Message<"geo.v1.PointOfInterest"> & {
   name: string;
 
   /**
-   * The location of the point.
+   * The location of the point, the center of an area.
    *
    * @generated from field: geo.v1.LatLng location = 4;
    */
   location?: LatLng | undefined;
 
   /**
-   * The elevation in meters, if known.
+   * The elevation in meters, from OpenStreetMap or else the elevation model. 0
+   * if unknown.
    *
    * @generated from field: double elevation_meters = 5;
    */
@@ -742,7 +744,9 @@ export const GeoService: GenService<{
   /**
    * Find footpaths, tracks and trails within a radius of a point. Results are
    * OpenStreetMap ways with their name, type, surface and difficulty, sorted by
-   * length, longest first.
+   * length, longest first. Only areas whose map data has been imported can be
+   * searched, the same areas routes can be routed in; elsewhere this fails
+   * with FAILED_PRECONDITION.
    *
    * @generated from rpc geo.v1.GeoService.FindTrails
    */
@@ -754,6 +758,8 @@ export const GeoService: GenService<{
   /**
    * Find points of interest useful for trail running, such as peaks, water
    * sources, parking, viewpoints and shelters, within a radius of a point.
+   * Only areas whose map data has been imported can be searched; elsewhere
+   * this fails with FAILED_PRECONDITION.
    *
    * @generated from rpc geo.v1.GeoService.FindPointsOfInterest
    */

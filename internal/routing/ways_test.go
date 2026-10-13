@@ -8,64 +8,77 @@ import (
 
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/qedus/osmpbf"
 )
 
-func TestWaysRoundTrip(t *testing.T) {
+func TestOSMRoundTrip(t *testing.T) {
 	ways, nodes, _ := testGraph()
+	features := testFeatures()
 	var buf bytes.Buffer
-	if err := routing.WriteWays(&buf, ways, nodes); err != nil {
-		t.Fatalf("WriteWays: %v", err)
+	if err := routing.WriteOSM(&buf, &routing.OSM{Ways: ways, Nodes: nodes, Features: features}); err != nil {
+		t.Fatalf("WriteOSM: %v", err)
 	}
 	written := bytes.Clone(buf.Bytes())
-	gotWays, gotNodes, err := routing.ReadWays(&buf)
+	got, err := routing.ReadOSM(&buf)
 	if err != nil {
-		t.Fatalf("ReadWays: %v", err)
+		t.Fatalf("ReadOSM: %v", err)
 	}
-	if !slices.Equal(gotNodes.IDs, nodes.IDs) {
-		t.Errorf("got node IDs %v, want %v", gotNodes.IDs, nodes.IDs)
+	if !slices.Equal(got.Nodes.IDs, nodes.IDs) {
+		t.Errorf("got node IDs %v, want %v", got.Nodes.IDs, nodes.IDs)
 	}
 	for i := range nodes.IDs {
-		if math.Abs(gotNodes.Lats[i]-nodes.Lats[i]) > 1e-6 || math.Abs(gotNodes.Lngs[i]-nodes.Lngs[i]) > 1e-6 {
-			t.Errorf("node %d at %v, %v, want %v, %v", nodes.IDs[i], gotNodes.Lats[i], gotNodes.Lngs[i], nodes.Lats[i], nodes.Lngs[i])
+		if math.Abs(got.Nodes.Lats[i]-nodes.Lats[i]) > 1e-6 || math.Abs(got.Nodes.Lngs[i]-nodes.Lngs[i]) > 1e-6 {
+			t.Errorf("node %d at %v, %v, want %v, %v", nodes.IDs[i], got.Nodes.Lats[i], got.Nodes.Lngs[i], nodes.Lats[i], nodes.Lngs[i])
 		}
 	}
 	byID := map[int64]routing.Way{}
-	for _, w := range gotWays {
+	for _, w := range got.Ways {
 		byID[w.ID] = w
 	}
-	if len(gotWays) != len(ways) {
-		t.Fatalf("got %d ways, want %d", len(gotWays), len(ways))
+	if len(got.Ways) != len(ways) {
+		t.Fatalf("got %d ways, want %d", len(got.Ways), len(ways))
 	}
 	for _, want := range ways {
 		got := byID[want.ID]
-		if got.Highway != want.Highway || got.SacScale != want.SacScale || got.Terrain != want.Terrain || !slices.Equal(got.Nodes, want.Nodes) {
+		if got.Highway != want.Highway || got.SacScale != want.SacScale || got.Terrain != want.Terrain ||
+			got.Name != want.Name || got.Surface != want.Surface || !slices.Equal(got.Nodes, want.Nodes) {
 			t.Errorf("got way %+v, want %+v", got, want)
+		}
+	}
+	if len(got.Features) != len(features) {
+		t.Fatalf("got %d features, want %d", len(got.Features), len(features))
+	}
+	for _, want := range features {
+		i := slices.IndexFunc(got.Features, func(f routing.Feature) bool { return f.ID == want.ID && f.Way == want.Way })
+		if i < 0 {
+			t.Errorf("feature %+v is missing", want)
+			continue
+		}
+		f := got.Features[i]
+		if f.Kind != want.Kind || f.Name != want.Name || math.Abs(f.Point.Lat-want.Point.Lat) > 1e-6 ||
+			math.Abs(f.Point.Lng-want.Point.Lng) > 1e-6 || !sameElevation(f.Point.Ele, want.Point.Ele) {
+			t.Errorf("got feature %+v, want %+v", f, want)
 		}
 	}
 	// Garbage and truncated files fail.
 	for _, data := range [][]byte{nil, []byte("not gzip"), written[:len(written)/2]} {
-		if _, _, err := routing.ReadWays(bytes.NewReader(data)); err == nil {
-			t.Errorf("ReadWays of %d bytes succeeded", len(data))
+		if _, err := routing.ReadOSM(bytes.NewReader(data)); err == nil {
+			t.Errorf("ReadOSM of %d bytes succeeded", len(data))
 		}
 	}
 }
 
-func TestWaysFromOSM(t *testing.T) {
-	ways, nodes := routing.WaysFromOSM([]*osmpbf.Way{
-		{ID: 1, Tags: map[string]string{"highway": "path", "sac_scale": "mountain_hiking"}, NodeIDs: []int64{10, 11}},
-		{ID: 2, Tags: map[string]string{"highway": "motorway"}, NodeIDs: []int64{11, 12}},
-		{ID: 3, Tags: map[string]string{"highway": "service", "service": "parking_aisle"}, NodeIDs: []int64{12, 13}},
-		{ID: 4, Tags: map[string]string{"highway": "residential"}, NodeIDs: []int64{11, 14}},
-	}, map[int64]geo.Point{10: {Lat: 1, Lng: 1}, 11: {Lat: 2, Lng: 2}, 12: {Lat: 3, Lng: 3}, 13: {Lat: 4, Lng: 4}, 14: {Lat: 5, Lng: 5}})
-	var ids []int64
-	for _, w := range ways {
-		ids = append(ids, w.ID)
-	}
-	if !slices.Equal(ids, []int64{1, 4}) || ways[0].SacScale != "mountain_hiking" {
-		t.Errorf("got ways %+v, want the path and the residential road", ways)
-	}
-	if !slices.Equal(nodes.IDs, []int64{10, 11, 14}) || nodes.Lats[2] != 5 {
-		t.Errorf("got nodes %+v, want those of the foot ways", nodes)
+// sameElevation reports whether elevations are equal, or both unknown.
+func sameElevation(a, b float64) bool {
+	return a == b || math.IsNaN(a) && math.IsNaN(b)
+}
+
+// testFeatures are points of interest around testGraph: a peak with an
+// elevation east of the middle, a car park way at the start and a spring far
+// away. The peak and the car park have the same ID.
+func testFeatures() []routing.Feature {
+	return []routing.Feature{
+		{ID: 20, Kind: geo.FeaturePeak, Name: "East Peak", Point: geo.Point{Lat: 0.005, Lng: 0.006, Ele: 1234}},
+		{ID: 20, Way: true, Kind: geo.FeatureParking, Point: geo.Point{Lat: 0.0001, Lng: 0, Ele: math.NaN()}},
+		{ID: 21, Kind: geo.FeatureWater, Name: "Far Spring", Point: geo.Point{Lat: 10, Lng: 10, Ele: math.NaN()}},
 	}
 }
