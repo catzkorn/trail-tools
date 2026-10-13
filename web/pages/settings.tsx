@@ -245,7 +245,7 @@ const McpInstructions: React.FC = () => {
 };
 
 interface SettingsPageProps {
-  user: User | null;
+  user: User;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
@@ -253,9 +253,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
     <PageHeader title="Settings" />
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-4">
-        {user !== null && <AvatarCard user={user} />}
+        <AvatarCard user={user} />
         <Passkeys />
-        <Invitations admin={user !== null && user.admin} />
+        <Invitations admin={user.admin} />
         <StravaCard showDisconnect />
       </div>
       <div className="flex flex-col gap-4">

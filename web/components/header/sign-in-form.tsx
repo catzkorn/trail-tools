@@ -21,10 +21,10 @@ import React, {
 } from "react";
 
 /**
- * SignInDialog signs in with a passkey, offered both as a button and in the
+ * SignInForm signs in with a passkey, offered both as a button and in the
  * browser's autofill.
  */
-const SignInDialog: React.FC = () => {
+const SignInForm: React.FC = () => {
   const queryClient = useQueryClient();
   const transport = useTransport();
   const client = useMemo(
@@ -96,42 +96,42 @@ const SignInDialog: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex w-80 max-w-full flex-col gap-4 rounded-lg bg-white p-5 text-center shadow-md">
-        <h3 className="text-base font-semibold text-gray-900">Sign in</h3>
-        {passkeysSupported() ? (
-          <>
+    <div className="flex w-full max-w-sm flex-col gap-4">
+      <h2 className="text-2xl font-bold text-ink">Sign in</h2>
+      {passkeysSupported() ? (
+        <>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-stone-600">
+            Passkey
             <input
               type="text"
               name="username"
               autoComplete="username webauthn"
               placeholder="Choose a passkey"
-              aria-label="Passkey"
-              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900"
+              className="block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-[15px] font-normal text-ink focus:border-brand-500 focus:ring-brand-500"
             />
-            <button
-              type="button"
-              disabled={pending}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:opacity-50"
-              onClick={signIn}
-            >
-              <KeyIcon className="size-5" />
-              {pending ? "Waiting for passkey…" : "Sign in with a passkey"}
-            </button>
-          </>
-        ) : (
-          <p className="text-sm text-gray-600">
-            This browser doesn&apos;t support passkeys.
-          </p>
-        )}
-        {error !== "" && <p className="text-sm text-red-700">{error}</p>}
-        <p className="text-xs text-gray-500">
-          trailrunn.ing is invite only. To create an account, ask for an
-          invitation link.
+          </label>
+          <button
+            type="button"
+            disabled={pending}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-[15px] font-semibold text-neutral-50 hover:bg-neutral-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ember focus-visible:ring-offset-2 disabled:opacity-50"
+            onClick={signIn}
+          >
+            <KeyIcon className="size-[18px] text-ember" />
+            {pending ? "Waiting for passkey…" : "Sign in with a passkey"}
+          </button>
+        </>
+      ) : (
+        <p className="text-sm text-stone-600">
+          This browser doesn&apos;t support passkeys.
         </p>
-      </div>
+      )}
+      {error !== "" && <p className="text-[13px] text-brand-700">{error}</p>}
+      <p className="border-t border-stone-200 pt-3 text-[13px] leading-normal text-stone-500">
+        trailrunn.ing is invite only. To create an account, ask for an
+        invitation link.
+      </p>
     </div>
   );
 };
 
-export default SignInDialog;
+export default SignInForm;

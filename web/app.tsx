@@ -1,5 +1,5 @@
+import Athletes from "@components/athletes/athletes";
 import Header from "@components/header/header";
-import SignInDialog from "@components/header/sign-in-dialog";
 import Loading from "@components/loading";
 import { Code } from "@connectrpc/connect";
 import { useQuery } from "@connectrpc/connect-query";
@@ -7,7 +7,6 @@ import { getCurrentUser } from "gen/users/v1/users-UserService_connectquery";
 import type { User } from "gen/users/v1/users_pb";
 import ActivitiesPage from "pages/activities";
 import ActivityPage from "pages/activity";
-import AthletesPage from "pages/athletes";
 import CalendarPage from "pages/calendar";
 import DashboardPage from "pages/dashboard";
 import ForecastPage from "pages/forecast";
@@ -27,29 +26,23 @@ import RoutePage from "pages/route";
 import RoutesPage from "pages/routes";
 import SettingsPage from "pages/settings";
 import SharedRacePlanPage from "pages/shared-race-plan";
+import SignInPage from "pages/sign-in";
 import TripReportPage from "pages/trip-report";
 import TripReportsPage from "pages/trip-reports";
-import type { ReactNode } from "react";
 import React from "react";
-import { Link, Route, Routes } from "react-router";
+import { Link, Outlet, Route, Routes } from "react-router";
 
-interface RequireUserProps {
-  user: User | null;
-  children: ReactNode;
-}
-
-// RequireUser shows a sign in prompt instead of pages that need a user.
-const RequireUser: React.FC<RequireUserProps> = ({ user, children }) => {
-  if (user === null) {
-    return (
-      <div className="flex grow flex-col items-center gap-4 py-10">
-        <p className="text-lg text-gray-700">Please sign in to continue.</p>
-        <SignInDialog />
+// Layout is the header above the page.
+const Layout: React.FC<{ user: User | null }> = ({ user }) => (
+  <div className="flex min-h-full flex-col">
+    <Header user={user} />
+    <main className="flex grow justify-center bg-stone-50 print:bg-white">
+      <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
+        <Outlet />
       </div>
-    );
-  }
-  return children;
-};
+    </main>
+  </div>
+);
 
 const NotFound: React.FC = () => (
   <div className="flex grow flex-col items-center gap-2 py-10">
@@ -102,85 +95,52 @@ const App: React.FC = () => {
     ({ user } = data);
   }
 
-  const protectedPage = (page: ReactNode): ReactNode => (
-    <RequireUser user={user}>{page}</RequireUser>
-  );
-
+  /**
+   * Pages that need a user are only routed to when signed in. Signed out,
+   * any other page shows the sign in page instead.
+   */
   return (
-    <div className="flex min-h-full flex-col">
-      <Header user={user} />
-      <main className="flex grow justify-center bg-stone-50 print:bg-white">
-        <div className="flex w-full max-w-7xl min-w-0 grow flex-col px-3 py-5 sm:px-4 print:px-0 print:py-0">
-          <Routes>
+    <Routes>
+      <Route element={<Layout user={user} />}>
+        <Route
+          path="/share/race-plans/:token"
+          element={<SharedRacePlanPage />}
+        />
+        <Route
+          path="/u/:handle/races/:slug"
+          element={<PublicRaceReportPage />}
+        />
+        <Route path="/u/:handle" element={<PublicProfilePage />} />
+        <Route path="/u/:handle/:slug" element={<PublicTripReportPage />} />
+        <Route path="/invite/:token" element={<InvitePage />} />
+        {user !== null && (
+          <>
             <Route path="/" element={<DashboardPage user={user} />} />
-            <Route path="/plans" element={protectedPage(<PlansPage />)} />
-            <Route path="/plans/:id" element={protectedPage(<PlanPage />)} />
-            <Route path="/routes" element={protectedPage(<RoutesPage />)} />
-            <Route
-              path="/routes/new"
-              element={protectedPage(<RoutePage isNew />)}
-            />
-            <Route
-              path="/routes/:id"
-              element={protectedPage(<RoutePage isNew={false} />)}
-            />
-            <Route path="/calendar" element={protectedPage(<CalendarPage />)} />
-            <Route path="/races" element={protectedPage(<RacesPage />)} />
-            <Route
-              path="/race-plans/:id"
-              element={protectedPage(<RacePlanPage />)}
-            />
-            <Route
-              path="/share/race-plans/:token"
-              element={<SharedRacePlanPage />}
-            />
-            <Route path="/forecast" element={protectedPage(<ForecastPage />)} />
-            <Route
-              path="/activities"
-              element={protectedPage(<ActivitiesPage />)}
-            />
-            <Route
-              path="/activities/:id"
-              element={protectedPage(<ActivityPage />)}
-            />
-            <Route
-              path="/trip-reports"
-              element={protectedPage(<TripReportsPage />)}
-            />
-            <Route
-              path="/trip-reports/:id"
-              element={protectedPage(<TripReportPage />)}
-            />
-            <Route
-              path="/race-reports"
-              element={protectedPage(<RaceReportsPage />)}
-            />
-            <Route
-              path="/race-reports/:id"
-              element={protectedPage(<RaceReportPage />)}
-            />
-            <Route
-              path="/u/:handle/races/:slug"
-              element={<PublicRaceReportPage />}
-            />
-            <Route path="/u/:handle" element={<PublicProfilePage />} />
-            <Route path="/u/:handle/:slug" element={<PublicTripReportPage />} />
-            <Route path="/athletes" element={<AthletesPage user={user} />} />
-            <Route
-              path="/settings"
-              element={protectedPage(<SettingsPage user={user} />)}
-            />
-            <Route path="/map-data" element={protectedPage(<MapDataPage />)} />
-            <Route path="/invite/:token" element={<InvitePage />} />
-            <Route
-              path="/oauth/authorize"
-              element={protectedPage(<OAuthConsentPage />)}
-            />
+            <Route path="/plans" element={<PlansPage />} />
+            <Route path="/plans/:id" element={<PlanPage />} />
+            <Route path="/routes" element={<RoutesPage />} />
+            <Route path="/routes/new" element={<RoutePage isNew />} />
+            <Route path="/routes/:id" element={<RoutePage isNew={false} />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/races" element={<RacesPage />} />
+            <Route path="/race-plans/:id" element={<RacePlanPage />} />
+            <Route path="/forecast" element={<ForecastPage />} />
+            <Route path="/activities" element={<ActivitiesPage />} />
+            <Route path="/activities/:id" element={<ActivityPage />} />
+            <Route path="/trip-reports" element={<TripReportsPage />} />
+            <Route path="/trip-reports/:id" element={<TripReportPage />} />
+            <Route path="/race-reports" element={<RaceReportsPage />} />
+            <Route path="/race-reports/:id" element={<RaceReportPage />} />
+            <Route path="/athletes" element={<Athletes />} />
+            <Route path="/settings" element={<SettingsPage user={user} />} />
+            <Route path="/map-data" element={<MapDataPage />} />
+            <Route path="/oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-      </main>
-    </div>
+          </>
+        )}
+      </Route>
+      {user === null && <Route path="*" element={<SignInPage />} />}
+    </Routes>
   );
 };
 
