@@ -1,4 +1,4 @@
-import { PointOfInterestKind, Terrain } from "gen/geo/v1/geo_pb";
+import { Terrain } from "gen/geo/v1/geo_pb";
 import { WorkoutType } from "gen/plans/v1/plans_pb";
 import { ContingencyScenario, RuleStatus } from "gen/races/v1/race_plans_pb";
 import { RacePriority } from "gen/races/v1/races_pb";
@@ -226,73 +226,6 @@ export const ruleStatusLabel = (status: RuleStatus): string => {
       return "Unknown";
     }
   }
-};
-
-export interface PoiStyle {
-  kind: PointOfInterestKind;
-  label: string;
-  symbol: string;
-  color: string;
-}
-
-export const POI_STYLES: PoiStyle[] = [
-  {
-    color: "#7c2d12",
-    kind: PointOfInterestKind.PEAK,
-    label: "Peak",
-    symbol: "▲",
-  },
-  {
-    color: "#0284c7",
-    kind: PointOfInterestKind.WATER,
-    label: "Water",
-    symbol: "W",
-  },
-  {
-    color: "#1d4ed8",
-    kind: PointOfInterestKind.PARKING,
-    label: "Parking",
-    symbol: "P",
-  },
-  {
-    color: "#0f766e",
-    kind: PointOfInterestKind.VIEWPOINT,
-    label: "Viewpoint",
-    symbol: "V",
-  },
-  {
-    color: "#92400e",
-    kind: PointOfInterestKind.SHELTER,
-    label: "Shelter",
-    symbol: "H",
-  },
-  {
-    color: "#475569",
-    kind: PointOfInterestKind.TOILETS,
-    label: "Toilets",
-    symbol: "T",
-  },
-  {
-    color: "#6d28d9",
-    kind: PointOfInterestKind.SADDLE,
-    label: "Saddle",
-    symbol: "◆",
-  },
-  {
-    color: "#15803d",
-    kind: PointOfInterestKind.TRAILHEAD,
-    label: "Trailhead",
-    symbol: "S",
-  },
-];
-
-export const poiStyle = (kind: PointOfInterestKind): PoiStyle => {
-  for (const style of POI_STYLES) {
-    if (style.kind === kind) {
-      return style;
-    }
-  }
-  return { color: "#475569", kind, label: "Point", symbol: "•" };
 };
 
 // Sport types counted as running volume (Strava sport types).

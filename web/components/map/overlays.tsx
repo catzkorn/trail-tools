@@ -4,16 +4,12 @@ import { useQuery } from "@connectrpc/connect-query";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { keepPreviousData, skipToken } from "@tanstack/react-query";
 import {
-  findPointsOfInterest,
   findTrails,
   listHeatmapTracks,
 } from "gen/geo/v1/geo-GeoService_connectquery";
-import type {
-  FindPointsOfInterestResponse,
-  FindTrailsResponse,
-} from "gen/geo/v1/geo_pb";
+import type { FindTrailsResponse } from "gen/geo/v1/geo_pb";
 import { formatKm } from "helpers/format";
-import { poiStyle, terrainStyle } from "helpers/labels";
+import { terrainStyle } from "helpers/labels";
 import { decodePolyline } from "helpers/polyline";
 import * as leaflet from "leaflet";
 import React, { useEffect } from "react";
@@ -23,7 +19,6 @@ import { textElement } from "./layers";
 import { useMap } from "./map-view";
 
 export const TRAILS_MIN_ZOOM = 13;
-export const POI_MIN_ZOOM = 12;
 const MAX_RADIUS_METERS = 15_000;
 
 const round = (value: number, decimals: number): number => {
@@ -50,7 +45,7 @@ interface OverlayProps {
 }
 
 /**
- * NotImported reports whether finding trails or points of interest failed
+ * NotImported reports whether finding trails failed
  * because no map data has been imported for the area.
  */
 export const notImported = (error: ConnectError | null): boolean =>
@@ -76,29 +71,6 @@ export const useTrails = (
           center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
           includeGeometry: true,
           limit: 300,
-          radiusMeters: searchRadius(viewport),
-        }
-      : skipToken,
-    { placeholderData: keepPreviousData, retry }
-  );
-};
-
-/**
- * UsePointsOfInterest finds the points of interest around the map center,
- * if shown and zoomed in enough. Calls with the same viewport share the
- * query.
- */
-export const usePointsOfInterest = (
-  viewport: Viewport,
-  shown: boolean
-): UseQueryResult<FindPointsOfInterestResponse, ConnectError> => {
-  const { center, zoom } = viewport;
-  return useQuery(
-    findPointsOfInterest,
-    shown && zoom >= POI_MIN_ZOOM
-      ? {
-          center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
-          limit: 200,
           radiusMeters: searchRadius(viewport),
         }
       : skipToken,
@@ -200,65 +172,6 @@ export const TrailsOverlay: React.FC<OverlayProps> = ({ viewport }) => {
         { sticky: true }
       );
       group.addLayer(line);
-    }
-    group.addTo(map);
-    return () => {
-      group.remove();
-    };
-  }, [map, data, enabled]);
-
-  return null;
-};
-
-const poiIcon = (symbol: string, color: string, name: string): HTMLElement => {
-  const root = document.createElement("div");
-  root.className = "poi-marker";
-  const badge = document.createElement("span");
-  badge.className = "poi-symbol";
-  badge.style.backgroundColor = color;
-  badge.textContent = symbol;
-  root.append(badge);
-  if (name !== "") {
-    const label = document.createElement("span");
-    label.className = "poi-label";
-    label.textContent = name;
-    root.append(label);
-  }
-  return root;
-};
-
-// PoiOverlay draws points of interest such as peaks, water and parking.
-export const PoiOverlay: React.FC<OverlayProps> = ({ viewport }) => {
-  const map = useMap();
-  const enabled = viewport.zoom >= POI_MIN_ZOOM;
-  const { data } = usePointsOfInterest(viewport, true);
-
-  useEffect(() => {
-    if (data === undefined || !enabled) {
-      return undefined;
-    }
-    const group = leaflet.layerGroup();
-    for (const point of data.points) {
-      if (point.location === undefined) {
-        continue;
-      }
-      const style = poiStyle(point.kind);
-      const elevation =
-        point.elevationMeters > 0
-          ? ` (${Math.round(point.elevationMeters)} m)`
-          : "";
-      const marker = leaflet.marker([point.location.lat, point.location.lng], {
-        icon: leaflet.divIcon({
-          className: "",
-          html: poiIcon(style.symbol, style.color, point.name),
-          iconAnchor: [8, 8],
-          iconSize: [16, 16],
-        }),
-        keyboard: false,
-      });
-      const name = point.name === "" ? style.label : point.name;
-      marker.bindTooltip(textElement(`${name}${elevation} · ${style.label}`));
-      group.addLayer(marker);
     }
     group.addTo(map);
     return () => {
