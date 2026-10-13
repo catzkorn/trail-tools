@@ -66,8 +66,11 @@ func TestRenderDefault(t *testing.T) {
 	if !strings.Contains(body, "<title>trailrunn.ing</title>") {
 		t.Errorf("page has no default title:\n%s", body)
 	}
-	if strings.Contains(body, "og:") || strings.Contains(body, "description") {
-		t.Errorf("page without metadata has metadata:\n%s", body)
+	if !strings.Contains(body, `<meta name="description" content="Training plans, race day plans and trip reports for trail runners." />`) {
+		t.Errorf("page has no default description:\n%s", body)
+	}
+	if strings.Contains(body, "og:") {
+		t.Errorf("page without a URL has Open Graph tags:\n%s", body)
 	}
 
 	rec = httptest.NewRecorder()

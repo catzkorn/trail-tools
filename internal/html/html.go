@@ -17,6 +17,9 @@ const templateName = "index.html"
 // defaultTitle is the title of pages without their own.
 const defaultTitle = "trailrunn.ing"
 
+// defaultDescription describes pages without their own description.
+const defaultDescription = "Training plans, race day plans and trip reports for trail runners."
+
 // defaultImagePath is the path of the link preview image of pages without
 // their own: the app's mark and name.
 const defaultImagePath = "/img/og.png"
@@ -78,7 +81,8 @@ var indexTemplate = template.Must(template.New(templateName).Parse(
 type Page struct {
 	// The title of the page. Defaults to "trailrunn.ing".
 	Title string
-	// A short description of the page.
+	// A short description of the page. Defaults to a description of the
+	// app.
 	Description string
 	// The canonical URL of the page. The Open Graph tags are only added
 	// for pages with a URL.
@@ -100,6 +104,9 @@ type Page struct {
 func Render(w http.ResponseWriter, watch bool, status int, page Page) {
 	if page.Title == "" {
 		page.Title = defaultTitle
+	}
+	if page.Description == "" {
+		page.Description = defaultDescription
 	}
 	if page.Image == "" && page.URL != "" {
 		if u, err := url.Parse(page.URL); err == nil {
