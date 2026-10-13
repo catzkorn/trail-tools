@@ -29,6 +29,7 @@ import SharedRacePlanPage from "pages/shared-race-plan";
 import SignInPage from "pages/sign-in";
 import TripReportPage from "pages/trip-report";
 import TripReportsPage from "pages/trip-reports";
+import WorkoutPage from "pages/workout";
 import React from "react";
 import { Link, Outlet, Route, Routes } from "react-router";
 
@@ -118,6 +119,7 @@ const App: React.FC = () => {
             <Route path="/" element={<DashboardPage user={user} />} />
             <Route path="/plans" element={<PlansPage />} />
             <Route path="/plans/:id" element={<PlanPage />} />
+            <Route path="/workouts/:id" element={<WorkoutPage />} />
             <Route path="/routes" element={<RoutesPage />} />
             <Route path="/routes/new" element={<RoutePage isNew />} />
             <Route path="/routes/:id" element={<RoutePage isNew={false} />} />

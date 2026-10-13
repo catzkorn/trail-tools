@@ -49,6 +49,13 @@ service TrainingPlanService {
   rpc UpdateWorkout(UpdateWorkoutRequest) returns (UpdateWorkoutResponse);
   // Delete one or more workouts.
   rpc DeleteWorkouts(DeleteWorkoutsRequest) returns (DeleteWorkoutsResponse);
+  // List the weather forecast for the days of the user's workouts in a date
+  // range, without hourly forecasts. Forecasts are available up to 15 days
+  // ahead, so workouts after that, before today and rest days are left out.
+  rpc ListWorkoutWeather(ListWorkoutWeatherRequest) returns (ListWorkoutWeatherResponse);
+  // Get the weather forecast for the day of a workout, with the forecast
+  // for each hour of the daytime.
+  rpc GetWorkoutWeather(GetWorkoutWeatherRequest) returns (GetWorkoutWeatherResponse);
 }
 
 // A training plan.
@@ -261,6 +268,98 @@ message GetWorkoutRequest {
 message GetWorkoutResponse {
   // The workout.
   Workout workout = 1;
+}
+
+// WeatherLocationSource is where a workout's forecast is for.
+enum WeatherLocationSource {
+  WEATHER_LOCATION_SOURCE_UNSPECIFIED = 0;
+  // The start of the workout's route.
+  WEATHER_LOCATION_SOURCE_ROUTE_START = 1;
+  // Where the user's most recent activity started, for workouts without a
+  // route.
+  WEATHER_LOCATION_SOURCE_LATEST_ACTIVITY = 2;
+}
+
+// The weather forecast for the day of a workout.
+message WorkoutWeather {
+  // The ID of the workout.
+  string workout_id = 1;
+  // The date of the workout (YYYY-MM-DD).
+  string date = 2;
+  // Where the forecast is for.
+  geo.v1.LatLng location = 3;
+  // Where the location comes from.
+  WeatherLocationSource location_source = 4;
+  // The weather during the daytime, from 06:00 to 21:00 local time.
+  DayWeather day = 5;
+  // The forecast for each hour of the daytime. Only set by
+  // GetWorkoutWeather.
+  repeated HourWeather hours = 6;
+}
+
+// The weather of a day.
+message DayWeather {
+  // The lowest and highest air temperature in degrees Celsius.
+  double min_temperature_celsius = 1;
+  double max_temperature_celsius = 2;
+  // The highest chance of precipitation in percent.
+  int32 max_precipitation_probability = 3;
+  // The total precipitation in millimeters.
+  double precipitation_mm = 4;
+  // The total snowfall in centimeters.
+  double snowfall_cm = 5;
+  // The strongest wind and gusts in kilometers per hour.
+  double max_wind_speed_kmh = 6;
+  double max_wind_gusts_kmh = 7;
+  // The most severe WMO weather code of the day, as used by Open-Meteo.
+  int32 weather_code = 8;
+  // A description of the weather code, e.g. "Light rain".
+  string description = 9;
+}
+
+// The weather forecast for an hour.
+message HourWeather {
+  // The start of the hour.
+  google.protobuf.Timestamp time = 1;
+  // Air temperature in degrees Celsius.
+  double temperature_celsius = 2;
+  // Apparent (feels like) temperature in degrees Celsius.
+  double apparent_temperature_celsius = 3;
+  // The chance of precipitation in percent.
+  int32 precipitation_probability = 4;
+  // Precipitation in millimeters.
+  double precipitation_mm = 5;
+  // The WMO weather code, as used by Open-Meteo.
+  int32 weather_code = 6;
+  // Wind and gusts in kilometers per hour, and where the wind comes from in
+  // degrees.
+  double wind_speed_kmh = 7;
+  double wind_gusts_kmh = 8;
+  int32 wind_direction_degrees = 9;
+  // Whether it is daylight.
+  bool is_day = 10;
+}
+
+message ListWorkoutWeatherRequest {
+  // The first and last date of the range (YYYY-MM-DD).
+  string start_date = 1;
+  string end_date = 2;
+}
+
+message ListWorkoutWeatherResponse {
+  // The forecasts of the workouts that have one, in date order.
+  repeated WorkoutWeather weather = 1;
+}
+
+message GetWorkoutWeatherRequest {
+  // The ID of the workout.
+  string workout_id = 1;
+}
+
+message GetWorkoutWeatherResponse {
+  // The forecast. Unset if there is none yet, e.g. for workouts more than 15
+  // days ahead, or without a location.
+  WorkoutWeather weather = 1;
 }
 
 message CreateWorkoutsRequest {

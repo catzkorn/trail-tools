@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Terrain } from "../../geo/v1/geo_pb";
+import type { LatLng, Terrain } from "../../geo/v1/geo_pb";
 import { file_geo_v1_geo } from "../../geo/v1/geo_pb";
 import type { FieldMask, Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_field_mask, file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file plans/v1/plans.proto.
  */
 export const file_plans_v1_plans: GenFile = /*@__PURE__*/
-  fileDesc("ChRwbGFucy92MS9wbGFucy5wcm90bxIIcGxhbnMudjEi7AEKDFRyYWluaW5nUGxhbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEhIKCnN0YXJ0X2RhdGUYBCABKAkSEAoIZW5kX2RhdGUYBSABKAkSFQoNZ29hbF9yYWNlX2lkcxgGIAMoCRI3CgtjcmVhdGVfdGltZRgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIARI3Cgt1cGRhdGVfdGltZRgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIASLrAQoKUGxhblBlcmlvZBISCgJpZBgBIAEoCUIGqp8ZAggBEjAKC2dyYW51bGFyaXR5GAIgASgOMhsucGxhbnMudjEuUGVyaW9kR3JhbnVsYXJpdHkSEgoKc3RhcnRfZGF0ZRgDIAEoCRINCgV0aXRsZRgEIAEoCRINCgVub3RlcxgFIAEoCRIeChZ0YXJnZXRfZGlzdGFuY2VfbWV0ZXJzGAYgASgBEiQKHHRhcmdldF9lbGV2YXRpb25fZ2Fpbl9tZXRlcnMYByABKAESHwoXdGFyZ2V0X2R1cmF0aW9uX3NlY29uZHMYCCABKAUixgIKB1dvcmtvdXQSCgoCaWQYASABKAkSFwoHcGxhbl9pZBgCIAEoCUIGqp8ZAggBEgwKBGRhdGUYAyABKAkSIwoEdHlwZRgEIAEoDjIVLnBsYW5zLnYxLldvcmtvdXRUeXBlEg0KBXRpdGxlGAUgASgJEhMKC2Rlc2NyaXB0aW9uGAYgASgJEh4KFnRhcmdldF9kaXN0YW5jZV9tZXRlcnMYByABKAESJAocdGFyZ2V0X2VsZXZhdGlvbl9nYWluX21ldGVycxgIIAEoARIfChd0YXJnZXRfZHVyYXRpb25fc2Vjb25kcxgJIAEoBRInCg50YXJnZXRfdGVycmFpbhgKIAEoDjIPLmdlby52MS5UZXJyYWluEhAKCHJvdXRlX2lkGAsgASgJEh0KFWNvbXBsZXRlZF9hY3Rpdml0eV9pZBgMIAEoCSJBChlDcmVhdGVUcmFpbmluZ1BsYW5SZXF1ZXN0EiQKBHBsYW4YASABKAsyFi5wbGFucy52MS5UcmFpbmluZ1BsYW4iQgoaQ3JlYXRlVHJhaW5pbmdQbGFuUmVzcG9uc2USJAoEcGxhbhgBIAEoCzIWLnBsYW5zLnYxLlRyYWluaW5nUGxhbiIkChZHZXRUcmFpbmluZ1BsYW5SZXF1ZXN0EgoKAmlkGAEgASgJImYKF0dldFRyYWluaW5nUGxhblJlc3BvbnNlEiQKBHBsYW4YASABKAsyFi5wbGFucy52MS5UcmFpbmluZ1BsYW4SJQoHcGVyaW9kcxgCIAMoCzIULnBsYW5zLnYxLlBsYW5QZXJpb2QiGgoYTGlzdFRyYWluaW5nUGxhbnNSZXF1ZXN0IkIKGUxpc3RUcmFpbmluZ1BsYW5zUmVzcG9uc2USJQoFcGxhbnMYASADKAsyFi5wbGFucy52MS5UcmFpbmluZ1BsYW4icgoZVXBkYXRlVHJhaW5pbmdQbGFuUmVxdWVzdBIkCgRwbGFuGAEgASgLMhYucGxhbnMudjEuVHJhaW5pbmdQbGFuEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayJCChpVcGRhdGVUcmFpbmluZ1BsYW5SZXNwb25zZRIkCgRwbGFuGAEgASgLMhYucGxhbnMudjEuVHJhaW5pbmdQbGFuIicKGURlbGV0ZVRyYWluaW5nUGxhblJlcXVlc3QSCgoCaWQYASABKAkiHAoaRGVsZXRlVHJhaW5pbmdQbGFuUmVzcG9uc2UiTwoVU2V0UGxhblBlcmlvZHNSZXF1ZXN0Eg8KB3BsYW5faWQYASABKAkSJQoHcGVyaW9kcxgCIAMoCzIULnBsYW5zLnYxLlBsYW5QZXJpb2QiPwoWU2V0UGxhblBlcmlvZHNSZXNwb25zZRIlCgdwZXJpb2RzGAEgAygLMhQucGxhbnMudjEuUGxhblBlcmlvZCI4ChhEZWxldGVQbGFuUGVyaW9kc1JlcXVlc3QSDwoHcGxhbl9pZBgBIAEoCRILCgNpZHMYAiADKAkiGwoZRGVsZXRlUGxhblBlcmlvZHNSZXNwb25zZSJMChNMaXN0V29ya291dHNSZXF1ZXN0Eg8KB3BsYW5faWQYASABKAkSEgoKc3RhcnRfZGF0ZRgCIAEoCRIQCghlbmRfZGF0ZRgDIAEoCSI7ChRMaXN0V29ya291dHNSZXNwb25zZRIjCgh3b3Jrb3V0cxgBIAMoCzIRLnBsYW5zLnYxLldvcmtvdXQiHwoRR2V0V29ya291dFJlcXVlc3QSCgoCaWQYASABKAkiOAoSR2V0V29ya291dFJlc3BvbnNlEiIKB3dvcmtvdXQYASABKAsyES5wbGFucy52MS5Xb3Jrb3V0Ik0KFUNyZWF0ZVdvcmtvdXRzUmVxdWVzdBIPCgdwbGFuX2lkGAEgASgJEiMKCHdvcmtvdXRzGAIgAygLMhEucGxhbnMudjEuV29ya291dCI9ChZDcmVhdGVXb3Jrb3V0c1Jlc3BvbnNlEiMKCHdvcmtvdXRzGAEgAygLMhEucGxhbnMudjEuV29ya291dCJrChRVcGRhdGVXb3Jrb3V0UmVxdWVzdBIiCgd3b3Jrb3V0GAEgASgLMhEucGxhbnMudjEuV29ya291dBIvCgt1cGRhdGVfbWFzaxgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5GaWVsZE1hc2siOwoVVXBkYXRlV29ya291dFJlc3BvbnNlEiIKB3dvcmtvdXQYASABKAsyES5wbGFucy52MS5Xb3Jrb3V0IjUKFURlbGV0ZVdvcmtvdXRzUmVxdWVzdBIPCgdwbGFuX2lkGAEgASgJEgsKA2lkcxgCIAMoCSIYChZEZWxldGVXb3Jrb3V0c1Jlc3BvbnNlKnIKEVBlcmlvZEdyYW51bGFyaXR5EiIKHlBFUklPRF9HUkFOVUxBUklUWV9VTlNQRUNJRklFRBAAEhwKGFBFUklPRF9HUkFOVUxBUklUWV9NT05USBABEhsKF1BFUklPRF9HUkFOVUxBUklUWV9XRUVLEAIqtwMKC1dvcmtvdXRUeXBlEhwKGFdPUktPVVRfVFlQRV9VTlNQRUNJRklFRBAAEhUKEVdPUktPVVRfVFlQRV9CQVNFEA0SGgoWV09SS09VVF9UWVBFX0lOVEVOU0lUWRAOEh8KG1dPUktPVVRfVFlQRV9DUk9TU19UUkFJTklORxAJEhkKFVdPUktPVVRfVFlQRV9TVFJFTkdUSBAKEhUKEVdPUktPVVRfVFlQRV9SQUNFEAsSFQoRV09SS09VVF9UWVBFX1JFU1QQCBIZChFXT1JLT1VUX1RZUEVfRUFTWRABGgIIARIdChVXT1JLT1VUX1RZUEVfTE9OR19SVU4QAhoCCAESGgoSV09SS09VVF9UWVBFX1RFTVBPEAMaAggBEh4KFldPUktPVVRfVFlQRV9JTlRFUlZBTFMQBBoCCAESIQoZV09SS09VVF9UWVBFX0hJTExfUkVQRUFUUxAFGgIIARIZChFXT1JLT1VUX1RZUEVfVkVSVBAGGgIIARIdChVXT1JLT1VUX1RZUEVfUkVDT1ZFUlkQBxoCCAESGgoSV09SS09VVF9UWVBFX09USEVSEAwaAggBMrUIChNUcmFpbmluZ1BsYW5TZXJ2aWNlEl8KEkNyZWF0ZVRyYWluaW5nUGxhbhIjLnBsYW5zLnYxLkNyZWF0ZVRyYWluaW5nUGxhblJlcXVlc3QaJC5wbGFucy52MS5DcmVhdGVUcmFpbmluZ1BsYW5SZXNwb25zZRJWCg9HZXRUcmFpbmluZ1BsYW4SIC5wbGFucy52MS5HZXRUcmFpbmluZ1BsYW5SZXF1ZXN0GiEucGxhbnMudjEuR2V0VHJhaW5pbmdQbGFuUmVzcG9uc2USXAoRTGlzdFRyYWluaW5nUGxhbnMSIi5wbGFucy52MS5MaXN0VHJhaW5pbmdQbGFuc1JlcXVlc3QaIy5wbGFucy52MS5MaXN0VHJhaW5pbmdQbGFuc1Jlc3BvbnNlEl8KElVwZGF0ZVRyYWluaW5nUGxhbhIjLnBsYW5zLnYxLlVwZGF0ZVRyYWluaW5nUGxhblJlcXVlc3QaJC5wbGFucy52MS5VcGRhdGVUcmFpbmluZ1BsYW5SZXNwb25zZRJfChJEZWxldGVUcmFpbmluZ1BsYW4SIy5wbGFucy52MS5EZWxldGVUcmFpbmluZ1BsYW5SZXF1ZXN0GiQucGxhbnMudjEuRGVsZXRlVHJhaW5pbmdQbGFuUmVzcG9uc2USUwoOU2V0UGxhblBlcmlvZHMSHy5wbGFucy52MS5TZXRQbGFuUGVyaW9kc1JlcXVlc3QaIC5wbGFucy52MS5TZXRQbGFuUGVyaW9kc1Jlc3BvbnNlElwKEURlbGV0ZVBsYW5QZXJpb2RzEiIucGxhbnMudjEuRGVsZXRlUGxhblBlcmlvZHNSZXF1ZXN0GiMucGxhbnMudjEuRGVsZXRlUGxhblBlcmlvZHNSZXNwb25zZRJNCgxMaXN0V29ya291dHMSHS5wbGFucy52MS5MaXN0V29ya291dHNSZXF1ZXN0Gh4ucGxhbnMudjEuTGlzdFdvcmtvdXRzUmVzcG9uc2USRwoKR2V0V29ya291dBIbLnBsYW5zLnYxLkdldFdvcmtvdXRSZXF1ZXN0GhwucGxhbnMudjEuR2V0V29ya291dFJlc3BvbnNlElMKDkNyZWF0ZVdvcmtvdXRzEh8ucGxhbnMudjEuQ3JlYXRlV29ya291dHNSZXF1ZXN0GiAucGxhbnMudjEuQ3JlYXRlV29ya291dHNSZXNwb25zZRJQCg1VcGRhdGVXb3Jrb3V0Eh4ucGxhbnMudjEuVXBkYXRlV29ya291dFJlcXVlc3QaHy5wbGFucy52MS5VcGRhdGVXb3Jrb3V0UmVzcG9uc2USUwoORGVsZXRlV29ya291dHMSHy5wbGFucy52MS5EZWxldGVXb3Jrb3V0c1JlcXVlc3QaIC5wbGFucy52MS5EZWxldGVXb3Jrb3V0c1Jlc3BvbnNlQpoBCgxjb20ucGxhbnMudjFCClBsYW5zUHJvdG9QAVo9Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcGxhbnMvdjE7cGxhbnN2MaICA1BYWKoCCFBsYW5zLlYxygIIUGxhbnNcVjHiAhRQbGFuc1xWMVxHUEJNZXRhZGF0YeoCCVBsYW5zOjpWMWIGcHJvdG8z", [file_geo_v1_geo, file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChRwbGFucy92MS9wbGFucy5wcm90bxIIcGxhbnMudjEi7AEKDFRyYWluaW5nUGxhbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEhIKCnN0YXJ0X2RhdGUYBCABKAkSEAoIZW5kX2RhdGUYBSABKAkSFQoNZ29hbF9yYWNlX2lkcxgGIAMoCRI3CgtjcmVhdGVfdGltZRgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIARI3Cgt1cGRhdGVfdGltZRgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCBqqfGQIIASLrAQoKUGxhblBlcmlvZBISCgJpZBgBIAEoCUIGqp8ZAggBEjAKC2dyYW51bGFyaXR5GAIgASgOMhsucGxhbnMudjEuUGVyaW9kR3JhbnVsYXJpdHkSEgoKc3RhcnRfZGF0ZRgDIAEoCRINCgV0aXRsZRgEIAEoCRINCgVub3RlcxgFIAEoCRIeChZ0YXJnZXRfZGlzdGFuY2VfbWV0ZXJzGAYgASgBEiQKHHRhcmdldF9lbGV2YXRpb25fZ2Fpbl9tZXRlcnMYByABKAESHwoXdGFyZ2V0X2R1cmF0aW9uX3NlY29uZHMYCCABKAUixgIKB1dvcmtvdXQSCgoCaWQYASABKAkSFwoHcGxhbl9pZBgCIAEoCUIGqp8ZAggBEgwKBGRhdGUYAyABKAkSIwoEdHlwZRgEIAEoDjIVLnBsYW5zLnYxLldvcmtvdXRUeXBlEg0KBXRpdGxlGAUgASgJEhMKC2Rlc2NyaXB0aW9uGAYgASgJEh4KFnRhcmdldF9kaXN0YW5jZV9tZXRlcnMYByABKAESJAocdGFyZ2V0X2VsZXZhdGlvbl9nYWluX21ldGVycxgIIAEoARIfChd0YXJnZXRfZHVyYXRpb25fc2Vjb25kcxgJIAEoBRInCg50YXJnZXRfdGVycmFpbhgKIAEoDjIPLmdlby52MS5UZXJyYWluEhAKCHJvdXRlX2lkGAsgASgJEh0KFWNvbXBsZXRlZF9hY3Rpdml0eV9pZBgMIAEoCSJBChlDcmVhdGVUcmFpbmluZ1BsYW5SZXF1ZXN0EiQKBHBsYW4YASABKAsyFi5wbGFucy52MS5UcmFpbmluZ1BsYW4iQgoaQ3JlYXRlVHJhaW5pbmdQbGFuUmVzcG9uc2USJAoEcGxhbhgBIAEoCzIWLnBsYW5zLnYxLlRyYWluaW5nUGxhbiIkChZHZXRUcmFpbmluZ1BsYW5SZXF1ZXN0EgoKAmlkGAEgASgJImYKF0dldFRyYWluaW5nUGxhblJlc3BvbnNlEiQKBHBsYW4YASABKAsyFi5wbGFucy52MS5UcmFpbmluZ1BsYW4SJQoHcGVyaW9kcxgCIAMoCzIULnBsYW5zLnYxLlBsYW5QZXJpb2QiGgoYTGlzdFRyYWluaW5nUGxhbnNSZXF1ZXN0IkIKGUxpc3RUcmFpbmluZ1BsYW5zUmVzcG9uc2USJQoFcGxhbnMYASADKAsyFi5wbGFucy52MS5UcmFpbmluZ1BsYW4icgoZVXBkYXRlVHJhaW5pbmdQbGFuUmVxdWVzdBIkCgRwbGFuGAEgASgLMhYucGxhbnMudjEuVHJhaW5pbmdQbGFuEi8KC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayJCChpVcGRhdGVUcmFpbmluZ1BsYW5SZXNwb25zZRIkCgRwbGFuGAEgASgLMhYucGxhbnMudjEuVHJhaW5pbmdQbGFuIicKGURlbGV0ZVRyYWluaW5nUGxhblJlcXVlc3QSCgoCaWQYASABKAkiHAoaRGVsZXRlVHJhaW5pbmdQbGFuUmVzcG9uc2UiTwoVU2V0UGxhblBlcmlvZHNSZXF1ZXN0Eg8KB3BsYW5faWQYASABKAkSJQoHcGVyaW9kcxgCIAMoCzIULnBsYW5zLnYxLlBsYW5QZXJpb2QiPwoWU2V0UGxhblBlcmlvZHNSZXNwb25zZRIlCgdwZXJpb2RzGAEgAygLMhQucGxhbnMudjEuUGxhblBlcmlvZCI4ChhEZWxldGVQbGFuUGVyaW9kc1JlcXVlc3QSDwoHcGxhbl9pZBgBIAEoCRILCgNpZHMYAiADKAkiGwoZRGVsZXRlUGxhblBlcmlvZHNSZXNwb25zZSJMChNMaXN0V29ya291dHNSZXF1ZXN0Eg8KB3BsYW5faWQYASABKAkSEgoKc3RhcnRfZGF0ZRgCIAEoCRIQCghlbmRfZGF0ZRgDIAEoCSI7ChRMaXN0V29ya291dHNSZXNwb25zZRIjCgh3b3Jrb3V0cxgBIAMoCzIRLnBsYW5zLnYxLldvcmtvdXQiHwoRR2V0V29ya291dFJlcXVlc3QSCgoCaWQYASABKAkiOAoSR2V0V29ya291dFJlc3BvbnNlEiIKB3dvcmtvdXQYASABKAsyES5wbGFucy52MS5Xb3Jrb3V0ItcBCg5Xb3Jrb3V0V2VhdGhlchISCgp3b3Jrb3V0X2lkGAEgASgJEgwKBGRhdGUYAiABKAkSIAoIbG9jYXRpb24YAyABKAsyDi5nZW8udjEuTGF0TG5nEjgKD2xvY2F0aW9uX3NvdXJjZRgEIAEoDjIfLnBsYW5zLnYxLldlYXRoZXJMb2NhdGlvblNvdXJjZRIhCgNkYXkYBSABKAsyFC5wbGFucy52MS5EYXlXZWF0aGVyEiQKBWhvdXJzGAYgAygLMhUucGxhbnMudjEuSG91cldlYXRoZXIihwIKCkRheVdlYXRoZXISHwoXbWluX3RlbXBlcmF0dXJlX2NlbHNpdXMYASABKAESHwoXbWF4X3RlbXBlcmF0dXJlX2NlbHNpdXMYAiABKAESJQodbWF4X3ByZWNpcGl0YXRpb25fcHJvYmFiaWxpdHkYAyABKAUSGAoQcHJlY2lwaXRhdGlvbl9tbRgEIAEoARITCgtzbm93ZmFsbF9jbRgFIAEoARIaChJtYXhfd2luZF9zcGVlZF9rbWgYBiABKAESGgoSbWF4X3dpbmRfZ3VzdHNfa21oGAcgASgBEhQKDHdlYXRoZXJfY29kZRgIIAEoBRITCgtkZXNjcmlwdGlvbhgJIAEoCSKtAgoLSG91cldlYXRoZXISKAoEdGltZRgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASGwoTdGVtcGVyYXR1cmVfY2Vsc2l1cxgCIAEoARIkChxhcHBhcmVudF90ZW1wZXJhdHVyZV9jZWxzaXVzGAMgASgBEiEKGXByZWNpcGl0YXRpb25fcHJvYmFiaWxpdHkYBCABKAUSGAoQcHJlY2lwaXRhdGlvbl9tbRgFIAEoARIUCgx3ZWF0aGVyX2NvZGUYBiABKAUSFgoOd2luZF9zcGVlZF9rbWgYByABKAESFgoOd2luZF9ndXN0c19rbWgYCCABKAESHgoWd2luZF9kaXJlY3Rpb25fZGVncmVlcxgJIAEoBRIOCgZpc19kYXkYCiABKAgiQQoZTGlzdFdvcmtvdXRXZWF0aGVyUmVxdWVzdBISCgpzdGFydF9kYXRlGAEgASgJEhAKCGVuZF9kYXRlGAIgASgJIkcKGkxpc3RXb3Jrb3V0V2VhdGhlclJlc3BvbnNlEikKB3dlYXRoZXIYASADKAsyGC5wbGFucy52MS5Xb3Jrb3V0V2VhdGhlciIuChhHZXRXb3Jrb3V0V2VhdGhlclJlcXVlc3QSEgoKd29ya291dF9pZBgBIAEoCSJGChlHZXRXb3Jrb3V0V2VhdGhlclJlc3BvbnNlEikKB3dlYXRoZXIYASABKAsyGC5wbGFucy52MS5Xb3Jrb3V0V2VhdGhlciJNChVDcmVhdGVXb3Jrb3V0c1JlcXVlc3QSDwoHcGxhbl9pZBgBIAEoCRIjCgh3b3Jrb3V0cxgCIAMoCzIRLnBsYW5zLnYxLldvcmtvdXQiPQoWQ3JlYXRlV29ya291dHNSZXNwb25zZRIjCgh3b3Jrb3V0cxgBIAMoCzIRLnBsYW5zLnYxLldvcmtvdXQiawoUVXBkYXRlV29ya291dFJlcXVlc3QSIgoHd29ya291dBgBIAEoCzIRLnBsYW5zLnYxLldvcmtvdXQSLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIjsKFVVwZGF0ZVdvcmtvdXRSZXNwb25zZRIiCgd3b3Jrb3V0GAEgASgLMhEucGxhbnMudjEuV29ya291dCI1ChVEZWxldGVXb3Jrb3V0c1JlcXVlc3QSDwoHcGxhbl9pZBgBIAEoCRILCgNpZHMYAiADKAkiGAoWRGVsZXRlV29ya291dHNSZXNwb25zZSpyChFQZXJpb2RHcmFudWxhcml0eRIiCh5QRVJJT0RfR1JBTlVMQVJJVFlfVU5TUEVDSUZJRUQQABIcChhQRVJJT0RfR1JBTlVMQVJJVFlfTU9OVEgQARIbChdQRVJJT0RfR1JBTlVMQVJJVFlfV0VFSxACKrcDCgtXb3Jrb3V0VHlwZRIcChhXT1JLT1VUX1RZUEVfVU5TUEVDSUZJRUQQABIVChFXT1JLT1VUX1RZUEVfQkFTRRANEhoKFldPUktPVVRfVFlQRV9JTlRFTlNJVFkQDhIfChtXT1JLT1VUX1RZUEVfQ1JPU1NfVFJBSU5JTkcQCRIZChVXT1JLT1VUX1RZUEVfU1RSRU5HVEgQChIVChFXT1JLT1VUX1RZUEVfUkFDRRALEhUKEVdPUktPVVRfVFlQRV9SRVNUEAgSGQoRV09SS09VVF9UWVBFX0VBU1kQARoCCAESHQoVV09SS09VVF9UWVBFX0xPTkdfUlVOEAIaAggBEhoKEldPUktPVVRfVFlQRV9URU1QTxADGgIIARIeChZXT1JLT1VUX1RZUEVfSU5URVJWQUxTEAQaAggBEiEKGVdPUktPVVRfVFlQRV9ISUxMX1JFUEVBVFMQBRoCCAESGQoRV09SS09VVF9UWVBFX1ZFUlQQBhoCCAESHQoVV09SS09VVF9UWVBFX1JFQ09WRVJZEAcaAggBEhoKEldPUktPVVRfVFlQRV9PVEhFUhAMGgIIASqWAQoVV2VhdGhlckxvY2F0aW9uU291cmNlEicKI1dFQVRIRVJfTE9DQVRJT05fU09VUkNFX1VOU1BFQ0lGSUVEEAASJwojV0VBVEhFUl9MT0NBVElPTl9TT1VSQ0VfUk9VVEVfU1RBUlQQARIrCidXRUFUSEVSX0xPQ0FUSU9OX1NPVVJDRV9MQVRFU1RfQUNUSVZJVFkQAjL0CQoTVHJhaW5pbmdQbGFuU2VydmljZRJfChJDcmVhdGVUcmFpbmluZ1BsYW4SIy5wbGFucy52MS5DcmVhdGVUcmFpbmluZ1BsYW5SZXF1ZXN0GiQucGxhbnMudjEuQ3JlYXRlVHJhaW5pbmdQbGFuUmVzcG9uc2USVgoPR2V0VHJhaW5pbmdQbGFuEiAucGxhbnMudjEuR2V0VHJhaW5pbmdQbGFuUmVxdWVzdBohLnBsYW5zLnYxLkdldFRyYWluaW5nUGxhblJlc3BvbnNlElwKEUxpc3RUcmFpbmluZ1BsYW5zEiIucGxhbnMudjEuTGlzdFRyYWluaW5nUGxhbnNSZXF1ZXN0GiMucGxhbnMudjEuTGlzdFRyYWluaW5nUGxhbnNSZXNwb25zZRJfChJVcGRhdGVUcmFpbmluZ1BsYW4SIy5wbGFucy52MS5VcGRhdGVUcmFpbmluZ1BsYW5SZXF1ZXN0GiQucGxhbnMudjEuVXBkYXRlVHJhaW5pbmdQbGFuUmVzcG9uc2USXwoSRGVsZXRlVHJhaW5pbmdQbGFuEiMucGxhbnMudjEuRGVsZXRlVHJhaW5pbmdQbGFuUmVxdWVzdBokLnBsYW5zLnYxLkRlbGV0ZVRyYWluaW5nUGxhblJlc3BvbnNlElMKDlNldFBsYW5QZXJpb2RzEh8ucGxhbnMudjEuU2V0UGxhblBlcmlvZHNSZXF1ZXN0GiAucGxhbnMudjEuU2V0UGxhblBlcmlvZHNSZXNwb25zZRJcChFEZWxldGVQbGFuUGVyaW9kcxIiLnBsYW5zLnYxLkRlbGV0ZVBsYW5QZXJpb2RzUmVxdWVzdBojLnBsYW5zLnYxLkRlbGV0ZVBsYW5QZXJpb2RzUmVzcG9uc2USTQoMTGlzdFdvcmtvdXRzEh0ucGxhbnMudjEuTGlzdFdvcmtvdXRzUmVxdWVzdBoeLnBsYW5zLnYxLkxpc3RXb3Jrb3V0c1Jlc3BvbnNlEkcKCkdldFdvcmtvdXQSGy5wbGFucy52MS5HZXRXb3Jrb3V0UmVxdWVzdBocLnBsYW5zLnYxLkdldFdvcmtvdXRSZXNwb25zZRJTCg5DcmVhdGVXb3Jrb3V0cxIfLnBsYW5zLnYxLkNyZWF0ZVdvcmtvdXRzUmVxdWVzdBogLnBsYW5zLnYxLkNyZWF0ZVdvcmtvdXRzUmVzcG9uc2USUAoNVXBkYXRlV29ya291dBIeLnBsYW5zLnYxLlVwZGF0ZVdvcmtvdXRSZXF1ZXN0Gh8ucGxhbnMudjEuVXBkYXRlV29ya291dFJlc3BvbnNlElMKDkRlbGV0ZVdvcmtvdXRzEh8ucGxhbnMudjEuRGVsZXRlV29ya291dHNSZXF1ZXN0GiAucGxhbnMudjEuRGVsZXRlV29ya291dHNSZXNwb25zZRJfChJMaXN0V29ya291dFdlYXRoZXISIy5wbGFucy52MS5MaXN0V29ya291dFdlYXRoZXJSZXF1ZXN0GiQucGxhbnMudjEuTGlzdFdvcmtvdXRXZWF0aGVyUmVzcG9uc2USXAoRR2V0V29ya291dFdlYXRoZXISIi5wbGFucy52MS5HZXRXb3Jrb3V0V2VhdGhlclJlcXVlc3QaIy5wbGFucy52MS5HZXRXb3Jrb3V0V2VhdGhlclJlc3BvbnNlQpoBCgxjb20ucGxhbnMudjFCClBsYW5zUHJvdG9QAVo9Z2l0aHViLmNvbS9jYXR6a29ybi90cmFpbC10b29scy9pbnRlcm5hbC9nZW4vcGxhbnMvdjE7cGxhbnN2MaICA1BYWKoCCFBsYW5zLlYxygIIUGxhbnNcVjHiAhRQbGFuc1xWMVxHUEJNZXRhZGF0YeoCCVBsYW5zOjpWMWIGcHJvdG8z", [file_geo_v1_geo, file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * A training plan.
@@ -629,6 +629,299 @@ export const GetWorkoutResponseSchema: GenMessage<GetWorkoutResponse> = /*@__PUR
   messageDesc(file_plans_v1_plans, 20);
 
 /**
+ * The weather forecast for the day of a workout.
+ *
+ * @generated from message plans.v1.WorkoutWeather
+ */
+export type WorkoutWeather = Message<"plans.v1.WorkoutWeather"> & {
+  /**
+   * The ID of the workout.
+   *
+   * @generated from field: string workout_id = 1;
+   */
+  workoutId: string;
+
+  /**
+   * The date of the workout (YYYY-MM-DD).
+   *
+   * @generated from field: string date = 2;
+   */
+  date: string;
+
+  /**
+   * Where the forecast is for.
+   *
+   * @generated from field: geo.v1.LatLng location = 3;
+   */
+  location?: LatLng | undefined;
+
+  /**
+   * Where the location comes from.
+   *
+   * @generated from field: plans.v1.WeatherLocationSource location_source = 4;
+   */
+  locationSource: WeatherLocationSource;
+
+  /**
+   * The weather during the daytime, from 06:00 to 21:00 local time.
+   *
+   * @generated from field: plans.v1.DayWeather day = 5;
+   */
+  day?: DayWeather | undefined;
+
+  /**
+   * The forecast for each hour of the daytime. Only set by
+   * GetWorkoutWeather.
+   *
+   * @generated from field: repeated plans.v1.HourWeather hours = 6;
+   */
+  hours: HourWeather[];
+};
+
+/**
+ * Describes the message plans.v1.WorkoutWeather.
+ * Use `create(WorkoutWeatherSchema)` to create a new message.
+ */
+export const WorkoutWeatherSchema: GenMessage<WorkoutWeather> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 21);
+
+/**
+ * The weather of a day.
+ *
+ * @generated from message plans.v1.DayWeather
+ */
+export type DayWeather = Message<"plans.v1.DayWeather"> & {
+  /**
+   * The lowest and highest air temperature in degrees Celsius.
+   *
+   * @generated from field: double min_temperature_celsius = 1;
+   */
+  minTemperatureCelsius: number;
+
+  /**
+   * @generated from field: double max_temperature_celsius = 2;
+   */
+  maxTemperatureCelsius: number;
+
+  /**
+   * The highest chance of precipitation in percent.
+   *
+   * @generated from field: int32 max_precipitation_probability = 3;
+   */
+  maxPrecipitationProbability: number;
+
+  /**
+   * The total precipitation in millimeters.
+   *
+   * @generated from field: double precipitation_mm = 4;
+   */
+  precipitationMm: number;
+
+  /**
+   * The total snowfall in centimeters.
+   *
+   * @generated from field: double snowfall_cm = 5;
+   */
+  snowfallCm: number;
+
+  /**
+   * The strongest wind and gusts in kilometers per hour.
+   *
+   * @generated from field: double max_wind_speed_kmh = 6;
+   */
+  maxWindSpeedKmh: number;
+
+  /**
+   * @generated from field: double max_wind_gusts_kmh = 7;
+   */
+  maxWindGustsKmh: number;
+
+  /**
+   * The most severe WMO weather code of the day, as used by Open-Meteo.
+   *
+   * @generated from field: int32 weather_code = 8;
+   */
+  weatherCode: number;
+
+  /**
+   * A description of the weather code, e.g. "Light rain".
+   *
+   * @generated from field: string description = 9;
+   */
+  description: string;
+};
+
+/**
+ * Describes the message plans.v1.DayWeather.
+ * Use `create(DayWeatherSchema)` to create a new message.
+ */
+export const DayWeatherSchema: GenMessage<DayWeather> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 22);
+
+/**
+ * The weather forecast for an hour.
+ *
+ * @generated from message plans.v1.HourWeather
+ */
+export type HourWeather = Message<"plans.v1.HourWeather"> & {
+  /**
+   * The start of the hour.
+   *
+   * @generated from field: google.protobuf.Timestamp time = 1;
+   */
+  time?: Timestamp | undefined;
+
+  /**
+   * Air temperature in degrees Celsius.
+   *
+   * @generated from field: double temperature_celsius = 2;
+   */
+  temperatureCelsius: number;
+
+  /**
+   * Apparent (feels like) temperature in degrees Celsius.
+   *
+   * @generated from field: double apparent_temperature_celsius = 3;
+   */
+  apparentTemperatureCelsius: number;
+
+  /**
+   * The chance of precipitation in percent.
+   *
+   * @generated from field: int32 precipitation_probability = 4;
+   */
+  precipitationProbability: number;
+
+  /**
+   * Precipitation in millimeters.
+   *
+   * @generated from field: double precipitation_mm = 5;
+   */
+  precipitationMm: number;
+
+  /**
+   * The WMO weather code, as used by Open-Meteo.
+   *
+   * @generated from field: int32 weather_code = 6;
+   */
+  weatherCode: number;
+
+  /**
+   * Wind and gusts in kilometers per hour, and where the wind comes from in
+   * degrees.
+   *
+   * @generated from field: double wind_speed_kmh = 7;
+   */
+  windSpeedKmh: number;
+
+  /**
+   * @generated from field: double wind_gusts_kmh = 8;
+   */
+  windGustsKmh: number;
+
+  /**
+   * @generated from field: int32 wind_direction_degrees = 9;
+   */
+  windDirectionDegrees: number;
+
+  /**
+   * Whether it is daylight.
+   *
+   * @generated from field: bool is_day = 10;
+   */
+  isDay: boolean;
+};
+
+/**
+ * Describes the message plans.v1.HourWeather.
+ * Use `create(HourWeatherSchema)` to create a new message.
+ */
+export const HourWeatherSchema: GenMessage<HourWeather> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 23);
+
+/**
+ * @generated from message plans.v1.ListWorkoutWeatherRequest
+ */
+export type ListWorkoutWeatherRequest = Message<"plans.v1.ListWorkoutWeatherRequest"> & {
+  /**
+   * The first and last date of the range (YYYY-MM-DD).
+   *
+   * @generated from field: string start_date = 1;
+   */
+  startDate: string;
+
+  /**
+   * @generated from field: string end_date = 2;
+   */
+  endDate: string;
+};
+
+/**
+ * Describes the message plans.v1.ListWorkoutWeatherRequest.
+ * Use `create(ListWorkoutWeatherRequestSchema)` to create a new message.
+ */
+export const ListWorkoutWeatherRequestSchema: GenMessage<ListWorkoutWeatherRequest> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 24);
+
+/**
+ * @generated from message plans.v1.ListWorkoutWeatherResponse
+ */
+export type ListWorkoutWeatherResponse = Message<"plans.v1.ListWorkoutWeatherResponse"> & {
+  /**
+   * The forecasts of the workouts that have one, in date order.
+   *
+   * @generated from field: repeated plans.v1.WorkoutWeather weather = 1;
+   */
+  weather: WorkoutWeather[];
+};
+
+/**
+ * Describes the message plans.v1.ListWorkoutWeatherResponse.
+ * Use `create(ListWorkoutWeatherResponseSchema)` to create a new message.
+ */
+export const ListWorkoutWeatherResponseSchema: GenMessage<ListWorkoutWeatherResponse> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 25);
+
+/**
+ * @generated from message plans.v1.GetWorkoutWeatherRequest
+ */
+export type GetWorkoutWeatherRequest = Message<"plans.v1.GetWorkoutWeatherRequest"> & {
+  /**
+   * The ID of the workout.
+   *
+   * @generated from field: string workout_id = 1;
+   */
+  workoutId: string;
+};
+
+/**
+ * Describes the message plans.v1.GetWorkoutWeatherRequest.
+ * Use `create(GetWorkoutWeatherRequestSchema)` to create a new message.
+ */
+export const GetWorkoutWeatherRequestSchema: GenMessage<GetWorkoutWeatherRequest> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 26);
+
+/**
+ * @generated from message plans.v1.GetWorkoutWeatherResponse
+ */
+export type GetWorkoutWeatherResponse = Message<"plans.v1.GetWorkoutWeatherResponse"> & {
+  /**
+   * The forecast. Unset if there is none yet, e.g. for workouts more than 15
+   * days ahead, or without a location.
+   *
+   * @generated from field: plans.v1.WorkoutWeather weather = 1;
+   */
+  weather?: WorkoutWeather | undefined;
+};
+
+/**
+ * Describes the message plans.v1.GetWorkoutWeatherResponse.
+ * Use `create(GetWorkoutWeatherResponseSchema)` to create a new message.
+ */
+export const GetWorkoutWeatherResponseSchema: GenMessage<GetWorkoutWeatherResponse> = /*@__PURE__*/
+  messageDesc(file_plans_v1_plans, 27);
+
+/**
  * @generated from message plans.v1.CreateWorkoutsRequest
  */
 export type CreateWorkoutsRequest = Message<"plans.v1.CreateWorkoutsRequest"> & {
@@ -652,7 +945,7 @@ export type CreateWorkoutsRequest = Message<"plans.v1.CreateWorkoutsRequest"> & 
  * Use `create(CreateWorkoutsRequestSchema)` to create a new message.
  */
 export const CreateWorkoutsRequestSchema: GenMessage<CreateWorkoutsRequest> = /*@__PURE__*/
-  messageDesc(file_plans_v1_plans, 21);
+  messageDesc(file_plans_v1_plans, 28);
 
 /**
  * @generated from message plans.v1.CreateWorkoutsResponse
@@ -671,7 +964,7 @@ export type CreateWorkoutsResponse = Message<"plans.v1.CreateWorkoutsResponse"> 
  * Use `create(CreateWorkoutsResponseSchema)` to create a new message.
  */
 export const CreateWorkoutsResponseSchema: GenMessage<CreateWorkoutsResponse> = /*@__PURE__*/
-  messageDesc(file_plans_v1_plans, 22);
+  messageDesc(file_plans_v1_plans, 29);
 
 /**
  * @generated from message plans.v1.UpdateWorkoutRequest
@@ -698,7 +991,7 @@ export type UpdateWorkoutRequest = Message<"plans.v1.UpdateWorkoutRequest"> & {
  * Use `create(UpdateWorkoutRequestSchema)` to create a new message.
  */
 export const UpdateWorkoutRequestSchema: GenMessage<UpdateWorkoutRequest> = /*@__PURE__*/
-  messageDesc(file_plans_v1_plans, 23);
+  messageDesc(file_plans_v1_plans, 30);
 
 /**
  * @generated from message plans.v1.UpdateWorkoutResponse
@@ -717,7 +1010,7 @@ export type UpdateWorkoutResponse = Message<"plans.v1.UpdateWorkoutResponse"> & 
  * Use `create(UpdateWorkoutResponseSchema)` to create a new message.
  */
 export const UpdateWorkoutResponseSchema: GenMessage<UpdateWorkoutResponse> = /*@__PURE__*/
-  messageDesc(file_plans_v1_plans, 24);
+  messageDesc(file_plans_v1_plans, 31);
 
 /**
  * @generated from message plans.v1.DeleteWorkoutsRequest
@@ -743,7 +1036,7 @@ export type DeleteWorkoutsRequest = Message<"plans.v1.DeleteWorkoutsRequest"> & 
  * Use `create(DeleteWorkoutsRequestSchema)` to create a new message.
  */
 export const DeleteWorkoutsRequestSchema: GenMessage<DeleteWorkoutsRequest> = /*@__PURE__*/
-  messageDesc(file_plans_v1_plans, 25);
+  messageDesc(file_plans_v1_plans, 32);
 
 /**
  * @generated from message plans.v1.DeleteWorkoutsResponse
@@ -756,7 +1049,7 @@ export type DeleteWorkoutsResponse = Message<"plans.v1.DeleteWorkoutsResponse"> 
  * Use `create(DeleteWorkoutsResponseSchema)` to create a new message.
  */
 export const DeleteWorkoutsResponseSchema: GenMessage<DeleteWorkoutsResponse> = /*@__PURE__*/
-  messageDesc(file_plans_v1_plans, 26);
+  messageDesc(file_plans_v1_plans, 33);
 
 /**
  * PeriodGranularity is the length of a plan period.
@@ -916,6 +1209,39 @@ export const WorkoutTypeSchema: GenEnum<WorkoutType> = /*@__PURE__*/
   enumDesc(file_plans_v1_plans, 1);
 
 /**
+ * WeatherLocationSource is where a workout's forecast is for.
+ *
+ * @generated from enum plans.v1.WeatherLocationSource
+ */
+export enum WeatherLocationSource {
+  /**
+   * @generated from enum value: WEATHER_LOCATION_SOURCE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The start of the workout's route.
+   *
+   * @generated from enum value: WEATHER_LOCATION_SOURCE_ROUTE_START = 1;
+   */
+  ROUTE_START = 1,
+
+  /**
+   * Where the user's most recent activity started, for workouts without a
+   * route.
+   *
+   * @generated from enum value: WEATHER_LOCATION_SOURCE_LATEST_ACTIVITY = 2;
+   */
+  LATEST_ACTIVITY = 2,
+}
+
+/**
+ * Describes the enum plans.v1.WeatherLocationSource.
+ */
+export const WeatherLocationSourceSchema: GenEnum<WeatherLocationSource> = /*@__PURE__*/
+  enumDesc(file_plans_v1_plans, 2);
+
+/**
  * TrainingPlanService manages training plans of up to a year leading to one or
  * more goal races. A plan is organised at three levels:
  *
@@ -1056,6 +1382,29 @@ export const TrainingPlanService: GenService<{
     methodKind: "unary";
     input: typeof DeleteWorkoutsRequestSchema;
     output: typeof DeleteWorkoutsResponseSchema;
+  },
+  /**
+   * List the weather forecast for the days of the user's workouts in a date
+   * range, without hourly forecasts. Forecasts are available up to 15 days
+   * ahead, so workouts after that, before today and rest days are left out.
+   *
+   * @generated from rpc plans.v1.TrainingPlanService.ListWorkoutWeather
+   */
+  listWorkoutWeather: {
+    methodKind: "unary";
+    input: typeof ListWorkoutWeatherRequestSchema;
+    output: typeof ListWorkoutWeatherResponseSchema;
+  },
+  /**
+   * Get the weather forecast for the day of a workout, with the forecast
+   * for each hour of the daytime.
+   *
+   * @generated from rpc plans.v1.TrainingPlanService.GetWorkoutWeather
+   */
+  getWorkoutWeather: {
+    methodKind: "unary";
+    input: typeof GetWorkoutWeatherRequestSchema;
+    output: typeof GetWorkoutWeatherResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_plans_v1_plans, 0);

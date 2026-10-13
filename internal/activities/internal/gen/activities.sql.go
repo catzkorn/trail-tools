@@ -119,6 +119,20 @@ func (q *Queries) GetActivityStreams(ctx context.Context, arg *GetActivityStream
 	return streams, err
 }
 
+const getLatestActivityPolyline = `-- name: GetLatestActivityPolyline :one
+select summary_polyline from strava_activities
+where user_id = $1 and summary_polyline <> ''
+order by start_date_local desc, start_time desc
+limit 1
+`
+
+func (q *Queries) GetLatestActivityPolyline(ctx context.Context, userID pgtype.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, getLatestActivityPolyline, userID)
+	var summary_polyline string
+	err := row.Scan(&summary_polyline)
+	return summary_polyline, err
+}
+
 const getLatestActivityStartTime = `-- name: GetLatestActivityStartTime :one
 select max(start_time)::timestamptz from strava_activities
 where user_id = $1

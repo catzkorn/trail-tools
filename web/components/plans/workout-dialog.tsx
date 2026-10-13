@@ -46,6 +46,8 @@ interface WorkoutDialogProps {
   // Activities near the workout date, to mark the workout as completed.
   activities: Activity[];
   onClose: () => void;
+  // Called once the workout is deleted, before the plan is refreshed.
+  onDeleted?: () => void;
 }
 
 const TYPE_OPTIONS: SelectOption[] = WORKOUT_STYLES.map((style) => ({
@@ -67,6 +69,7 @@ const WorkoutDialog: React.FC<WorkoutDialogProps> = ({
   date: initialDate,
   activities,
   onClose,
+  onDeleted,
 }) => {
   const queryClient = useQueryClient();
   const routes = useQuery(listRoutes, {});
@@ -96,7 +99,12 @@ const WorkoutDialog: React.FC<WorkoutDialogProps> = ({
   };
   const create = useMutation(createWorkouts, { onSuccess });
   const update = useMutation(updateWorkout, { onSuccess });
-  const remove = useMutation(deleteWorkouts, { onSuccess });
+  const remove = useMutation(deleteWorkouts, {
+    onSuccess: async () => {
+      onDeleted?.();
+      await onSuccess();
+    },
+  });
   const pending = create.isPending || update.isPending || remove.isPending;
 
   const save = () => {

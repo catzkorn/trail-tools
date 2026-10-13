@@ -60,6 +60,12 @@ const (
 	// TrainingPlanServiceDeleteWorkoutsProcedure is the procedure name of the TrainingPlanService's
 	// DeleteWorkouts RPC.
 	TrainingPlanServiceDeleteWorkoutsProcedure = "/plans.v1.TrainingPlanService/DeleteWorkouts"
+	// TrainingPlanServiceListWorkoutWeatherProcedure is the procedure name of the TrainingPlanService's
+	// ListWorkoutWeather RPC.
+	TrainingPlanServiceListWorkoutWeatherProcedure = "/plans.v1.TrainingPlanService/ListWorkoutWeather"
+	// TrainingPlanServiceGetWorkoutWeatherProcedure is the procedure name of the TrainingPlanService's
+	// GetWorkoutWeather RPC.
+	TrainingPlanServiceGetWorkoutWeatherProcedure = "/plans.v1.TrainingPlanService/GetWorkoutWeather"
 )
 
 var (
@@ -147,6 +153,20 @@ var (
 			Procedure:  TrainingPlanServiceDeleteWorkoutsProcedure,
 		}
 	})
+	trainingPlanServiceListWorkoutWeatherSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_plans_v1_plans_proto.Services().ByName("TrainingPlanService").Methods().ByName("ListWorkoutWeather"),
+			Procedure:  TrainingPlanServiceListWorkoutWeatherProcedure,
+		}
+	})
+	trainingPlanServiceGetWorkoutWeatherSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_plans_v1_plans_proto.Services().ByName("TrainingPlanService").Methods().ByName("GetWorkoutWeather"),
+			Procedure:  TrainingPlanServiceGetWorkoutWeatherProcedure,
+		}
+	})
 )
 
 // TrainingPlanServiceClient is a client for the plans.v1.TrainingPlanService service.
@@ -180,6 +200,13 @@ type TrainingPlanServiceClient interface {
 	UpdateWorkout(context.Context, *v1.UpdateWorkoutRequest) (*v1.UpdateWorkoutResponse, error)
 	// Delete one or more workouts.
 	DeleteWorkouts(context.Context, *v1.DeleteWorkoutsRequest) (*v1.DeleteWorkoutsResponse, error)
+	// List the weather forecast for the days of the user's workouts in a date
+	// range, without hourly forecasts. Forecasts are available up to 15 days
+	// ahead, so workouts after that, before today and rest days are left out.
+	ListWorkoutWeather(context.Context, *v1.ListWorkoutWeatherRequest) (*v1.ListWorkoutWeatherResponse, error)
+	// Get the weather forecast for the day of a workout, with the forecast
+	// for each hour of the daytime.
+	GetWorkoutWeather(context.Context, *v1.GetWorkoutWeatherRequest) (*v1.GetWorkoutWeatherResponse, error)
 }
 
 // NewTrainingPlanServiceClient constructs a client for the plans.v1.TrainingPlanService service.
@@ -219,6 +246,13 @@ type TrainingPlanServiceHandler interface {
 	UpdateWorkout(context.Context, *v1.UpdateWorkoutRequest) (*v1.UpdateWorkoutResponse, error)
 	// Delete one or more workouts.
 	DeleteWorkouts(context.Context, *v1.DeleteWorkoutsRequest) (*v1.DeleteWorkoutsResponse, error)
+	// List the weather forecast for the days of the user's workouts in a date
+	// range, without hourly forecasts. Forecasts are available up to 15 days
+	// ahead, so workouts after that, before today and rest days are left out.
+	ListWorkoutWeather(context.Context, *v1.ListWorkoutWeatherRequest) (*v1.ListWorkoutWeatherResponse, error)
+	// Get the weather forecast for the day of a workout, with the forecast
+	// for each hour of the daytime.
+	GetWorkoutWeather(context.Context, *v1.GetWorkoutWeatherRequest) (*v1.GetWorkoutWeatherResponse, error)
 }
 
 // RegisterTrainingPlanServiceHandler registers svc as the plans.v1.TrainingPlanService
@@ -238,6 +272,8 @@ func RegisterTrainingPlanServiceHandler(server *connect.Server, svc TrainingPlan
 		connect.Method{Spec: trainingPlanServiceCreateWorkoutsSpec(), Handler: adapter.createWorkouts},
 		connect.Method{Spec: trainingPlanServiceUpdateWorkoutSpec(), Handler: adapter.updateWorkout},
 		connect.Method{Spec: trainingPlanServiceDeleteWorkoutsSpec(), Handler: adapter.deleteWorkouts},
+		connect.Method{Spec: trainingPlanServiceListWorkoutWeatherSpec(), Handler: adapter.listWorkoutWeather},
+		connect.Method{Spec: trainingPlanServiceGetWorkoutWeatherSpec(), Handler: adapter.getWorkoutWeather},
 	)
 }
 
@@ -290,6 +326,14 @@ func (UnimplementedTrainingPlanServiceHandler) UpdateWorkout(context.Context, *v
 
 func (UnimplementedTrainingPlanServiceHandler) DeleteWorkouts(context.Context, *v1.DeleteWorkoutsRequest) (*v1.DeleteWorkoutsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "plans.v1.TrainingPlanService.DeleteWorkouts is not implemented")
+}
+
+func (UnimplementedTrainingPlanServiceHandler) ListWorkoutWeather(context.Context, *v1.ListWorkoutWeatherRequest) (*v1.ListWorkoutWeatherResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "plans.v1.TrainingPlanService.ListWorkoutWeather is not implemented")
+}
+
+func (UnimplementedTrainingPlanServiceHandler) GetWorkoutWeather(context.Context, *v1.GetWorkoutWeatherRequest) (*v1.GetWorkoutWeatherResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "plans.v1.TrainingPlanService.GetWorkoutWeather is not implemented")
 }
 
 type trainingPlanServiceClient struct {
@@ -387,6 +431,22 @@ func (c *trainingPlanServiceClient) UpdateWorkout(ctx context.Context, req *v1.U
 func (c *trainingPlanServiceClient) DeleteWorkouts(ctx context.Context, req *v1.DeleteWorkoutsRequest) (*v1.DeleteWorkoutsResponse, error) {
 	var res v1.DeleteWorkoutsResponse
 	if err := c.client.CallUnary(ctx, trainingPlanServiceDeleteWorkoutsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *trainingPlanServiceClient) ListWorkoutWeather(ctx context.Context, req *v1.ListWorkoutWeatherRequest) (*v1.ListWorkoutWeatherResponse, error) {
+	var res v1.ListWorkoutWeatherResponse
+	if err := c.client.CallUnary(ctx, trainingPlanServiceListWorkoutWeatherSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *trainingPlanServiceClient) GetWorkoutWeather(ctx context.Context, req *v1.GetWorkoutWeatherRequest) (*v1.GetWorkoutWeatherResponse, error) {
+	var res v1.GetWorkoutWeatherResponse
+	if err := c.client.CallUnary(ctx, trainingPlanServiceGetWorkoutWeatherSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -532,6 +592,30 @@ func (h trainingPlanServiceHandler) deleteWorkouts(ctx context.Context, _ connec
 		return err
 	}
 	res, err := h.svc.DeleteWorkouts(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h trainingPlanServiceHandler) listWorkoutWeather(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListWorkoutWeatherRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListWorkoutWeather(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h trainingPlanServiceHandler) getWorkoutWeather(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetWorkoutWeatherRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetWorkoutWeather(ctx, &req)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ import {
 import Targets from "@components/plans/targets";
 import WeekDays from "@components/plans/week-days";
 import WorkoutDialog from "@components/plans/workout-dialog";
+import { useWorkoutWeather } from "@components/plans/workout-weather";
 import ConfirmButton from "@components/ui/confirm-button";
 import { Badge } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
@@ -137,6 +138,7 @@ const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods, races }) => {
   const monthEnd = endOfMonth(month);
   const viewStart = startOfWeek(maxDate(month, plan.startDate));
   const viewEnd = endOfWeek(minDate(monthEnd, plan.endDate));
+  const weather = useWorkoutWeather(viewStart, viewEnd);
 
   const selectMonth = (value: string) => {
     setSearchParams({ month: value }, { replace: true });
@@ -416,8 +418,9 @@ const PlanDetail: React.FC<PlanDetailProps> = ({ plan, periods, races }) => {
                 onAddWorkout={(date) => {
                   setWorkoutEdit({ date, workout: undefined });
                 }}
-                onEditWorkout={(workout) => {
-                  setWorkoutEdit({ date: workout.date, workout });
+                weather={weather}
+                onOpenWorkout={(workout) => {
+                  void navigate(`/workouts/${workout.id}`);
                 }}
               />
             </section>

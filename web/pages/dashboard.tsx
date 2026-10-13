@@ -11,6 +11,7 @@ import {
 } from "@components/plans/plan-utils";
 import Targets from "@components/plans/targets";
 import WeekDays from "@components/plans/week-days";
+import { useWorkoutWeather } from "@components/plans/workout-weather";
 import StravaCard from "@components/strava/strava-card";
 import Card from "@components/ui/card";
 import { Badge, EmptyState } from "@components/ui/misc";
@@ -59,7 +60,7 @@ import {
   sportLabel,
 } from "helpers/labels";
 import React from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 const VolumeCard: React.FC = () => {
   const end = today();
@@ -188,6 +189,8 @@ const ThisWeek: React.FC<ThisWeekProps> = ({
     planId: plan.id,
     startDate: monday,
   });
+  const weather = useWorkoutWeather(monday, sunday);
+  const navigate = useNavigate();
   if (workouts.isPending || activities.isPending) {
     return <Loading />;
   }
@@ -228,6 +231,10 @@ const ThisWeek: React.FC<ThisWeekProps> = ({
         goalRacesByDate={racesByDate(races, plan.goalRaceIds)}
         rangeStart={plan.startDate}
         rangeEnd={plan.endDate}
+        weather={weather}
+        onOpenWorkout={(workout) => {
+          void navigate(`/workouts/${workout.id}`);
+        }}
       />
     </div>
   );

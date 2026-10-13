@@ -92,3 +92,20 @@ export const updateWorkout = TrainingPlanService.method.updateWorkout;
  * @generated from rpc plans.v1.TrainingPlanService.DeleteWorkouts
  */
 export const deleteWorkouts = TrainingPlanService.method.deleteWorkouts;
+
+/**
+ * List the weather forecast for the days of the user's workouts in a date
+ * range, without hourly forecasts. Forecasts are available up to 15 days
+ * ahead, so workouts after that, before today and rest days are left out.
+ *
+ * @generated from rpc plans.v1.TrainingPlanService.ListWorkoutWeather
+ */
+export const listWorkoutWeather = TrainingPlanService.method.listWorkoutWeather;
+
+/**
+ * Get the weather forecast for the day of a workout, with the forecast
+ * for each hour of the daytime.
+ *
+ * @generated from rpc plans.v1.TrainingPlanService.GetWorkoutWeather
+ */
+export const getWorkoutWeather = TrainingPlanService.method.getWorkoutWeather;

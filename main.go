@@ -457,7 +457,7 @@ func run(
 	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	geoService := geosvc.NewService(log, mapData, routing.NewFinder(db), activityRepo)
-	planService := plan.NewService(log, planRepo)
+	planService := plan.NewService(log, planRepo, routeRepo, activityRepo, mapData)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
 	// Activities are synced from Strava before importing their photos into

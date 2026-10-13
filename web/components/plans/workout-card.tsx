@@ -1,11 +1,15 @@
 import { CheckCircleIcon, MapIcon } from "@heroicons/react/24/solid";
-import type { Workout } from "gen/plans/v1/plans_pb";
+import type { Workout, WorkoutWeather } from "gen/plans/v1/plans_pb";
 import { formatHoursMinutes } from "helpers/format";
 import { workoutStyle } from "helpers/labels";
 import React from "react";
 
+import { WeatherBadge } from "./workout-weather";
+
 interface WorkoutCardProps {
   workout: Workout;
+  // The forecast for the workout's day, if there is one.
+  weather?: WorkoutWeather | undefined;
   onClick?: (() => void) | undefined;
 }
 
@@ -24,7 +28,11 @@ const targets = (workout: Workout): string => {
 };
 
 // WorkoutCard is a compact, color coded workout in a calendar day.
-const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onClick }) => {
+const WorkoutCard: React.FC<WorkoutCardProps> = ({
+  workout,
+  weather,
+  onClick,
+}) => {
   const style = workoutStyle(workout.type);
   const detail = targets(workout);
   const content = (
@@ -48,6 +56,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, onClick }) => {
       {detail !== "" && (
         <span className="tabular-nums opacity-80">{detail}</span>
       )}
+      {weather?.day !== undefined && <WeatherBadge day={weather.day} />}
     </>
   );
   const className = `flex w-full flex-col rounded border-l-4 border px-1.5 py-1 text-left text-[11px] leading-tight ${style.cardClass}`;

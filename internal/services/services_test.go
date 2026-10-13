@@ -164,7 +164,7 @@ func newEnv(t *testing.T) *env {
 	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil, strava.WebURL)
 	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, e.mapData, activityRepo)
-	planService := plan.NewService(log, planRepo)
+	planService := plan.NewService(log, planRepo, routeRepo, activityRepo, e.mapData)
 	raceService := race.NewService(log, raceRepo, routeRepo)
 	e.liveTrack = &fakeLiveTrack{}
 	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
@@ -344,6 +344,8 @@ func (f *fakeRouter) lastPrefer() [][]geo.Point {
 type fakeMapData struct {
 	mu        sync.Mutex
 	forecasts []mapdata.ForecastQuery
+	// The points of the HourlyForecast calls.
+	hourlyForecasts []geo.Point
 	// The number of FillElevations calls.
 	fills int
 }
@@ -386,6 +388,29 @@ func (f *fakeMapData) Forecast(_ context.Context, queries []mapdata.ForecastQuer
 		if hour.Equal(queries[0].Time.UTC().Truncate(time.Hour).Add(time.Hour)) {
 			weather[i].WeatherCode = 95
 		}
+	}
+	return weather, nil
+}
+
+// HourlyForecast returns light rain from 10 to 12 UTC and otherwise clear
+// weather, at 5 degrees at midnight UTC warming by a degree an hour.
+func (f *fakeMapData) HourlyForecast(_ context.Context, point geo.Point, start, end time.Time) ([]mapdata.Weather, error) {
+	f.mu.Lock()
+	f.hourlyForecasts = append(f.hourlyForecasts, point)
+	f.mu.Unlock()
+	var weather []mapdata.Weather
+	for hour := start; !hour.After(end.Add(23 * time.Hour)); hour = hour.Add(time.Hour) {
+		w := mapdata.Weather{
+			Time:                     hour,
+			TemperatureCelsius:       5 + float64(hour.Hour()),
+			PrecipitationProbability: 10,
+			WindSpeedKMH:             float64(hour.Hour()),
+			IsDay:                    true,
+		}
+		if hour.Hour() >= 10 && hour.Hour() < 12 {
+			w.WeatherCode, w.PrecipitationProbability, w.PrecipitationMM = 61, 80, 0.5
+		}
+		weather = append(weather, w)
 	}
 	return weather, nil
 }

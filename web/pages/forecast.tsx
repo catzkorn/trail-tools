@@ -312,6 +312,18 @@ const ForecastResult: React.FC<ForecastResultProps> = ({ forecast }) => {
   );
 };
 
+/**
+ * StartFromParam returns the start in the URL, e.g. "2026-10-14T07:00", if
+ * it's a time in the future, or else the default start.
+ */
+const startFromParam = (value: string | null): string => {
+  const parsed = value === null ? null : parseLocalDateTime(value);
+  if (value === null || parsed === null || parsed.getTime() <= Date.now()) {
+    return defaultStart();
+  }
+  return value;
+};
+
 const ForecastPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const routeParam = searchParams.get("route") ?? "";
@@ -319,7 +331,9 @@ const ForecastPage: React.FC = () => {
   const [mode, setMode] = useState<SourceMode>("route");
   const [routeId, setRouteId] = useState(routeParam);
   const [gpx, setGpx] = useState("");
-  const [start, setStart] = useState(defaultStart);
+  const [start, setStart] = useState(() =>
+    startFromParam(searchParams.get("start"))
+  );
   const [speed, setSpeed] = useState("8");
   const [climb, setClimb] = useState("600");
   const [intervalMinutes, setIntervalMinutes] = useState("60");
