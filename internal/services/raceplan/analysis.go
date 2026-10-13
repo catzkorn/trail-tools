@@ -437,30 +437,51 @@ var planRules = []rule{
 		id:          "segment-fueling",
 		section:     "nutrition",
 		title:       "Plan fuel for every segment",
-		description: "Every segment longer than 30 minutes should have planned intake meeting at least 80% of the carbohydrate target, so fueling is decided before the race.",
+		description: "Every segment longer than 30 minutes should have planned intake meeting at least 80% of the carbohydrate, fluid and sodium targets, so fueling and hydration are decided before the race.",
 		check: func(a *analyzer) (racesv1.RuleStatus, string) {
-			if a.plan.GetNutrition().GetCarbsGramsPerHour() <= 0 {
-				return fail, "Set a carbohydrate target first."
+			n := a.plan.GetNutrition()
+			if n.GetCarbsGramsPerHour() <= 0 && n.GetFluidMlPerHour() <= 0 && n.GetSodiumMgPerHour() <= 0 {
+				return fail, "Set nutrition targets first."
 			}
 			var under, over []string
 			for i, cp := range a.checkpoints {
 				if time.Duration(a.plan.GetCheckpoints()[i].GetPlannedSegmentSeconds())*time.Second < minFueledSegment {
 					continue
 				}
+				nutrients := []struct {
+					name, unit      string
+					planned, target float64
+				}{
+					{"carbohydrate", "g", cp.GetCarbsGrams(), cp.GetCarbsTargetGrams()},
+					{"fluid", "ml", cp.GetFluidMl(), cp.GetFluidTargetMl()},
+					{"sodium", "mg", cp.GetSodiumMg(), cp.GetSodiumTargetMg()},
+				}
+				var low, high []string
+				for _, nutrient := range nutrients {
+					if nutrient.target <= 0 {
+						continue
+					}
+					amount := fmt.Sprintf("%.0f of %.0f %s %s", nutrient.planned, nutrient.target, nutrient.unit, nutrient.name)
+					switch ratio := nutrient.planned / nutrient.target; {
+					case ratio < minSegmentFuelFraction:
+						low = append(low, amount)
+					case ratio > maxSegmentFuelFraction:
+						high = append(high, amount)
+					}
+				}
 				name := checkpointName(a.plan.GetCheckpoints()[i], i)
-				ratio := cp.GetCarbsGrams() / cp.GetCarbsTargetGrams()
-				switch {
-				case ratio < minSegmentFuelFraction:
-					under = append(under, fmt.Sprintf("%s (%.0f of %.0f g)", name, cp.GetCarbsGrams(), cp.GetCarbsTargetGrams()))
-				case ratio > maxSegmentFuelFraction:
-					over = append(over, fmt.Sprintf("%s (%.0f of %.0f g)", name, cp.GetCarbsGrams(), cp.GetCarbsTargetGrams()))
+				if len(low) > 0 {
+					under = append(under, fmt.Sprintf("%s (%s)", name, strings.Join(low, ", ")))
+				}
+				if len(high) > 0 {
+					over = append(over, fmt.Sprintf("%s (%s)", name, strings.Join(high, ", ")))
 				}
 			}
 			switch {
 			case len(under) > 0:
-				return fail, "Not enough carbohydrate planned to " + listViolations(under) + "."
+				return fail, "Not enough planned to " + listViolations(under) + "."
 			case len(over) > 0:
-				return warn, "More carbohydrate than the target planned to " + listViolations(over) + "; check the stomach can handle it."
+				return warn, "More than the target planned to " + listViolations(over) + "; check the stomach can handle it."
 			}
 			return pass, ""
 		},
