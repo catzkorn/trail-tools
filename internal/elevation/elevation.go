@@ -10,13 +10,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/geo"
+	"gitlab.com/greyxor/slogor"
 )
 
 // DefaultURL is the base URL of the elevation tiles: SRTM derived 1x1 degree
@@ -42,8 +45,12 @@ type DEM struct {
 	client   *http.Client
 
 	// mu serialises loading tiles, so concurrent lookups don't download or
-	// decode the same tile twice, and guards tiles.
+	// decode the same tile twice, and guards the fields below.
 	mu sync.Mutex
+	// An optional durable cache of the tiles, e.g. a Cloud Storage bucket,
+	// for when the cache directory doesn't outlive the process.
+	store blob.Store
+	log   *slog.Logger
 	// The most recently used tiles, most recent first. A nil tile records
 	// that there is no tile, e.g. over the sea.
 	tiles []cachedTile
@@ -59,6 +66,16 @@ type cachedTile struct {
 // NewDEM creates a DEM that downloads tiles from baseURL into cacheDir.
 func NewDEM(baseURL, cacheDir string) *DEM {
 	return &DEM{baseURL: baseURL, cacheDir: cacheDir, client: http.DefaultClient}
+}
+
+// SetTileStore makes the DEM look for tiles missing from the cache directory
+// in store before downloading them, and add the tiles it downloads to it.
+// Failing to read or write the store only logs a warning, as the tiles can
+// be downloaded instead.
+func (d *DEM) SetTileStore(store blob.Store, log *slog.Logger) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.store, d.log = store, log
 }
 
 // cachedTile returns the tile with the south west corner lat, lng, loading it
@@ -120,7 +137,7 @@ func (d *DEM) tile(ctx context.Context, lat, lng int) (*hgtTile, error) {
 	name := tileName(lat, lng)
 	path := filepath.Join(d.cacheDir, name+".hgt.gz")
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		if err := d.download(ctx, name, path); err != nil {
+		if err := d.fetch(ctx, name, path); err != nil {
 			return nil, err
 		}
 	}
@@ -152,38 +169,79 @@ func (d *DEM) tile(ctx context.Context, lat, lng int) (*hgtTile, error) {
 	return t, nil
 }
 
-func (d *DEM) download(ctx context.Context, name, path string) error {
+// tileKey returns the key of a tile in the tile store, following the tile
+// server's paths, e.g. skadi/N46/N46E007.hgt.gz.
+func tileKey(name string) string {
+	return "skadi/" + name[:3] + "/" + name + ".hgt.gz"
+}
+
+// fetch writes the tile to path in the cache directory: from the tile store
+// if it has it, or else downloaded and added to the tile store. An empty file
+// or object records that the tile doesn't exist.
+func (d *DEM) fetch(ctx context.Context, name, path string) error {
 	if err := os.MkdirAll(d.cacheDir, 0o755); err != nil {
 		return err
 	}
-	url := fmt.Sprintf("%s/%s/%s.hgt.gz", d.baseURL, name[:3], name)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	key := tileKey(name)
+	if d.store != nil {
+		data, err := d.store.Get(ctx, key)
+		if err == nil {
+			return writeFile(path, data)
+		}
+		if !errors.Is(err, blob.ErrNotFound) && ctx.Err() == nil {
+			d.log.WarnContext(ctx, "Failed to read an elevation tile from the tile store, downloading it",
+				slog.String("tile", name), slogor.Err(err))
+		}
+	}
+	data, err := d.download(ctx, name)
 	if err != nil {
 		return err
 	}
+	if err := writeFile(path, data); err != nil {
+		return err
+	}
+	if d.store != nil {
+		if err := d.store.Put(ctx, key, data, "application/gzip"); err != nil && ctx.Err() == nil {
+			d.log.WarnContext(ctx, "Failed to add an elevation tile to the tile store",
+				slog.String("tile", name), slogor.Err(err))
+		}
+	}
+	return nil
+}
+
+// download downloads the gzipped tile. It returns no data if there is no
+// tile, e.g. over the sea.
+func (d *DEM) download(ctx context.Context, name string) ([]byte, error) {
+	url := fmt.Sprintf("%s/%s/%s.hgt.gz", d.baseURL, name[:3], name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := d.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to download elevation tile %s: %w", name, err)
+		return nil, fmt.Errorf("failed to download elevation tile %s: %w", name, err)
 	}
 	defer resp.Body.Close()
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotFound, http.StatusForbidden:
 		// There is no tile, e.g. over the sea.
-		return os.WriteFile(path, nil, 0o644)
+		return nil, nil
 	default:
-		return fmt.Errorf("failed to download elevation tile %s: status %d", name, resp.StatusCode)
+		return nil, fmt.Errorf("failed to download elevation tile %s: status %d", name, resp.StatusCode)
 	}
-	tmp := path + ".tmp"
-	f, err := os.Create(tmp)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to download elevation tile %s: %w", name, err)
 	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		return fmt.Errorf("failed to download elevation tile %s: %w", name, err)
-	}
-	if err := f.Close(); err != nil {
+	return data, nil
+}
+
+// writeFile writes data to a temporary file and renames it to path, so
+// readers never see a partial file.
+func writeFile(path string, data []byte) error {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return err
 	}
 	return os.Rename(tmp, path)

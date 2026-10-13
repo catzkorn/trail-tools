@@ -41,6 +41,7 @@ resource "google_cloud_run_v2_service" "app" {
             TRAIL_TOOLS_LOG_LEVEL    = "info"
             TRAIL_TOOLS_IMPORT_JOB   = google_cloud_run_v2_job.import[0].id
             TRAIL_TOOLS_PHOTO_BUCKET = google_storage_bucket.photos.name
+            TRAIL_TOOLS_DEM_BUCKET   = google_storage_bucket.dem.name
           },
           local.strava ? {
             TRAIL_TOOLS_STRAVA_CLIENT_ID          = var.strava_client_id
@@ -83,6 +84,7 @@ resource "google_cloud_run_v2_service" "app" {
   depends_on = [
     google_secret_manager_secret_iam_member.run,
     google_storage_bucket_iam_member.run_photos,
+    google_storage_bucket_iam_member.run_dem,
   ]
 }
 
@@ -120,6 +122,10 @@ resource "google_cloud_run_v2_job" "import" {
           value = "json"
         }
         env {
+          name  = "TRAIL_TOOLS_DEM_BUCKET"
+          value = google_storage_bucket.dem.name
+        }
+        env {
           name = "TRAIL_TOOLS_DATABASE_URL"
           value_source {
             secret_key_ref {
@@ -132,7 +138,10 @@ resource "google_cloud_run_v2_job" "import" {
     }
   }
 
-  depends_on = [google_secret_manager_secret_iam_member.run]
+  depends_on = [
+    google_secret_manager_secret_iam_member.run,
+    google_storage_bucket_iam_member.run_dem,
+  ]
 }
 
 # The service starts executions of the import job, with the import's ID as
