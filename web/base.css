@@ -19,6 +19,8 @@
   --color-brand-900: #592b10;
   --font-brand: "Lexend Giga", ui-sans-serif, system-ui, sans-serif;
   --font-ui: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  /* Lexend is the app's typeface. */
+  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --color-google-text-gray: #3c4043;
   --color-google-logo-blue: #4285f4;
   --color-google-logo-green: #34a853;
