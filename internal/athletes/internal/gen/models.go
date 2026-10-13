@@ -612,18 +612,12 @@ func (e Terrain) Valid() bool {
 type WorkoutType string
 
 const (
-	WorkoutTypeEasy          WorkoutType = "easy"
-	WorkoutTypeLongRun       WorkoutType = "long_run"
-	WorkoutTypeTempo         WorkoutType = "tempo"
-	WorkoutTypeIntervals     WorkoutType = "intervals"
-	WorkoutTypeHillRepeats   WorkoutType = "hill_repeats"
-	WorkoutTypeVert          WorkoutType = "vert"
-	WorkoutTypeRecovery      WorkoutType = "recovery"
-	WorkoutTypeRest          WorkoutType = "rest"
+	WorkoutTypeBase          WorkoutType = "base"
+	WorkoutTypeIntensity     WorkoutType = "intensity"
 	WorkoutTypeCrossTraining WorkoutType = "cross_training"
 	WorkoutTypeStrength      WorkoutType = "strength"
 	WorkoutTypeRace          WorkoutType = "race"
-	WorkoutTypeOther         WorkoutType = "other"
+	WorkoutTypeRest          WorkoutType = "rest"
 )
 
 func (e *WorkoutType) Scan(src interface{}) error {
@@ -663,18 +657,12 @@ func (ns NullWorkoutType) Value() (driver.Value, error) {
 
 func (e WorkoutType) Valid() bool {
 	switch e {
-	case WorkoutTypeEasy,
-		WorkoutTypeLongRun,
-		WorkoutTypeTempo,
-		WorkoutTypeIntervals,
-		WorkoutTypeHillRepeats,
-		WorkoutTypeVert,
-		WorkoutTypeRecovery,
-		WorkoutTypeRest,
+	case WorkoutTypeBase,
+		WorkoutTypeIntensity,
 		WorkoutTypeCrossTraining,
 		WorkoutTypeStrength,
 		WorkoutTypeRace,
-		WorkoutTypeOther:
+		WorkoutTypeRest:
 		return true
 	}
 	return false
@@ -1170,6 +1158,7 @@ type User struct {
 	ID         pgtype.UUID
 	CreateTime pgtype.Timestamptz
 	IsAdmin    bool
+	AvatarKey  pgtype.Text
 }
 
 type Workout struct {

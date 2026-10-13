@@ -36,6 +36,9 @@ const (
 	// GeoServiceGetPersonalHeatmapProcedure is the procedure name of the GeoService's
 	// GetPersonalHeatmap RPC.
 	GeoServiceGetPersonalHeatmapProcedure = "/geo.v1.GeoService/GetPersonalHeatmap"
+	// GeoServiceListHeatmapTracksProcedure is the procedure name of the GeoService's ListHeatmapTracks
+	// RPC.
+	GeoServiceListHeatmapTracksProcedure = "/geo.v1.GeoService/ListHeatmapTracks"
 )
 
 var (
@@ -74,6 +77,13 @@ var (
 			Procedure:  GeoServiceGetPersonalHeatmapProcedure,
 		}
 	})
+	geoServiceListHeatmapTracksSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_geo_v1_geo_proto.Services().ByName("GeoService").Methods().ByName("ListHeatmapTracks"),
+			Procedure:  GeoServiceListHeatmapTracksProcedure,
+		}
+	})
 )
 
 // GeoServiceClient is a client for the geo.v1.GeoService service.
@@ -98,6 +108,9 @@ type GeoServiceClient interface {
 	// cells inside a bounding box. Cells with a high count are places the user
 	// runs often. Useful for finding familiar trails and areas.
 	GetPersonalHeatmap(context.Context, *v1.GetPersonalHeatmapRequest) (*v1.GetPersonalHeatmapResponse, error)
+	// List the parts of the user's GPS tracks inside a bounding box, simplified,
+	// for drawing them as a heatmap.
+	ListHeatmapTracks(context.Context, *v1.ListHeatmapTracksRequest) (*v1.ListHeatmapTracksResponse, error)
 }
 
 // NewGeoServiceClient constructs a client for the geo.v1.GeoService service. Multiple service
@@ -128,6 +141,9 @@ type GeoServiceHandler interface {
 	// cells inside a bounding box. Cells with a high count are places the user
 	// runs often. Useful for finding familiar trails and areas.
 	GetPersonalHeatmap(context.Context, *v1.GetPersonalHeatmapRequest) (*v1.GetPersonalHeatmapResponse, error)
+	// List the parts of the user's GPS tracks inside a bounding box, simplified,
+	// for drawing them as a heatmap.
+	ListHeatmapTracks(context.Context, *v1.ListHeatmapTracksRequest) (*v1.ListHeatmapTracksResponse, error)
 }
 
 // RegisterGeoServiceHandler registers svc as the geo.v1.GeoService implementation on server.
@@ -139,6 +155,7 @@ func RegisterGeoServiceHandler(server *connect.Server, svc GeoServiceHandler) {
 		connect.Method{Spec: geoServiceFindPointsOfInterestSpec(), Handler: adapter.findPointsOfInterest},
 		connect.Method{Spec: geoServiceGetElevationSpec(), Handler: adapter.getElevation},
 		connect.Method{Spec: geoServiceGetPersonalHeatmapSpec(), Handler: adapter.getPersonalHeatmap},
+		connect.Method{Spec: geoServiceListHeatmapTracksSpec(), Handler: adapter.listHeatmapTracks},
 	)
 }
 
@@ -163,6 +180,10 @@ func (UnimplementedGeoServiceHandler) GetElevation(context.Context, *v1.GetEleva
 
 func (UnimplementedGeoServiceHandler) GetPersonalHeatmap(context.Context, *v1.GetPersonalHeatmapRequest) (*v1.GetPersonalHeatmapResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "geo.v1.GeoService.GetPersonalHeatmap is not implemented")
+}
+
+func (UnimplementedGeoServiceHandler) ListHeatmapTracks(context.Context, *v1.ListHeatmapTracksRequest) (*v1.ListHeatmapTracksResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "geo.v1.GeoService.ListHeatmapTracks is not implemented")
 }
 
 type geoServiceClient struct {
@@ -204,6 +225,14 @@ func (c *geoServiceClient) GetElevation(ctx context.Context, req *v1.GetElevatio
 func (c *geoServiceClient) GetPersonalHeatmap(ctx context.Context, req *v1.GetPersonalHeatmapRequest) (*v1.GetPersonalHeatmapResponse, error) {
 	var res v1.GetPersonalHeatmapResponse
 	if err := c.client.CallUnary(ctx, geoServiceGetPersonalHeatmapSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *geoServiceClient) ListHeatmapTracks(ctx context.Context, req *v1.ListHeatmapTracksRequest) (*v1.ListHeatmapTracksResponse, error) {
+	var res v1.ListHeatmapTracksResponse
+	if err := c.client.CallUnary(ctx, geoServiceListHeatmapTracksSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -265,6 +294,18 @@ func (h geoServiceHandler) getPersonalHeatmap(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.GetPersonalHeatmap(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h geoServiceHandler) listHeatmapTracks(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListHeatmapTracksRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListHeatmapTracks(ctx, &req)
 	if err != nil {
 		return err
 	}

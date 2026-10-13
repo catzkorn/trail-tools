@@ -13,6 +13,7 @@ import {
 import { useInfiniteQuery } from "@connectrpc/connect-query";
 import { CameraIcon } from "@heroicons/react/24/outline";
 import { listActivities } from "gen/activities/v1/activities-ActivityService_connectquery";
+import { ActivitySort } from "gen/activities/v1/activities_pb";
 import {
   formatDate,
   formatHoursMinutes,
@@ -31,11 +32,30 @@ const SPORT_SELECT: SelectOption[] = [
   })),
 ];
 
+// The orders activities can be listed in, by their URL parameter.
+const SORTS: { value: string; label: string; sort: ActivitySort }[] = [
+  { label: "Most recent", sort: ActivitySort.UNSPECIFIED, value: "" },
+  { label: "Longest distance", sort: ActivitySort.DISTANCE, value: "distance" },
+  {
+    label: "Most elevation",
+    sort: ActivitySort.ELEVATION_GAIN,
+    value: "elevation",
+  },
+  { label: "Longest time", sort: ActivitySort.MOVING_TIME, value: "time" },
+];
+
+const SORT_SELECT: SelectOption[] = SORTS.map(({ label, value }) => ({
+  label,
+  value,
+}));
+
 const ActivitiesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const startDate = searchParams.get("start") ?? "";
   const endDate = searchParams.get("end") ?? "";
   const sport = searchParams.get("sport") ?? "";
+  const sortParam = searchParams.get("sort") ?? "";
+  const sort = SORTS.find((option) => option.value === sortParam) ?? SORTS[0];
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);
 
@@ -64,6 +84,7 @@ const ActivitiesPage: React.FC = () => {
       endDate,
       pageSize: 50,
       pageToken: "",
+      sort: sort?.sort ?? ActivitySort.UNSPECIFIED,
       sportTypes: sport === "" ? [] : [sport],
       startDate,
     },
@@ -214,6 +235,14 @@ const ActivitiesPage: React.FC = () => {
             setFilter("sport", value);
           }}
         />
+        <SelectField
+          label="Sort by"
+          value={sort?.value ?? ""}
+          options={SORT_SELECT}
+          onChange={(value) => {
+            setFilter("sort", value);
+          }}
+        />
         {(startDate !== "" || endDate !== "" || sport !== "") && (
           <button
             type="button"
@@ -221,7 +250,10 @@ const ActivitiesPage: React.FC = () => {
             onClick={() => {
               setDraftStart("");
               setDraftEnd("");
-              setSearchParams({}, { replace: true });
+              // Clearing the filters keeps the order.
+              setSearchParams(sortParam === "" ? {} : { sort: sortParam }, {
+                replace: true,
+              });
             }}
           >
             Clear filters

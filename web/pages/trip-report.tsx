@@ -24,7 +24,6 @@ import { formatRange, trackSlice } from "@components/trips/sections";
 import {
   TripStatsRow,
   mapPhotos,
-  profileMarkers,
   profilePoints,
   trackPositions,
 } from "@components/trips/trip-bits";
@@ -227,7 +226,6 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
   const track = useMemo(() => trackPositions(routePoints), [routePoints]);
   const profile = useMemo(() => profilePoints(routePoints), [routePoints]);
   const markers = useMemo(() => mapPhotos(photos), [photos]);
-  const photoMarkers = useMemo(() => profileMarkers(photos), [photos]);
   // The stretch of the track of the section being edited, if it has one.
   const highlight = useMemo(() => {
     const active = sections.find((section) => section.key === activeKey);
@@ -634,7 +632,6 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
           <Card>
             <ElevationProfile
               points={profile}
-              markers={photoMarkers}
               ranges={ranges}
               height={170}
               onHover={setHoverIndex}

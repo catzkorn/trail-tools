@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package geo.v1;
 
+import "mcp/v1/options.proto";
+
 // GeoService provides tools for exploring the area around a location. Map data
 // comes from OpenStreetMap, elevation data from the Copernicus DEM (via
 // Open-Meteo), and the heatmap from the user's own synced activities. Use these
@@ -28,6 +30,11 @@ service GeoService {
   // cells inside a bounding box. Cells with a high count are places the user
   // runs often. Useful for finding familiar trails and areas.
   rpc GetPersonalHeatmap(GetPersonalHeatmapRequest) returns (GetPersonalHeatmapResponse);
+  // List the parts of the user's GPS tracks inside a bounding box, simplified,
+  // for drawing them as a heatmap.
+  rpc ListHeatmapTracks(ListHeatmapTracksRequest) returns (ListHeatmapTracksResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
 }
 
 // A WGS84 coordinate.
@@ -221,6 +228,22 @@ message HeatmapCell {
   LatLng center = 1;
   // The number of distinct activities that passed through the cell.
   int32 activity_count = 2;
+}
+
+message ListHeatmapTracksRequest {
+  // The area to list the tracks in.
+  BoundingBox bounds = 1;
+  // How far in meters the simplified tracks may stray from the recorded
+  // ones. Defaults to 10, minimum 1.
+  double tolerance_meters = 2;
+}
+
+message ListHeatmapTracksResponse {
+  // The parts of the tracks inside the bounds, as encoded polylines.
+  repeated string polylines = 1;
+  // Whether there were too many points to return all of them. The longest
+  // parts are returned first.
+  bool truncated = 2;
 }
 
 message GetPersonalHeatmapResponse {

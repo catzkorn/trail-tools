@@ -62,5 +62,5 @@ func (r *Repository) loadUser(ctx context.Context, querier *gen.Queries, userID 
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
-	return &PasskeyUser{id: row.ID, Name: row.Name, UserHandle: row.UserHandle, admin: row.IsAdmin}, nil
+	return &PasskeyUser{id: row.ID, Name: row.Name, UserHandle: row.UserHandle, AvatarKey: row.AvatarKey.String, admin: row.IsAdmin}, nil
 }

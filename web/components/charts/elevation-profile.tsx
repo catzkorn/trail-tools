@@ -88,12 +88,15 @@ const NO_LEVELS: ProfilePoint[] = [];
 
 const NO_POINT: ProfilePoint = { distanceMeters: 0, elevationMeters: 0 };
 
-// BandFill is the color of a range: active ranges stand out, others alternate.
+// BAND_FILLS are the colors ranges cycle through, so neighbors differ.
+const BAND_FILLS = ["#e0f2fe", "#fef3c7", "#ede9fe"];
+
+// BandFill is the color of a range: active ranges stand out, others cycle.
 const bandFill = (range: ProfileRange, index: number): string => {
   if (range.active === true) {
-    return "#d1fae5";
+    return "#a7f3d0";
   }
-  return index % 2 === 0 ? "#f8fafc" : "#f1f5f9";
+  return BAND_FILLS[index % BAND_FILLS.length] ?? "#f1f5f9";
 };
 
 // FitLabel shortens a label to about the width in pixels, with an ellipsis.
@@ -464,8 +467,8 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   x2={band.x1}
                   y1={marginTop}
                   y2={baseline}
-                  stroke="#94a3b8"
-                  strokeWidth={1}
+                  stroke="#475569"
+                  strokeWidth={1.5}
                 />
               )}
             </g>
@@ -528,7 +531,7 @@ const ElevationProfile: React.FC<ElevationProfileProps> = ({
                   key={`label-${band.startMeters}-${band.endMeters}`}
                   x={band.x1 + 4}
                   y={marginTop + 11}
-                  className={`text-[10px] ${band.active === true ? "fill-emerald-900 font-semibold" : "fill-gray-500"}`}
+                  className={`text-[10px] ${band.active === true ? "fill-emerald-900 font-semibold" : "fill-gray-700 font-medium"}`}
                 >
                   {fitLabel(band.label, band.x2 - band.x1 - 8)}
                 </text>

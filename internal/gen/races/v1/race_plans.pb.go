@@ -2133,7 +2133,8 @@ type CheckpointSplit_builder struct {
 	CheckpointIndex int32
 	// When the runner arrived at the checkpoint, if recorded.
 	ArrivalTime *timestamppb.Timestamp
-	// When the runner left the checkpoint, if recorded.
+	// When the runner left the checkpoint, if recorded. The finish, the last
+	// checkpoint, has no departure.
 	DepartureTime *timestamppb.Timestamp
 }
 
@@ -2583,7 +2584,7 @@ type CheckpointEstimate_builder struct {
 	// Whether the arrival time was recorded rather than estimated.
 	ArrivalRecorded bool
 	// The departure time: recorded if departure_recorded is set, otherwise
-	// estimated.
+	// estimated. Unset for the finish.
 	DepartureTime *timestamppb.Timestamp
 	// Whether the departure time was recorded rather than estimated.
 	DepartureRecorded bool
@@ -2637,6 +2638,7 @@ type RaceDayStatus struct {
 	xxx_hidden_EstimatedLocation       *v1.LatLng             `protobuf:"bytes,13,opt,name=estimated_location,json=estimatedLocation,proto3"`
 	xxx_hidden_Checkpoints             *[]*CheckpointEstimate `protobuf:"bytes,8,rep,name=checkpoints,proto3"`
 	xxx_hidden_EstimatedFinishTime     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=estimated_finish_time,json=estimatedFinishTime,proto3"`
+	xxx_hidden_Finished                bool                   `protobuf:"varint,14,opt,name=finished,proto3"`
 	xxx_hidden_StatusTime              *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=status_time,json=statusTime,proto3"`
 	unknownFields                      protoimpl.UnknownFields
 	sizeCache                          protoimpl.SizeCache
@@ -2753,6 +2755,13 @@ func (x *RaceDayStatus) GetEstimatedFinishTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *RaceDayStatus) GetFinished() bool {
+	if x != nil {
+		return x.xxx_hidden_Finished
+	}
+	return false
+}
+
 func (x *RaceDayStatus) GetStatusTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_StatusTime
@@ -2806,6 +2815,10 @@ func (x *RaceDayStatus) SetCheckpoints(v []*CheckpointEstimate) {
 
 func (x *RaceDayStatus) SetEstimatedFinishTime(v *timestamppb.Timestamp) {
 	x.xxx_hidden_EstimatedFinishTime = v
+}
+
+func (x *RaceDayStatus) SetFinished(v bool) {
+	x.xxx_hidden_Finished = v
 }
 
 func (x *RaceDayStatus) SetStatusTime(v *timestamppb.Timestamp) {
@@ -2908,10 +2921,13 @@ type RaceDayStatus_builder struct {
 	// the latest known progress, otherwise the point on the course at
 	// estimated_distance_meters. Unset if unknown.
 	EstimatedLocation *v1.LatLng
-	// The estimates for each checkpoint, in course order.
+	// The estimates for each checkpoint, in course order. The last checkpoint
+	// is the finish, which has no departure time.
 	Checkpoints []*CheckpointEstimate
-	// The estimated finish time.
+	// The estimated finish time, or the recorded one once finished.
 	EstimatedFinishTime *timestamppb.Timestamp
+	// Whether the runner has finished: the arrival at the finish is recorded.
+	Finished bool
 	// When the status was computed.
 	StatusTime *timestamppb.Timestamp
 }
@@ -2932,6 +2948,7 @@ func (b0 RaceDayStatus_builder) Build() *RaceDayStatus {
 	x.xxx_hidden_EstimatedLocation = b.EstimatedLocation
 	x.xxx_hidden_Checkpoints = &b.Checkpoints
 	x.xxx_hidden_EstimatedFinishTime = b.EstimatedFinishTime
+	x.xxx_hidden_Finished = b.Finished
 	x.xxx_hidden_StatusTime = b.StatusTime
 	return m0
 }
@@ -5821,7 +5838,7 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"cutoffTime\x122\n" +
 	"\x15cutoff_buffer_seconds\x18\v \x01(\x05R\x13cutoffBufferSeconds\x12\x18\n" +
-	"\aoverdue\x18\f \x01(\bR\aoverdue\"\xf8\x05\n" +
+	"\aoverdue\x18\f \x01(\bR\aoverdue\"\x94\x06\n" +
 	"\rRaceDayStatus\x12,\n" +
 	"\brace_day\x18\x01 \x01(\v2\x11.races.v1.RaceDayR\araceDay\x129\n" +
 	"\n" +
@@ -5836,7 +5853,8 @@ const file_races_v1_race_plans_proto_rawDesc = "" +
 	"\x19estimated_distance_meters\x18\f \x01(\x01R\x17estimatedDistanceMeters\x12=\n" +
 	"\x12estimated_location\x18\r \x01(\v2\x0e.geo.v1.LatLngR\x11estimatedLocation\x12>\n" +
 	"\vcheckpoints\x18\b \x03(\v2\x1c.races.v1.CheckpointEstimateR\vcheckpoints\x12N\n" +
-	"\x15estimated_finish_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x13estimatedFinishTime\x12;\n" +
+	"\x15estimated_finish_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x13estimatedFinishTime\x12\x1a\n" +
+	"\bfinished\x18\x0e \x01(\bR\bfinished\x12;\n" +
 	"\vstatus_time\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"statusTime\"\xd4\x05\n" +

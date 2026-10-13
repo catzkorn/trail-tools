@@ -455,6 +455,9 @@ type RouteStats struct {
 	xxx_hidden_MaxClimbGradePercent   float64                `protobuf:"fixed64,6,opt,name=max_climb_grade_percent,json=maxClimbGradePercent,proto3"`
 	xxx_hidden_MaxDescentGradePercent float64                `protobuf:"fixed64,7,opt,name=max_descent_grade_percent,json=maxDescentGradePercent,proto3"`
 	xxx_hidden_Terrain                *[]*TerrainShare       `protobuf:"bytes,8,rep,name=terrain,proto3"`
+	xxx_hidden_RepeatedDistanceMeters float64                `protobuf:"fixed64,9,opt,name=repeated_distance_meters,json=repeatedDistanceMeters,proto3,oneof"`
+	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
+	XXX_presence                      [1]uint32
 	unknownFields                     protoimpl.UnknownFields
 	sizeCache                         protoimpl.SizeCache
 }
@@ -542,6 +545,13 @@ func (x *RouteStats) GetTerrain() []*TerrainShare {
 	return nil
 }
 
+func (x *RouteStats) GetRepeatedDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_RepeatedDistanceMeters
+	}
+	return 0
+}
+
 func (x *RouteStats) SetDistanceMeters(v float64) {
 	x.xxx_hidden_DistanceMeters = v
 }
@@ -574,6 +584,23 @@ func (x *RouteStats) SetTerrain(v []*TerrainShare) {
 	x.xxx_hidden_Terrain = &v
 }
 
+func (x *RouteStats) SetRepeatedDistanceMeters(v float64) {
+	x.xxx_hidden_RepeatedDistanceMeters = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
+}
+
+func (x *RouteStats) HasRepeatedDistanceMeters() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+}
+
+func (x *RouteStats) ClearRepeatedDistanceMeters() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_RepeatedDistanceMeters = 0
+}
+
 type RouteStats_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -595,6 +622,12 @@ type RouteStats_builder struct {
 	// Distance by terrain type. Terrain is unknown for straight legs, GPX imports
 	// and activity routes.
 	Terrain []*TerrainShare
+	// Distance in meters that retraces ground the route already covered, in
+	// either direction: about half of an out-and-back, the return along a
+	// loop's stem, and close to 0 for a loop. Approximate: separate trails
+	// within about 15 m of each other count as the same. Unset in ListRoutes
+	// for routes saved before it was computed.
+	RepeatedDistanceMeters *float64
 }
 
 func (b0 RouteStats_builder) Build() *RouteStats {
@@ -609,6 +642,10 @@ func (b0 RouteStats_builder) Build() *RouteStats {
 	x.xxx_hidden_MaxClimbGradePercent = b.MaxClimbGradePercent
 	x.xxx_hidden_MaxDescentGradePercent = b.MaxDescentGradePercent
 	x.xxx_hidden_Terrain = &b.Terrain
+	if b.RepeatedDistanceMeters != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		x.xxx_hidden_RepeatedDistanceMeters = *b.RepeatedDistanceMeters
+	}
 	return m0
 }
 
@@ -3303,7 +3340,7 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\fTerrainShare\x12)\n" +
 	"\aterrain\x18\x01 \x01(\x0e2\x0f.geo.v1.TerrainR\aterrain\x12'\n" +
 	"\x0fdistance_meters\x18\x02 \x01(\x01R\x0edistanceMeters\x12\x1a\n" +
-	"\bfraction\x18\x03 \x01(\x01R\bfraction\"\xa6\x03\n" +
+	"\bfraction\x18\x03 \x01(\x01R\bfraction\"\x82\x04\n" +
 	"\n" +
 	"RouteStats\x12'\n" +
 	"\x0fdistance_meters\x18\x01 \x01(\x01R\x0edistanceMeters\x122\n" +
@@ -3313,7 +3350,9 @@ const file_routes_v1_routes_proto_rawDesc = "" +
 	"\x14max_elevation_meters\x18\x05 \x01(\x01R\x12maxElevationMeters\x125\n" +
 	"\x17max_climb_grade_percent\x18\x06 \x01(\x01R\x14maxClimbGradePercent\x129\n" +
 	"\x19max_descent_grade_percent\x18\a \x01(\x01R\x16maxDescentGradePercent\x121\n" +
-	"\aterrain\x18\b \x03(\v2\x17.routes.v1.TerrainShareR\aterrain\"\xac\x04\n" +
+	"\aterrain\x18\b \x03(\v2\x17.routes.v1.TerrainShareR\aterrain\x12=\n" +
+	"\x18repeated_distance_meters\x18\t \x01(\x01H\x00R\x16repeatedDistanceMeters\x88\x01\x01B\x1b\n" +
+	"\x19_repeated_distance_meters\"\xac\x04\n" +
 	"\x05Route\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -3559,6 +3598,7 @@ func file_routes_v1_routes_proto_init() {
 	if File_routes_v1_routes_proto != nil {
 		return
 	}
+	file_routes_v1_routes_proto_msgTypes[2].OneofWrappers = []any{}
 	file_routes_v1_routes_proto_msgTypes[7].OneofWrappers = []any{
 		(*createRouteRequest_Waypoints)(nil),
 		(*createRouteRequest_Gpx)(nil),

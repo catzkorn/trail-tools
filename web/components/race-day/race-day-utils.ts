@@ -132,10 +132,14 @@ export const paceText = (paceFactor: number): string => {
   return `${-percent}% faster than plan`;
 };
 
-export const statusLabel = (status: CheckpointStatus): string => {
+// StatusLabel describes a checkpoint's status. Reaching the finish ends the race.
+export const statusLabel = (
+  status: CheckpointStatus,
+  finish: boolean
+): string => {
   switch (status) {
     case CheckpointStatus.ARRIVED: {
-      return "At checkpoint";
+      return finish ? "Finished" : "At checkpoint";
     }
     case CheckpointStatus.DEPARTED: {
       return "Left";
@@ -146,10 +150,15 @@ export const statusLabel = (status: CheckpointStatus): string => {
   }
 };
 
-export const statusClass = (status: CheckpointStatus): string => {
+export const statusClass = (
+  status: CheckpointStatus,
+  finish: boolean
+): string => {
   switch (status) {
     case CheckpointStatus.ARRIVED: {
-      return "bg-sky-100 text-sky-800 ring-sky-300";
+      return finish
+        ? "bg-emerald-100 text-emerald-800 ring-emerald-300"
+        : "bg-sky-100 text-sky-800 ring-sky-300";
     }
     case CheckpointStatus.DEPARTED: {
       return "bg-emerald-100 text-emerald-800 ring-emerald-300";
@@ -164,11 +173,13 @@ export const statusClass = (status: CheckpointStatus): string => {
 export const nextCheckpoint = (
   status: RaceDayStatus
 ): CheckpointEstimate | undefined =>
-  status.checkpoints.find(
-    (checkpoint) =>
-      checkpoint.status === CheckpointStatus.UPCOMING ||
-      checkpoint.status === CheckpointStatus.ARRIVED
-  );
+  status.finished
+    ? undefined
+    : status.checkpoints.find(
+        (checkpoint) =>
+          checkpoint.status === CheckpointStatus.UPCOMING ||
+          checkpoint.status === CheckpointStatus.ARRIVED
+      );
 
 // LastRecorded returns the last checkpoint with a recorded time.
 const lastRecorded = (

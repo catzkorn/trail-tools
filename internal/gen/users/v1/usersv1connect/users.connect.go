@@ -32,6 +32,10 @@ const (
 	UserServiceListAPITokensProcedure = "/users.v1.UserService/ListAPITokens"
 	// UserServiceDeleteAPITokenProcedure is the procedure name of the UserService's DeleteAPIToken RPC.
 	UserServiceDeleteAPITokenProcedure = "/users.v1.UserService/DeleteAPIToken"
+	// UserServiceUploadAvatarProcedure is the procedure name of the UserService's UploadAvatar RPC.
+	UserServiceUploadAvatarProcedure = "/users.v1.UserService/UploadAvatar"
+	// UserServiceDeleteAvatarProcedure is the procedure name of the UserService's DeleteAvatar RPC.
+	UserServiceDeleteAvatarProcedure = "/users.v1.UserService/DeleteAvatar"
 )
 
 var (
@@ -63,6 +67,20 @@ var (
 			Procedure:  UserServiceDeleteAPITokenProcedure,
 		}
 	})
+	userServiceUploadAvatarSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("UploadAvatar"),
+			Procedure:  UserServiceUploadAvatarProcedure,
+		}
+	})
+	userServiceDeleteAvatarSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("DeleteAvatar"),
+			Procedure:  UserServiceDeleteAvatarProcedure,
+		}
+	})
 )
 
 // UserServiceClient is a client for the users.v1.UserService service.
@@ -76,6 +94,11 @@ type UserServiceClient interface {
 	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
 	// Delete an API token.
 	DeleteAPIToken(context.Context, *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error)
+	// Upload a picture to use as the user's avatar, replacing any previous
+	// one. The middle square of the picture is used.
+	UploadAvatar(context.Context, *v1.UploadAvatarRequest) (*v1.UploadAvatarResponse, error)
+	// Remove the user's avatar.
+	DeleteAvatar(context.Context, *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error)
 }
 
 // NewUserServiceClient constructs a client for the users.v1.UserService service. Multiple service
@@ -95,6 +118,11 @@ type UserServiceHandler interface {
 	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
 	// Delete an API token.
 	DeleteAPIToken(context.Context, *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error)
+	// Upload a picture to use as the user's avatar, replacing any previous
+	// one. The middle square of the picture is used.
+	UploadAvatar(context.Context, *v1.UploadAvatarRequest) (*v1.UploadAvatarResponse, error)
+	// Remove the user's avatar.
+	DeleteAvatar(context.Context, *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error)
 }
 
 // RegisterUserServiceHandler registers svc as the users.v1.UserService implementation on server.
@@ -105,6 +133,8 @@ func RegisterUserServiceHandler(server *connect.Server, svc UserServiceHandler) 
 		connect.Method{Spec: userServiceCreateAPITokenSpec(), Handler: adapter.createAPIToken},
 		connect.Method{Spec: userServiceListAPITokensSpec(), Handler: adapter.listAPITokens},
 		connect.Method{Spec: userServiceDeleteAPITokenSpec(), Handler: adapter.deleteAPIToken},
+		connect.Method{Spec: userServiceUploadAvatarSpec(), Handler: adapter.uploadAvatar},
+		connect.Method{Spec: userServiceDeleteAvatarSpec(), Handler: adapter.deleteAvatar},
 	)
 }
 
@@ -125,6 +155,14 @@ func (UnimplementedUserServiceHandler) ListAPITokens(context.Context, *v1.ListAP
 
 func (UnimplementedUserServiceHandler) DeleteAPIToken(context.Context, *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.DeleteAPIToken is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) UploadAvatar(context.Context, *v1.UploadAvatarRequest) (*v1.UploadAvatarResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.UploadAvatar is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) DeleteAvatar(context.Context, *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.DeleteAvatar is not implemented")
 }
 
 type userServiceClient struct {
@@ -158,6 +196,22 @@ func (c *userServiceClient) ListAPITokens(ctx context.Context, req *v1.ListAPITo
 func (c *userServiceClient) DeleteAPIToken(ctx context.Context, req *v1.DeleteAPITokenRequest) (*v1.DeleteAPITokenResponse, error) {
 	var res v1.DeleteAPITokenResponse
 	if err := c.client.CallUnary(ctx, userServiceDeleteAPITokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) UploadAvatar(ctx context.Context, req *v1.UploadAvatarRequest) (*v1.UploadAvatarResponse, error) {
+	var res v1.UploadAvatarResponse
+	if err := c.client.CallUnary(ctx, userServiceUploadAvatarSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) DeleteAvatar(ctx context.Context, req *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error) {
+	var res v1.DeleteAvatarResponse
+	if err := c.client.CallUnary(ctx, userServiceDeleteAvatarSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -207,6 +261,30 @@ func (h userServiceHandler) deleteAPIToken(ctx context.Context, _ connect.Spec, 
 		return err
 	}
 	res, err := h.svc.DeleteAPIToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) uploadAvatar(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UploadAvatarRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UploadAvatar(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) deleteAvatar(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteAvatarRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteAvatar(ctx, &req)
 	if err != nil {
 		return err
 	}

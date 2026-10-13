@@ -74,7 +74,18 @@ const SignInDialog: React.FC = () => {
     signInWithPasskey(client, "optional", undefined)
       .then(onSignedIn)
       .catch((error_: unknown) => {
-        if (!isCancelled(error_)) {
+        if (
+          error_ instanceof DOMException &&
+          error_.name === "NotAllowedError"
+        ) {
+          /**
+           * Browsers report a cancelled prompt and a passkey that couldn't
+           * be used alike, so say both.
+           */
+          setError(
+            "Signing in didn't finish: it was cancelled, or this device has no passkey for Trail Tools. Try again, or use a device with your passkey."
+          );
+        } else if (!isCancelled(error_)) {
           setError(errorMessage(error_));
         }
         beginAutofill();

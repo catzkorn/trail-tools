@@ -1,4 +1,5 @@
 import Loading from "@components/loading";
+import AvatarCard from "@components/settings/avatar-card";
 import Connections from "@components/settings/connections";
 import Invitations from "@components/settings/invitations";
 import Passkeys from "@components/settings/passkeys";
@@ -252,6 +253,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
     <PageHeader title="Settings" />
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-4">
+        {user !== null && <AvatarCard user={user} />}
         <Passkeys />
         <Invitations admin={user !== null && user.admin} />
         <StravaCard showDisconnect />

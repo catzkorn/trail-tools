@@ -59,13 +59,25 @@ const (
 	maxSummaryPeriodYears = 5
 )
 
+var activitySorts = map[activitiesv1.ActivitySort]activities.Sort{
+	activitiesv1.ActivitySort_ACTIVITY_SORT_UNSPECIFIED:    activities.SortRecent,
+	activitiesv1.ActivitySort_ACTIVITY_SORT_DISTANCE:       activities.SortDistance,
+	activitiesv1.ActivitySort_ACTIVITY_SORT_ELEVATION_GAIN: activities.SortElevationGain,
+	activitiesv1.ActivitySort_ACTIVITY_SORT_MOVING_TIME:    activities.SortMovingTime,
+}
+
 func (s *Service) ListActivities(ctx context.Context, req *activitiesv1.ListActivitiesRequest) (*activitiesv1.ListActivitiesResponse, error) {
 	userID, ok := authn.GetUserID(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, "")
 	}
+	sort, ok := activitySorts[req.GetSort()]
+	if !ok {
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "unknown sort %v", req.GetSort())
+	}
 	filter := activities.ListActivitiesFilter{
 		SportTypes: req.GetSportTypes(),
+		Sort:       sort,
 		Limit:      defaultPageSize,
 	}
 	if size := req.GetPageSize(); size > 0 {

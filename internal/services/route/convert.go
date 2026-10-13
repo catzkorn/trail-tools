@@ -134,6 +134,7 @@ func StatsToProto(stats geo.TrackStats) *routesv1.RouteStats {
 		MaxClimbGradePercent:   stats.MaxClimbGrade,
 		MaxDescentGradePercent: stats.MaxDescentGrade,
 		Terrain:                shares,
+		RepeatedDistanceMeters: stats.RepeatedMeters,
 	}.Build()
 }
 

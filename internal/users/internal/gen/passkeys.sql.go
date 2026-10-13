@@ -317,7 +317,7 @@ func (q *Queries) GetPasskey(ctx context.Context, id []byte) (*Passkey, error) {
 }
 
 const getPasskeyUser = `-- name: GetPasskeyUser :one
-select p.id, p.user_handle, p.name, u.is_admin from passkey_users p
+select p.id, p.user_handle, p.name, u.is_admin, u.avatar_key from passkey_users p
 join users u on u.id = p.id
 where p.id = $1
 `
@@ -327,6 +327,7 @@ type GetPasskeyUserRow struct {
 	UserHandle []byte
 	Name       string
 	IsAdmin    bool
+	AvatarKey  pgtype.Text
 }
 
 func (q *Queries) GetPasskeyUser(ctx context.Context, id pgtype.UUID) (*GetPasskeyUserRow, error) {
@@ -337,12 +338,13 @@ func (q *Queries) GetPasskeyUser(ctx context.Context, id pgtype.UUID) (*GetPassk
 		&i.UserHandle,
 		&i.Name,
 		&i.IsAdmin,
+		&i.AvatarKey,
 	)
 	return &i, err
 }
 
 const getPasskeyUserByHandle = `-- name: GetPasskeyUserByHandle :one
-select p.id, p.user_handle, p.name, u.is_admin from passkey_users p
+select p.id, p.user_handle, p.name, u.is_admin, u.avatar_key from passkey_users p
 join users u on u.id = p.id
 where p.user_handle = $1
 `
@@ -352,6 +354,7 @@ type GetPasskeyUserByHandleRow struct {
 	UserHandle []byte
 	Name       string
 	IsAdmin    bool
+	AvatarKey  pgtype.Text
 }
 
 func (q *Queries) GetPasskeyUserByHandle(ctx context.Context, userHandle []byte) (*GetPasskeyUserByHandleRow, error) {
@@ -362,6 +365,7 @@ func (q *Queries) GetPasskeyUserByHandle(ctx context.Context, userHandle []byte)
 		&i.UserHandle,
 		&i.Name,
 		&i.IsAdmin,
+		&i.AvatarKey,
 	)
 	return &i, err
 }

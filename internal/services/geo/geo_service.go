@@ -267,7 +267,60 @@ const (
 	defaultCellSizeMeters = 100
 	minCellSizeMeters     = 25
 	maxHeatmapCells       = 4_000_000
+
+	defaultTrackToleranceMeters = 10
+	minTrackToleranceMeters     = 1
+	// maxHeatmapTrackPoints bounds the size of a heatmap tracks response.
+	maxHeatmapTrackPoints = 200_000
 )
+
+func (s *Service) ListHeatmapTracks(ctx context.Context, req *geov1.ListHeatmapTracksRequest) (*geov1.ListHeatmapTracksResponse, error) {
+	userID, ok := authn.GetUserID(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "")
+	}
+	pb := req.GetBounds()
+	bounds := geo.Bounds{MinLat: pb.GetSouth(), MinLng: pb.GetWest(), MaxLat: pb.GetNorth(), MaxLng: pb.GetEast()}
+	if !req.HasBounds() || bounds.MinLat >= bounds.MaxLat || bounds.MinLng >= bounds.MaxLng {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "bounds with south < north and west < east are required")
+	}
+	tolerance := req.GetToleranceMeters()
+	if tolerance == 0 {
+		tolerance = defaultTrackToleranceMeters
+	}
+	if tolerance < minTrackToleranceMeters {
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "tolerance_meters must be at least %d", minTrackToleranceMeters)
+	}
+	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, time.Time{}, time.Time{})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, "failed to list tracks").WithCause(err)
+	}
+	var parts [][]geo.Point
+	for _, track := range tracks {
+		points, err := route.TrackPoints(track)
+		if err != nil {
+			s.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(track.ActivityID)))
+			continue
+		}
+		for _, part := range route.Clip(points, bounds) {
+			parts = append(parts, route.Simplify(part, tolerance))
+		}
+	}
+	// The longest parts first, so a truncated response keeps the most of
+	// the tracks.
+	sort.SliceStable(parts, func(i, j int) bool { return len(parts[i]) > len(parts[j]) })
+	resp := geov1.ListHeatmapTracksResponse_builder{}
+	points := 0
+	for _, part := range parts {
+		if points+len(part) > maxHeatmapTrackPoints {
+			resp.Truncated = true
+			break
+		}
+		points += len(part)
+		resp.Polylines = append(resp.Polylines, geo.EncodePolyline(part))
+	}
+	return resp.Build(), nil
+}
 
 func (s *Service) GetPersonalHeatmap(ctx context.Context, req *geov1.GetPersonalHeatmapRequest) (*geov1.GetPersonalHeatmapResponse, error) {
 	userID, ok := authn.GetUserID(ctx)

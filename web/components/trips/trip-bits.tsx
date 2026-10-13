@@ -1,7 +1,4 @@
-import type {
-  ProfileMarker,
-  ProfilePoint,
-} from "@components/charts/elevation-profile";
+import type { ProfilePoint } from "@components/charts/elevation-profile";
 import type { MapPhoto } from "@components/map/photo-markers";
 import { Badge } from "@components/ui/misc";
 import { cardClass } from "@components/ui/styles";
@@ -48,20 +45,6 @@ export const mapPhotos = (photos: TripPhoto[]): MapPhoto[] => {
         number: index + 1,
         position: [photo.location.lat, photo.location.lng],
         thumbnailUrl: photo.thumbnailUrl,
-      });
-    }
-  }
-  return result;
-};
-
-// ProfileMarkers marks the photos along the elevation profile.
-export const profileMarkers = (photos: TripPhoto[]): ProfileMarker[] => {
-  const result: ProfileMarker[] = [];
-  for (const [index, photo] of photos.entries()) {
-    if (photo.trackDistanceMeters !== undefined) {
-      result.push({
-        distanceMeters: photo.trackDistanceMeters,
-        label: String(index + 1),
       });
     }
   }

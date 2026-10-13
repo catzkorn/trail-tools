@@ -2,12 +2,12 @@
 insert into passkey_users (user_handle, name) values ($1, $2) returning *;
 
 -- name: GetPasskeyUser :one
-select p.*, u.is_admin from passkey_users p
+select p.*, u.is_admin, u.avatar_key from passkey_users p
 join users u on u.id = p.id
 where p.id = $1;
 
 -- name: GetPasskeyUserByHandle :one
-select p.*, u.is_admin from passkey_users p
+select p.*, u.is_admin, u.avatar_key from passkey_users p
 join users u on u.id = p.id
 where p.user_handle = $1;
 

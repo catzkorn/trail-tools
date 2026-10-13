@@ -4,7 +4,11 @@ import type { SelectOption } from "@components/ui/fields";
 import { Badge } from "@components/ui/misc";
 import { iconButton, inputClass } from "@components/ui/styles";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import type { Checkpoint, Intake } from "gen/races/v1/race_plans_pb";
+import type {
+  Checkpoint,
+  Intake,
+  NutritionStrategy,
+} from "gen/races/v1/race_plans_pb";
 import { CheckpointSchema, IntakeSchema } from "gen/races/v1/race_plans_pb";
 import { formatDuration, formatKm } from "helpers/format";
 import {
@@ -207,15 +211,111 @@ const CheckpointView: React.FC<CheckpointViewProps> = ({
   );
 };
 
+/**
+ * The planned fuel of a segment must be within these fractions of its
+ * targets, as in the plan's segment fueling rule.
+ */
+const MIN_FUEL_FRACTION = 0.8;
+const MAX_FUEL_FRACTION = 1.3;
+// Segments shorter than this aren't checked.
+const MIN_FUELED_SEGMENT_SECONDS = 30 * 60;
+
+interface SegmentFuelProps {
+  draft: CheckpointDraft;
+  nutrition: NutritionStrategy | undefined;
+}
+
+/**
+ * SegmentFuel compares the fuel planned for a segment with the nutrition
+ * targets for its planned time, as it's edited.
+ */
+const SegmentFuel: React.FC<SegmentFuelProps> = ({ draft, nutrition }) => {
+  const seconds = parseDuration(draft.segmentTime) ?? 0;
+  if (nutrition === undefined || seconds <= 0) {
+    return null;
+  }
+  const hours = seconds / 3600;
+  let carbs = 0;
+  let fluid = 0;
+  let sodium = 0;
+  for (const item of draft.intake) {
+    const quantity = parseNumber(item.quantity) ?? 0;
+    const product = nutrition.products.find(
+      (candidate) =>
+        candidate.name.trim().toLowerCase() ===
+        item.product.trim().toLowerCase()
+    );
+    if (product !== undefined) {
+      carbs += product.carbsGrams * quantity;
+      fluid += product.fluidMl * quantity;
+      sodium += product.sodiumMg * quantity;
+    }
+  }
+  const checked = seconds >= MIN_FUELED_SEGMENT_SECONDS;
+  const nutrients = [
+    {
+      label: "Carbs",
+      planned: carbs,
+      target: nutrition.carbsGramsPerHour * hours,
+      unit: "g",
+    },
+    {
+      label: "Fluid",
+      planned: fluid,
+      target: nutrition.fluidMlPerHour * hours,
+      unit: "ml",
+    },
+    {
+      label: "Sodium",
+      planned: sodium,
+      target: nutrition.sodiumMgPerHour * hours,
+      unit: "mg",
+    },
+  ].filter((nutrient) => nutrient.target > 0);
+  if (nutrients.length === 0) {
+    return null;
+  }
+  const chipClass = (planned: number, target: number): string => {
+    if (!checked) {
+      return "bg-gray-100 text-gray-700";
+    }
+    if (planned < target * MIN_FUEL_FRACTION) {
+      return "bg-red-50 text-red-800 ring-1 ring-red-200";
+    }
+    if (planned > target * MAX_FUEL_FRACTION) {
+      return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
+    }
+    return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200";
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+      <span className="text-gray-500">
+        For {formatDuration(seconds)} at the targets:
+      </span>
+      {nutrients.map((nutrient) => (
+        <span
+          key={nutrient.label}
+          className={`rounded px-1.5 py-0.5 tabular-nums ${chipClass(nutrient.planned, nutrient.target)}`}
+        >
+          {nutrient.label} {Math.round(nutrient.planned)} /{" "}
+          {Math.round(nutrient.target)} {nutrient.unit}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 interface CheckpointEditorProps {
   draft: CheckpointDraft;
   products: string[];
+  nutrition: NutritionStrategy | undefined;
   onChange: (draft: CheckpointDraft) => void;
 }
 
 const CheckpointEditor: React.FC<CheckpointEditorProps> = ({
   draft,
   products,
+  nutrition,
   onChange,
 }) => {
   const productOptions: SelectOption[] = [
@@ -419,6 +519,7 @@ const CheckpointEditor: React.FC<CheckpointEditorProps> = ({
             Add products in the nutrition section to plan intake.
           </p>
         )}
+        <SegmentFuel draft={draft} nutrition={nutrition} />
         <AddButton
           label="Add intake"
           onClick={() => {
@@ -516,6 +617,7 @@ const CheckpointsSection: React.FC<SectionComponentProps> = ({
               <CheckpointEditor
                 draft={draft}
                 products={products}
+                nutrition={plan.nutrition}
                 onChange={(changed) => {
                   setDrafts(
                     drafts.map((other) =>

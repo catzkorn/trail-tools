@@ -247,6 +247,9 @@ func validateSplit(split *racesv1.CheckpointSplit, checkpoints int) error {
 	if i < 0 || int(i) >= checkpoints {
 		return fmt.Errorf("checkpoint_index %d is out of range, the plan has %d checkpoints", i, checkpoints)
 	}
+	if int(i) == checkpoints-1 && split.HasDepartureTime() {
+		return fmt.Errorf("checkpoint %d is the finish, which has no departure_time", i+1)
+	}
 	if split.HasArrivalTime() && split.HasDepartureTime() && split.GetDepartureTime().AsTime().Before(split.GetArrivalTime().AsTime()) {
 		return fmt.Errorf("checkpoint %d: departure_time must not be before arrival_time", i+1)
 	}

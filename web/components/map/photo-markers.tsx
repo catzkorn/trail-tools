@@ -46,63 +46,92 @@ const markerElement = (
 
 // MARKER_SPACING is how far apart in pixels photo markers are kept.
 const MARKER_SPACING = 44;
+/**
+ * MAX_SPREAD is the most photos spread around their location; larger groups
+ * are stacked until the map is zoomed in further.
+ */
+const MAX_SPREAD = 8;
+
+// Cluster is a group of photos that overlap at a zoom level.
+interface Cluster {
+  photos: MapPhoto[];
+  // The projected pixel positions of the photos, and their center.
+  points: leaflet.Point[];
+  center: leaflet.Point;
+}
 
 /**
- * SpreadOffsets returns pixel offsets that move markers which would overlap
- * at a zoom level apart: each group of overlapping photos is arranged in a
- * circle around its center. Photos that don't overlap aren't moved.
+ * ClusterPhotos groups photos that would overlap at a zoom level: each photo
+ * joins the first group whose center is closer than the marker spacing, so
+ * groups stay about a marker wide rather than chaining along a track.
  */
-const spreadOffsets = (
+const clusterPhotos = (
   map: leaflet.Map,
   photos: MapPhoto[],
   zoom: number
-): Map<string, leaflet.Point> => {
-  const items = photos.map((photo) => ({
-    id: photo.id,
-    point: map.project(photo.position, zoom),
-  }));
-  // Group photos closer than the spacing to any photo of a group.
-  let groups: (typeof items)[] = [];
-  for (const item of items) {
-    const near = groups.filter((group) =>
-      group.some((other) => other.point.distanceTo(item.point) < MARKER_SPACING)
+): Cluster[] => {
+  const clusters: Cluster[] = [];
+  for (const photo of photos) {
+    const point = map.project(photo.position, zoom);
+    const cluster = clusters.find(
+      (candidate) => candidate.center.distanceTo(point) < MARKER_SPACING
     );
-    const members = new Set([item, ...near.flat()]);
-    groups = [
-      ...groups.filter((group) => !near.includes(group)),
-      // In the order of the photos.
-      items.filter((other) => members.has(other)),
-    ];
-  }
-  const offsets = new Map<string, leaflet.Point>();
-  for (const group of groups) {
-    if (group.length < 2) {
-      continue;
-    }
-    let center = leaflet.point(0, 0);
-    for (const item of group) {
-      center = center.add(item.point);
-    }
-    center = center.divideBy(group.length);
-    // A circle with room for every marker, starting at the top.
-    const radius = Math.max(
-      MARKER_SPACING * 0.6,
-      (MARKER_SPACING * group.length) / (2 * Math.PI)
-    );
-    for (const [index, item] of group.entries()) {
-      const angle = -Math.PI / 2 + (2 * Math.PI * index) / group.length;
-      const target = center.add(
-        leaflet.point(Math.cos(angle) * radius, Math.sin(angle) * radius)
-      );
-      offsets.set(item.id, target.subtract(item.point));
+    if (cluster === undefined) {
+      clusters.push({ center: point, photos: [photo], points: [point] });
+    } else {
+      cluster.photos.push(photo);
+      cluster.points.push(point);
+      cluster.center = cluster.center
+        .multiplyBy(cluster.points.length - 1)
+        .add(point)
+        .divideBy(cluster.points.length);
     }
   }
-  return offsets;
+  return clusters;
 };
 
 /**
- * PhotoMarkers draws photos as round thumbnails on the map. Photos close
- * together are spread out around their location, with a line to it.
+ * SpreadOffsets returns the pixel offsets that arrange a cluster's photos in
+ * a circle around its center, starting at the top.
+ */
+const spreadOffsets = (cluster: Cluster): leaflet.Point[] => {
+  const count = cluster.photos.length;
+  const radius = Math.max(
+    MARKER_SPACING * 0.6,
+    (MARKER_SPACING * count) / (2 * Math.PI)
+  );
+  return cluster.points.map((point, index) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * index) / count;
+    return cluster.center
+      .add(leaflet.point(Math.cos(angle) * radius, Math.sin(angle) * radius))
+      .subtract(point);
+  });
+};
+
+// StackElement is a marker for a stack of photos, showing how many.
+const stackElement = (cover: MapPhoto, count: number, selected: boolean) => {
+  const element = document.createElement("div");
+  element.className = [
+    "photo-marker",
+    "photo-marker-stack",
+    selected ? "photo-marker-selected" : "",
+  ].join(" ");
+  const image = document.createElement("img");
+  image.src = cover.thumbnailUrl;
+  image.alt = "";
+  image.draggable = false;
+  element.append(image);
+  const badge = document.createElement("span");
+  badge.className = "photo-marker-number photo-marker-count";
+  badge.textContent = String(count);
+  element.append(badge);
+  return element;
+};
+
+/**
+ * PhotoMarkers draws photos as round thumbnails on the map. Photos that
+ * overlap are stacked, showing how many, until the map is zoomed in far
+ * enough to spread them around their location with a line to it.
  */
 const PhotoMarkers: React.FC<PhotoMarkersProps> = ({
   photos,
@@ -128,16 +157,15 @@ const PhotoMarkers: React.FC<PhotoMarkersProps> = ({
       map.off("zoomend", onZoom);
     };
   }, [map]);
-  const offsets = useMemo(
-    () => spreadOffsets(map, photos, zoom),
+  const clusters = useMemo(
+    () => clusterPhotos(map, photos, zoom),
     [map, photos, zoom]
   );
 
   useEffect(() => {
     const group = leaflet.layerGroup();
-    for (const photo of photos) {
+    const addPhoto = (photo: MapPhoto, offset: leaflet.Point) => {
       const selected = photo.id === selectedId;
-      const offset = offsets.get(photo.id) ?? leaflet.point(0, 0);
       if (offset.x !== 0 || offset.y !== 0) {
         // A line from where the photo was taken to its moved marker.
         const at = map.project(photo.position, zoom);
@@ -172,12 +200,59 @@ const PhotoMarkers: React.FC<PhotoMarkersProps> = ({
         handleMove(photo.id, marker.getLatLng());
       });
       group.addLayer(marker);
+    };
+    const atMaxZoom = zoom >= map.getMaxZoom();
+    for (const cluster of clusters) {
+      const [first] = cluster.photos;
+      if (first === undefined) {
+        continue;
+      }
+      if (cluster.photos.length === 1) {
+        addPhoto(first, leaflet.point(0, 0));
+        continue;
+      }
+      if (cluster.photos.length <= MAX_SPREAD || atMaxZoom) {
+        const offsets = spreadOffsets(cluster);
+        for (const [index, photo] of cluster.photos.entries()) {
+          addPhoto(photo, offsets[index] ?? leaflet.point(0, 0));
+        }
+        continue;
+      }
+      // Too many to spread: a stack, which zooms in to its photos.
+      const selected = cluster.photos.find((photo) => photo.id === selectedId);
+      const center = map.unproject(cluster.center, zoom);
+      const stack = leaflet.marker(center, {
+        icon: leaflet.divIcon({
+          className: "",
+          html: stackElement(
+            selected ?? first,
+            cluster.photos.length,
+            selected !== undefined
+          ),
+          iconAnchor: [20, 20],
+          iconSize: [40, 40],
+        }),
+        riseOnHover: true,
+        title: `${cluster.photos.length} photos: zoom in to see them`,
+        zIndexOffset: selected === undefined ? 500 : 1000,
+      });
+      stack.on("click", () => {
+        const bounds = leaflet.latLngBounds(
+          cluster.photos.map((photo) => photo.position)
+        );
+        const target = Math.min(
+          map.getMaxZoom(),
+          Math.max(map.getBoundsZoom(bounds.pad(0.2)), zoom + 2)
+        );
+        map.flyTo(bounds.getCenter(), target, { duration: 0.4 });
+      });
+      group.addLayer(stack);
     }
     group.addTo(map);
     return () => {
       group.remove();
     };
-  }, [map, photos, selectedId, draggable, offsets, zoom]);
+  }, [map, clusters, selectedId, draggable, zoom]);
 
   // Bring the selected photo into view.
   const selected = photos.find((photo) => photo.id === selectedId);

@@ -426,7 +426,7 @@ func (s *Service) workoutFromProto(ctx context.Context, w *plansv1.Workout, plan
 	if date.Before(plan.StartDate) || date.After(plan.EndDate) {
 		return nil, invalidArgument("date %s is outside the plan (%s to %s)", store.FormatDate(date), store.FormatDate(plan.StartDate), store.FormatDate(plan.EndDate))
 	}
-	workoutType, ok := workoutTypes[w.GetType()]
+	workoutType, ok := workoutTypeFromProto(w.GetType())
 	if !ok {
 		return nil, invalidArgument("type is required")
 	}
@@ -475,30 +475,6 @@ func validateTargets(distance, elevation float64, duration int32) error {
 		return errors.New("targets must not be negative")
 	}
 	return nil
-}
-
-var workoutTypes = map[plansv1.WorkoutType]plans.WorkoutType{
-	plansv1.WorkoutType_WORKOUT_TYPE_EASY:           plans.WorkoutTypeEasy,
-	plansv1.WorkoutType_WORKOUT_TYPE_LONG_RUN:       plans.WorkoutTypeLongRun,
-	plansv1.WorkoutType_WORKOUT_TYPE_TEMPO:          plans.WorkoutTypeTempo,
-	plansv1.WorkoutType_WORKOUT_TYPE_INTERVALS:      plans.WorkoutTypeIntervals,
-	plansv1.WorkoutType_WORKOUT_TYPE_HILL_REPEATS:   plans.WorkoutTypeHillRepeats,
-	plansv1.WorkoutType_WORKOUT_TYPE_VERT:           plans.WorkoutTypeVert,
-	plansv1.WorkoutType_WORKOUT_TYPE_RECOVERY:       plans.WorkoutTypeRecovery,
-	plansv1.WorkoutType_WORKOUT_TYPE_REST:           plans.WorkoutTypeRest,
-	plansv1.WorkoutType_WORKOUT_TYPE_CROSS_TRAINING: plans.WorkoutTypeCrossTraining,
-	plansv1.WorkoutType_WORKOUT_TYPE_STRENGTH:       plans.WorkoutTypeStrength,
-	plansv1.WorkoutType_WORKOUT_TYPE_RACE:           plans.WorkoutTypeRace,
-	plansv1.WorkoutType_WORKOUT_TYPE_OTHER:          plans.WorkoutTypeOther,
-}
-
-func workoutTypeToProto(t plans.WorkoutType) plansv1.WorkoutType {
-	for k, v := range workoutTypes {
-		if v == t {
-			return k
-		}
-	}
-	return plansv1.WorkoutType_WORKOUT_TYPE_UNSPECIFIED
 }
 
 func planToProto(p *plans.TrainingPlan) *plansv1.TrainingPlan {

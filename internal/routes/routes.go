@@ -297,5 +297,11 @@ func routeFromDB(
 	if err := json.Unmarshal(stats, &route.Stats); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal stats: %w", err)
 	}
+	if route.Stats.RepeatedMeters == nil && legs != nil {
+		// Stored before the repeated distance was computed.
+		points, _ := route.Path()
+		repeated := geo.RepeatedDistance(points)
+		route.Stats.RepeatedMeters = &repeated
+	}
 	return route, nil
 }

@@ -118,8 +118,10 @@ func TestTrainingPlans(t *testing.T) {
 	workouts, err := e.plans.CreateWorkouts(ctx, plansv1.CreateWorkoutsRequest_builder{
 		PlanId: planID,
 		Workouts: []*plansv1.Workout{
-			plansv1.Workout_builder{Date: "2026-11-03", Type: plansv1.WorkoutType_WORKOUT_TYPE_EASY, Title: "Easy 8k", TargetDistanceMeters: 8000}.Build(),
+			plansv1.Workout_builder{Date: "2026-11-03", Type: plansv1.WorkoutType_WORKOUT_TYPE_BASE, Title: "Easy 8k", TargetDistanceMeters: 8000}.Build(),
 			plansv1.Workout_builder{
+				// Older clients may send deprecated types.
+				//lint:ignore SA1019 Testing a deprecated type.
 				Date: "2026-11-08", Type: plansv1.WorkoutType_WORKOUT_TYPE_LONG_RUN, Title: "Long run",
 				TargetElevationGainMeters: 1000, TargetTerrain: geov1.Terrain_TERRAIN_TRAIL, RouteId: route.GetRoute().GetId(),
 			}.Build(),
@@ -133,13 +135,16 @@ func TestTrainingPlans(t *testing.T) {
 	if longRun.GetPlanId() != planID || longRun.GetRouteId() != route.GetRoute().GetId() || longRun.GetTargetTerrain() != geov1.Terrain_TERRAIN_TRAIL {
 		t.Errorf("unexpected workout %v", longRun)
 	}
+	if longRun.GetType() != plansv1.WorkoutType_WORKOUT_TYPE_BASE {
+		t.Errorf("a long run has type %v, want base", longRun.GetType())
+	}
 	// Workouts must be inside the plan and have a type, and the batch is
 	// atomic.
 	_, err = e.plans.CreateWorkouts(ctx, plansv1.CreateWorkoutsRequest_builder{
 		PlanId: planID,
 		Workouts: []*plansv1.Workout{
-			plansv1.Workout_builder{Date: "2026-11-04", Type: plansv1.WorkoutType_WORKOUT_TYPE_EASY}.Build(),
-			plansv1.Workout_builder{Date: "2026-10-01", Type: plansv1.WorkoutType_WORKOUT_TYPE_EASY}.Build(),
+			plansv1.Workout_builder{Date: "2026-11-04", Type: plansv1.WorkoutType_WORKOUT_TYPE_BASE}.Build(),
+			plansv1.Workout_builder{Date: "2026-10-01", Type: plansv1.WorkoutType_WORKOUT_TYPE_BASE}.Build(),
 		},
 	}.Build())
 	wantCode(t, err, connect.CodeInvalidArgument)

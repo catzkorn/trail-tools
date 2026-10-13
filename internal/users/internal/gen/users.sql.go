@@ -11,13 +11,43 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getAvatarKeyForUpdate = `-- name: GetAvatarKeyForUpdate :one
+select avatar_key from users where id = $1 for update
+`
+
+func (q *Queries) GetAvatarKeyForUpdate(ctx context.Context, id pgtype.UUID) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, getAvatarKeyForUpdate, id)
+	var avatar_key pgtype.Text
+	err := row.Scan(&avatar_key)
+	return avatar_key, err
+}
+
 const getUser = `-- name: GetUser :one
-select id, create_time, is_admin from users where id = $1
+select id, create_time, is_admin, avatar_key from users where id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (*User, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.CreateTime, &i.IsAdmin)
+	err := row.Scan(
+		&i.ID,
+		&i.CreateTime,
+		&i.IsAdmin,
+		&i.AvatarKey,
+	)
 	return &i, err
+}
+
+const setAvatarKey = `-- name: SetAvatarKey :exec
+update users set avatar_key = $2 where id = $1
+`
+
+type SetAvatarKeyParams struct {
+	ID        pgtype.UUID
+	AvatarKey pgtype.Text
+}
+
+func (q *Queries) SetAvatarKey(ctx context.Context, arg *SetAvatarKeyParams) error {
+	_, err := q.db.Exec(ctx, setAvatarKey, arg.ID, arg.AvatarKey)
+	return err
 }

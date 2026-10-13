@@ -11,17 +11,13 @@ import { useMap } from "./map-view";
 import {
   HeatmapOverlay,
   notImported,
-  POI_MIN_ZOOM,
-  PoiOverlay,
   TRAILS_MIN_ZOOM,
   TrailsOverlay,
-  usePointsOfInterest,
   useTrails,
 } from "./overlays";
 
 const HEATMAP_KEY = "trail-tools.overlay.heatmap";
 const TRAILS_KEY = "trail-tools.overlay.trails";
-const POI_KEY = "trail-tools.overlay.poi";
 
 interface ToggleProps {
   label: string;
@@ -170,8 +166,8 @@ const overlayNote = (
 };
 
 /**
- * ExploreControls adds a place search and toggles for the heatmap, trail and
- * point of interest overlays. It must be rendered inside a MapView.
+ * ExploreControls adds a place search and toggles for the heatmap and trail
+ * overlays. It must be rendered inside a MapView.
  */
 const ExploreControls: React.FC<ExploreControlsProps> = ({
   showHeatmap = false,
@@ -188,9 +184,7 @@ const ExploreControls: React.FC<ExploreControlsProps> = ({
     }
   }
   const [trails, setTrails] = useState(() => readStorageFlag(TRAILS_KEY));
-  const [poi, setPoi] = useState(() => readStorageFlag(POI_KEY));
   const trailsQuery = useTrails(viewport, trails);
-  const poiQuery = usePointsOfInterest(viewport, poi);
 
   return (
     <>
@@ -220,24 +214,9 @@ const ExploreControls: React.FC<ExploreControlsProps> = ({
             writeStorageFlag(TRAILS_KEY, checked);
           }}
         />
-        <Toggle
-          label="Points of interest"
-          checked={poi}
-          note={overlayNote(
-            poi,
-            viewport,
-            POI_MIN_ZOOM,
-            notImported(poiQuery.error)
-          )}
-          onChange={(checked) => {
-            setPoi(checked);
-            writeStorageFlag(POI_KEY, checked);
-          }}
-        />
       </div>
       {heatmap && <HeatmapOverlay viewport={viewport} />}
       {trails && <TrailsOverlay viewport={viewport} />}
-      {poi && <PoiOverlay viewport={viewport} />}
     </>
   );
 };

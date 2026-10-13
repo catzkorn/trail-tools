@@ -186,6 +186,14 @@ export const LiveStats: React.FC<LiveStatsProps> = ({ stats, updating }) => (
     <span title="Elevation loss" className="text-gray-700">
       ↓ {formatMeters(stats?.elevationLossMeters ?? 0)}
     </span>
+    {(stats?.repeatedDistanceMeters ?? 0) > 0 && (
+      <span
+        title="Distance that retraces the route, in either direction"
+        className="text-gray-700"
+      >
+        ↺ {formatKm(stats?.repeatedDistanceMeters ?? 0)}
+      </span>
+    )}
     {updating && (
       <span className="size-3 animate-spin rounded-full border-2 border-emerald-700 border-t-transparent" />
     )}

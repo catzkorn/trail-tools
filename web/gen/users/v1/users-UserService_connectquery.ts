@@ -32,3 +32,18 @@ export const listAPITokens = UserService.method.listAPITokens;
  * @generated from rpc users.v1.UserService.DeleteAPIToken
  */
 export const deleteAPIToken = UserService.method.deleteAPIToken;
+
+/**
+ * Upload a picture to use as the user's avatar, replacing any previous
+ * one. The middle square of the picture is used.
+ *
+ * @generated from rpc users.v1.UserService.UploadAvatar
+ */
+export const uploadAvatar = UserService.method.uploadAvatar;
+
+/**
+ * Remove the user's avatar.
+ *
+ * @generated from rpc users.v1.UserService.DeleteAvatar
+ */
+export const deleteAvatar = UserService.method.deleteAvatar;

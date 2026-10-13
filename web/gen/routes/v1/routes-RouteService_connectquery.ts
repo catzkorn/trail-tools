@@ -9,7 +9,8 @@ import { RouteService } from "./routes_pb";
  * route statistics and, optionally, the full path. Use this to iterate on a
  * route design before calling CreateRoute, or to try out changes to a saved
  * route (set route_id to reuse its unchanged legs) before calling
- * UpdateRoute.
+ * UpdateRoute. To check that a loop doesn't double back on itself, compare
+ * the stats' repeated_distance_meters with distance_meters.
  *
  * @generated from rpc routes.v1.RouteService.PreviewRoute
  */

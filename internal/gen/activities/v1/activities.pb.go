@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ActivitySort is the order to list activities in.
+type ActivitySort int32
+
+const (
+	// The most recent first.
+	ActivitySort_ACTIVITY_SORT_UNSPECIFIED ActivitySort = 0
+	// The longest distance first.
+	ActivitySort_ACTIVITY_SORT_DISTANCE ActivitySort = 1
+	// The most elevation gain first.
+	ActivitySort_ACTIVITY_SORT_ELEVATION_GAIN ActivitySort = 2
+	// The longest moving time first.
+	ActivitySort_ACTIVITY_SORT_MOVING_TIME ActivitySort = 3
+)
+
+// Enum value maps for ActivitySort.
+var (
+	ActivitySort_name = map[int32]string{
+		0: "ACTIVITY_SORT_UNSPECIFIED",
+		1: "ACTIVITY_SORT_DISTANCE",
+		2: "ACTIVITY_SORT_ELEVATION_GAIN",
+		3: "ACTIVITY_SORT_MOVING_TIME",
+	}
+	ActivitySort_value = map[string]int32{
+		"ACTIVITY_SORT_UNSPECIFIED":    0,
+		"ACTIVITY_SORT_DISTANCE":       1,
+		"ACTIVITY_SORT_ELEVATION_GAIN": 2,
+		"ACTIVITY_SORT_MOVING_TIME":    3,
+	}
+)
+
+func (x ActivitySort) Enum() *ActivitySort {
+	p := new(ActivitySort)
+	*p = x
+	return p
+}
+
+func (x ActivitySort) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ActivitySort) Descriptor() protoreflect.EnumDescriptor {
+	return file_activities_v1_activities_proto_enumTypes[0].Descriptor()
+}
+
+func (ActivitySort) Type() protoreflect.EnumType {
+	return &file_activities_v1_activities_proto_enumTypes[0]
+}
+
+func (x ActivitySort) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 // SummaryInterval is the length of a summary period.
 type SummaryInterval int32
 
@@ -57,11 +109,11 @@ func (x SummaryInterval) String() string {
 }
 
 func (SummaryInterval) Descriptor() protoreflect.EnumDescriptor {
-	return file_activities_v1_activities_proto_enumTypes[0].Descriptor()
+	return file_activities_v1_activities_proto_enumTypes[1].Descriptor()
 }
 
 func (SummaryInterval) Type() protoreflect.EnumType {
-	return &file_activities_v1_activities_proto_enumTypes[0]
+	return &file_activities_v1_activities_proto_enumTypes[1]
 }
 
 func (x SummaryInterval) Number() protoreflect.EnumNumber {
@@ -902,6 +954,7 @@ type ListActivitiesRequest struct {
 	xxx_hidden_SportTypes []string               `protobuf:"bytes,3,rep,name=sport_types,json=sportTypes,proto3"`
 	xxx_hidden_PageSize   int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3"`
 	xxx_hidden_PageToken  string                 `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3"`
+	xxx_hidden_Sort       ActivitySort           `protobuf:"varint,6,opt,name=sort,proto3,enum=activities.v1.ActivitySort"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -966,6 +1019,13 @@ func (x *ListActivitiesRequest) GetPageToken() string {
 	return ""
 }
 
+func (x *ListActivitiesRequest) GetSort() ActivitySort {
+	if x != nil {
+		return x.xxx_hidden_Sort
+	}
+	return ActivitySort_ACTIVITY_SORT_UNSPECIFIED
+}
+
 func (x *ListActivitiesRequest) SetStartDate(v string) {
 	x.xxx_hidden_StartDate = v
 }
@@ -986,6 +1046,10 @@ func (x *ListActivitiesRequest) SetPageToken(v string) {
 	x.xxx_hidden_PageToken = v
 }
 
+func (x *ListActivitiesRequest) SetSort(v ActivitySort) {
+	x.xxx_hidden_Sort = v
+}
+
 type ListActivitiesRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -1000,6 +1064,9 @@ type ListActivitiesRequest_builder struct {
 	PageSize int32
 	// The next_page_token from a previous response, to get the next page.
 	PageToken string
+	// How to order the activities. Defaults to the most recent first. Use the
+	// others to find the biggest days, e.g. by elevation gain.
+	Sort ActivitySort
 }
 
 func (b0 ListActivitiesRequest_builder) Build() *ListActivitiesRequest {
@@ -1011,6 +1078,7 @@ func (b0 ListActivitiesRequest_builder) Build() *ListActivitiesRequest {
 	x.xxx_hidden_SportTypes = b.SportTypes
 	x.xxx_hidden_PageSize = b.PageSize
 	x.xxx_hidden_PageToken = b.PageToken
+	x.xxx_hidden_Sort = b.Sort
 	return m0
 }
 
@@ -1662,7 +1730,7 @@ const file_activities_v1_activities_proto_rawDesc = "" +
 	"\vcadence_spm\x18\a \x03(\x01R\n" +
 	"cadenceSpm\x12!\n" +
 	"\fvelocity_mps\x18\b \x03(\x01R\vvelocityMps\x12#\n" +
-	"\rgrade_percent\x18\t \x03(\x01R\fgradePercent\"\xae\x01\n" +
+	"\rgrade_percent\x18\t \x03(\x01R\fgradePercent\"\xdf\x01\n" +
 	"\x15ListActivitiesRequest\x12\x1d\n" +
 	"\n" +
 	"start_date\x18\x01 \x01(\tR\tstartDate\x12\x19\n" +
@@ -1671,7 +1739,8 @@ const file_activities_v1_activities_proto_rawDesc = "" +
 	"sportTypes\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x05 \x01(\tR\tpageToken\"y\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken\x12/\n" +
+	"\x04sort\x18\x06 \x01(\x0e2\x1b.activities.v1.ActivitySortR\x04sort\"y\n" +
 	"\x16ListActivitiesResponse\x127\n" +
 	"\n" +
 	"activities\x18\x01 \x03(\v2\x17.activities.v1.ActivityR\n" +
@@ -1702,7 +1771,12 @@ const file_activities_v1_activities_proto_rawDesc = "" +
 	"\x15elevation_gain_meters\x18\x06 \x01(\x01R\x13elevationGainMeters\x126\n" +
 	"\x17longest_distance_meters\x18\a \x01(\x01R\x15longestDistanceMeters\"[\n" +
 	"\x1bSummarizeActivitiesResponse\x12<\n" +
-	"\tsummaries\x18\x01 \x03(\v2\x1e.activities.v1.ActivitySummaryR\tsummaries*j\n" +
+	"\tsummaries\x18\x01 \x03(\v2\x1e.activities.v1.ActivitySummaryR\tsummaries*\x8a\x01\n" +
+	"\fActivitySort\x12\x1d\n" +
+	"\x19ACTIVITY_SORT_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16ACTIVITY_SORT_DISTANCE\x10\x01\x12 \n" +
+	"\x1cACTIVITY_SORT_ELEVATION_GAIN\x10\x02\x12\x1d\n" +
+	"\x19ACTIVITY_SORT_MOVING_TIME\x10\x03*j\n" +
 	"\x0fSummaryInterval\x12 \n" +
 	"\x1cSUMMARY_INTERVAL_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SUMMARY_INTERVAL_WEEK\x10\x01\x12\x1a\n" +
@@ -1713,44 +1787,46 @@ const file_activities_v1_activities_proto_rawDesc = "" +
 	"\x13SummarizeActivities\x12).activities.v1.SummarizeActivitiesRequest\x1a*.activities.v1.SummarizeActivitiesResponseB\xc2\x01\n" +
 	"\x11com.activities.v1B\x0fActivitiesProtoP\x01ZGgithub.com/catzkorn/trail-tools/internal/gen/activities/v1;activitiesv1\xa2\x02\x03AXX\xaa\x02\rActivities.V1\xca\x02\rActivities\\V1\xe2\x02\x19Activities\\V1\\GPBMetadata\xea\x02\x0eActivities::V1b\x06proto3"
 
-var file_activities_v1_activities_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_activities_v1_activities_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_activities_v1_activities_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_activities_v1_activities_proto_goTypes = []any{
-	(SummaryInterval)(0),                // 0: activities.v1.SummaryInterval
-	(*Activity)(nil),                    // 1: activities.v1.Activity
-	(*ActivityPhoto)(nil),               // 2: activities.v1.ActivityPhoto
-	(*LatLng)(nil),                      // 3: activities.v1.LatLng
-	(*ActivityStreams)(nil),             // 4: activities.v1.ActivityStreams
-	(*ListActivitiesRequest)(nil),       // 5: activities.v1.ListActivitiesRequest
-	(*ListActivitiesResponse)(nil),      // 6: activities.v1.ListActivitiesResponse
-	(*GetActivityRequest)(nil),          // 7: activities.v1.GetActivityRequest
-	(*GetActivityResponse)(nil),         // 8: activities.v1.GetActivityResponse
-	(*SummarizeActivitiesRequest)(nil),  // 9: activities.v1.SummarizeActivitiesRequest
-	(*ActivitySummary)(nil),             // 10: activities.v1.ActivitySummary
-	(*SummarizeActivitiesResponse)(nil), // 11: activities.v1.SummarizeActivitiesResponse
-	(*timestamppb.Timestamp)(nil),       // 12: google.protobuf.Timestamp
+	(ActivitySort)(0),                   // 0: activities.v1.ActivitySort
+	(SummaryInterval)(0),                // 1: activities.v1.SummaryInterval
+	(*Activity)(nil),                    // 2: activities.v1.Activity
+	(*ActivityPhoto)(nil),               // 3: activities.v1.ActivityPhoto
+	(*LatLng)(nil),                      // 4: activities.v1.LatLng
+	(*ActivityStreams)(nil),             // 5: activities.v1.ActivityStreams
+	(*ListActivitiesRequest)(nil),       // 6: activities.v1.ListActivitiesRequest
+	(*ListActivitiesResponse)(nil),      // 7: activities.v1.ListActivitiesResponse
+	(*GetActivityRequest)(nil),          // 8: activities.v1.GetActivityRequest
+	(*GetActivityResponse)(nil),         // 9: activities.v1.GetActivityResponse
+	(*SummarizeActivitiesRequest)(nil),  // 10: activities.v1.SummarizeActivitiesRequest
+	(*ActivitySummary)(nil),             // 11: activities.v1.ActivitySummary
+	(*SummarizeActivitiesResponse)(nil), // 12: activities.v1.SummarizeActivitiesResponse
+	(*timestamppb.Timestamp)(nil),       // 13: google.protobuf.Timestamp
 }
 var file_activities_v1_activities_proto_depIdxs = []int32{
-	12, // 0: activities.v1.Activity.start_time:type_name -> google.protobuf.Timestamp
-	3,  // 1: activities.v1.ActivityPhoto.location:type_name -> activities.v1.LatLng
-	12, // 2: activities.v1.ActivityPhoto.taken_time:type_name -> google.protobuf.Timestamp
-	1,  // 3: activities.v1.ListActivitiesResponse.activities:type_name -> activities.v1.Activity
-	1,  // 4: activities.v1.GetActivityResponse.activity:type_name -> activities.v1.Activity
-	4,  // 5: activities.v1.GetActivityResponse.streams:type_name -> activities.v1.ActivityStreams
-	2,  // 6: activities.v1.GetActivityResponse.photos:type_name -> activities.v1.ActivityPhoto
-	0,  // 7: activities.v1.SummarizeActivitiesRequest.interval:type_name -> activities.v1.SummaryInterval
-	10, // 8: activities.v1.SummarizeActivitiesResponse.summaries:type_name -> activities.v1.ActivitySummary
-	5,  // 9: activities.v1.ActivityService.ListActivities:input_type -> activities.v1.ListActivitiesRequest
-	7,  // 10: activities.v1.ActivityService.GetActivity:input_type -> activities.v1.GetActivityRequest
-	9,  // 11: activities.v1.ActivityService.SummarizeActivities:input_type -> activities.v1.SummarizeActivitiesRequest
-	6,  // 12: activities.v1.ActivityService.ListActivities:output_type -> activities.v1.ListActivitiesResponse
-	8,  // 13: activities.v1.ActivityService.GetActivity:output_type -> activities.v1.GetActivityResponse
-	11, // 14: activities.v1.ActivityService.SummarizeActivities:output_type -> activities.v1.SummarizeActivitiesResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	13, // 0: activities.v1.Activity.start_time:type_name -> google.protobuf.Timestamp
+	4,  // 1: activities.v1.ActivityPhoto.location:type_name -> activities.v1.LatLng
+	13, // 2: activities.v1.ActivityPhoto.taken_time:type_name -> google.protobuf.Timestamp
+	0,  // 3: activities.v1.ListActivitiesRequest.sort:type_name -> activities.v1.ActivitySort
+	2,  // 4: activities.v1.ListActivitiesResponse.activities:type_name -> activities.v1.Activity
+	2,  // 5: activities.v1.GetActivityResponse.activity:type_name -> activities.v1.Activity
+	5,  // 6: activities.v1.GetActivityResponse.streams:type_name -> activities.v1.ActivityStreams
+	3,  // 7: activities.v1.GetActivityResponse.photos:type_name -> activities.v1.ActivityPhoto
+	1,  // 8: activities.v1.SummarizeActivitiesRequest.interval:type_name -> activities.v1.SummaryInterval
+	11, // 9: activities.v1.SummarizeActivitiesResponse.summaries:type_name -> activities.v1.ActivitySummary
+	6,  // 10: activities.v1.ActivityService.ListActivities:input_type -> activities.v1.ListActivitiesRequest
+	8,  // 11: activities.v1.ActivityService.GetActivity:input_type -> activities.v1.GetActivityRequest
+	10, // 12: activities.v1.ActivityService.SummarizeActivities:input_type -> activities.v1.SummarizeActivitiesRequest
+	7,  // 13: activities.v1.ActivityService.ListActivities:output_type -> activities.v1.ListActivitiesResponse
+	9,  // 14: activities.v1.ActivityService.GetActivity:output_type -> activities.v1.GetActivityResponse
+	12, // 15: activities.v1.ActivityService.SummarizeActivities:output_type -> activities.v1.SummarizeActivitiesResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_activities_v1_activities_proto_init() }
@@ -1763,7 +1839,7 @@ func file_activities_v1_activities_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_activities_v1_activities_proto_rawDesc), len(file_activities_v1_activities_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,

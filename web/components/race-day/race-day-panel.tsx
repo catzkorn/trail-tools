@@ -97,7 +97,7 @@ const Summary: React.FC<SummaryProps> = ({ status, totalMeters, now }) => {
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
         <div>
           <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-            Estimated finish
+            {status.finished ? "Finished" : "Estimated finish"}
           </p>
           <p className="text-3xl font-bold text-gray-900 tabular-nums">
             {formatClockTime(finish, now)}
@@ -302,6 +302,7 @@ const RaceDayPanel: React.FC<RaceDayPanelProps> = ({
       {next !== undefined && (
         <NextCheckpoint
           estimate={next}
+          finish={next.checkpointIndex === status.checkpoints.length - 1}
           checkpoint={plan.checkpoints.at(next.checkpointIndex)}
           now={now}
           saving={raceDay.saving}
@@ -311,7 +312,9 @@ const RaceDayPanel: React.FC<RaceDayPanelProps> = ({
               next,
               timestampNow(),
               split?.departureTime,
-              `Arrived at ${next.name}`
+              next.checkpointIndex === status.checkpoints.length - 1
+                ? "Finished"
+                : `Arrived at ${next.name}`
             );
           }}
           onLeft={() => {
@@ -351,6 +354,7 @@ const RaceDayPanel: React.FC<RaceDayPanelProps> = ({
       {editing !== null && (
         <SplitDialog
           name={editing.name}
+          finish={editing.checkpointIndex === status.checkpoints.length - 1}
           split={splitFor(splits, editing.checkpointIndex)}
           saving={raceDay.saving}
           error={raceDay.saveError}

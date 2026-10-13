@@ -288,17 +288,24 @@ func TestRaceDaySplits(t *testing.T) {
 	}.Build())
 	wantCode(t, err, connect.CodeInvalidArgument)
 
+	// The finish has no departure.
+	_, err = e.racePlans.SetCheckpointSplit(ctx, racesv1.SetCheckpointSplitRequest_builder{
+		PlanId: new(planID),
+		Split:  racesv1.CheckpointSplit_builder{CheckpointIndex: 1, DepartureTime: timestamppb.Now()}.Build(),
+	}.Build())
+	wantCode(t, err, connect.CodeInvalidArgument)
+
 	// Replacing the splits removes the ones not given.
 	if _, err := e.racePlans.UpdateRaceDay(ctx, racesv1.UpdateRaceDayRequest_builder{
 		PlanId: new(planID),
 		RaceDay: racesv1.RaceDay_builder{Splits: []*racesv1.CheckpointSplit{
-			racesv1.CheckpointSplit_builder{CheckpointIndex: 1, DepartureTime: timestamppb.New(start.Add(5 * time.Hour))}.Build(),
+			racesv1.CheckpointSplit_builder{CheckpointIndex: 0, DepartureTime: timestamppb.New(start.Add(5 * time.Hour))}.Build(),
 		}}.Build(),
 		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"splits"}},
 	}.Build()); err != nil {
 		t.Fatal(err)
 	}
-	if got := splits(); len(got) != 1 || got[1].HasArrivalTime() || !got[1].GetDepartureTime().AsTime().Equal(start.Add(5*time.Hour)) {
+	if got := splits(); len(got) != 1 || got[0].HasArrivalTime() || !got[0].GetDepartureTime().AsTime().Equal(start.Add(5*time.Hour)) {
 		t.Errorf("unexpected splits after replacing them %v", got)
 	}
 }

@@ -12,7 +12,6 @@ import {
   Story,
   TripStatsRow,
   mapPhotos,
-  profileMarkers,
   profilePoints,
   trackPositions,
   tripKicker,
@@ -288,7 +287,6 @@ const PublicTripReportPage: React.FC = () => {
   const photos = useMemo(() => report?.photos ?? [], [report?.photos]);
   const sections = report?.sections ?? NO_SECTIONS;
   const markers = useMemo(() => mapPhotos(photos), [photos]);
-  const photoMarkers = useMemo(() => profileMarkers(photos), [photos]);
   const sectionIds = useMemo(
     () => sections.map((section) => section.id),
     [sections]
@@ -473,7 +471,6 @@ const PublicTripReportPage: React.FC = () => {
                 <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200">
                   <ElevationProfile
                     points={profile}
-                    markers={photoMarkers}
                     ranges={ranges}
                     height={160}
                     onHover={setHoverIndex}

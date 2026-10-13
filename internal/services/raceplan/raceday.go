@@ -43,7 +43,8 @@ type progress struct {
 }
 
 // EstimateRaceDay estimates the arrival and departure times at each
-// checkpoint from the recorded race day data. Recorded checkpoint times are
+// checkpoint from the recorded race day data. The last checkpoint is the
+// finish, which has no departure: the race is over once it's reached. Recorded checkpoint times are
 // used as is. The runner's progress is the most recent recorded checkpoint
 // time or LiveTrack position, and the remaining checkpoints are estimated by
 // scaling the planned moving time by the runner's pace relative to the plan
@@ -71,10 +72,13 @@ func EstimateRaceDay(plan *racesv1.RacePlan, start time.Time, live *LiveFix, now
 			}
 			if s := splits[i]; s != nil {
 				e.ArrivalTime, e.ArrivalRecorded = s.GetArrivalTime(), s.HasArrivalTime()
-				e.DepartureTime, e.DepartureRecorded = s.GetDepartureTime(), s.HasDepartureTime()
+				if i < len(cps)-1 {
+					e.DepartureTime, e.DepartureRecorded = s.GetDepartureTime(), s.HasDepartureTime()
+				}
 			}
 			status.SetCheckpoints(append(status.GetCheckpoints(), e.Build()))
 		}
+		status.SetFinished(splits[len(cps)-1].HasArrivalTime())
 		return status
 	}
 	status.SetStartTime(timestamppb.New(start))
@@ -133,6 +137,7 @@ func EstimateRaceDay(plan *racesv1.RacePlan, start time.Time, live *LiveFix, now
 	var estimates []*racesv1.CheckpointEstimate
 	for i, cp := range cps {
 		s := splits[i]
+		finish := i == len(cps)-1
 		e := racesv1.CheckpointEstimate_builder{
 			CheckpointIndex:    int32(i),
 			Name:               cp.GetName(),
@@ -162,6 +167,9 @@ func EstimateRaceDay(plan *racesv1.RacePlan, start time.Time, live *LiveFix, now
 			}
 		}
 		switch {
+		case finish:
+			// The race ends at the finish.
+			departure = arrival
 		case s.HasDepartureTime():
 			departure = s.GetDepartureTime().AsTime()
 			e.DepartureRecorded = true
@@ -186,7 +194,9 @@ func EstimateRaceDay(plan *racesv1.RacePlan, start time.Time, live *LiveFix, now
 			cursorTime, cursorDist = departure, times.dist[i]
 		}
 		e.ArrivalTime = timestamppb.New(arrival)
-		e.DepartureTime = timestamppb.New(departure)
+		if !finish {
+			e.DepartureTime = timestamppb.New(departure)
+		}
 		e.DelaySeconds = int32(arrival.Sub(start.Add(times.arrival[i])).Seconds())
 		if e.CutoffTime != nil {
 			e.CutoffBufferSeconds = int32(e.CutoffTime.AsTime().Sub(arrival).Seconds())
@@ -194,6 +204,7 @@ func EstimateRaceDay(plan *racesv1.RacePlan, start time.Time, live *LiveFix, now
 		estimates = append(estimates, e.Build())
 	}
 	status.SetCheckpoints(estimates)
+	status.SetFinished(estimates[len(estimates)-1].GetArrivalRecorded())
 	status.SetEstimatedFinishTime(estimates[len(estimates)-1].GetArrivalTime())
 	status.SetEstimatedDistanceMeters(estimatedDistance(estimates, known, start, now))
 	return status
@@ -216,6 +227,10 @@ func estimatedDistance(estimates []*racesv1.CheckpointEstimate, known progress, 
 			continue
 		}
 		arrival, departure := e.GetArrivalTime().AsTime(), e.GetDepartureTime().AsTime()
+		if !e.HasDepartureTime() {
+			// The finish.
+			departure = arrival
+		}
 		if now.Before(arrival) {
 			if !arrival.After(prevTime) {
 				return d

@@ -156,7 +156,6 @@ func newEnv(t *testing.T) *env {
 		e.syncer.Wait()
 	})
 
-	userService := user.NewService(log, userRepo)
 	authService, err := auth.NewService(log, userRepo, "http://localhost:8080", bootstrapToken)
 	if err != nil {
 		t.Fatal(err)
@@ -174,6 +173,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
+	userService := user.NewService(log, userRepo, userRepo, photos)
 	tripService := trip.NewService(log, tripRepo, activityRepo, e.syncer, photos, "https://trail.example")
 	raceReportService := racereport.NewService(log, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
 
@@ -205,6 +205,7 @@ func newEnv(t *testing.T) *env {
 	racesv1connect.RegisterRaceReportServiceHandler(srv2, raceReportService)
 	connecthttp.Mount(mux, srv2)
 	mux.Handle(trip.PhotoPath, tripService.PhotoHandler())
+	mux.Handle(user.AvatarPath, userService.AvatarHandler())
 	mux.Handle(trip.ProfilePath, raceReportService.PageHandler(false, tripService.PageHandler(false)))
 
 	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))

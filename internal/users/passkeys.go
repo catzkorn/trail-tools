@@ -28,7 +28,10 @@ type PasskeyUser struct {
 	Name string
 	// The WebAuthn user handle, identifying the user to authenticators.
 	UserHandle []byte
-	admin      bool
+	// The key of the user's avatar image in the blob store. Empty if the
+	// user has no avatar.
+	AvatarKey string
+	admin     bool
 }
 
 // ID returns the user's ID.
@@ -131,7 +134,7 @@ func (r *Repository) GetPasskeyUser(ctx context.Context, userID pgtype.UUID) (*P
 		}
 		return nil, fmt.Errorf("failed to get passkey user: %w", err)
 	}
-	return &PasskeyUser{id: row.ID, Name: row.Name, UserHandle: row.UserHandle, admin: row.IsAdmin}, nil
+	return &PasskeyUser{id: row.ID, Name: row.Name, UserHandle: row.UserHandle, AvatarKey: row.AvatarKey.String, admin: row.IsAdmin}, nil
 }
 
 // CreateChallenge stores a challenge for a WebAuthn ceremony until expiry,

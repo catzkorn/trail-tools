@@ -145,6 +145,9 @@ type TrackStats struct {
 	MaxDescentGrade     float64
 	// Distance in meters by terrain type.
 	TerrainMeters map[Terrain]float64
+	// Distance in meters that retraces ground covered earlier, see
+	// RepeatedDistance. Nil for stats stored before it was computed.
+	RepeatedMeters *float64 `json:",omitempty"`
 }
 
 // ComputeStats computes statistics for a track. terrains may be nil, or have
@@ -180,5 +183,7 @@ func ComputeStats(points []Point, terrains []Terrain) TrackStats {
 	}
 	stats.ElevationGainMeters, stats.ElevationLossMeters = ElevationGainLoss(elevations)
 	stats.MaxClimbGrade, stats.MaxDescentGrade = MaxGrades(dists, elevations)
+	repeated := RepeatedDistance(points)
+	stats.RepeatedMeters = &repeated
 	return stats
 }

@@ -72,18 +72,12 @@ type WorkoutType string
 
 // Workout types.
 const (
-	WorkoutTypeEasy          WorkoutType = "easy"
-	WorkoutTypeLongRun       WorkoutType = "long_run"
-	WorkoutTypeTempo         WorkoutType = "tempo"
-	WorkoutTypeIntervals     WorkoutType = "intervals"
-	WorkoutTypeHillRepeats   WorkoutType = "hill_repeats"
-	WorkoutTypeVert          WorkoutType = "vert"
-	WorkoutTypeRecovery      WorkoutType = "recovery"
-	WorkoutTypeRest          WorkoutType = "rest"
+	WorkoutTypeBase          WorkoutType = "base"
+	WorkoutTypeIntensity     WorkoutType = "intensity"
 	WorkoutTypeCrossTraining WorkoutType = "cross_training"
 	WorkoutTypeStrength      WorkoutType = "strength"
 	WorkoutTypeRace          WorkoutType = "race"
-	WorkoutTypeOther         WorkoutType = "other"
+	WorkoutTypeRest          WorkoutType = "rest"
 )
 
 // Workout is a workout planned for a day.
