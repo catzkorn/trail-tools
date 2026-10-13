@@ -592,12 +592,13 @@ func run(
 		})
 	}
 
-	// Serve index.js, index.js.map, index.css, favicon.ico and img/ directly
+	// Serve index.js, index.js.map, index.css, favicon.svg, img/ and fonts/ directly
 	mux.Handle("/index.js", fileServer)
 	mux.Handle("/index.js.map", fileServer)
 	mux.Handle("/index.css", fileServer)
 	mux.Handle("/favicon.svg", fileServer)
 	mux.Handle("/img/", fileServer)
+	mux.Handle("/fonts/", fileServer)
 	// For all other requests, serve the contents of index.html
 	indexHandler := html.ServeIndexHTML(serveDir != "")
 	// A local server without an administrator sends its first visitor to

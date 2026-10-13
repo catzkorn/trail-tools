@@ -2,11 +2,34 @@
 @import "leaflet/dist/leaflet.css";
 
 @theme {
+  /* The trailrunn.ing brand: ink, and a burnt orange that isn't Strava's. */
+  --color-ink: #111111;
+  --color-ember: #d2601a;
+  --color-ember-dark: #b4500f;
+  --font-brand: "Lexend Giga", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --color-google-text-gray: #3c4043;
   --color-google-logo-blue: #4285f4;
   --color-google-logo-green: #34a853;
   --color-google-logo-yellow: #fbbc05;
   --color-google-logo-red: #ea4335;
+}
+
+/* Lexend and Lexend Giga, self-hosted from @fontsource by make fonts. */
+@font-face {
+  font-family: "Lexend";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/lexend-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Lexend Giga";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("/fonts/lexend-giga-latin-700-normal.woff2") format("woff2");
 }
 
 /*

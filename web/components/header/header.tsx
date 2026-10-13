@@ -1,3 +1,4 @@
+import { LogoMark, Wordmark } from "@components/header/logo";
 import UserNav from "@components/header/user-nav";
 import {
   CloseButton,
@@ -86,11 +87,12 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
+// The header's links are uppercase, underlined in the accent when active.
 const linkClass = (active: boolean): string =>
-  `inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap ${
+  `inline-flex h-full items-center gap-1 border-b-2 pt-0.5 text-[12.5px] font-medium tracking-[0.07em] whitespace-nowrap uppercase focus:outline-hidden focus-visible:text-white focus-visible:underline data-[focus]:text-white data-[focus]:underline ${
     active
-      ? "bg-gray-900 text-white"
-      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+      ? "border-ember text-white"
+      : "border-transparent text-neutral-400 hover:text-white"
   }`;
 
 // UseIsActive returns whether a nav item's page is shown.
@@ -105,15 +107,15 @@ const GroupMenu: React.FC<{ group: NavGroup }> = ({ group }) => {
   const isActive = useIsActive();
   const active = group.items.some(isActive);
   return (
-    <Menu as="div" className="relative">
+    <Menu as="div" className="relative flex">
       <MenuButton className={linkClass(active)}>
         {group.label}
-        <ChevronDownIcon className="size-4" />
+        <ChevronDownIcon className="size-3.5 stroke-2" />
       </MenuButton>
       <MenuItems
         transition
         anchor="bottom start"
-        className="z-[1100] mt-1 w-72 rounded-md bg-white p-1 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75"
+        className="z-[1100] w-72 rounded-md bg-white p-1 font-ui shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75"
       >
         {group.items.map((item) => (
           <MenuItem key={item.to}>
@@ -141,14 +143,14 @@ const GroupMenu: React.FC<{ group: NavGroup }> = ({ group }) => {
 const MobileMenu: React.FC = () => {
   const isActive = useIsActive();
   const itemClass = (item: NavItem): string =>
-    `block rounded-md px-3 py-2 text-sm font-medium ${
+    `block border-l-2 px-3 py-2 text-sm font-medium tracking-[0.07em] uppercase ${
       isActive(item)
-        ? "bg-gray-900 text-white"
-        : "text-gray-200 hover:bg-gray-700 hover:text-white"
+        ? "border-ember text-white"
+        : "border-transparent text-neutral-300 hover:text-white"
     }`;
   return (
     <Popover className="md:hidden">
-      <PopoverButton className="rounded-md p-1.5 text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white">
+      <PopoverButton className="rounded-md p-1.5 text-neutral-300 hover:text-white focus:outline-hidden data-[focus]:ring-2 data-[focus]:ring-white">
         {({ open }) => (
           <>
             <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
@@ -160,7 +162,7 @@ const MobileMenu: React.FC = () => {
           </>
         )}
       </PopoverButton>
-      <PopoverPanel className="absolute inset-x-0 top-14 z-[1100] border-t border-gray-700 bg-gray-800 px-4 pt-2 pb-4 shadow-lg">
+      <PopoverPanel className="absolute inset-x-0 top-16 z-[1100] border-t border-neutral-800 bg-ink px-4 pt-2 pb-4 shadow-lg">
         <div className="flex flex-col gap-1">
           {TOP_ITEMS.map((item) => (
             <CloseButton
@@ -175,7 +177,7 @@ const MobileMenu: React.FC = () => {
         </div>
         {GROUPS.map((group) => (
           <div key={group.label} className="mt-3">
-            <p className="px-3 pb-1 text-xs font-semibold tracking-wide text-gray-400 uppercase">
+            <p className="px-3 pb-1 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
               {group.label}
             </p>
             <div className="flex flex-col gap-1">
@@ -198,22 +200,18 @@ const MobileMenu: React.FC = () => {
 };
 
 const Header: React.FC<HeaderProps> = ({ user }) => (
-  <nav className="relative bg-gray-800 print:hidden">
+  <nav className="relative bg-ink font-ui print:hidden">
     <div className="mx-auto max-w-7xl px-4">
-      <div className="flex h-14 items-center justify-between gap-4">
+      <div className="flex h-16 items-stretch justify-between gap-4 md:gap-9">
         <div className="flex items-center gap-2">
           {user !== null && <MobileMenu />}
-          <Link to="/" className="flex shrink-0 items-center gap-2">
-            <img
-              className="h-8 w-auto"
-              src="/img/logo_transparent_small.png"
-              alt=""
-            />
-            <span className="text-lg font-bold text-white">Trail Tools</span>
+          <Link to="/" className="flex shrink-0 items-center gap-2.5">
+            <LogoMark />
+            <Wordmark className="text-[15px] text-neutral-50 sm:text-lg" />
           </Link>
         </div>
         {user !== null && (
-          <div className="hidden grow items-center gap-1 md:flex">
+          <div className="hidden grow items-stretch gap-6 md:flex">
             {TOP_ITEMS.map((item) => (
               <NavLink
                 key={item.to}

@@ -56,7 +56,8 @@ const AvatarCard: React.FC<{ user: User }> = ({ user }) => {
       <div className="flex items-center gap-4">
         <Avatar
           avatarUrl={user.avatarUrl}
-          className="size-20 shrink-0 ring-1 ring-gray-200"
+          name={user.name}
+          className="size-20 shrink-0 text-2xl ring-1 ring-gray-200"
         />
         <div className="flex flex-col gap-2">
           <p className="text-sm text-gray-600">

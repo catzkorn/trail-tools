@@ -9,17 +9,21 @@ interface UserNavProps {
 }
 
 const UserNav: React.FC<UserNavProps> = ({ user }) => (
-  <div className="ml-4 flex items-center gap-3 md:ml-6">
-    <span className="hidden text-sm text-gray-200 lg:block">{user.name}</span>
+  <div className="ml-4 flex items-center pr-1.5 md:ml-6">
     <Menu as="div" className="relative">
-      <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-hidden data-[focus]:ring-2 data-[focus]:ring-white data-[focus]:ring-offset-2 data-[focus]:ring-offset-gray-800">
+      {/* The ring with a gap is the brand's avatar style (avatar 4c). */}
+      <MenuButton className="relative flex items-center rounded-full shadow-[0_0_0_3px_var(--color-ink),0_0_0_6px_var(--color-ember)] focus:outline-hidden data-[focus]:outline-2 data-[focus]:outline-offset-[9px] data-[focus]:outline-white">
         <span className="absolute -inset-1.5" />
         <span className="sr-only">Open user menu</span>
-        <Avatar avatarUrl={user.avatarUrl} />
+        <Avatar
+          avatarUrl={user.avatarUrl}
+          name={user.name}
+          className="size-[34px] text-xs"
+        />
       </MenuButton>
       <MenuItems
         transition
-        className="absolute right-0 z-[1100] mt-2 w-56 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+        className="absolute right-0 z-[1100] mt-3 w-56 font-ui origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
       >
         <div className="border-b border-gray-100 px-4 py-2">
           <p className="truncate text-sm font-medium text-gray-900">
