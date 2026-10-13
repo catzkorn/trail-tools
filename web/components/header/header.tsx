@@ -149,7 +149,7 @@ const MobileMenu: React.FC = () => {
         : "border-transparent text-neutral-300 hover:text-white"
     }`;
   return (
-    <Popover className="md:hidden">
+    <Popover className="lg:hidden">
       <PopoverButton className="rounded-md p-1.5 text-neutral-300 hover:text-white focus:outline-hidden data-[focus]:ring-2 data-[focus]:ring-white">
         {({ open }) => (
           <>
@@ -202,7 +202,7 @@ const MobileMenu: React.FC = () => {
 const Header: React.FC<HeaderProps> = ({ user }) => (
   <nav className="relative bg-ink font-ui print:hidden">
     <div className="mx-auto max-w-7xl px-4">
-      <div className="flex h-16 items-stretch justify-between gap-4 md:gap-9">
+      <div className="flex h-16 items-stretch justify-between gap-4 lg:gap-9">
         <div className="flex items-center gap-2">
           {user !== null && <MobileMenu />}
           <Link to="/" className="flex shrink-0 items-center gap-2.5">
@@ -211,7 +211,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => (
           </Link>
         </div>
         {user !== null && (
-          <div className="hidden grow items-stretch gap-6 md:flex">
+          <div className="hidden grow items-stretch gap-6 lg:flex">
             {TOP_ITEMS.map((item) => (
               <NavLink
                 key={item.to}

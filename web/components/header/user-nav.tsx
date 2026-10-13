@@ -9,7 +9,7 @@ interface UserNavProps {
 }
 
 const UserNav: React.FC<UserNavProps> = ({ user }) => (
-  <div className="ml-4 flex items-center pr-1.5 md:ml-6">
+  <div className="ml-4 flex items-center pr-1.5 lg:ml-6">
     <Menu as="div" className="relative">
       {/* The ring with a gap is the brand's avatar style (avatar 4c). */}
       <MenuButton className="relative flex items-center rounded-full shadow-[0_0_0_3px_var(--color-ink),0_0_0_6px_var(--color-ember)] focus:outline-hidden data-[focus]:outline-2 data-[focus]:outline-offset-[9px] data-[focus]:outline-white">
