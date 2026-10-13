@@ -1140,6 +1140,7 @@ type TripReport struct {
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
 	HiddenEndsMeters    int32
+	CoverPhotoID        pgtype.UUID
 }
 
 type TripReportSection struct {

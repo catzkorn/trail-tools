@@ -383,13 +383,17 @@ const PublicTripReportPage: React.FC = () => {
     hoverPosition = track.at(hoverIndex) ?? null;
   }
   const hasMap = track.length > 1 || markers.length > 0;
-  const [cover] = photos;
+  const coverIndex = Math.max(
+    photos.findIndex((photo) => photo.id === report.coverPhotoId),
+    0
+  );
+  const cover = photos.at(coverIndex);
   // The photos of each section, without the cover photo shown on top.
   const photoIndexes = new Map(photos.map((photo, index) => [photo.id, index]));
   const sectionPhotos = (section: TripSection) =>
     section.photoIds.flatMap((id) => {
       const index = photoIndexes.get(id);
-      if (index === undefined || index === 0) {
+      if (index === undefined || index === coverIndex) {
         return [];
       }
       const photo = photos[index];
@@ -434,11 +438,11 @@ const PublicTripReportPage: React.FC = () => {
       {cover !== undefined && (
         <PhotoFigure
           photo={cover}
-          number={1}
+          number={coverIndex + 1}
           selected={cover.id === selectedId}
           layout="hero"
           onOpen={() => {
-            openPhoto(0);
+            openPhoto(coverIndex);
           }}
           onHover={setHoveredId}
           onShowOnMap={showOnMap}

@@ -336,6 +336,16 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 		}
 		update.HiddenEndsMeters = &hidden
 	}
+	if req.HasCoverPhotoId() {
+		var cover pgtype.UUID
+		if id := req.GetCoverPhotoId(); id != "" {
+			cover, err = store.StringToUUID(id)
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInvalidArgument, "cover_photo_id is not a valid ID")
+			}
+		}
+		update.CoverPhotoID = &cover
+	}
 	report, err := s.repo.UpdateReport(ctx, update)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to update trip report")
@@ -848,6 +858,8 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 		return connect.NewError(connect.CodeInvalidArgument, "the sections with an ID must be the report's sections, each listed once")
 	case errors.Is(err, trips.ErrPhotosMismatch):
 		return connect.NewError(connect.CodeInvalidArgument, "the photos must be the report's photos, each listed once")
+	case errors.Is(err, trips.ErrNotReportPhoto):
+		return connect.NewError(connect.CodeInvalidArgument, "the cover photo must be one of the report's photos")
 	case errors.Is(err, trips.ErrSlugTaken):
 		return connect.NewError(connect.CodeAlreadyExists, "another of your trip reports has this slug; choose another one")
 	default:

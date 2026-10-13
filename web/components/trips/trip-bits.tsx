@@ -183,7 +183,9 @@ export const ReportCard: React.FC<ReportCardProps> = ({
   to,
   showStatus = false,
 }) => {
-  const [cover] = report.photos;
+  const cover =
+    report.photos.find((photo) => photo.id === report.coverPhotoId) ??
+    report.photos.at(0);
   const stats = report.stats === undefined ? [] : statItems(report.stats);
   return (
     <Link

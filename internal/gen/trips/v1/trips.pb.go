@@ -95,6 +95,7 @@ type TripReport struct {
 	xxx_hidden_HiddenEndsMeters int32                  `protobuf:"varint,15,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3"`
 	xxx_hidden_Sections         *[]*TripSection        `protobuf:"bytes,16,rep,name=sections,proto3"`
 	xxx_hidden_Excerpt          string                 `protobuf:"bytes,17,opt,name=excerpt,proto3"`
+	xxx_hidden_CoverPhotoId     string                 `protobuf:"bytes,18,opt,name=cover_photo_id,json=coverPhotoId,proto3"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -240,6 +241,13 @@ func (x *TripReport) GetExcerpt() string {
 	return ""
 }
 
+func (x *TripReport) GetCoverPhotoId() string {
+	if x != nil {
+		return x.xxx_hidden_CoverPhotoId
+	}
+	return ""
+}
+
 func (x *TripReport) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -302,6 +310,10 @@ func (x *TripReport) SetSections(v []*TripSection) {
 
 func (x *TripReport) SetExcerpt(v string) {
 	x.xxx_hidden_Excerpt = v
+}
+
+func (x *TripReport) SetCoverPhotoId(v string) {
+	x.xxx_hidden_CoverPhotoId = v
 }
 
 func (x *TripReport) HasStats() bool {
@@ -392,6 +404,10 @@ type TripReport_builder struct {
 	Sections []*TripSection
 	// The start of the story, for lists of reports.
 	Excerpt string
+	// The ID of the photo shown on top of the report, in lists of reports and
+	// in link previews: the one chosen, or the first photo if none was
+	// chosen. Empty for a report without photos.
+	CoverPhotoId string
 }
 
 func (b0 TripReport_builder) Build() *TripReport {
@@ -414,6 +430,7 @@ func (b0 TripReport_builder) Build() *TripReport {
 	x.xxx_hidden_HiddenEndsMeters = b.HiddenEndsMeters
 	x.xxx_hidden_Sections = &b.Sections
 	x.xxx_hidden_Excerpt = b.Excerpt
+	x.xxx_hidden_CoverPhotoId = b.CoverPhotoId
 	return m0
 }
 
@@ -1499,6 +1516,7 @@ type UpdateTripReportRequest struct {
 	xxx_hidden_Slug             *string                `protobuf:"bytes,3,opt,name=slug,proto3,oneof"`
 	xxx_hidden_Date             *string                `protobuf:"bytes,5,opt,name=date,proto3,oneof"`
 	xxx_hidden_HiddenEndsMeters int32                  `protobuf:"varint,6,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3,oneof"`
+	xxx_hidden_CoverPhotoId     *string                `protobuf:"bytes,7,opt,name=cover_photo_id,json=coverPhotoId,proto3,oneof"`
 	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
 	XXX_presence                [1]uint32
 	unknownFields               protoimpl.UnknownFields
@@ -1574,28 +1592,43 @@ func (x *UpdateTripReportRequest) GetHiddenEndsMeters() int32 {
 	return 0
 }
 
+func (x *UpdateTripReportRequest) GetCoverPhotoId() string {
+	if x != nil {
+		if x.xxx_hidden_CoverPhotoId != nil {
+			return *x.xxx_hidden_CoverPhotoId
+		}
+		return ""
+	}
+	return ""
+}
+
 func (x *UpdateTripReportRequest) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
 
 func (x *UpdateTripReportRequest) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *UpdateTripReportRequest) SetSlug(v string) {
 	x.xxx_hidden_Slug = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *UpdateTripReportRequest) SetDate(v string) {
 	x.xxx_hidden_Date = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *UpdateTripReportRequest) SetHiddenEndsMeters(v int32) {
 	x.xxx_hidden_HiddenEndsMeters = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+}
+
+func (x *UpdateTripReportRequest) SetCoverPhotoId(v string) {
+	x.xxx_hidden_CoverPhotoId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *UpdateTripReportRequest) HasTitle() bool {
@@ -1626,6 +1659,13 @@ func (x *UpdateTripReportRequest) HasHiddenEndsMeters() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
+func (x *UpdateTripReportRequest) HasCoverPhotoId() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
 func (x *UpdateTripReportRequest) ClearTitle() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Title = nil
@@ -1646,6 +1686,11 @@ func (x *UpdateTripReportRequest) ClearHiddenEndsMeters() {
 	x.xxx_hidden_HiddenEndsMeters = 0
 }
 
+func (x *UpdateTripReportRequest) ClearCoverPhotoId() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_CoverPhotoId = nil
+}
+
 type UpdateTripReportRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -1660,6 +1705,10 @@ type UpdateTripReportRequest_builder struct {
 	// How far in meters around the start and finish of the track to hide on
 	// the public page, from 0 to 2000, if set.
 	HiddenEndsMeters *int32
+	// The ID of the photo to show on top of the report, in lists of reports
+	// and in link previews, if set: one of the report's photos, or empty to
+	// use the first photo.
+	CoverPhotoId *string
 }
 
 func (b0 UpdateTripReportRequest_builder) Build() *UpdateTripReportRequest {
@@ -1668,20 +1717,24 @@ func (b0 UpdateTripReportRequest_builder) Build() *UpdateTripReportRequest {
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Slug != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_Slug = b.Slug
 	}
 	if b.Date != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
 		x.xxx_hidden_Date = b.Date
 	}
 	if b.HiddenEndsMeters != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
 		x.xxx_hidden_HiddenEndsMeters = *b.HiddenEndsMeters
+	}
+	if b.CoverPhotoId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_CoverPhotoId = b.CoverPhotoId
 	}
 	return m0
 }
@@ -3653,7 +3706,7 @@ var File_trips_v1_trips_proto protoreflect.FileDescriptor
 
 const file_trips_v1_trips_proto_rawDesc = "" +
 	"\n" +
-	"\x14trips/v1/trips.proto\x12\btrips.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xc0\x05\n" +
+	"\x14trips/v1/trips.proto\x12\btrips.v1\x1a\x10geo/v1/geo.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xee\x05\n" +
 	"\n" +
 	"TripReport\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12'\n" +
@@ -3675,7 +3728,8 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\thas_track\x18\x0e \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\x12,\n" +
 	"\x12hidden_ends_meters\x18\x0f \x01(\x05R\x10hiddenEndsMeters\x129\n" +
 	"\bsections\x18\x10 \x03(\v2\x15.trips.v1.TripSectionB\x06\xaa\x9f\x19\x02\b\x01R\bsections\x12 \n" +
-	"\aexcerpt\x18\x11 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\aexcerptJ\x04\b\x05\x10\x06R\x04body\"\x84\x02\n" +
+	"\aexcerpt\x18\x11 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\aexcerpt\x12,\n" +
+	"\x0ecover_photo_id\x18\x12 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\fcoverPhotoIdJ\x04\b\x05\x10\x06R\x04body\"\x84\x02\n" +
 	"\vTripSection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -3729,17 +3783,19 @@ const file_trips_v1_trips_proto_rawDesc = "" +
 	"\vactivity_id\x18\x01 \x01(\tR\n" +
 	"activityId\"I\n" +
 	"\x17ListTripReportsResponse\x12.\n" +
-	"\areports\x18\x01 \x03(\v2\x14.trips.v1.TripReportR\areports\"\xe8\x01\n" +
+	"\areports\x18\x01 \x03(\v2\x14.trips.v1.TripReportR\areports\"\xa6\x02\n" +
 	"\x17UpdateTripReportRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x17\n" +
 	"\x04slug\x18\x03 \x01(\tH\x01R\x04slug\x88\x01\x01\x12\x17\n" +
 	"\x04date\x18\x05 \x01(\tH\x02R\x04date\x88\x01\x01\x121\n" +
-	"\x12hidden_ends_meters\x18\x06 \x01(\x05H\x03R\x10hiddenEndsMeters\x88\x01\x01B\b\n" +
+	"\x12hidden_ends_meters\x18\x06 \x01(\x05H\x03R\x10hiddenEndsMeters\x88\x01\x01\x12)\n" +
+	"\x0ecover_photo_id\x18\a \x01(\tH\x04R\fcoverPhotoId\x88\x01\x01B\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_slugB\a\n" +
 	"\x05_dateB\x15\n" +
-	"\x13_hidden_ends_metersJ\x04\b\x04\x10\x05R\x04body\"H\n" +
+	"\x13_hidden_ends_metersB\x11\n" +
+	"\x0f_cover_photo_idJ\x04\b\x04\x10\x05R\x04body\"H\n" +
 	"\x18UpdateTripReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.trips.v1.TripReportR\x06report\")\n" +
 	"\x17DeleteTripReportRequest\x12\x0e\n" +

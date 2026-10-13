@@ -610,12 +610,61 @@ func TestTripPhotos(t *testing.T) {
 		}
 	}
 
+	// The cover photo is the first photo, until the author chooses one.
+	if cover := reordered.GetReport().GetCoverPhotoId(); cover != unplaced.GetId() {
+		t.Errorf("default cover photo %q, want the first photo %q", cover, unplaced.GetId())
+	}
+	setCover := func(id string) (*tripsv1.UpdateTripReportResponse, error) {
+		return e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: reportID, CoverPhotoId: new(id)}.Build())
+	}
+	chosen, err := setCover(local.GetId())
+	if err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
+	if cover := chosen.GetReport().GetCoverPhotoId(); cover != local.GetId() {
+		t.Errorf("chosen cover photo %q, want %q", cover, local.GetId())
+	}
+	coverImage := `<meta property="og:image" content="` + local.GetUrl() + `" />`
+	for _, path := range []string{reportPath, "/u/jane-doe"} {
+		if _, body := e.get(path, ""); !strings.Contains(string(body), coverImage) {
+			t.Errorf("%s does not show the cover photo:\n%s", path, body)
+		}
+	}
+	listed, err := e.trips.ListTripReports(ctx, tripsv1.ListTripReportsRequest_builder{}.Build())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cover := listed.GetReports()[0].GetCoverPhotoId(); cover != local.GetId() {
+		t.Errorf("listed cover photo %q, want %q", cover, local.GetId())
+	}
+	for _, id := range []string{"00000000-0000-0000-0000-000000000000", "nope"} {
+		_, err = setCover(id)
+		wantCode(t, err, connect.CodeInvalidArgument)
+	}
+	_, err = e.otherTrips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: reportID, CoverPhotoId: new(local.GetId())}.Build())
+	wantCode(t, err, connect.CodeNotFound)
+	// An empty ID goes back to the first photo.
+	if resp, err := setCover(""); err != nil || resp.GetReport().GetCoverPhotoId() != unplaced.GetId() {
+		t.Errorf("clearing the cover photo: %v, %v", resp.GetReport().GetCoverPhotoId(), err)
+	}
+
 	// Deleting photos and reports deletes their images.
+	if _, err := setCover(gps.GetId()); err != nil {
+		t.Fatalf("UpdateTripReport: %v", err)
+	}
 	if _, err := e.trips.DeleteTripPhoto(ctx, tripsv1.DeleteTripPhotoRequest_builder{Id: gps.GetId()}.Build()); err != nil {
 		t.Fatalf("DeleteTripPhoto: %v", err)
 	}
 	if n := e.storedImages(); n != 6 {
 		t.Errorf("%d images stored after deleting a photo, want 6", n)
+	}
+	// Deleting the cover photo goes back to the first photo.
+	after, err := e.trips.GetTripReport(ctx, tripsv1.GetTripReportRequest_builder{Id: reportID}.Build())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cover := after.GetReport().GetCoverPhotoId(); cover != unplaced.GetId() {
+		t.Errorf("cover photo after deleting it %q, want %q", cover, unplaced.GetId())
 	}
 	_, err = e.otherTrips.DeleteTripPhoto(ctx, tripsv1.DeleteTripPhotoRequest_builder{Id: timed.GetId()}.Build())
 	wantCode(t, err, connect.CodeNotFound)

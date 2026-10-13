@@ -66,6 +66,9 @@ func (s *Service) reportToProto(r *trips.Report, st *story, profile *trips.Profi
 	if profile != nil {
 		b.Url = s.reportURL(profile.Handle, r.Slug)
 	}
+	if cover := trips.CoverPhoto(r, st.photos); cover != nil {
+		b.CoverPhotoId = store.UUIDToString(cover.ID)
+	}
 	photoIDs := map[pgtype.UUID][]string{}
 	for _, p := range st.photos {
 		b.Photos = append(b.Photos, s.photoToProto(p))

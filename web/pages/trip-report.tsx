@@ -175,6 +175,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     },
   });
   const movePhoto = useMutation(updateTripPhoto, { onSuccess: onChanged });
+  const setCover = useMutation(updateTripReport, { onSuccess: onChanged });
 
   // Clicking anywhere but a photo, or pressing Escape, clears the selection.
   useEffect(() => {
@@ -445,7 +446,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
               Tell the story in sections, each about a stretch of the trip with
               its photos. Readers see the stretch on the map as they read.
             </p>
-            <ErrorText error={suggest.error} />
+            <ErrorText error={suggest.error ?? setCover.error} />
             {suggestion !== null && (
               <SuggestionPanel
                 sections={suggestion}
@@ -473,6 +474,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
                 splitting={section.key === splittingKey}
                 selectedPhotoId={selectedId}
                 placingPhotoId={placingId}
+                coverPhotoId={report.coverPhotoId}
                 onActivate={() => {
                   setActiveKey(section.key);
                 }}
@@ -508,6 +510,9 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
                 }}
                 onMovePhotoToSection={(photoId, key) => {
                   change(movePhotoToSection(sections, photoId, key));
+                }}
+                onSetCover={(photoId) => {
+                  setCover.mutate({ coverPhotoId: photoId, id: report.id });
                 }}
                 onPhotoChanged={onChanged}
               />

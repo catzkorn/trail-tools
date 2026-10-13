@@ -152,6 +152,10 @@ message TripReport {
   repeated TripSection sections = 16 [(mcp.v1.field).output_only = true];
   // The start of the story, for lists of reports.
   string excerpt = 17 [(mcp.v1.field).output_only = true];
+  // The ID of the photo shown on top of the report, in lists of reports and
+  // in link previews: the one chosen, or the first photo if none was
+  // chosen. Empty for a report without photos.
+  string cover_photo_id = 18 [(mcp.v1.field).output_only = true];
 }
 
 // A section of a trip report's story, like a chapter of a blog post.
@@ -289,6 +293,10 @@ message UpdateTripReportRequest {
   // How far in meters around the start and finish of the track to hide on
   // the public page, from 0 to 2000, if set.
   optional int32 hidden_ends_meters = 6;
+  // The ID of the photo to show on top of the report, in lists of reports
+  // and in link previews, if set: one of the report's photos, or empty to
+  // use the first photo.
+  optional string cover_photo_id = 7;
 }
 
 message UpdateTripReportResponse {

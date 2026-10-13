@@ -22,6 +22,9 @@ var (
 	// ErrSlugTaken is returned when another of the user's reports has the
 	// slug.
 	ErrSlugTaken = errors.New("the slug is taken")
+	// ErrNotReportPhoto is returned when choosing a cover photo that isn't
+	// one of the report's photos.
+	ErrNotReportPhoto = errors.New("the photo isn't one of the report's photos")
 	// ErrPhotosMismatch is returned when setting the sections of a report
 	// with photos that aren't the report's, or with a photo twice.
 	ErrPhotosMismatch = errors.New("the photos don't match the report's photos")
@@ -80,6 +83,9 @@ type Report struct {
 	// How far around the start and finish of the track is hidden on the
 	// public page.
 	HiddenEndsMeters int32
+	// The photo shown on top of the report, if one was chosen. Use
+	// CoverPhoto for the photo to show.
+	CoverPhotoID pgtype.UUID
 	// Whether the report is published, and when it was first published.
 	Published   bool
 	PublishTime time.Time
@@ -320,6 +326,7 @@ func (r *Repository) ListReports(ctx context.Context, userID pgtype.UUID, filter
 			ElapsedTimeSeconds:  row.ElapsedTimeSeconds,
 			ElevationGainMeters: row.ElevationGainMeters,
 			HasTrack:            row.HasTrack,
+			CoverPhotoID:        row.CoverPhotoID,
 			Published:           row.Published,
 			PublishTime:         timestampFromPG(row.PublishTime),
 			CreateTime:          row.CreateTime.Time,
@@ -336,6 +343,9 @@ type ReportUpdate struct {
 	Date        *time.Time
 	// How far around the start and finish of the track to hide.
 	HiddenEndsMeters *int32
+	// The photo shown on top of the report, or an invalid UUID to use the
+	// first photo.
+	CoverPhotoID *pgtype.UUID
 }
 
 // UpdateReport updates one of the user's reports. It returns ErrSlugTaken if
@@ -354,11 +364,17 @@ func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report
 	if u.HiddenEndsMeters != nil {
 		params.HiddenEndsMeters = pgtype.Int4{Int32: *u.HiddenEndsMeters, Valid: true}
 	}
+	if u.CoverPhotoID != nil {
+		params.SetCoverPhoto = true
+		params.CoverPhotoID = *u.CoverPhotoID
+	}
 	row, err := r.q.UpdateReport(ctx, params)
 	if err != nil {
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 			return nil, store.ErrNotFound
+		case isForeignKeyViolation(err, "trip_reports_cover_photo_fkey"):
+			return nil, ErrNotReportPhoto
 		case isUniqueViolation(err, "trip_reports_user_id_slug_key"):
 			return nil, ErrSlugTaken
 		}
@@ -729,6 +745,7 @@ func reportFromDB(row *gen.TripReport) *Report {
 		Track:               row.Track,
 		HasTrack:            row.Track != nil,
 		HiddenEndsMeters:    row.HiddenEndsMeters,
+		CoverPhotoID:        row.CoverPhotoID,
 		Published:           row.Published,
 		PublishTime:         timestampFromPG(row.PublishTime),
 		CreateTime:          row.CreateTime.Time,
@@ -806,4 +823,24 @@ func timestampFromPG(t pgtype.Timestamptz) time.Time {
 func isUniqueViolation(err error, constraint string) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == constraint
+}
+
+func isForeignKeyViolation(err error, constraint string) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503" && pgErr.ConstraintName == constraint
+}
+
+// CoverPhoto returns the photo shown on top of a report: the chosen one, or
+// the first photo. photos are the report's photos in order. It returns nil
+// for a report without photos.
+func CoverPhoto(r *Report, photos []*Photo) *Photo {
+	for _, p := range photos {
+		if p.ID == r.CoverPhotoID {
+			return p
+		}
+	}
+	if len(photos) == 0 {
+		return nil
+	}
+	return photos[0]
 }
