@@ -24,6 +24,8 @@ func TestValidateRedirectURI(t *testing.T) {
 		"https://vscode.dev/redirect",
 		"cursor://anysphere.cursor-mcp/oauth/callback",
 		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-12345-trailrunn.ing",
+		"https://oauth-redirect-sandbox.googleusercontent.com/a/user_bound_custom-mcp-12345-trailrunn_ing",
+		"https://oauth-redirect-test.googleusercontent.com/r/user_bound_custom-mcp-12345-trailrunn_ing",
 	} {
 		if err := validateRedirectURI(uri); err != nil {
 			t.Errorf("validateRedirectURI(%q) = %v, want nil", uri, err)
@@ -45,6 +47,9 @@ func TestValidateRedirectURI(t *testing.T) {
 		// Google's relay forwards to any Cloud project, so only Gemini's
 		// connectors are allowed.
 		"https://oauth-redirect.googleusercontent.com/r/evil-project",
+		"https://oauth-redirect-sandbox.googleusercontent.com/r/evil-project",
+		"https://oauth-redirect.googleusercontent.com/b/user_bound_custom-mcp-1",
+		"https://oauth-redirect-evil.googleusercontent.com/r/user_bound_custom-mcp-1",
 		"https://oauth-redirect.googleusercontent.com/",
 		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1/../../r/evil-project",
 		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1%2F..%2Fevil-project",
@@ -122,6 +127,18 @@ func TestRegister(t *testing.T) {
 	}
 	if res["token_endpoint_auth_method"] != "none" || res["client_secret"] != nil {
 		t.Errorf("got registration %v, want a public client", res)
+	}
+
+	// Gemini registers its redirects on all of Google's relay hosts.
+	var gemini []string
+	for _, host := range []string{"oauth-redirect-sandbox", "oauth-redirect-test", "oauth-redirect"} {
+		for _, path := range []string{"r", "a"} {
+			gemini = append(gemini, `"https://`+host+`.googleusercontent.com/`+path+`/user_bound_custom-mcp-116425298551065020144-trailrunn_ing"`)
+		}
+	}
+	status, res = register(t, ts, `{"client_name":"Google","redirect_uris":[`+strings.Join(gemini, ",")+`],"grant_types":["authorization_code","refresh_token"],"response_types":["code"]}`)
+	if status != http.StatusCreated {
+		t.Fatalf("registering Gemini: got status %d: %v", status, res)
 	}
 
 	// Clients asking for more than is supported get what is.
