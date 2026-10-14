@@ -259,10 +259,16 @@ var allowedRedirectHosts = []string{
 var allowedRedirectPrefixes = []string{
 	// Gemini's custom MCP connectors redirect through Google's OAuth relay,
 	// which forwards /r/<id> to the Google Cloud project with that ID, so the
-	// host can't be allowed as a whole. Gemini's IDs start with
+	// hosts can't be allowed as a whole. Gemini's IDs start with
 	// user_bound_custom-mcp-, which no Cloud project ID can, as those can't
-	// contain underscores.
+	// contain underscores. Gemini registers its redirects on the relay's
+	// production, sandbox and test hosts, under both /r/ and /a/.
 	"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-",
+	"https://oauth-redirect.googleusercontent.com/a/user_bound_custom-mcp-",
+	"https://oauth-redirect-sandbox.googleusercontent.com/r/user_bound_custom-mcp-",
+	"https://oauth-redirect-sandbox.googleusercontent.com/a/user_bound_custom-mcp-",
+	"https://oauth-redirect-test.googleusercontent.com/r/user_bound_custom-mcp-",
+	"https://oauth-redirect-test.googleusercontent.com/a/user_bound_custom-mcp-",
 }
 
 // allowedRedirectSchemes are the private use URI schemes of desktop MCP
