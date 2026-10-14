@@ -3,16 +3,15 @@ package route
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
-	"gitlab.com/greyxor/slogor"
 )
 
 // unsafeFilenameChars matches characters that are replaced in download file
@@ -61,7 +60,7 @@ func (s *Service) DownloadHandler(next http.Handler) http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-			s.log.ErrorContext(r.Context(), "Failed to get route", slogor.Err(err))
+			s.report.Report(r.Context(), "Failed to get route", err)
 			http.Error(w, "failed to get route", http.StatusInternalServerError)
 			return
 		}
@@ -71,7 +70,7 @@ func (s *Service) DownloadHandler(next http.Handler) http.Handler {
 			w.Header().Set("Content-Type", "application/gpx+xml")
 			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.gpx"`, filename))
 			if err := geo.WriteGPX(w, route.Name, points); err != nil {
-				s.log.ErrorContext(r.Context(), "Failed to write GPX", slogor.Err(err))
+				s.report.Report(r.Context(), "Failed to write GPX", err)
 			}
 			return
 		}
@@ -87,7 +86,7 @@ func (s *Service) DownloadHandler(next http.Handler) http.Handler {
 			CoursePoints:   highPoint(points, elapsed),
 			Start:          time.Now(),
 		}
-		WriteFIT(w, r, s.log, filename, course)
+		WriteFIT(w, r, s.report, filename, course)
 	})
 }
 
@@ -118,10 +117,10 @@ func DownloadFilename(title, fallback string) string {
 }
 
 // WriteFIT writes a course as a FIT file download named filename.fit.
-func WriteFIT(w http.ResponseWriter, r *http.Request, log *slog.Logger, filename string, course *geo.FITCourse) {
+func WriteFIT(w http.ResponseWriter, r *http.Request, report *errreport.Reporter, filename string, course *geo.FITCourse) {
 	w.Header().Set("Content-Type", "application/vnd.ant.fit")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.fit"`, filename))
 	if err := geo.WriteFITCourse(w, course); err != nil {
-		log.ErrorContext(r.Context(), "Failed to write FIT course", slogor.Err(err))
+		report.Report(r.Context(), "Failed to write FIT course", err)
 	}
 }

@@ -35,13 +35,15 @@ resource "google_cloud_run_v2_service" "app" {
       dynamic "env" {
         for_each = merge(
           {
-            TRAIL_TOOLS_HOSTNAME     = "0.0.0.0"
-            TRAIL_TOOLS_PUBLIC_URL   = local.public_url
-            TRAIL_TOOLS_LOG_FORMAT   = "json"
-            TRAIL_TOOLS_LOG_LEVEL    = "info"
-            TRAIL_TOOLS_IMPORT_JOB   = google_cloud_run_v2_job.import[0].id
-            TRAIL_TOOLS_PHOTO_BUCKET = google_storage_bucket.photos.name
-            TRAIL_TOOLS_DEM_BUCKET   = google_storage_bucket.dem.name
+            TRAIL_TOOLS_HOSTNAME   = "0.0.0.0"
+            TRAIL_TOOLS_PUBLIC_URL = local.public_url
+            TRAIL_TOOLS_LOG_FORMAT = "json"
+            TRAIL_TOOLS_LOG_LEVEL  = "info"
+            # Errors are reported to Error Reporting rather than logged.
+            TRAIL_TOOLS_ERROR_REPORTING_PROJECT = var.project
+            TRAIL_TOOLS_IMPORT_JOB              = google_cloud_run_v2_job.import[0].id
+            TRAIL_TOOLS_PHOTO_BUCKET            = google_storage_bucket.photos.name
+            TRAIL_TOOLS_DEM_BUCKET              = google_storage_bucket.dem.name
           },
           local.strava ? {
             TRAIL_TOOLS_STRAVA_CLIENT_ID          = var.strava_client_id
@@ -85,6 +87,7 @@ resource "google_cloud_run_v2_service" "app" {
     google_secret_manager_secret_iam_member.run,
     google_storage_bucket_iam_member.run_photos,
     google_storage_bucket_iam_member.run_dem,
+    google_project_iam_member.run_error_reporting,
   ]
 }
 
@@ -126,6 +129,10 @@ resource "google_cloud_run_v2_job" "import" {
           value = google_storage_bucket.dem.name
         }
         env {
+          name  = "TRAIL_TOOLS_ERROR_REPORTING_PROJECT"
+          value = var.project
+        }
+        env {
           name = "TRAIL_TOOLS_DATABASE_URL"
           value_source {
             secret_key_ref {
@@ -141,6 +148,7 @@ resource "google_cloud_run_v2_job" "import" {
   depends_on = [
     google_secret_manager_secret_iam_member.run,
     google_storage_bucket_iam_member.run_dem,
+    google_project_iam_member.run_error_reporting,
   ]
 }
 
@@ -198,6 +206,16 @@ resource "google_cloud_scheduler_job" "strava_sync" {
       audience              = "trail-tools-scheduler"
     }
   }
+
+  depends_on = [google_project_service.services]
+}
+
+# Lets the service and the import job report errors to Error Reporting,
+# which is free.
+resource "google_project_iam_member" "run_error_reporting" {
+  project = var.project
+  role    = "roles/errorreporting.writer"
+  member  = google_service_account.run.member
 
   depends_on = [google_project_service.services]
 }

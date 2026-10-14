@@ -14,6 +14,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/activities"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
@@ -457,7 +458,7 @@ func TestScheduledStravaSync(t *testing.T) {
 	ctx := context.Background()
 	e.connectStrava()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false, nil)
+	syncer := stravasvc.NewSyncer(ctx, log, errreport.NewLocal(log), e.activities, e.strava, false, nil)
 
 	// Background syncs are disabled.
 	if syncer.Start(e.userID, false) {
@@ -521,7 +522,7 @@ func TestStravaSyncResumesListing(t *testing.T) {
 	ctx := context.Background()
 	e.connectStrava()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false, nil)
+	syncer := stravasvc.NewSyncer(ctx, log, errreport.NewLocal(log), e.activities, e.strava, false, nil)
 	e.strava.pageSize = 2
 	e.strava.listLimitAfter = 1
 
@@ -578,7 +579,7 @@ func TestTriggeredStravaSync(t *testing.T) {
 	e.connectStrava()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	trigger := &fakeTrigger{}
-	syncer := stravasvc.NewSyncer(ctx, log, e.activities, e.strava, false, trigger)
+	syncer := stravasvc.NewSyncer(ctx, log, errreport.NewLocal(log), e.activities, e.strava, false, trigger)
 
 	// A requested sync is marked running and triggered, without syncing
 	// within the request.

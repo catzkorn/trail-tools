@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -44,7 +45,7 @@ func WithResourceMetadata(url string) Option {
 	}
 }
 
-func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepository, next http.Handler, opts ...Option) (http.Handler, error) {
+func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, report *errreport.Reporter, repo SessionRepository, next http.Handler, opts ...Option) (http.Handler, error) {
 	var o options
 	for _, opt := range opts {
 		opt(&o)
@@ -60,7 +61,7 @@ func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepos
 					http.Error(w, "invalid or expired token", http.StatusUnauthorized)
 					return
 				}
-				log.ErrorContext(r.Context(), "Failed to get API token user", slogor.Err(err))
+				report.Report(r.Context(), "Failed to get API token user", err)
 				http.Error(w, "failed to authenticate", http.StatusInternalServerError)
 				return
 			}
@@ -86,7 +87,7 @@ func NewAuthnMiddleware(ctx context.Context, log *slog.Logger, repo SessionRepos
 				next.ServeHTTP(w, r)
 				return
 			}
-			log.ErrorContext(r.Context(), "failed to get session", slogor.Err(err))
+			report.Report(r.Context(), "failed to get session", err)
 			http.Error(w, "failed to get session", http.StatusInternalServerError)
 			return
 		}
@@ -158,11 +159,11 @@ func SessionCookie(sessionID string, expiry time.Time) *http.Cookie {
 
 // RegisterLogoutHandler registers a handler that logs out the user by
 // expiring the session cookie and redirecting to the root path.
-func RegisterLogoutHandler(logger *slog.Logger, mux *http.ServeMux, sessionRepo SessionRepository) {
+func RegisterLogoutHandler(report *errreport.Reporter, mux *http.ServeMux, sessionRepo SessionRepository) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if c, err := r.Cookie(sessionCookieName); err == nil {
 			if err := sessionRepo.DeleteSession(r.Context(), c.Value); err != nil && !errors.Is(err, store.ErrNotFound) {
-				logger.ErrorContext(r.Context(), "failed to delete session", slogor.Err(err))
+				report.Report(r.Context(), "failed to delete session", err)
 			}
 			expireCookie(w, c)
 		}

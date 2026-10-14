@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 )
 
 // WebhookPath is the path Strava sends webhook events to.
@@ -55,6 +55,7 @@ type SubscriptionClient interface {
 // has it, and a connection is removed only if Strava rejects its token.
 type Webhook struct {
 	log         *slog.Logger
+	report      *errreport.Reporter
 	repo        WebhookRepository
 	syncer      *Syncer
 	client      SubscriptionClient
@@ -64,9 +65,10 @@ type Webhook struct {
 
 // NewWebhook creates a new Webhook, served at callbackURL. verifyToken is
 // sent by Strava when validating the push subscription.
-func NewWebhook(log *slog.Logger, repo WebhookRepository, syncer *Syncer, client SubscriptionClient, callbackURL, verifyToken string) *Webhook {
+func NewWebhook(log *slog.Logger, report *errreport.Reporter, repo WebhookRepository, syncer *Syncer, client SubscriptionClient, callbackURL, verifyToken string) *Webhook {
 	return &Webhook{
 		log:         log,
+		report:      report,
 		repo:        repo,
 		syncer:      syncer,
 		client:      client,
@@ -171,12 +173,16 @@ func (h *Webhook) handleEvent(w http.ResponseWriter, r *http.Request) {
 	// context. Keep going for the budget anyway, so the work isn't lost.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), webhookBudget)
 	defer cancel()
-	log := h.log.With(slog.String("object_type", e.ObjectType), slog.Int64("object_id", e.ObjectID),
-		slog.String("aspect_type", e.AspectType), slog.Int64("owner_id", e.OwnerID))
+	attrs := []slog.Attr{
+		slog.String("object_type", e.ObjectType), slog.Int64("object_id", e.ObjectID),
+		slog.String("aspect_type", e.AspectType), slog.Int64("owner_id", e.OwnerID),
+	}
+	log := slog.New(h.log.Handler().WithAttrs(attrs))
+	report := h.report.With(attrs...)
 	conns, err := h.repo.ListStravaConnectionsByAthlete(ctx, e.OwnerID)
 	if err != nil {
 		// Strava sends the event again.
-		log.ErrorContext(ctx, "Failed to find the Strava connection of a webhook event", slogor.Err(err))
+		report.Report(ctx, "Failed to find the Strava connection of a webhook event", err)
 		http.Error(w, "failed to handle event", http.StatusInternalServerError)
 		return
 	}
@@ -186,9 +192,9 @@ func (h *Webhook) handleEvent(w http.ResponseWriter, r *http.Request) {
 	for _, conn := range conns {
 		switch {
 		case e.ObjectType == "athlete" && e.AspectType == "update" && fmt.Sprint(e.Updates["authorized"]) == "false":
-			h.deauthorize(ctx, log, conn)
+			h.deauthorize(ctx, log, report, conn)
 		case e.ObjectType == "activity":
-			h.syncActivity(ctx, log, conn, e.ObjectID)
+			h.syncActivity(ctx, log, report, conn, e.ObjectID)
 		}
 	}
 	w.WriteHeader(http.StatusOK)
@@ -196,8 +202,9 @@ func (h *Webhook) handleEvent(w http.ResponseWriter, r *http.Request) {
 
 // syncActivity syncs an activity that was created, updated or deleted. If
 // that fails or takes too long, the connection is synced soon instead.
-func (h *Webhook) syncActivity(ctx context.Context, log *slog.Logger, conn *activities.StravaConnection, stravaID int64) {
-	log = log.With(slog.String("user_id", store.UUIDToString(conn.UserID)))
+func (h *Webhook) syncActivity(ctx context.Context, log *slog.Logger, report *errreport.Reporter, conn *activities.StravaConnection, stravaID int64) {
+	user := slog.String("user_id", store.UUIDToString(conn.UserID))
+	log, report = log.With(user), report.With(user)
 	err := h.syncer.SyncActivity(ctx, conn.UserID, stravaID)
 	switch {
 	case err == nil:
@@ -214,27 +221,28 @@ func (h *Webhook) syncActivity(ctx context.Context, log *slog.Logger, conn *acti
 	case ctx.Err() != nil:
 		log.InfoContext(ctx, "Syncing an activity from a Strava webhook event took too long, syncing later")
 	default:
-		log.ErrorContext(ctx, "Failed to sync an activity from a Strava webhook event, syncing later", slogor.Err(err))
+		report.Report(ctx, "Failed to sync an activity from a Strava webhook event, syncing later", err)
 	}
 	stateCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 	if err := h.syncer.SyncSoon(stateCtx, conn.UserID); err != nil {
-		log.ErrorContext(ctx, "Failed to schedule a Strava sync", slogor.Err(err))
+		report.Report(ctx, "Failed to schedule a Strava sync", err)
 	}
 }
 
 // deauthorize removes the connection if the athlete revoked access.
-func (h *Webhook) deauthorize(ctx context.Context, log *slog.Logger, conn *activities.StravaConnection) {
-	log = log.With(slog.String("user_id", store.UUIDToString(conn.UserID)))
+func (h *Webhook) deauthorize(ctx context.Context, log *slog.Logger, report *errreport.Reporter, conn *activities.StravaConnection) {
+	user := slog.String("user_id", store.UUIDToString(conn.UserID))
+	log, report = log.With(user), report.With(user)
 	authorized, err := h.syncer.Authorized(ctx, conn)
 	switch {
 	case err != nil:
-		log.ErrorContext(ctx, "Failed to check the Strava authorization of a webhook event", slogor.Err(err))
+		report.Report(ctx, "Failed to check the Strava authorization of a webhook event", err)
 	case authorized:
 		log.WarnContext(ctx, "Ignoring a Strava deauthorization event of an athlete who is still authorized")
 	default:
 		if err := h.repo.DeleteStravaConnection(ctx, conn.UserID); err != nil && !errors.Is(err, store.ErrNotFound) {
-			log.ErrorContext(ctx, "Failed to disconnect Strava", slogor.Err(err))
+			report.Report(ctx, "Failed to disconnect Strava", err)
 			return
 		}
 		log.InfoContext(ctx, "Disconnected Strava, as the athlete revoked access")

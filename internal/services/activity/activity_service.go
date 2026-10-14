@@ -13,12 +13,12 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -36,6 +36,7 @@ type ActivityRepository interface {
 // Service implements API handlers for the activity service.
 type Service struct {
 	log        *slog.Logger
+	report     *errreport.Reporter
 	activities ActivityRepository
 	// The URL of Strava's website, for links to activities.
 	stravaWebURL string
@@ -43,9 +44,10 @@ type Service struct {
 
 // NewService creates a new Service. stravaWebURL is the URL of Strava's
 // website, usually strava.WebURL, for links to activities.
-func NewService(log *slog.Logger, activities ActivityRepository, stravaWebURL string) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, activities ActivityRepository, stravaWebURL string) *Service {
 	return &Service{
 		log:          log,
+		report:       report,
 		activities:   activities,
 		stravaWebURL: stravaWebURL,
 	}
@@ -343,6 +345,6 @@ func DownsampleStreams(streams *activitiesv1.ActivityStreams, limit int) *activi
 }
 
 func (s *Service) internalError(ctx context.Context, msg string, err error) error {
-	s.log.ErrorContext(ctx, msg, slogor.Err(err))
+	s.report.Report(ctx, msg, err)
 	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/catzkorn/trail-tools/internal/blob"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -25,6 +26,7 @@ type AvatarRepository interface {
 // Service implements API handlers for the user service.
 type Service struct {
 	log     *slog.Logger
+	report  *errreport.Reporter
 	tokens  APITokenRepository
 	avatars AvatarRepository
 	blobs   blob.Store
@@ -32,9 +34,10 @@ type Service struct {
 
 // NewService creates a new Service from the provided logger, repositories
 // and the blob store avatar images are stored in.
-func NewService(log *slog.Logger, tokens APITokenRepository, avatars AvatarRepository, blobs blob.Store) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, tokens APITokenRepository, avatars AvatarRepository, blobs blob.Store) *Service {
 	return &Service{
 		log:     log,
+		report:  report,
 		tokens:  tokens,
 		avatars: avatars,
 		blobs:   blobs,

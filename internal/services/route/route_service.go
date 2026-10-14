@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routes"
@@ -31,6 +32,7 @@ type ActivityRepository interface {
 // Service implements API handlers for the route service.
 type Service struct {
 	log        *slog.Logger
+	report     *errreport.Reporter
 	routes     RouteRepository
 	activities ActivityRepository
 	router     Router
@@ -39,9 +41,10 @@ type Service struct {
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, routes RouteRepository, activities ActivityRepository, router Router, mapData MapData) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, routes RouteRepository, activities ActivityRepository, router Router, mapData MapData) *Service {
 	return &Service{
 		log:        log,
+		report:     report,
 		routes:     routes,
 		activities: activities,
 		router:     router,

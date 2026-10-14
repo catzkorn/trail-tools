@@ -12,12 +12,12 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -34,6 +34,7 @@ type ConnectionRepository interface {
 // not configured with Strava credentials, the syncer and OAuth client are nil.
 type Service struct {
 	log    *slog.Logger
+	report *errreport.Reporter
 	repo   ConnectionRepository
 	syncer *Syncer
 	oauth  *OAuth
@@ -44,9 +45,10 @@ type Service struct {
 // NewService creates a new Service. syncer and oauth may be nil if Strava is
 // not configured. webURL is the URL of Strava's website, usually strava.WebURL, for links
 // to athletes.
-func NewService(log *slog.Logger, repo ConnectionRepository, syncer *Syncer, oauth *OAuth, webURL string) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, repo ConnectionRepository, syncer *Syncer, oauth *OAuth, webURL string) *Service {
 	return &Service{
 		log:    log,
+		report: report,
 		repo:   repo,
 		syncer: syncer,
 		oauth:  oauth,
@@ -200,7 +202,7 @@ func syncStateToProto(state activities.SyncState) stravav1.SyncState {
 }
 
 func (s *Service) internalError(ctx context.Context, msg string, err error) error {
-	s.log.ErrorContext(ctx, msg, slogor.Err(err))
+	s.report.Report(ctx, msg, err)
 	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }
 

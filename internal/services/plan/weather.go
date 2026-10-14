@@ -16,7 +16,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -165,7 +164,7 @@ func (s *Service) workoutWeather(ctx context.Context, userID pgtype.UUID, workou
 	for _, g := range groups {
 		hours, err := s.weather.HourlyForecast(ctx, g.location.point, g.first, g.last)
 		if err != nil {
-			s.log.ErrorContext(ctx, "Failed to get weather forecast", slogor.Err(err))
+			s.report.Report(ctx, "Failed to get weather forecast", err)
 			return nil, connect.NewError(connect.CodeUnavailable, "the weather forecast is unavailable, try again later")
 		}
 		g.byLocalDay = make(map[string][]mapdata.Weather)

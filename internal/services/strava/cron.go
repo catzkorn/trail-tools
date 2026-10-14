@@ -2,11 +2,10 @@ package strava
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"time"
 
-	"gitlab.com/greyxor/slogor"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 )
 
 // SyncPath is the path of the scheduled sync endpoint.
@@ -19,7 +18,7 @@ const scheduledSyncBudget = 10 * time.Minute
 // SyncHandler returns a handler that syncs all connections that are due a
 // sync, for running from a scheduler such as Cloud Scheduler. It must be
 // protected by authorization.
-func SyncHandler(log *slog.Logger, syncer *Syncer) http.Handler {
+func SyncHandler(report *errreport.Reporter, syncer *Syncer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -28,7 +27,7 @@ func SyncHandler(log *slog.Logger, syncer *Syncer) http.Handler {
 		ctx, cancel := context.WithTimeout(r.Context(), scheduledSyncBudget)
 		defer cancel()
 		if err := syncer.SyncDue(ctx); err != nil && ctx.Err() == nil {
-			log.ErrorContext(ctx, "Scheduled Strava sync failed", slogor.Err(err))
+			report.Report(ctx, "Scheduled Strava sync failed", err)
 			http.Error(w, "sync failed", http.StatusInternalServerError)
 			return
 		}

@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/catzkorn/trail-tools/internal/errreport"
 )
 
 func TestValidateRedirectURI(t *testing.T) {
@@ -85,7 +87,8 @@ func TestMatchRedirectURI(t *testing.T) {
 func newTestServer(t *testing.T) (*Server, *httptest.Server) {
 	t.Helper()
 	ts := httptest.NewUnstartedServer(nil)
-	s := NewServer(slog.New(slog.NewTextHandler(io.Discard, nil)), nil, "http://"+ts.Listener.Addr().String(), "/mcp")
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	s := NewServer(log, errreport.NewLocal(log), nil, "http://"+ts.Listener.Addr().String(), "/mcp")
 	mux := http.NewServeMux()
 	s.RegisterHandlers(mux, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.WriteString(w, "consent")
@@ -269,7 +272,7 @@ func TestAuthorizeErrors(t *testing.T) {
 
 func TestResourceMetadataURL(t *testing.T) {
 	t.Parallel()
-	s := NewServer(nil, nil, "https://trail.example/", "/mcp")
+	s := NewServer(nil, nil, nil, "https://trail.example/", "/mcp")
 	if got, want := s.ResourceMetadataURL(), "https://trail.example/.well-known/oauth-protected-resource/mcp"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}

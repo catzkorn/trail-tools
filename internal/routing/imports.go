@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/elevation"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
@@ -178,7 +179,7 @@ func FailImport(ctx context.Context, db *store.DB, id pgtype.UUID, message strin
 // RunImport runs a queued import, recording its progress. It is called by
 // the server for imports in the background, and by the import-osm command
 // for imports run as a job.
-func RunImport(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevation.DEM, id pgtype.UUID) error {
+func RunImport(ctx context.Context, log *slog.Logger, report *errreport.Reporter, db *store.DB, dem *elevation.DEM, id pgtype.UUID) error {
 	// Start the import only if it's still queued, so it isn't run twice or
 	// run after it was taken to have never started.
 	r, err := scanImport(db.QueryRow(ctx, `update routing_imports set state = 'running', message = '',
@@ -196,7 +197,7 @@ func RunImport(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevati
 		// Record the failure even if ctx was cancelled.
 		ctx := context.WithoutCancel(ctx)
 		if err := FailImport(ctx, db, id, err.Error()); err != nil {
-			log.ErrorContext(ctx, "Failed to record the failed import", slog.Any("error", err))
+			report.Report(ctx, "Failed to record the failed import", err)
 		}
 	}
 	return err

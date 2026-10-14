@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	routingv1 "github.com/catzkorn/trail-tools/internal/gen/routing/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
@@ -18,7 +19,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -48,14 +48,15 @@ type ImportRunner interface {
 // Service implements API handlers for the map data service.
 type Service struct {
 	log      *slog.Logger
+	report   *errreport.Reporter
 	db       *store.DB
 	extracts ExtractFinder
 	runner   ImportRunner
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, db *store.DB, extracts ExtractFinder, runner ImportRunner) *Service {
-	return &Service{log: log, db: db, extracts: extracts, runner: runner}
+func NewService(log *slog.Logger, report *errreport.Reporter, db *store.DB, extracts ExtractFinder, runner ImportRunner) *Service {
+	return &Service{log: log, report: report, db: db, extracts: extracts, runner: runner}
 }
 
 func (s *Service) GetMapData(ctx context.Context, req *routingv1.GetMapDataRequest) (*routingv1.GetMapDataResponse, error) {
@@ -143,9 +144,9 @@ func (s *Service) StartImport(ctx context.Context, req *routingv1.StartImportReq
 		return nil, s.internalError(ctx, err)
 	}
 	if err := s.runner.Run(ctx, record.ID); err != nil {
-		s.log.ErrorContext(ctx, "Failed to start an import", slogor.Err(err))
+		s.report.Report(ctx, "Failed to start an import", err)
 		if err := routing.FailImport(context.WithoutCancel(ctx), s.db, record.ID, "failed to start the import"); err != nil {
-			s.log.ErrorContext(ctx, "Failed to record the failed import", slogor.Err(err))
+			s.report.Report(ctx, "Failed to record the failed import", err)
 		}
 		return nil, connect.NewError(connect.CodeUnavailable, "failed to start the import, try again later")
 	}
@@ -171,7 +172,7 @@ func (s *Service) findExtracts(ctx context.Context, bounds geo.Bounds) ([]routin
 		if errors.Is(err, routing.ErrNoExtract) || errors.Is(err, routing.ErrTooManyExtracts) {
 			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error()).WithCause(err)
 		}
-		s.log.ErrorContext(ctx, "Failed to find OpenStreetMap extracts", slogor.Err(err))
+		s.report.Report(ctx, "Failed to find OpenStreetMap extracts", err)
 		return nil, connect.NewError(connect.CodeUnavailable, "failed to look up OpenStreetMap extracts, try again later")
 	}
 	return extracts, nil
@@ -192,7 +193,7 @@ func extractNames(extracts []routing.Extract) []string {
 }
 
 func (s *Service) internalError(ctx context.Context, err error) error {
-	s.log.ErrorContext(ctx, "Map data request failed", slogor.Err(err))
+	s.report.Report(ctx, "Map data request failed", err)
 	return connect.NewError(connect.CodeInternal, "internal error")
 }
 

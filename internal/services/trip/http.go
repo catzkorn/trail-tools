@@ -16,7 +16,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 )
 
 // The sizes photos are stored and served in.
@@ -59,7 +58,7 @@ func (s *Service) PhotoHandler() http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-			s.log.ErrorContext(r.Context(), "Failed to get photo", slogor.Err(err))
+			s.report.Report(r.Context(), "Failed to get photo", err)
 			http.Error(w, "failed to get photo", http.StatusInternalServerError)
 			return
 		}
@@ -79,7 +78,7 @@ func (s *Service) PhotoHandler() http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-			s.log.ErrorContext(r.Context(), "Failed to read photo", slogor.Err(err))
+			s.report.Report(r.Context(), "Failed to read photo", err)
 			http.Error(w, "failed to read photo", http.StatusInternalServerError)
 			return
 		}
@@ -113,7 +112,7 @@ func (s *Service) PageHandler(watch bool) http.Handler {
 		}
 		if err != nil {
 			if !errors.Is(err, store.ErrNotFound) {
-				s.log.ErrorContext(r.Context(), "Failed to get public page", slogor.Err(err))
+				s.report.Report(r.Context(), "Failed to get public page", err)
 			}
 			// The frontend shows its own error page.
 			html.Render(w, watch, http.StatusNotFound, html.Page{Title: "Not found · trailrunn.ing", NoIndex: true})

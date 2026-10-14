@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/catzkorn/trail-tools/internal/errreport"
 )
 
 // adminRepo is a Repository that only knows whether there is an
@@ -44,7 +46,8 @@ func TestBootstrapHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := NewService(slog.New(slog.NewTextHandler(io.Discard, nil)), &adminRepo{hasAdmin: tt.hasAdmin}, "http://localhost:8080", tt.token)
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
+			s, err := NewService(log, errreport.NewLocal(log), &adminRepo{hasAdmin: tt.hasAdmin}, "http://localhost:8080", tt.token)
 			if err != nil {
 				t.Fatal(err)
 			}

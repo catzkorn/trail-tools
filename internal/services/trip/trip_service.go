@@ -18,6 +18,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/blob"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
@@ -72,6 +73,7 @@ type ActivitySyncer interface {
 // Service implements API handlers for the trip report service.
 type Service struct {
 	log        *slog.Logger
+	report     *errreport.Reporter
 	repo       TripRepository
 	activities ActivityRepository
 	syncer     ActivitySyncer
@@ -86,9 +88,10 @@ type Service struct {
 // before importing their photos, and may be nil if Strava isn't configured.
 // Photos are stored in blobs. baseURL is the public URL of the server, used
 // for the URLs of reports and photos.
-func NewService(log *slog.Logger, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, baseURL string) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, baseURL string) *Service {
 	return &Service{
 		log:        log,
+		report:     report,
 		repo:       repo,
 		activities: activities,
 		syncer:     syncer,
@@ -780,7 +783,7 @@ func (s *Service) reportsToProto(ctx context.Context, reports []*trips.Report, p
 func (s *Service) deleteImages(ctx context.Context, objectKey string) {
 	for _, size := range []string{sizeLarge, sizeThumb} {
 		if err := s.blobs.Delete(ctx, imageKey(objectKey, size)); err != nil {
-			s.log.ErrorContext(ctx, "Failed to delete photo image", slog.String("key", objectKey), slogor.Err(err))
+			s.report.Report(ctx, "Failed to delete photo image", err, slog.String("key", objectKey))
 		}
 	}
 }
@@ -869,7 +872,7 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 	case errors.Is(err, trips.ErrSlugTaken):
 		return connect.NewError(connect.CodeAlreadyExists, "another of your trip reports has this slug; choose another one")
 	default:
-		s.log.ErrorContext(ctx, msg, slogor.Err(err))
+		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
 }

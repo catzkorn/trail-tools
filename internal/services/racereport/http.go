@@ -9,7 +9,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/html"
 	"github.com/catzkorn/trail-tools/internal/services/trip"
 	"github.com/catzkorn/trail-tools/internal/store"
-	"gitlab.com/greyxor/slogor"
 )
 
 // PageHandler serves the frontend for public race reports at
@@ -27,7 +26,7 @@ func (s *Service) PageHandler(watch bool, next http.Handler) http.Handler {
 		profile, report, err := s.PublicReport(r.Context(), parts[0], parts[2])
 		if err != nil {
 			if !errors.Is(err, store.ErrNotFound) {
-				s.log.ErrorContext(r.Context(), "Failed to get public race report", slogor.Err(err))
+				s.report.Report(r.Context(), "Failed to get public race report", err)
 			}
 			// The frontend shows its own error page.
 			html.Render(w, watch, http.StatusNotFound, html.Page{Title: "Not found · trailrunn.ing", NoIndex: true})

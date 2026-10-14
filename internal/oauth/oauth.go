@@ -37,11 +37,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
-	"gitlab.com/greyxor/slogor"
 )
 
 // Paths of the OAuth endpoints.
@@ -85,6 +85,7 @@ type Repository interface {
 // Server is an OAuth authorization server for a protected resource.
 type Server struct {
 	log      *slog.Logger
+	report   *errreport.Reporter
 	repo     Repository
 	issuer   string
 	resource string
@@ -94,10 +95,11 @@ type Server struct {
 // NewServer creates an authorization server. The publicURL is the public URL
 // of the application, which is the issuer, and resourcePath is the path of
 // the protected resource, e.g. "/mcp".
-func NewServer(log *slog.Logger, repo Repository, publicURL, resourcePath string) *Server {
+func NewServer(log *slog.Logger, report *errreport.Reporter, repo Repository, publicURL, resourcePath string) *Server {
 	issuer := strings.TrimSuffix(publicURL, "/")
 	return &Server{
 		log:      log,
+		report:   report,
 		repo:     repo,
 		issuer:   issuer,
 		resource: issuer + resourcePath,
@@ -396,7 +398,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	clientID, err := encodeClientID(c)
 	if err != nil {
-		s.log.ErrorContext(r.Context(), "Failed to encode client ID", slogor.Err(err))
+		s.report.Report(r.Context(), "Failed to encode client ID", err)
 		writeError(w, http.StatusInternalServerError, "server_error", "failed to register client")
 		return
 	}
@@ -670,7 +672,7 @@ func (s *Server) exchangeCode(r *http.Request, clientID string) (*users.OAuthTok
 		if errors.Is(err, store.ErrNotFound) {
 			return nil, &tokenError{"invalid_grant", "invalid authorization code"}
 		}
-		s.log.ErrorContext(r.Context(), "Failed to consume OAuth authorization code", slogor.Err(err))
+		s.report.Report(r.Context(), "Failed to consume OAuth authorization code", err)
 		return nil, errTokenServer
 	}
 	if authz.ClientID != clientID {
@@ -686,7 +688,7 @@ func (s *Server) exchangeCode(r *http.Request, clientID string) (*users.OAuthTok
 	}
 	tokens, err := s.repo.CreateOAuthGrant(r.Context(), authz, s.now().Add(accessTokenTTL), s.now().Add(refreshTokenTTL))
 	if err != nil {
-		s.log.ErrorContext(r.Context(), "Failed to create OAuth grant", slogor.Err(err))
+		s.report.Report(r.Context(), "Failed to create OAuth grant", err)
 		return nil, errTokenServer
 	}
 	return tokens, nil
@@ -703,7 +705,7 @@ func (s *Server) refresh(r *http.Request, clientID string) (*users.OAuthTokens, 
 		if errors.Is(err, store.ErrNotFound) {
 			return nil, &tokenError{"invalid_grant", "invalid refresh token"}
 		}
-		s.log.ErrorContext(r.Context(), "Failed to refresh OAuth grant", slogor.Err(err))
+		s.report.Report(r.Context(), "Failed to refresh OAuth grant", err)
 		return nil, errTokenServer
 	}
 	return tokens, nil
