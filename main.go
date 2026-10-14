@@ -30,6 +30,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/cloudscheduler"
 	"github.com/catzkorn/trail-tools/internal/demo"
 	"github.com/catzkorn/trail-tools/internal/elevation"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/fakestrava"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
@@ -97,6 +98,11 @@ var (
 		"log-format",
 		"text",
 		"The log format: \"text\" for terminals, or \"json\" for structured logging platforms like Cloud Logging",
+	)
+	errorReportingProject = flag.String(
+		"error-reporting-project",
+		"",
+		"The Google Cloud project to report errors to with Error Reporting, using the application default credentials. If unset, errors are logged",
 	)
 	databaseUrl = flag.String(
 		"database-url",
@@ -232,12 +238,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		os.Exit(1)
 	}
+	report, err := newReporter(context.Background(), logger, *errorReportingProject)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
+		os.Exit(1)
+	}
 	// Cloud Run sends SIGTERM to stop instances.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	if err := run(
+	err = run(
 		ctx,
 		logger,
+		report,
 		*databaseUrl,
 		*hostname,
 		*port,
@@ -260,15 +271,37 @@ func main() {
 		*photoDir,
 		*demBucket,
 		mapdata.Config{},
-	); err != nil {
-		logger.ErrorContext(ctx, "Failed running app", slogor.Err(err))
+	)
+	stop()
+	if err != nil {
+		report.Report(context.Background(), "Failed running app", err)
+	}
+	// Send the errors not yet sent before exiting.
+	if closeErr := report.Close(); closeErr != nil {
+		logger.Warn("Failed to send the remaining error reports", slog.String("error", closeErr.Error()))
+	}
+	if err != nil {
 		os.Exit(1)
 	}
+}
+
+// newReporter returns a reporter sending errors to Error Reporting in a
+// project, from the Cloud Run service or job it runs in, or logging them if
+// the project is empty.
+func newReporter(ctx context.Context, log *slog.Logger, project string) (*errreport.Reporter, error) {
+	if project == "" {
+		return errreport.NewLocal(log), nil
+	}
+	// Cloud Run sets these for services and jobs.
+	service := cmp.Or(os.Getenv("K_SERVICE"), os.Getenv("CLOUD_RUN_JOB"), "trail-tools")
+	version := cmp.Or(os.Getenv("K_REVISION"), os.Getenv("CLOUD_RUN_EXECUTION"))
+	return errreport.New(ctx, project, service, version, log)
 }
 
 func run(
 	ctx context.Context,
 	log *slog.Logger,
+	report *errreport.Reporter,
 	databaseUrl string,
 	hostname string,
 	port string,
@@ -404,10 +437,10 @@ func run(
 		// activities follow trails without importing or downloading map data.
 		go func() {
 			if err := demo.Load(ctx, log, db, dem); err != nil && ctx.Err() == nil {
-				log.ErrorContext(ctx, "Failed to load the map data of Squamish", slogor.Err(err))
+				report.Report(ctx, "Failed to load the map data of Squamish", err)
 			}
 			if err := fakeStravaServer.Prepare(ctx); err != nil && ctx.Err() == nil {
-				log.ErrorContext(ctx, "Failed to generate the fake Strava's activities", slogor.Err(err))
+				report.Report(ctx, "Failed to generate the fake Strava's activities", err)
 			}
 		}()
 	}
@@ -434,10 +467,10 @@ func run(
 			}
 			trigger = job
 		}
-		stravaSyncer = stravasvc.NewSyncer(ctx, log, activityRepo, stravaClient, background, trigger)
-		stravaOAuth = stravasvc.NewOAuth(log, stravaClient, activityRepo, stravaSyncer, []byte(stravaClientSecret))
+		stravaSyncer = stravasvc.NewSyncer(ctx, log, report, activityRepo, stravaClient, background, trigger)
+		stravaOAuth = stravasvc.NewOAuth(log, report, stravaClient, activityRepo, stravaSyncer, []byte(stravaClientSecret))
 		if stravaWebhookVerifyToken != "" {
-			stravaWebhook = stravasvc.NewWebhook(log, activityRepo, stravaSyncer, stravaClient,
+			stravaWebhook = stravasvc.NewWebhook(log, report, activityRepo, stravaSyncer, stravaClient,
 				baseURL+stravasvc.WebhookPath, stravaWebhookVerifyToken)
 		}
 		if background {
@@ -448,29 +481,29 @@ func run(
 		log.InfoContext(ctx, "Strava sync disabled, set -strava-client-id and -strava-client-secret to enable it")
 	}
 
-	userService := user.NewService(log, users, users, photos)
-	authService, err := auth.NewService(log, users, baseURL, adminBootstrapToken)
+	userService := user.NewService(log, report, users, users, photos)
+	authService, err := auth.NewService(log, report, users, baseURL, adminBootstrapToken)
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
 	}
-	activityService := activity.NewService(log, activityRepo, stravaWebURL)
-	stravaService := stravasvc.NewService(log, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
-	routeService := route.NewService(log, routeRepo, activityRepo, routing.NewRouter(db), mapData)
+	activityService := activity.NewService(log, report, activityRepo, stravaWebURL)
+	stravaService := stravasvc.NewService(log, report, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
+	routeService := route.NewService(log, report, routeRepo, activityRepo, routing.NewRouter(db), mapData)
 	geoService := geosvc.NewService(log, mapData, routing.NewFinder(db), activityRepo)
-	planService := plan.NewService(log, planRepo, routeRepo, activityRepo, mapData)
-	raceService := race.NewService(log, raceRepo, routeRepo)
-	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
+	planService := plan.NewService(log, report, planRepo, routeRepo, activityRepo, mapData)
+	raceService := race.NewService(log, report, raceRepo, routeRepo)
+	racePlanService := raceplan.NewService(log, report, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
 	// Activities are synced from Strava before importing their photos into
 	// trip reports, if Strava is configured.
 	var activitySyncer trip.ActivitySyncer
 	if stravaSyncer != nil {
 		activitySyncer = stravaSyncer
 	}
-	tripService := trip.NewService(log, tripRepo, activityRepo, activitySyncer, photos, baseURL)
-	raceReportService := racereport.NewService(log, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, baseURL)
+	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
-	oauthServer := oauth.NewServer(log, users, baseURL, mcpPath)
+	oauthServer := oauth.NewServer(log, report, users, baseURL, mcpPath)
 	oauthService := oauthsvc.NewService(log, oauthServer, users)
 	// Imports of OpenStreetMap data need more memory than the server has on
 	// Cloud Run, so they run as a Cloud Run job there.
@@ -482,11 +515,11 @@ func run(
 		}
 		importRunner = jobImportRunner{job: job}
 	} else {
-		localRunner := routing.NewLocalRunner(ctx, log, db, dem)
+		localRunner := routing.NewLocalRunner(ctx, log, report, db, dem)
 		defer localRunner.Wait()
 		importRunner = localRunner
 	}
-	mapDataService := mapdatasvc.NewService(log, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
+	mapDataService := mapdatasvc.NewService(log, report, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
 
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
@@ -509,13 +542,13 @@ func run(
 
 	// Wrap the API mux in the authn middleware. Each service checks
 	// authentication itself.
-	authHandler, err := authn.NewAuthnMiddleware(ctx, log, users, apiMux)
+	authHandler, err := authn.NewAuthnMiddleware(ctx, log, report, users, apiMux)
 	if err != nil {
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
 	authenticate := func(next http.Handler) http.Handler {
 		// NewAuthnMiddleware never returns an error.
-		h, _ := authn.NewAuthnMiddleware(ctx, log, users, next)
+		h, _ := authn.NewAuthnMiddleware(ctx, log, report, users, next)
 		return h
 	}
 
@@ -529,7 +562,7 @@ func run(
 
 	// Serve the same API to AI agents over MCP. MCP clients authenticate
 	// with API tokens or OAuth access tokens.
-	mcpServer, err := mcp.NewServer(log,
+	mcpServer, err := mcp.NewServer(log, report,
 		mcp.Service{Name: usersv1connect.UserServiceName, Handler: userService},
 		mcp.Service{Name: activitiesv1connect.ActivityServiceName, Handler: activityService},
 		mcp.Service{Name: stravav1connect.StravaServiceName, Handler: stravaService},
@@ -545,7 +578,7 @@ func run(
 		return fmt.Errorf("failed to create MCP server: %w", err)
 	}
 	resourceMetadataURL := oauthServer.ResourceMetadataURL()
-	mcpHandler, err := authn.NewAuthnMiddleware(ctx, log, users,
+	mcpHandler, err := authn.NewAuthnMiddleware(ctx, log, report, users,
 		authn.RequireUser(resourceMetadataURL, mcpServer.Handler()),
 		authn.WithResourceMetadata(resourceMetadataURL),
 	)
@@ -565,7 +598,7 @@ func run(
 	// Serve the scheduled sync endpoint, only for the scheduler
 	if stravaSyncer != nil && !stravaSyncer.Background() {
 		syncHandler, err := authn.RequireGoogleServiceAccount(ctx, log, schedulerAudience, schedulerServiceAccount,
-			stravasvc.SyncHandler(log, stravaSyncer))
+			stravasvc.SyncHandler(report, stravaSyncer))
 		if err != nil {
 			return fmt.Errorf("failed to create scheduled sync handler: %w", err)
 		}
@@ -573,7 +606,7 @@ func run(
 	}
 
 	// Register the logout handler directly on the mux
-	authn.RegisterLogoutHandler(log, mux, users)
+	authn.RegisterLogoutHandler(report, mux, users)
 
 	// Create the FS used to serve the frontend.
 	webFs, _ := fs.Sub(web.Dist, "dist")
@@ -659,7 +692,7 @@ func run(
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(shutdownCtx); err != nil {
-			log.ErrorContext(ctx, "Failed to shutdown server", slogor.Err(err))
+			report.Report(ctx, "Failed to shutdown server", err)
 		}
 	}()
 	if stravaWebhook != nil {
@@ -668,7 +701,7 @@ func run(
 		// it time to start.
 		go func() {
 			if err := stravaWebhook.Subscribe(ctx); err != nil {
-				log.ErrorContext(ctx, "Failed to subscribe to Strava webhook events, new activities sync periodically instead", slogor.Err(err))
+				report.Report(ctx, "Failed to subscribe to Strava webhook events, new activities sync periodically instead", err)
 			}
 		}()
 	}

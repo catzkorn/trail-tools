@@ -15,12 +15,12 @@ import (
 	"log/slog"
 	"net/http"
 	"reflect"
-	"runtime/debug"
 	"strings"
 	"unicode"
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/apidesc"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -68,7 +68,7 @@ type Server struct {
 // except those that are excluded with the (mcp.v1.method).exclude option.
 // It returns an error if a service or method can't be found, a method has an
 // unexpected signature, or two services have a method with the same name.
-func NewServer(log *slog.Logger, services ...Service) (*Server, error) {
+func NewServer(log *slog.Logger, report *errreport.Reporter, services ...Service) (*Server, error) {
 	type tool struct {
 		tool    *mcp.Tool
 		handler mcp.ToolHandler
@@ -99,7 +99,7 @@ func NewServer(log *slog.Logger, services ...Service) (*Server, error) {
 				return nil, fmt.Errorf("duplicate tool name %q from %s and %s", name, other, svc.Name)
 			}
 			toolServices[name] = svc.Name
-			handler, err := newToolHandler(log, svc.Handler, md)
+			handler, err := newToolHandler(log, report, svc.Handler, md)
 			if err != nil {
 				return nil, fmt.Errorf("creating tool handler for %s: %w", md.FullName(), err)
 			}
@@ -175,7 +175,7 @@ func newTool(md protoreflect.MethodDescriptor) *mcp.Tool {
 
 // newToolHandler returns a tool handler calling the method on the Connect
 // service implementation impl.
-func newToolHandler(log *slog.Logger, impl any, md protoreflect.MethodDescriptor) (mcp.ToolHandler, error) {
+func newToolHandler(log *slog.Logger, report *errreport.Reporter, impl any, md protoreflect.MethodDescriptor) (mcp.ToolHandler, error) {
 	inType, err := protoregistry.GlobalTypes.FindMessageByName(md.Input().FullName())
 	if err != nil {
 		return nil, fmt.Errorf("finding input type %s: %w", md.Input().FullName(), err)
@@ -198,11 +198,9 @@ func newToolHandler(log *slog.Logger, impl any, md protoreflect.MethodDescriptor
 	return func(ctx context.Context, req *mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.ErrorContext(ctx, "Panic in MCP tool",
-					slog.String("method", method),
-					slog.Any("panic", r),
-					slog.String("stack", string(debug.Stack())),
-				)
+				// The report's stack trace is where the panic happened, as
+				// deferred functions run on top of it.
+				report.Report(ctx, "Panic in MCP tool", fmt.Errorf("panic: %v", r), slog.String("method", method))
 				result, err = errorResult(connect.NewError(connect.CodeInternal, "internal error")), nil
 			}
 		}()
@@ -221,12 +219,12 @@ func newToolHandler(log *slog.Logger, impl any, md protoreflect.MethodDescriptor
 		out := fn.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(in)})
 		if errVal := out[1]; !errVal.IsNil() {
 			err := errVal.Interface().(error)
-			code := connect.CodeOf(err)
-			level := slog.LevelDebug
-			if code == connect.CodeInternal || code == connect.CodeUnknown {
-				level = slog.LevelError
+			log.DebugContext(ctx, "MCP tool call failed", slog.String("method", method), slog.Any("error", err))
+			// Services report internal errors where they happen, but not
+			// errors they didn't expect to return.
+			if connect.CodeOf(err) == connect.CodeUnknown {
+				report.Report(ctx, "MCP tool call failed", err, slog.String("method", method))
 			}
-			log.Log(ctx, level, "MCP tool call failed", slog.String("method", method), slog.Any("error", err))
 			return errorResult(err), nil
 		}
 		if out[0].IsNil() {

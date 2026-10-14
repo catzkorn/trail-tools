@@ -21,6 +21,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/blob"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
@@ -112,6 +113,7 @@ func newEnv(t *testing.T) *env {
 	t.Helper()
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	report := errreport.NewLocal(log)
 	db := storetest.New(t)
 	userRepo, err := users.NewRepository(log, db)
 	if err != nil {
@@ -150,38 +152,38 @@ func newEnv(t *testing.T) *env {
 	}
 
 	syncCtx, cancel := context.WithCancel(ctx)
-	e.syncer = stravasvc.NewSyncer(syncCtx, log, activityRepo, e.strava, true, nil)
+	e.syncer = stravasvc.NewSyncer(syncCtx, log, report, activityRepo, e.strava, true, nil)
 	t.Cleanup(func() {
 		cancel()
 		e.syncer.Wait()
 	})
 
-	authService, err := auth.NewService(log, userRepo, "http://localhost:8080", bootstrapToken)
+	authService, err := auth.NewService(log, report, userRepo, "http://localhost:8080", bootstrapToken)
 	if err != nil {
 		t.Fatal(err)
 	}
-	activityService := activity.NewService(log, activityRepo, strava.WebURL)
-	stravaService := stravasvc.NewService(log, activityRepo, e.syncer, nil, strava.WebURL)
-	routeService := route.NewService(log, routeRepo, activityRepo, e.router, e.mapData)
+	activityService := activity.NewService(log, report, activityRepo, strava.WebURL)
+	stravaService := stravasvc.NewService(log, report, activityRepo, e.syncer, nil, strava.WebURL)
+	routeService := route.NewService(log, report, routeRepo, activityRepo, e.router, e.mapData)
 	geoService := geosvc.NewService(log, e.mapData, e.mapData, activityRepo)
-	planService := plan.NewService(log, planRepo, routeRepo, activityRepo, e.mapData)
-	raceService := race.NewService(log, raceRepo, routeRepo)
+	planService := plan.NewService(log, report, planRepo, routeRepo, activityRepo, e.mapData)
+	raceService := race.NewService(log, report, raceRepo, routeRepo)
 	e.liveTrack = &fakeLiveTrack{}
-	racePlanService := raceplan.NewService(log, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
+	racePlanService := raceplan.NewService(log, report, raceRepo, routeRepo, e.liveTrack, "https://trail.example")
 	e.photoDir = t.TempDir()
 	photos, err := blob.NewDir(e.photoDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	userService := user.NewService(log, userRepo, userRepo, photos)
-	tripService := trip.NewService(log, tripRepo, activityRepo, e.syncer, photos, "https://trail.example")
-	raceReportService := racereport.NewService(log, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
+	userService := user.NewService(log, report, userRepo, userRepo, photos)
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, "https://trail.example")
+	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
 
 	// Start listening before creating the handler, as the OAuth server needs
 	// the URL of the server.
 	e.srv = httptest.NewUnstartedServer(nil)
 	t.Cleanup(e.srv.Close)
-	oauthServer := oauth.NewServer(log, userRepo, "http://"+e.srv.Listener.Addr().String(), "/mcp")
+	oauthServer := oauth.NewServer(log, report, userRepo, "http://"+e.srv.Listener.Addr().String(), "/mcp")
 	resourceMetadataURL := oauthServer.ResourceMetadataURL()
 
 	mux := http.NewServeMux()
@@ -212,9 +214,9 @@ func newEnv(t *testing.T) *env {
 	mux.Handle("/race-plans/", racePlanService.CourseHandler(http.NotFoundHandler()))
 	e.imports = &fakeImportRunner{}
 	srv3 := connect.NewServer()
-	routingv1connect.RegisterMapDataServiceHandler(srv3, mapdatasvc.NewService(log, db, fakeExtracts{}, e.imports))
+	routingv1connect.RegisterMapDataServiceHandler(srv3, mapdatasvc.NewService(log, report, db, fakeExtracts{}, e.imports))
 	connecthttp.Mount(mux, srv3)
-	mcpServer, err := mcp.NewServer(log,
+	mcpServer, err := mcp.NewServer(log, report,
 		mcp.Service{Name: racesv1connect.RaceServiceName, Handler: raceService},
 		mcp.Service{Name: routesv1connect.RouteServiceName, Handler: routeService},
 	)
@@ -222,7 +224,7 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	mux.Handle("/mcp", authn.RequireUser(resourceMetadataURL, mcpServer.Handler()))
-	handler, err := authn.NewAuthnMiddleware(ctx, log, userRepo, mux, authn.WithResourceMetadata(resourceMetadataURL))
+	handler, err := authn.NewAuthnMiddleware(ctx, log, report, userRepo, mux, authn.WithResourceMetadata(resourceMetadataURL))
 	if err != nil {
 		t.Fatal(err)
 	}

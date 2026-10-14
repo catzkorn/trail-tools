@@ -14,10 +14,10 @@ import (
 	"syscall"
 
 	"github.com/catzkorn/trail-tools/internal/elevation"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/store"
-	"gitlab.com/greyxor/slogor"
 )
 
 // importOSM runs the import-osm command, which loads OpenStreetMap extracts
@@ -41,6 +41,7 @@ func importOSM(args []string) int {
 	demBucket := fs.String("dem-bucket", "", "The Google Cloud Storage bucket to cache elevation tiles in, using the application default credentials. If unset, they're only cached in -dem-cache")
 	logLevel := fs.String("log-level", "info", "The log level to use")
 	logFormat := fs.String("log-format", "text", "The log format: \"text\" for terminals, or \"json\" for Cloud Logging")
+	errorReportingProject := fs.String("error-reporting-project", "", "The Google Cloud project to report errors to with Error Reporting. If unset, errors are logged")
 	_ = fs.Parse(args)
 	if err := setFlagsFromEnv(fs); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
@@ -51,16 +52,26 @@ func importOSM(args []string) int {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		return 1
 	}
+	report, err := newReporter(context.Background(), log, *errorReportingProject)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
+		return 1
+	}
+	defer func() {
+		if err := report.Close(); err != nil {
+			log.Warn("Failed to send the remaining error reports", slog.String("error", err.Error()))
+		}
+	}()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := runImportOSM(ctx, log, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache, *demBucket); err != nil {
-		log.ErrorContext(ctx, "Failed to import the OpenStreetMap extract", slogor.Err(err))
+	if err := runImportOSM(ctx, log, report, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache, *demBucket); err != nil {
+		report.Report(ctx, "Failed to import the OpenStreetMap extract", err)
 		return 1
 	}
 	return 0
 }
 
-func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, region, source, rawBounds, demURL, demCache, demBucket string) error {
+func runImportOSM(ctx context.Context, log *slog.Logger, report *errreport.Reporter, databaseURL, importID, region, source, rawBounds, demURL, demCache, demBucket string) error {
 	switch {
 	case databaseURL == "":
 		return errors.New("database-url is required")
@@ -94,7 +105,7 @@ func runImportOSM(ctx context.Context, log *slog.Logger, databaseURL, importID, 
 		if err != nil {
 			return fmt.Errorf("invalid import-id: %w", err)
 		}
-		return routing.RunImport(ctx, log, db, dem, id)
+		return routing.RunImport(ctx, log, report, db, dem, id)
 	}
 	_, err = routing.Import(ctx, log, db, routing.ImportConfig{
 		Region:  region,

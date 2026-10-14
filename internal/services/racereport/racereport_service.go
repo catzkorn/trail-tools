@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
@@ -22,7 +23,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -83,6 +83,7 @@ type Plans interface {
 // Service implements API handlers for the race report service.
 type Service struct {
 	log        *slog.Logger
+	report     *errreport.Reporter
 	repo       ReportRepository
 	activities ActivityRepository
 	profiles   ProfileRepository
@@ -92,9 +93,10 @@ type Service struct {
 
 // NewService creates a new Service. baseURL is the public URL of the server,
 // used for the URLs of reports.
-func NewService(log *slog.Logger, repo ReportRepository, activities ActivityRepository, profiles ProfileRepository, plans Plans, baseURL string) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, repo ReportRepository, activities ActivityRepository, profiles ProfileRepository, plans Plans, baseURL string) *Service {
 	return &Service{
 		log:        log,
+		report:     report,
 		repo:       repo,
 		activities: activities,
 		profiles:   profiles,
@@ -616,7 +618,7 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 	case errors.Is(err, races.ErrSlugTaken):
 		return connect.NewError(connect.CodeAlreadyExists, "another of your race reports has this slug; choose another one")
 	default:
-		s.log.ErrorContext(ctx, msg, slogor.Err(err))
+		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
 }

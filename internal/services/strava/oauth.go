@@ -17,6 +17,7 @@ import (
 
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -42,6 +43,7 @@ type OAuthClient interface {
 // OAuth implements the Strava OAuth flow.
 type OAuth struct {
 	log    *slog.Logger
+	report *errreport.Reporter
 	client OAuthClient
 	repo   ConnectionRepository
 	syncer *Syncer
@@ -52,9 +54,10 @@ type OAuth struct {
 // NewOAuth creates a new OAuth. stateKey signs the OAuth state parameter
 // and must be the same on all instances of the server, e.g. the Strava client
 // secret.
-func NewOAuth(log *slog.Logger, client OAuthClient, repo ConnectionRepository, syncer *Syncer, stateKey []byte) *OAuth {
+func NewOAuth(log *slog.Logger, report *errreport.Reporter, client OAuthClient, repo ConnectionRepository, syncer *Syncer, stateKey []byte) *OAuth {
 	return &OAuth{
 		log:      log,
+		report:   report,
 		client:   client,
 		repo:     repo,
 		syncer:   syncer,
@@ -118,7 +121,7 @@ func (o *OAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	token, athlete, err := o.client.Exchange(ctx, q.Get("code"))
 	if err != nil {
-		o.log.ErrorContext(ctx, "Failed to exchange Strava code", slogor.Err(err))
+		o.report.Report(ctx, "Failed to exchange Strava code", err)
 		o.redirectSettings(w, r, "error", "Failed to connect Strava")
 		return
 	}
@@ -131,7 +134,7 @@ func (o *OAuth) handleCallback(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,
 	}); err != nil {
-		o.log.ErrorContext(ctx, "Failed to store Strava connection", slogor.Err(err))
+		o.report.Report(ctx, "Failed to store Strava connection", err)
 		o.redirectSettings(w, r, "error", "Failed to connect Strava")
 		return
 	}

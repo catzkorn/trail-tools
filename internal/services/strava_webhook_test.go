@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -90,7 +91,7 @@ func TestStravaWebhook(t *testing.T) {
 	// Skip the fake's rate limit, which is tested with the full sync.
 	e.strava.rateLimited = true
 	subs := &fakeSubscriptions{}
-	webhook := stravasvc.NewWebhook(log, e.activities, e.syncer, subs, "https://trail.example/strava/webhook", "verify-me")
+	webhook := stravasvc.NewWebhook(log, errreport.NewLocal(log), e.activities, e.syncer, subs, "https://trail.example/strava/webhook", "verify-me")
 
 	// Strava validates the callback with the verify token.
 	validate := func(callbackURL, verifyToken string) error {
@@ -117,7 +118,7 @@ func TestStravaWebhook(t *testing.T) {
 	if err := webhook.Subscribe(ctx); err != nil || len(subs.subs) != 1 || len(subs.deleted) != 1 {
 		t.Errorf("Subscribe with an existing subscription: %v, %v", err, subs.subs)
 	}
-	local := stravasvc.NewWebhook(log, e.activities, e.syncer, subs, "http://localhost:8080/strava/webhook", "verify-me")
+	local := stravasvc.NewWebhook(log, errreport.NewLocal(log), e.activities, e.syncer, subs, "http://localhost:8080/strava/webhook", "verify-me")
 	if err := local.Subscribe(ctx); err == nil {
 		t.Error("Subscribe should fail without a public URL")
 	}

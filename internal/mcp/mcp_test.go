@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
@@ -56,7 +57,7 @@ func allServices() []Service {
 }
 
 func TestNewServer(t *testing.T) {
-	srv, err := NewServer(discardLogger(), allServices()...)
+	srv, err := NewServer(discardLogger(), errreport.NewLocal(discardLogger()), allServices()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +222,7 @@ func TestNewServerErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewServer(discardLogger(), tt.services...)
+			_, err := NewServer(discardLogger(), errreport.NewLocal(discardLogger()), tt.services...)
 			if err == nil {
 				t.Fatal("expected error")
 			}
@@ -288,7 +289,7 @@ func TestValidateSignature(t *testing.T) {
 }
 
 func TestInstructions(t *testing.T) {
-	srv, err := NewServer(discardLogger(), allServices()...)
+	srv, err := NewServer(discardLogger(), errreport.NewLocal(discardLogger()), allServices()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,7 +401,7 @@ func connectClient(t *testing.T, h http.Handler) *mcp.ClientSession {
 func TestCallTool(t *testing.T) {
 	routes := &fakeRoutes{}
 	racePlans := &fakeRacePlans{got: make(chan *racesv1.UpdateRacePlanRequest, 1)}
-	srv, err := NewServer(discardLogger(),
+	srv, err := NewServer(discardLogger(), errreport.NewLocal(discardLogger()),
 		Service{Name: routesv1connect.RouteServiceName, Handler: routes},
 		Service{Name: racesv1connect.RacePlanServiceName, Handler: racePlans},
 	)

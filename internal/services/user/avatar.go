@@ -16,7 +16,6 @@ import (
 	usersv1 "github.com/catzkorn/trail-tools/internal/gen/users/v1"
 	"github.com/catzkorn/trail-tools/internal/images"
 	"github.com/catzkorn/trail-tools/internal/users"
-	"gitlab.com/greyxor/slogor"
 )
 
 const (
@@ -116,7 +115,7 @@ func (s *Service) deleteAvatar(ctx context.Context, key string) {
 		return
 	}
 	if err := s.blobs.Delete(context.WithoutCancel(ctx), avatarObjectKey(key)); err != nil {
-		s.log.ErrorContext(ctx, "Failed to delete avatar image", slogor.Err(err))
+		s.report.Report(ctx, "Failed to delete avatar image", err)
 	}
 }
 
@@ -141,7 +140,7 @@ func (s *Service) AvatarHandler() http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-			s.log.ErrorContext(r.Context(), "Failed to read avatar", slogor.Err(err))
+			s.report.Report(r.Context(), "Failed to read avatar", err)
 			http.Error(w, "failed to read avatar", http.StatusInternalServerError)
 			return
 		}
@@ -154,6 +153,6 @@ func (s *Service) AvatarHandler() http.Handler {
 }
 
 func (s *Service) toConnectError(ctx context.Context, err error, msg string) error {
-	s.log.ErrorContext(ctx, msg, slogor.Err(err))
+	s.report.Report(ctx, msg, err)
 	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }

@@ -19,6 +19,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	authv1 "github.com/catzkorn/trail-tools/internal/gen/auth/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/store"
@@ -68,6 +69,7 @@ type Repository interface {
 // Service implements API handlers for the auth service.
 type Service struct {
 	log            *slog.Logger
+	report         *errreport.Reporter
 	repo           Repository
 	rp             *webauthn.RelyingParty
 	rpName         string
@@ -80,14 +82,15 @@ type Service struct {
 // application, which determines the WebAuthn relying party. bootstrapToken,
 // if set, works as an invitation to create the first administrator while
 // there are no administrators.
-func NewService(log *slog.Logger, repo Repository, baseURL, bootstrapToken string) (*Service, error) {
+func NewService(log *slog.Logger, report *errreport.Reporter, repo Repository, baseURL, bootstrapToken string) (*Service, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil || u.Host == "" {
 		return nil, fmt.Errorf("invalid base URL %q", baseURL)
 	}
 	return &Service{
-		log:  log,
-		repo: repo,
+		log:    log,
+		report: report,
+		repo:   repo,
 		rp: &webauthn.RelyingParty{
 			ID:     u.Hostname(),
 			Origin: u.Scheme + "://" + u.Host,
@@ -427,7 +430,7 @@ func (s *Service) BootstrapHandler(next http.Handler) http.Handler {
 			hasAdmin, err := s.repo.HasAdmin(r.Context())
 			switch {
 			case err != nil:
-				s.log.ErrorContext(r.Context(), "Failed to check for administrators", slogor.Err(err))
+				s.report.Report(r.Context(), "Failed to check for administrators", err)
 			case !hasAdmin:
 				http.Redirect(w, r, "/invite/"+url.PathEscape(s.bootstrapToken), http.StatusFound)
 				return
@@ -538,6 +541,6 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 }
 
 func (s *Service) internalError(ctx context.Context, msg string, err error) error {
-	s.log.ErrorContext(ctx, msg, slogor.Err(err))
+	s.report.Report(ctx, msg, err)
 	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }

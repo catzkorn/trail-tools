@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	plansv1 "github.com/catzkorn/trail-tools/internal/gen/plans/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/catzkorn/trail-tools/internal/plans"
@@ -19,7 +20,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -48,6 +48,7 @@ type PlanRepository interface {
 // Service implements API handlers for the training plan service.
 type Service struct {
 	log        *slog.Logger
+	report     *errreport.Reporter
 	plans      PlanRepository
 	routes     RouteSource
 	activities ActivitySource
@@ -56,9 +57,10 @@ type Service struct {
 
 // NewService creates a new Service. The routes, activities and weather
 // forecast the weather of workouts.
-func NewService(log *slog.Logger, plans PlanRepository, routes RouteSource, activities ActivitySource, weather WeatherSource) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, plans PlanRepository, routes RouteSource, activities ActivitySource, weather WeatherSource) *Service {
 	return &Service{
 		log:        log,
+		report:     report,
 		plans:      plans,
 		routes:     routes,
 		activities: activities,
@@ -552,7 +554,7 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 	case errors.Is(err, store.ErrNotFound):
 		return connect.NewError(connect.CodeNotFound, "not found")
 	default:
-		s.log.ErrorContext(ctx, msg, slogor.Err(err))
+		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
 }

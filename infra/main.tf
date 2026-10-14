@@ -20,6 +20,7 @@ resource "google_project_service" "services" {
     "billingbudgets.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "cloudscheduler.googleapis.com",
+    "clouderrorreporting.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "run.googleapis.com",

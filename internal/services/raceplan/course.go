@@ -51,7 +51,7 @@ func (s *Service) CourseHandler(next http.Handler) http.Handler {
 			CoursePoints:   checkpointCoursePoints(checkpoints, arrivals),
 			Start:          time.Now(),
 		}
-		route.WriteFIT(w, r, s.log, route.DownloadFilename(race.Name, "race"), course)
+		route.WriteFIT(w, r, s.report, route.DownloadFilename(race.Name, "race"), course)
 	})
 }
 

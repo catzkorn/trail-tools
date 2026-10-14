@@ -10,6 +10,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/catzkorn/trail-tools/internal/protomask"
@@ -17,7 +18,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -43,14 +43,16 @@ type RouteRepository interface {
 // Service implements API handlers for the race service.
 type Service struct {
 	log    *slog.Logger
+	report *errreport.Reporter
 	races  RaceRepository
 	routes RouteRepository
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, races RaceRepository, routes RouteRepository) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, races RaceRepository, routes RouteRepository) *Service {
 	return &Service{
 		log:    log,
+		report: report,
 		races:  races,
 		routes: routes,
 	}
@@ -258,6 +260,6 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 	if errors.Is(err, store.ErrNotFound) {
 		return connect.NewError(connect.CodeNotFound, "race not found")
 	}
-	s.log.ErrorContext(ctx, msg, slogor.Err(err))
+	s.report.Report(ctx, msg, err)
 	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }

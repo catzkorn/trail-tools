@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -77,6 +77,7 @@ const (
 // runs per user.
 type Syncer struct {
 	log    *slog.Logger
+	report *errreport.Reporter
 	repo   SyncRepository
 	client StravaClient
 	nowFn  func() time.Time
@@ -100,9 +101,10 @@ type Syncer struct {
 // If background is false, Start does nothing and syncs must be run with
 // SyncOnce and SyncDue, e.g. from a scheduled job, which trigger, if not
 // nil, runs when a sync is requested.
-func NewSyncer(ctx context.Context, log *slog.Logger, repo SyncRepository, client StravaClient, background bool, trigger Trigger) *Syncer {
+func NewSyncer(ctx context.Context, log *slog.Logger, report *errreport.Reporter, repo SyncRepository, client StravaClient, background bool, trigger Trigger) *Syncer {
 	return &Syncer{
 		log:        log,
+		report:     report,
 		repo:       repo,
 		client:     client,
 		nowFn:      time.Now,
@@ -174,7 +176,7 @@ func (s *Syncer) Request(ctx context.Context, userID pgtype.UUID, full bool) err
 		if err == nil {
 			return nil
 		}
-		s.log.ErrorContext(ctx, "Failed to trigger a Strava sync, syncing within the request instead", slogor.Err(err))
+		s.report.Report(ctx, "Failed to trigger a Strava sync, syncing within the request instead", err)
 	}
 	syncCtx, cancel := context.WithTimeout(ctx, inlineSyncBudget)
 	defer cancel()
@@ -264,7 +266,7 @@ func (s *Syncer) RunBackground(ctx context.Context) {
 	for {
 		conns, err := s.repo.ListStravaConnections(ctx)
 		if err != nil {
-			s.log.ErrorContext(ctx, "Failed to list Strava connections", slogor.Err(err))
+			s.report.Report(ctx, "Failed to list Strava connections", err)
 		}
 		for _, conn := range conns {
 			// Rate limited syncs resume waiting for the limit to reset.
@@ -288,7 +290,8 @@ var errRateLimited = errors.New("rate limited")
 // connection's sync state. If wait is set, it waits for rate limits to
 // reset, otherwise it stops.
 func (s *Syncer) sync(ctx context.Context, userID pgtype.UUID, full, wait bool) {
-	log := s.log.With(slog.String("user_id", store.UUIDToString(userID)))
+	user := slog.String("user_id", store.UUIDToString(userID))
+	log, report := s.log.With(user), s.report.With(user)
 	log.InfoContext(ctx, "Starting Strava sync", slog.Bool("full", full))
 	err := s.runSync(ctx, log, userID, full, wait)
 	if ctx.Err() != nil {
@@ -304,19 +307,19 @@ func (s *Syncer) sync(ctx context.Context, userID pgtype.UUID, full, wait bool) 
 	// Use a fresh context so the final state is recorded.
 	stateCtx := context.WithoutCancel(ctx)
 	if err != nil {
-		log.ErrorContext(ctx, "Strava sync failed", slogor.Err(err))
+		report.Report(ctx, "Strava sync failed", err)
 		if err := s.repo.UpdateStravaSyncState(stateCtx, userID, activities.SyncStateFailed, err.Error(), time.Time{}, time.Time{}); err != nil {
-			log.ErrorContext(ctx, "Failed to record sync failure", slogor.Err(err))
+			report.Report(ctx, "Failed to record sync failure", err)
 		}
 		return
 	}
 	total, _, err := s.repo.CountActivities(stateCtx, userID)
 	if err != nil {
-		log.ErrorContext(ctx, "Failed to count activities", slogor.Err(err))
+		report.Report(ctx, "Failed to count activities", err)
 	}
 	message := fmt.Sprintf("Synced %d activities", total)
 	if err := s.repo.UpdateStravaSyncState(stateCtx, userID, activities.SyncStateIdle, message, time.Time{}, s.nowFn()); err != nil {
-		log.ErrorContext(ctx, "Failed to record sync completion", slogor.Err(err))
+		report.Report(ctx, "Failed to record sync completion", err)
 	}
 	log.InfoContext(ctx, "Finished Strava sync", slog.Int64("activities", total))
 }

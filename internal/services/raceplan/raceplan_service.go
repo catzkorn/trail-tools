@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/races/v1/racesv1connect"
 	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
@@ -23,7 +24,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/route"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -52,6 +52,7 @@ type RouteRepository interface {
 // Service implements API handlers for the race plan service.
 type Service struct {
 	log         *slog.Logger
+	report      *errreport.Reporter
 	repo        RacePlanRepository
 	routes      RouteRepository
 	liveTracker LiveTracker
@@ -61,9 +62,10 @@ type Service struct {
 
 // NewService creates a new Service. baseURL is the public URL of the server,
 // used to create share links.
-func NewService(log *slog.Logger, repo RacePlanRepository, routes RouteRepository, liveTracker LiveTracker, baseURL string) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, repo RacePlanRepository, routes RouteRepository, liveTracker LiveTracker, baseURL string) *Service {
 	return &Service{
 		log:         log,
+		report:      report,
 		repo:        repo,
 		routes:      routes,
 		liveTracker: liveTracker,
@@ -420,7 +422,7 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 	case errors.Is(err, races.ErrCheckpointNotFound):
 		return connect.NewError(connect.CodeInvalidArgument, "the checkpoint doesn't exist in the plan")
 	default:
-		s.log.ErrorContext(ctx, msg, slogor.Err(err))
+		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
 }
