@@ -21,7 +21,11 @@ import {
   useQuery,
   useTransport,
 } from "@connectrpc/connect-query";
-import { PrinterIcon, ShareIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowDownTrayIcon,
+  PrinterIcon,
+  ShareIcon,
+} from "@heroicons/react/24/outline";
 import { skipToken, useQueryClient } from "@tanstack/react-query";
 import {
   deleteRacePlan,
@@ -229,6 +233,17 @@ const RacePlanPage: React.FC = () => {
               <PrinterIcon className="size-4" />
               Print
             </button>
+            {courseRouteId !== "" && (
+              <a
+                href={`/race-plans/${plan.id}.fit`}
+                className={secondaryButton}
+                title="The course for Garmin and other watches, with the checkpoints and a virtual partner on your planned splits"
+                download
+              >
+                <ArrowDownTrayIcon className="size-4" />
+                Garmin course
+              </a>
+            )}
             <ConfirmButton
               title="Delete race plan?"
               message="The race itself is kept. A new plan can be created from the Races page."

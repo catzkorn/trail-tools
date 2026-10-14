@@ -22,9 +22,6 @@ const (
 	minForecastInterval     = 15 * time.Minute
 	maxForecastPoints       = 200
 	maxForecastPathPoints   = 1000
-	// elevationSmoothingWindow is the number of points averaged when
-	// estimating climbing time, to filter elevation noise.
-	elevationSmoothingWindow = 5
 )
 
 // forecastSample is a point along the route at an expected time.
@@ -142,16 +139,7 @@ func (s *Service) forecastPath(ctx context.Context, msg *routesv1.GetRouteForeca
 // elevation gain at the climbing rate if it is set.
 func sampleRoute(points []geo.Point, speedKMH, climbMetersPerHour float64, interval time.Duration) ([]forecastSample, time.Duration) {
 	dists := geo.CumulativeDistances(points)
-	smoothed := smoothElevations(points)
-	elapsed := make([]float64, len(points))
-	speedMPS := speedKMH * 1000 / 3600
-	for i := 1; i < len(points); i++ {
-		dt := (dists[i] - dists[i-1]) / speedMPS
-		if climb := smoothed[i] - smoothed[i-1]; climbMetersPerHour > 0 && climb > 0 {
-			dt += climb / climbMetersPerHour * 3600
-		}
-		elapsed[i] = elapsed[i-1] + dt
-	}
+	elapsed := geo.ElapsedSeconds(points, speedKMH, climbMetersPerHour)
 	total := elapsed[len(elapsed)-1]
 	at := func(kind routesv1.ForecastPointKind, idx int) forecastSample {
 		return forecastSample{
@@ -194,24 +182,6 @@ func sampleRoute(points []geo.Point, speedKMH, climbMetersPerHour float64, inter
 	samples = append(samples, at(routesv1.ForecastPointKind_FORECAST_POINT_KIND_FINISH, len(points)-1))
 	sort.SliceStable(samples, func(i, j int) bool { return samples[i].elapsed < samples[j].elapsed })
 	return samples, time.Duration(total * float64(time.Second))
-}
-
-// smoothElevations returns the elevations averaged over a small window.
-func smoothElevations(points []geo.Point) []float64 {
-	smoothed := make([]float64, len(points))
-	for i := range points {
-		// Shrink the window near the ends so the start and end elevations
-		// are kept.
-		half := min(elevationSmoothingWindow/2, i, len(points)-1-i)
-		var sum float64
-		var n int
-		for j := i - half; j <= i+half; j++ {
-			sum += points[j].Ele
-			n++
-		}
-		smoothed[i] = sum / float64(n)
-	}
-	return smoothed
 }
 
 func forecastPointToProto(sample forecastSample, t time.Time, w mapdata.Weather) *routesv1.ForecastPoint {

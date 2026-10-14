@@ -208,7 +208,8 @@ func newEnv(t *testing.T) *env {
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
 	mux.Handle(trip.ProfilePath, raceReportService.PageHandler(false, tripService.PageHandler(false)))
 
-	mux.Handle("/routes/", routeService.GPXHandler(http.NotFoundHandler()))
+	mux.Handle("/routes/", routeService.DownloadHandler(http.NotFoundHandler()))
+	mux.Handle("/race-plans/", racePlanService.CourseHandler(http.NotFoundHandler()))
 	e.imports = &fakeImportRunner{}
 	srv3 := connect.NewServer()
 	routingv1connect.RegisterMapDataServiceHandler(srv3, mapdatasvc.NewService(log, db, fakeExtracts{}, e.imports))

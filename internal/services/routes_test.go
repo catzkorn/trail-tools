@@ -154,6 +154,17 @@ func TestRoutes(t *testing.T) {
 		!strings.Contains(resp.Header.Get("Content-Disposition"), "Bigger-hill-loop.gpx") {
 		t.Fatalf("unexpected GPX response %d %s", resp.StatusCode, gpx)
 	}
+	// And as a FIT course for Garmin devices.
+	resp, fit := e.get("/routes/"+routeID+".fit", e.token)
+	if resp.StatusCode != http.StatusOK || len(fit) < 100 || string(fit[8:12]) != ".FIT" ||
+		resp.Header.Get("Content-Type") != "application/vnd.ant.fit" ||
+		!strings.Contains(resp.Header.Get("Content-Disposition"), "Bigger-hill-loop.fit") {
+		t.Fatalf("unexpected FIT response %d %v", resp.StatusCode, resp.Header)
+	}
+	if resp, _ := e.get("/routes/"+routeID+".fit", e.otherToken); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("FIT course of another user's route: status %d, want 404", resp.StatusCode)
+	}
+
 	imported, err := e.routes.CreateRoute(ctx, routesv1.CreateRouteRequest_builder{
 		Gpx: new(string(gpx)),
 	}.Build())
