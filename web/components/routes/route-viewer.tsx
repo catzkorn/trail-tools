@@ -195,6 +195,15 @@ const RouteViewer: React.FC<RouteViewerProps> = ({ route, onEdit }) => {
                 <ArrowDownTrayIcon className="size-4" />
                 GPX
               </a>
+              <a
+                href={`/routes/${route.id}.fit`}
+                className={secondaryButton}
+                title="A course for Garmin and other watches, with a virtual partner at an easy pace"
+                download
+              >
+                <ArrowDownTrayIcon className="size-4" />
+                Garmin course
+              </a>
               <Link
                 to={`/forecast?route=${route.id}`}
                 className={secondaryButton}

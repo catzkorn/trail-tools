@@ -612,7 +612,8 @@ func run(
 	oauthServer.RegisterHandlers(mux, indexHandler)
 	// Serve routes as GPX files, falling back to the frontend for other
 	// /routes/ pages.
-	mux.Handle("/routes/", authenticate(routeService.GPXHandler(indexHandler)))
+	mux.Handle("/routes/", authenticate(routeService.DownloadHandler(indexHandler)))
+	mux.Handle("/race-plans/", authenticate(racePlanService.CourseHandler(indexHandler)))
 	// Registering /routes/ makes the mux redirect /routes to /routes/, so
 	// serve the frontend for /routes explicitly.
 	mux.Handle("/routes", indexHandler)
