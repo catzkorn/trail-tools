@@ -106,13 +106,16 @@ where id = sqlc.arg(id);
 -- name: UpsertActivityStreams :exec
 insert into strava_activity_streams (
   activity_id,
-  streams
+  streams,
+  track_polyline
 ) values (
   $1,
-  $2
+  $2,
+  sqlc.arg(track_polyline)::text
 )
 on conflict (activity_id) do update set
-  streams = excluded.streams;
+  streams = excluded.streams,
+  track_polyline = excluded.track_polyline;
 
 -- name: ListActivities :many
 select
@@ -156,7 +159,7 @@ where user_id = $1
 order by start_date_local;
 
 -- name: ListActivityTracksInBounds :many
-select a.id, a.summary_polyline, s.streams
+select a.id, a.summary_polyline, s.track_polyline, (s.activity_id is not null)::boolean as has_streams
 from strava_activities a
 left join strava_activity_streams s on s.activity_id = a.id
 where a.user_id = $1
@@ -166,3 +169,22 @@ where a.user_id = $1
   and a.max_lng >= sqlc.arg(west)::double precision
   and (sqlc.narg(start_date)::date is null or a.start_date_local >= sqlc.narg(start_date)::date)
   and (sqlc.narg(end_date)::date is null or a.start_date_local <= sqlc.narg(end_date)::date);
+
+-- name: ListActivitySummaryTracksInBounds :many
+select id, summary_polyline
+from strava_activities
+where user_id = $1
+  and min_lat <= sqlc.arg(north)::double precision
+  and max_lat >= sqlc.arg(south)::double precision
+  and min_lng <= sqlc.arg(east)::double precision
+  and max_lng >= sqlc.arg(west)::double precision
+  and (sqlc.narg(start_date)::date is null or start_date_local >= sqlc.narg(start_date)::date)
+  and (sqlc.narg(end_date)::date is null or start_date_local <= sqlc.narg(end_date)::date);
+
+-- name: ListStreamsWithoutTrack :many
+select activity_id, streams from strava_activity_streams
+where activity_id = any(sqlc.arg(activity_ids)::uuid[]) and track_polyline is null;
+
+-- name: SetActivityTrack :exec
+update strava_activity_streams set track_polyline = sqlc.arg(track_polyline)::text
+where activity_id = $1;

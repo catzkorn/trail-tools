@@ -1069,8 +1069,9 @@ type StravaActivityPhoto struct {
 }
 
 type StravaActivityStream struct {
-	ActivityID pgtype.UUID
-	Streams    []byte
+	ActivityID    pgtype.UUID
+	Streams       []byte
+	TrackPolyline pgtype.Text
 }
 
 type StravaConnection struct {

@@ -217,7 +217,7 @@ func (t *trackSnapper) deviation(i, j int, path []geo.Point) (float64, int) {
 func (t *trackSnapper) straight(i, j int) []snapLeg {
 	worst, worstIndex := 0.0, -1
 	for k := i + 1; k < j; k++ {
-		if d := pointSegmentDistance(t.points[k], t.points[i], t.points[j]); d > worst {
+		if d := geo.SegmentDistance(t.points[k], t.points[i], t.points[j]); d > worst {
 			worst, worstIndex = d, k
 		}
 	}
@@ -345,7 +345,7 @@ func distanceToPath(p geo.Point, path []geo.Point) float64 {
 	}
 	nearest := math.Inf(1)
 	for i := 1; i < len(path); i++ {
-		nearest = math.Min(nearest, pointSegmentDistance(p, path[i-1], path[i]))
+		nearest = math.Min(nearest, geo.SegmentDistance(p, path[i-1], path[i]))
 	}
 	return nearest
 }

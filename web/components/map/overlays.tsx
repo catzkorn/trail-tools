@@ -12,7 +12,7 @@ import { formatKm } from "helpers/format";
 import { terrainStyle } from "helpers/labels";
 import { decodePolyline } from "helpers/polyline";
 import * as leaflet from "leaflet";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 import type { Viewport } from "./layers";
 import { textElement } from "./layers";
@@ -39,6 +39,31 @@ const HEAT_COLOR = "#6f3410";
 // MetersPerPixel is the size of a screen pixel on the map at a latitude.
 const metersPerPixel = (lat: number, zoom: number): number =>
   (40_075_016 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 8);
+
+/**
+ * STALE_TIME is how long fetched trails and heatmap tracks are reused, so
+ * panning back or refocusing the window doesn't fetch them again.
+ */
+const STALE_TIME = 5 * 60 * 1000;
+
+/**
+ * UseCanvasRenderer returns a canvas renderer for an overlay's lines, removed
+ * from the map when the overlay unmounts. Canvas draws many lines much faster
+ * than SVG.
+ */
+const useCanvasRenderer = (
+  map: leaflet.Map,
+  options: leaflet.RendererOptions
+): leaflet.Canvas => {
+  const [renderer] = useState(() => leaflet.canvas(options));
+  useEffect(
+    () => () => {
+      renderer.removeFrom(map);
+    },
+    [map, renderer]
+  );
+  return renderer;
+};
 
 interface OverlayProps {
   viewport: Viewport;
@@ -69,12 +94,14 @@ export const useTrails = (
     shown && zoom >= TRAILS_MIN_ZOOM
       ? {
           center: { lat: round(center.lat, 3), lng: round(center.lng, 3) },
+          // Simplified to about a pixel.
+          geometryToleranceMeters: Math.round(metersPerPixel(center.lat, zoom)),
           includeGeometry: true,
           limit: 300,
           radiusMeters: searchRadius(viewport),
         }
       : skipToken,
-    { placeholderData: keepPreviousData, retry }
+    { placeholderData: keepPreviousData, retry, staleTime: STALE_TIME }
   );
 };
 
@@ -102,14 +129,14 @@ export const HeatmapOverlay: React.FC<OverlayProps> = ({ viewport }) => {
         Math.round(metersPerPixel(bounds.getCenter().lat, zoom))
       ),
     },
-    { placeholderData: keepPreviousData }
+    { placeholderData: keepPreviousData, staleTime: STALE_TIME }
   );
+  const renderer = useCanvasRenderer(map, { padding: 0.2 });
 
   useEffect(() => {
     if (data === undefined) {
       return undefined;
     }
-    const renderer = leaflet.canvas({ padding: 0.2 });
     const group = leaflet.layerGroup();
     for (const polyline of data.polylines) {
       group.addLayer(
@@ -128,7 +155,7 @@ export const HeatmapOverlay: React.FC<OverlayProps> = ({ viewport }) => {
     return () => {
       group.remove();
     };
-  }, [map, data]);
+  }, [map, data, renderer]);
 
   return null;
 };
@@ -138,6 +165,8 @@ export const TrailsOverlay: React.FC<OverlayProps> = ({ viewport }) => {
   const map = useMap();
   const enabled = viewport.zoom >= TRAILS_MIN_ZOOM;
   const { data } = useTrails(viewport, true);
+  // A few pixels around the thin lines show their tooltips.
+  const renderer = useCanvasRenderer(map, { padding: 0.2, tolerance: 4 });
 
   useEffect(() => {
     if (data === undefined || !enabled) {
@@ -158,6 +187,7 @@ export const TrailsOverlay: React.FC<OverlayProps> = ({ viewport }) => {
           color: style.color,
           dashArray: "6 4",
           opacity: 0.9,
+          renderer,
           weight: 2.5,
         }
       );
@@ -177,7 +207,7 @@ export const TrailsOverlay: React.FC<OverlayProps> = ({ viewport }) => {
     return () => {
       group.remove();
     };
-  }, [map, data, enabled]);
+  }, [map, data, enabled, renderer]);
 
   return null;
 };

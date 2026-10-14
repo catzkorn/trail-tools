@@ -37,7 +37,7 @@ func TestFinder(t *testing.T) {
 
 	// The trails near the spur are returned whole, once: the spur, the link
 	// and the east trail, but not the road or the west trail.
-	trails, err := finder.FindTrails(ctx, geo.Point{Lat: 0.005, Lng: 0.002}, 300)
+	trails, err := finder.FindTrails(ctx, geo.Point{Lat: 0.005, Lng: 0.002}, 300, 10)
 	if err != nil {
 		t.Fatalf("FindTrails: %v", err)
 	}
@@ -56,12 +56,21 @@ func TestFinder(t *testing.T) {
 		t.Errorf("got east trail %+v", east)
 	}
 	wantPoints := []geo.Point{{Lat: 0, Lng: 0}, {Lat: 0.005, Lng: 0.004}, {Lat: 0.01, Lng: 0}}
-	if !slices.Equal(east.Points, wantPoints) {
+	if !slices.EqualFunc(east.Points, wantPoints, func(a, b geo.Point) bool { return a.Lat == b.Lat && a.Lng == b.Lng }) {
 		t.Errorf("got east trail points %v, want %v", east.Points, wantPoints)
 	}
 	// The link is straight, so its middle point is simplified away.
 	if link := byID[15]; link.Name != "Link" || len(link.Points) != 2 {
 		t.Errorf("got link %+v", link)
+	}
+	// The limit keeps the nearest trails: the spur and the link, which both
+	// start at the center, but not the east trail.
+	trails, err = finder.FindTrails(ctx, geo.Point{Lat: 0.005, Lng: 0.002}, 300, 2)
+	if err != nil {
+		t.Fatalf("FindTrails: %v", err)
+	}
+	if len(trails) != 2 || trails[0].WayID != 13 || trails[1].WayID != 15 {
+		t.Errorf("got trails %+v, want ways 13 and 15", trails)
 	}
 
 	// Points of interest of the given kinds are returned once.
@@ -89,7 +98,7 @@ func TestFinder(t *testing.T) {
 
 	// Nothing is found in an imported area without trails or points of
 	// interest of the kinds.
-	if trails, err := finder.FindTrails(ctx, geo.Point{Lat: 0.019, Lng: 0.019}, 100); err != nil || len(trails) != 0 {
+	if trails, err := finder.FindTrails(ctx, geo.Point{Lat: 0.019, Lng: 0.019}, 100, 10); err != nil || len(trails) != 0 {
 		t.Errorf("FindTrails: got %+v, %v, want none", trails, err)
 	}
 	if features, err := finder.FindFeatures(ctx, geo.Point{Lat: 0.005, Lng: 0.005}, 1000, []geo.FeatureKind{geo.FeatureWater}); err != nil || len(features) != 0 {
@@ -97,7 +106,7 @@ func TestFinder(t *testing.T) {
 	}
 	// Areas outside the imported regions have no map data.
 	outside := geo.Point{Lat: -30, Lng: -30}
-	if _, err := finder.FindTrails(ctx, outside, 1000); !errors.Is(err, routing.ErrNoMapData) {
+	if _, err := finder.FindTrails(ctx, outside, 1000, 10); !errors.Is(err, routing.ErrNoMapData) {
 		t.Errorf("FindTrails: got %v, want ErrNoMapData", err)
 	}
 	if _, err := finder.FindFeatures(ctx, outside, 1000, []geo.FeatureKind{geo.FeaturePeak}); !errors.Is(err, routing.ErrNoMapData) {

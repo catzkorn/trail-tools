@@ -2,7 +2,6 @@ package routing
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -30,7 +29,8 @@ type Trail struct {
 	WayID                            int64
 	Name, Highway, Surface, SacScale string
 	Terrain                          geo.Terrain
-	Points                           []geo.Point
+	// The points of the trail, without elevations.
+	Points []geo.Point
 }
 
 // Finder finds trails and points of interest in the imported regions.
@@ -60,23 +60,29 @@ func nearSQL(column string) string {
 	and ST_DWithin(` + column + `::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)`
 }
 
-// FindTrails returns the trails with a section within radius meters of
-// center, whole. A way that's only partly imported is returned as one trail
-// for each part. It returns ErrNoMapData if the area is outside every
-// imported region.
-func (f *Finder) FindTrails(ctx context.Context, center geo.Point, radius float64) ([]Trail, error) {
+// FindTrails returns the up to limit trails nearest center with a section
+// within radius meters of it, whole, nearest first. A way that's only partly
+// imported is returned as one trail for each part. It returns ErrNoMapData if
+// the area is outside every imported region.
+func (f *Finder) FindTrails(ctx context.Context, center geo.Point, radius float64, limit int) ([]Trail, error) {
 	// Ways are found by their edges near the center, and returned with all
 	// their edges, in order. Overlapping regions can both have a way, so
-	// it's taken from one of them.
+	// it's taken from one of them. The edges are read as encoded polylines,
+	// which are accurate to about a meter and much cheaper to decode than
+	// GeoJSON.
 	rows, err := f.db.Query(ctx, `with near as (
-		select way_id, min(region_id) as region_id from routing_edges
+		select way_id, min(region_id) as region_id,
+			min(ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, false)) as distance
+		from routing_edges
 		where way_id is not null and highway in `+trailHighwaysSQL+` and `+nearSQL("geom")+`
 		group by way_id
+		order by distance, way_id
+		limit $6
 	)
-	select e.way_id, e.source, e.target, ST_AsGeoJSON(e.geom), e.name, e.highway, e.surface, e.sac_scale, e.terrain
+	select e.way_id, e.source, e.target, ST_AsEncodedPolyline(e.geom), e.name, e.highway, e.surface, e.sac_scale, e.terrain
 	from routing_edges e join near n on e.way_id = n.way_id and e.region_id = n.region_id
 	where e.highway in `+trailHighwaysSQL+`
-	order by e.way_id, e.id`, searchArea(center, radius)...)
+	order by n.distance, e.way_id, e.id`, append(searchArea(center, radius), limit)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find trails: %w", err)
 	}
@@ -86,19 +92,13 @@ func (f *Finder) FindTrails(ctx context.Context, center geo.Point, radius float6
 	for rows.Next() {
 		var t Trail
 		var source, target int64
-		var geojson, terrain string
-		if err := rows.Scan(&t.WayID, &source, &target, &geojson, &t.Name, &t.Highway, &t.Surface, &t.SacScale, &terrain); err != nil {
+		var polyline, terrain string
+		if err := rows.Scan(&t.WayID, &source, &target, &polyline, &t.Name, &t.Highway, &t.Surface, &t.SacScale, &terrain); err != nil {
 			return nil, fmt.Errorf("failed to find trails: %w", err)
 		}
-		var line struct {
-			Coordinates [][2]float64 `json:"coordinates"`
-		}
-		if err := json.Unmarshal([]byte(geojson), &line); err != nil {
+		points, err := geo.DecodePolyline(polyline)
+		if err != nil {
 			return nil, fmt.Errorf("failed to decode a section of way %d: %w", t.WayID, err)
-		}
-		points := make([]geo.Point, len(line.Coordinates))
-		for i, c := range line.Coordinates {
-			points[i] = geo.Point{Lng: c[0], Lat: c[1]}
 		}
 		// The edges of a way were imported in order, each starting where the
 		// one before ends.
