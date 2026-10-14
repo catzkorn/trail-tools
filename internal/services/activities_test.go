@@ -406,6 +406,24 @@ func TestGeo(t *testing.T) {
 		t.Errorf("unexpected trail %v", trail)
 	}
 
+	// The geometry can be simplified: the straight trail is its ends.
+	for _, tt := range []struct {
+		tolerance float64
+		want      int
+	}{{0, 5}, {10, 2}} {
+		trails, err := e.geo.FindTrails(ctx, geov1.FindTrailsRequest_builder{
+			Center:                  center,
+			IncludeGeometry:         true,
+			GeometryToleranceMeters: tt.tolerance,
+		}.Build())
+		if err != nil {
+			t.Fatalf("FindTrails: %v", err)
+		}
+		if got := len(trails.GetTrails()[0].GetGeometry()); got != tt.want {
+			t.Errorf("got %d points at a tolerance of %v meters, want %d", got, tt.tolerance, tt.want)
+		}
+	}
+
 	pois, err := e.geo.FindPointsOfInterest(ctx, geov1.FindPointsOfInterestRequest_builder{
 		Center: center,
 		Kinds:  []geov1.PointOfInterestKind{geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_PEAK, geov1.PointOfInterestKind_POINT_OF_INTEREST_KIND_WATER},

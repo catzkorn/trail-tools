@@ -600,13 +600,14 @@ func (b0 SearchPlacesResponse_builder) Build() *SearchPlacesResponse {
 }
 
 type FindTrailsRequest struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Center          *LatLng                `protobuf:"bytes,1,opt,name=center,proto3"`
-	xxx_hidden_RadiusMeters    float64                `protobuf:"fixed64,2,opt,name=radius_meters,json=radiusMeters,proto3"`
-	xxx_hidden_Limit           int32                  `protobuf:"varint,3,opt,name=limit,proto3"`
-	xxx_hidden_IncludeGeometry bool                   `protobuf:"varint,4,opt,name=include_geometry,json=includeGeometry,proto3"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Center                  *LatLng                `protobuf:"bytes,1,opt,name=center,proto3"`
+	xxx_hidden_RadiusMeters            float64                `protobuf:"fixed64,2,opt,name=radius_meters,json=radiusMeters,proto3"`
+	xxx_hidden_Limit                   int32                  `protobuf:"varint,3,opt,name=limit,proto3"`
+	xxx_hidden_IncludeGeometry         bool                   `protobuf:"varint,4,opt,name=include_geometry,json=includeGeometry,proto3"`
+	xxx_hidden_GeometryToleranceMeters float64                `protobuf:"fixed64,5,opt,name=geometry_tolerance_meters,json=geometryToleranceMeters,proto3"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *FindTrailsRequest) Reset() {
@@ -662,6 +663,13 @@ func (x *FindTrailsRequest) GetIncludeGeometry() bool {
 	return false
 }
 
+func (x *FindTrailsRequest) GetGeometryToleranceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_GeometryToleranceMeters
+	}
+	return 0
+}
+
 func (x *FindTrailsRequest) SetCenter(v *LatLng) {
 	x.xxx_hidden_Center = v
 }
@@ -676,6 +684,10 @@ func (x *FindTrailsRequest) SetLimit(v int32) {
 
 func (x *FindTrailsRequest) SetIncludeGeometry(v bool) {
 	x.xxx_hidden_IncludeGeometry = v
+}
+
+func (x *FindTrailsRequest) SetGeometryToleranceMeters(v float64) {
+	x.xxx_hidden_GeometryToleranceMeters = v
 }
 
 func (x *FindTrailsRequest) HasCenter() bool {
@@ -696,11 +708,16 @@ type FindTrailsRequest_builder struct {
 	Center *LatLng
 	// The search radius in meters. Defaults to 3000, maximum 15000.
 	RadiusMeters float64
-	// Maximum number of trails to return. Defaults to 50, maximum 500.
+	// Maximum number of trails to return, those nearest the center, longest
+	// first. Defaults to 50, maximum 500.
 	Limit int32
 	// Include the geometry of each trail. Increases the response size
 	// significantly; leave unset unless the coordinates are needed.
 	IncludeGeometry bool
+	// How far in meters the returned geometry may stray from the trails, to
+	// make the response smaller, e.g. the size of a pixel when drawing them on
+	// a map. Defaults to 0, the full geometry.
+	GeometryToleranceMeters float64
 }
 
 func (b0 FindTrailsRequest_builder) Build() *FindTrailsRequest {
@@ -711,6 +728,7 @@ func (b0 FindTrailsRequest_builder) Build() *FindTrailsRequest {
 	x.xxx_hidden_RadiusMeters = b.RadiusMeters
 	x.xxx_hidden_Limit = b.Limit
 	x.xxx_hidden_IncludeGeometry = b.IncludeGeometry
+	x.xxx_hidden_GeometryToleranceMeters = b.GeometryToleranceMeters
 	return m0
 }
 
@@ -1761,7 +1779,9 @@ type ListHeatmapTracksRequest_builder struct {
 	// The area to list the tracks in.
 	Bounds *BoundingBox
 	// How far in meters the simplified tracks may stray from the recorded
-	// ones. Defaults to 10, minimum 1.
+	// ones. Defaults to 10, minimum 1. The tracks are stored simplified to 2
+	// meters, and from 50 meters the activities' summary polylines are used,
+	// which are much faster to list.
 	ToleranceMeters float64
 }
 
@@ -1961,12 +1981,13 @@ const file_geo_v1_geo_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12+\n" +
 	"\x06bounds\x18\x05 \x01(\v2\x13.geo.v1.BoundingBoxR\x06bounds\"=\n" +
 	"\x14SearchPlacesResponse\x12%\n" +
-	"\x06places\x18\x01 \x03(\v2\r.geo.v1.PlaceR\x06places\"\xa1\x01\n" +
+	"\x06places\x18\x01 \x03(\v2\r.geo.v1.PlaceR\x06places\"\xdd\x01\n" +
 	"\x11FindTrailsRequest\x12&\n" +
 	"\x06center\x18\x01 \x01(\v2\x0e.geo.v1.LatLngR\x06center\x12#\n" +
 	"\rradius_meters\x18\x02 \x01(\x01R\fradiusMeters\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12)\n" +
-	"\x10include_geometry\x18\x04 \x01(\bR\x0fincludeGeometry\"\xbb\x03\n" +
+	"\x10include_geometry\x18\x04 \x01(\bR\x0fincludeGeometry\x12:\n" +
+	"\x19geometry_tolerance_meters\x18\x05 \x01(\x01R\x17geometryToleranceMeters\"\xbb\x03\n" +
 	"\x05Trail\x12\x15\n" +
 	"\x06osm_id\x18\x01 \x01(\tR\x05osmId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +

@@ -422,7 +422,7 @@ func (f *fakeMapData) Search(_ context.Context, query string, limit int) ([]mapd
 
 // FindTrails returns a trail north from the center. Areas south of 60°S
 // haven't been imported.
-func (f *fakeMapData) FindTrails(_ context.Context, center geo.Point, radius float64) ([]routing.Trail, error) {
+func (f *fakeMapData) FindTrails(_ context.Context, center geo.Point, radius float64, limit int) ([]routing.Trail, error) {
 	if center.Lat < -60 {
 		return nil, routing.ErrNoMapData
 	}

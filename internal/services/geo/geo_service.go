@@ -36,12 +36,12 @@ type MapData interface {
 // Finder finds trails and points of interest in the imported OpenStreetMap
 // data.
 type Finder interface {
-	FindTrails(ctx context.Context, center geo.Point, radius float64) ([]routing.Trail, error)
+	FindTrails(ctx context.Context, center geo.Point, radius float64, limit int) ([]routing.Trail, error)
 	FindFeatures(ctx context.Context, center geo.Point, radius float64, kinds []geo.FeatureKind) ([]routing.Feature, error)
 }
 
 type TrackRepository interface {
-	ListTracksInBounds(ctx context.Context, userID pgtype.UUID, bounds geo.Bounds, startDate, endDate time.Time) ([]activities.Track, error)
+	ListTracksInBounds(ctx context.Context, userID pgtype.UUID, bounds geo.Bounds, startDate, endDate time.Time, precision float64) ([]activities.Track, error)
 }
 
 // Service implements API handlers for the geo service.
@@ -110,7 +110,11 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 	}
 	limit := clamp(int(req.GetLimit()), 50, 500)
-	ways, err := s.finder.FindTrails(ctx, center, radius)
+	tolerance := req.GetGeometryToleranceMeters()
+	if tolerance < 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "geometry_tolerance_meters must not be negative")
+	}
+	ways, err := s.finder.FindTrails(ctx, center, radius, limit)
 	if err != nil {
 		return nil, findError(err)
 	}
@@ -149,7 +153,11 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 			DistanceFromCenterMeters: math.Round(nearestDist),
 		}
 		if req.GetIncludeGeometry() {
-			for _, p := range points {
+			geometry := points
+			if tolerance > 0 {
+				geometry = geo.Simplify(points, tolerance)
+			}
+			for _, p := range geometry {
 				b.Geometry = append(b.Geometry, latLng(p.Lat, p.Lng))
 			}
 		}
@@ -291,19 +299,18 @@ func (s *Service) ListHeatmapTracks(ctx context.Context, req *geov1.ListHeatmapT
 	if tolerance < minTrackToleranceMeters {
 		return nil, connect.Errorf(connect.CodeInvalidArgument, "tolerance_meters must be at least %d", minTrackToleranceMeters)
 	}
-	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, time.Time{}, time.Time{})
+	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, time.Time{}, time.Time{}, tolerance)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, "failed to list tracks").WithCause(err)
 	}
 	var parts [][]geo.Point
 	for _, track := range tracks {
-		points, err := route.TrackPoints(track)
-		if err != nil {
-			s.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(track.ActivityID)))
-			continue
+		// Connect reports the context's error with its code.
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
-		for _, part := range route.Clip(points, bounds) {
-			parts = append(parts, route.Simplify(part, tolerance))
+		for _, part := range geo.Clip(track.Points, bounds) {
+			parts = append(parts, geo.Simplify(part, tolerance))
 		}
 	}
 	// The longest parts first, so a truncated response keeps the most of
@@ -357,18 +364,18 @@ func (s *Service) GetPersonalHeatmap(ctx context.Context, req *geov1.GetPersonal
 	if grid.Rows*grid.Cols > maxHeatmapCells {
 		return nil, connect.NewError(connect.CodeInvalidArgument, "the area is too large for the cell size; use a smaller area or larger cells")
 	}
-	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, startDate, endDate)
+	// Tracks accurate to a quarter of a cell count in the right cells.
+	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, startDate, endDate, cellSize/4)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, "failed to list tracks").WithCause(err)
 	}
 	counts := map[int]int32{}
 	for _, track := range tracks {
-		points, err := route.TrackPoints(track)
-		if err != nil {
-			s.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(track.ActivityID)))
-			continue
+		// Connect reports the context's error with its code.
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
-		for cell := range grid.Cells(points) {
+		for cell := range grid.Cells(track.Points) {
 			counts[cell]++
 		}
 	}

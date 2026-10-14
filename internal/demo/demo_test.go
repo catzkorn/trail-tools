@@ -65,7 +65,7 @@ func TestLoad(t *testing.T) {
 	}
 	// Named trails and peaks are found around the Chief.
 	finder := routing.NewFinder(db)
-	trails, err := finder.FindTrails(ctx, chief, 1000)
+	trails, err := finder.FindTrails(ctx, chief, 1000, 100)
 	if err != nil {
 		t.Fatalf("FindTrails: %v", err)
 	}

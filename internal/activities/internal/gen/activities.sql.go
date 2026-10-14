@@ -287,6 +287,61 @@ func (q *Queries) ListActivitiesWithoutStreams(ctx context.Context, arg *ListAct
 	return items, nil
 }
 
+const listActivitySummaryTracksInBounds = `-- name: ListActivitySummaryTracksInBounds :many
+select id, summary_polyline
+from strava_activities
+where user_id = $1
+  and min_lat <= $2::double precision
+  and max_lat >= $3::double precision
+  and min_lng <= $4::double precision
+  and max_lng >= $5::double precision
+  and ($6::date is null or start_date_local >= $6::date)
+  and ($7::date is null or start_date_local <= $7::date)
+`
+
+type ListActivitySummaryTracksInBoundsParams struct {
+	UserID    pgtype.UUID
+	North     float64
+	South     float64
+	East      float64
+	West      float64
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+}
+
+type ListActivitySummaryTracksInBoundsRow struct {
+	ID              pgtype.UUID
+	SummaryPolyline string
+}
+
+func (q *Queries) ListActivitySummaryTracksInBounds(ctx context.Context, arg *ListActivitySummaryTracksInBoundsParams) ([]*ListActivitySummaryTracksInBoundsRow, error) {
+	rows, err := q.db.Query(ctx, listActivitySummaryTracksInBounds,
+		arg.UserID,
+		arg.North,
+		arg.South,
+		arg.East,
+		arg.West,
+		arg.StartDate,
+		arg.EndDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*ListActivitySummaryTracksInBoundsRow
+	for rows.Next() {
+		var i ListActivitySummaryTracksInBoundsRow
+		if err := rows.Scan(&i.ID, &i.SummaryPolyline); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActivityTotals = `-- name: ListActivityTotals :many
 select start_date_local, distance_meters, moving_time_seconds, elevation_gain_meters
 from strava_activities
@@ -342,7 +397,7 @@ func (q *Queries) ListActivityTotals(ctx context.Context, arg *ListActivityTotal
 }
 
 const listActivityTracksInBounds = `-- name: ListActivityTracksInBounds :many
-select a.id, a.summary_polyline, s.streams
+select a.id, a.summary_polyline, s.track_polyline, (s.activity_id is not null)::boolean as has_streams
 from strava_activities a
 left join strava_activity_streams s on s.activity_id = a.id
 where a.user_id = $1
@@ -367,7 +422,8 @@ type ListActivityTracksInBoundsParams struct {
 type ListActivityTracksInBoundsRow struct {
 	ID              pgtype.UUID
 	SummaryPolyline string
-	Streams         []byte
+	TrackPolyline   pgtype.Text
+	HasStreams      bool
 }
 
 func (q *Queries) ListActivityTracksInBounds(ctx context.Context, arg *ListActivityTracksInBoundsParams) ([]*ListActivityTracksInBoundsRow, error) {
@@ -387,7 +443,42 @@ func (q *Queries) ListActivityTracksInBounds(ctx context.Context, arg *ListActiv
 	var items []*ListActivityTracksInBoundsRow
 	for rows.Next() {
 		var i ListActivityTracksInBoundsRow
-		if err := rows.Scan(&i.ID, &i.SummaryPolyline, &i.Streams); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.SummaryPolyline,
+			&i.TrackPolyline,
+			&i.HasStreams,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStreamsWithoutTrack = `-- name: ListStreamsWithoutTrack :many
+select activity_id, streams from strava_activity_streams
+where activity_id = any($1::uuid[]) and track_polyline is null
+`
+
+type ListStreamsWithoutTrackRow struct {
+	ActivityID pgtype.UUID
+	Streams    []byte
+}
+
+func (q *Queries) ListStreamsWithoutTrack(ctx context.Context, activityIds []pgtype.UUID) ([]*ListStreamsWithoutTrackRow, error) {
+	rows, err := q.db.Query(ctx, listStreamsWithoutTrack, activityIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*ListStreamsWithoutTrackRow
+	for rows.Next() {
+		var i ListStreamsWithoutTrackRow
+		if err := rows.Scan(&i.ActivityID, &i.Streams); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)
@@ -468,6 +559,21 @@ func (q *Queries) SetActivityDetail(ctx context.Context, arg *SetActivityDetailP
 		arg.DeviceName,
 		arg.DetailJSON,
 	)
+	return err
+}
+
+const setActivityTrack = `-- name: SetActivityTrack :exec
+update strava_activity_streams set track_polyline = $2::text
+where activity_id = $1
+`
+
+type SetActivityTrackParams struct {
+	ActivityID    pgtype.UUID
+	TrackPolyline string
+}
+
+func (q *Queries) SetActivityTrack(ctx context.Context, arg *SetActivityTrackParams) error {
+	_, err := q.db.Exec(ctx, setActivityTrack, arg.ActivityID, arg.TrackPolyline)
 	return err
 }
 
@@ -592,21 +698,25 @@ func (q *Queries) UpsertActivity(ctx context.Context, arg *UpsertActivityParams)
 const upsertActivityStreams = `-- name: UpsertActivityStreams :exec
 insert into strava_activity_streams (
   activity_id,
-  streams
+  streams,
+  track_polyline
 ) values (
   $1,
-  $2
+  $2,
+  $3::text
 )
 on conflict (activity_id) do update set
-  streams = excluded.streams
+  streams = excluded.streams,
+  track_polyline = excluded.track_polyline
 `
 
 type UpsertActivityStreamsParams struct {
-	ActivityID pgtype.UUID
-	Streams    []byte
+	ActivityID    pgtype.UUID
+	Streams       []byte
+	TrackPolyline string
 }
 
 func (q *Queries) UpsertActivityStreams(ctx context.Context, arg *UpsertActivityStreamsParams) error {
-	_, err := q.db.Exec(ctx, upsertActivityStreams, arg.ActivityID, arg.Streams)
+	_, err := q.db.Exec(ctx, upsertActivityStreams, arg.ActivityID, arg.Streams, arg.TrackPolyline)
 	return err
 }

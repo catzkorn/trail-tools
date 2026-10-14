@@ -88,11 +88,16 @@ message FindTrailsRequest {
   LatLng center = 1;
   // The search radius in meters. Defaults to 3000, maximum 15000.
   double radius_meters = 2;
-  // Maximum number of trails to return. Defaults to 50, maximum 500.
+  // Maximum number of trails to return, those nearest the center, longest
+  // first. Defaults to 50, maximum 500.
   int32 limit = 3;
   // Include the geometry of each trail. Increases the response size
   // significantly; leave unset unless the coordinates are needed.
   bool include_geometry = 4;
+  // How far in meters the returned geometry may stray from the trails, to
+  // make the response smaller, e.g. the size of a pixel when drawing them on
+  // a map. Defaults to 0, the full geometry.
+  double geometry_tolerance_meters = 5;
 }
 
 // A trail is a single OpenStreetMap way, such as a path or track. A way that's
@@ -234,7 +239,9 @@ message ListHeatmapTracksRequest {
   // The area to list the tracks in.
   BoundingBox bounds = 1;
   // How far in meters the simplified tracks may stray from the recorded
-  // ones. Defaults to 10, minimum 1.
+  // ones. Defaults to 10, minimum 1. The tracks are stored simplified to 2
+  // meters, and from 50 meters the activities' summary polylines are used,
+  // which are much faster to list.
   double tolerance_meters = 2;
 }
 

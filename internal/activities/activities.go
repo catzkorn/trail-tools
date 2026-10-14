@@ -204,8 +204,9 @@ func (r *Repository) SetActivityDetail(ctx context.Context, activityID pgtype.UU
 	return nil
 }
 
-// SetActivityStreams stores the encoded streams of an activity and marks its
-// streams as synced. streams may be nil if the activity has no streams.
+// SetActivityStreams stores the encoded streams of an activity, with its
+// track, and marks its streams as synced. streams may be nil if the activity
+// has no streams.
 func (r *Repository) SetActivityStreams(ctx context.Context, activityID pgtype.UUID, streams []byte, bounds *geo.Bounds) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -222,7 +223,11 @@ func (r *Repository) SetActivityStreams(ctx context.Context, activityID pgtype.U
 		return fmt.Errorf("failed to mark streams synced: %w", err)
 	}
 	if streams != nil {
-		if err := q.UpsertActivityStreams(ctx, &gen.UpsertActivityStreamsParams{ActivityID: activityID, Streams: streams}); err != nil {
+		track, err := trackFromStreams(streams)
+		if err != nil {
+			return err
+		}
+		if err := q.UpsertActivityStreams(ctx, &gen.UpsertActivityStreamsParams{ActivityID: activityID, Streams: streams, TrackPolyline: track}); err != nil {
 			return fmt.Errorf("failed to store streams: %w", err)
 		}
 	}
@@ -339,36 +344,6 @@ func (r *Repository) ListActivityTotals(ctx context.Context, userID pgtype.UUID,
 		}
 	}
 	return totals, nil
-}
-
-// Track is the GPS track of an activity. Streams is nil if the streams have
-// not been synced, in which case the summary polyline should be used.
-type Track struct {
-	ActivityID      pgtype.UUID
-	SummaryPolyline string
-	Streams         []byte
-}
-
-// ListTracksInBounds lists the tracks of activities whose bounding box
-// intersects the bounds, optionally within an inclusive date range.
-func (r *Repository) ListTracksInBounds(ctx context.Context, userID pgtype.UUID, bounds geo.Bounds, startDate, endDate time.Time) ([]Track, error) {
-	rows, err := r.q.ListActivityTracksInBounds(ctx, &gen.ListActivityTracksInBoundsParams{
-		UserID:    userID,
-		North:     bounds.MaxLat,
-		South:     bounds.MinLat,
-		East:      bounds.MaxLng,
-		West:      bounds.MinLng,
-		StartDate: store.DateToPG(startDate),
-		EndDate:   store.DateToPG(endDate),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list tracks: %w", err)
-	}
-	tracks := make([]Track, len(rows))
-	for i, row := range rows {
-		tracks[i] = Track{ActivityID: row.ID, SummaryPolyline: row.SummaryPolyline, Streams: row.Streams}
-	}
-	return tracks, nil
 }
 
 // activityRow has the same fields as the rows returned by the activity
