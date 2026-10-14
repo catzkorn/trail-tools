@@ -225,7 +225,7 @@ func snap(ctx context.Context, tx pgx.Tx, p geo.Point) (position, error) {
 	var distance float64
 	e, err := scanEdge(row, &distance)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return position{}, fmt.Errorf("%w: no map data has been imported; run import-osm for the area", ErrNotRoutable)
+		return position{}, fmt.Errorf("%w: no map data has been imported; run osmimport for the area", ErrNotRoutable)
 	}
 	if err != nil {
 		return position{}, fmt.Errorf("failed to find the nearest path: %w", err)
@@ -237,7 +237,7 @@ func snap(ctx context.Context, tx pgx.Tx, p geo.Point) (position, error) {
 			return position{}, fmt.Errorf("failed to check the imported regions: %w", err)
 		}
 		if !covered {
-			return position{}, fmt.Errorf("%w: no map data has been imported for the area around %.5f, %.5f; run import-osm for it", ErrNotRoutable, p.Lat, p.Lng)
+			return position{}, fmt.Errorf("%w: no map data has been imported for the area around %.5f, %.5f; run osmimport for it", ErrNotRoutable, p.Lat, p.Lng)
 		}
 		return position{}, fmt.Errorf("%w: there is no mapped path within %d meters of %.5f, %.5f", ErrNotRoutable, maxSnapMeters, p.Lat, p.Lng)
 	}

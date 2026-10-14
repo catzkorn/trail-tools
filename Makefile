@@ -133,7 +133,7 @@ go-lint:
 run: db ## Run the backend (starts db)
 	@$(WAIT_DB)
 	@$(MAKE) --no-print-directory admin-invitation &
-	go run . $(SERVER_FLAGS)
+	go run ./cmd/trailrunn.ing $(SERVER_FLAGS)
 
 .PHONY: admin-invitation
 admin-invitation: ## Print where to create the first administrator once the local server is up, if there's no administrator yet
@@ -145,7 +145,7 @@ admin-invitation: ## Print where to create the first administrator once the loca
 .PHONY: import-osm
 import-osm: db ## Import OpenStreetMap data for routing, e.g. make import-osm REGION=liechtenstein PBF=<url or file>
 	@$(WAIT_DB)
-	go run . import-osm \
+	go run ./cmd/osmimport \
 		-database-url postgres://postgres:password@localhost:5432/postgres?sslmode=disable \
 		-region "$(REGION)" -pbf "$(PBF)" $(if $(BOUNDS),-bounds "$(BOUNDS)")
 
@@ -203,7 +203,7 @@ watch: db ## Run backend + assets with live reload
 			--target=es6 \
 			--watch=forever 2> /dev/null & \
 		$(CONTAINER_BIN) run --rm --name $(WATCH_CSS_CONTAINER) $(NODE_ARGS) sh watch-css.sh & \
-		go tool github.com/mitranim/gow -s run . $(SERVER_FLAGS) -serve-dir $(CURDIR)/web/dist \
+		go tool github.com/mitranim/gow -s run ./cmd/trailrunn.ing $(SERVER_FLAGS) -serve-dir $(CURDIR)/web/dist \
 	"
 
 .PHONY: gen

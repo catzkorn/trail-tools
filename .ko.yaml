@@ -3,8 +3,15 @@ defaultBaseImage: gcr.io/distroless/static-debian12:nonroot
 defaultPlatforms:
   - linux/amd64
 builds:
-  - id: trail-tools
-    main: .
+  - id: trailrunn.ing
+    main: ./cmd/trailrunn.ing
+    flags:
+      - -trimpath
+    ldflags:
+      - -s
+      - -w
+  - id: osmimport
+    main: ./cmd/osmimport
     flags:
       - -trimpath
     ldflags:

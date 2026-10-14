@@ -1,3 +1,6 @@
+// Command osmimport loads the foot accessible ways and points of interest
+// of OpenStreetMap extracts into the routing graph. The server runs it as a
+// Cloud Run job for imports started on the map data page.
 package main
 
 import (
@@ -17,16 +20,20 @@ import (
 	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
+	"github.com/catzkorn/trail-tools/internal/setup"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/telemetry"
 )
 
-// importOSM runs the import-osm command, which loads OpenStreetMap extracts
-// into the routing graph, and returns the exit code.
-func importOSM(args []string) int {
-	fs := flag.NewFlagSet("import-osm", flag.ExitOnError)
+func main() {
+	os.Exit(run(os.Args[1:]))
+}
+
+// run runs the command with the arguments, and returns the exit code.
+func run(args []string) int {
+	fs := flag.NewFlagSet("osmimport", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintf(fs.Output(), "Usage: %s import-osm [flags]\n\n", os.Args[0])
+		fmt.Fprintf(fs.Output(), "Usage: %s [flags]\n\n", os.Args[0])
 		fmt.Fprintln(fs.Output(), "Loads the foot accessible ways of OpenStreetMap PBF extracts into the routing graph.")
 		fmt.Fprintln(fs.Output(), "Importing a region again replaces it. Extracts can be downloaded from https://download.geofabrik.de.")
 		fmt.Fprintln(fs.Output())
@@ -47,22 +54,22 @@ func importOSM(args []string) int {
 	traceProject := fs.String("trace-project", "", "The Google Cloud project to export traces to, using the application default credentials")
 	traceSampleRate := fs.Float64("trace-sample-rate", 1, "The fraction of traces to sample, from 0 to 1")
 	_ = fs.Parse(args)
-	if err := setFlagsFromEnv(fs); err != nil {
+	if err := setup.FlagsFromEnv(fs); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
 		return 1
 	}
-	log, err := newLogger(*logLevel, *logFormat)
+	log, err := setup.Logger(*logLevel, *logFormat)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		return 1
 	}
-	stopTracing, err := initTracing(context.Background(), log, *otlpEndpoint, *traceProject, *traceSampleRate)
+	stopTracing, err := setup.Tracing(context.Background(), log, *otlpEndpoint, *traceProject, *traceSampleRate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up tracing: %v\n", err)
 		return 1
 	}
 	defer stopTracing()
-	report, err := newReporter(context.Background(), log, *errorReportingProject)
+	report, err := setup.Reporter(context.Background(), log, *errorReportingProject)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
 		return 1
@@ -74,14 +81,14 @@ func importOSM(args []string) int {
 	}()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := runImportOSM(ctx, log, report, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache, *demBucket); err != nil {
+	if err := importOSM(ctx, log, report, *databaseURL, *importID, *region, *source, *bounds, *demURL, *demCache, *demBucket); err != nil {
 		report.Report(ctx, "Failed to import the OpenStreetMap extract", err)
 		return 1
 	}
 	return 0
 }
 
-func runImportOSM(ctx context.Context, log *slog.Logger, report *errreport.Reporter, databaseURL, importID, region, source, rawBounds, demURL, demCache, demBucket string) error {
+func importOSM(ctx context.Context, log *slog.Logger, report *errreport.Reporter, databaseURL, importID, region, source, rawBounds, demURL, demCache, demBucket string) error {
 	switch {
 	case databaseURL == "":
 		return errors.New("database-url is required")
@@ -108,7 +115,7 @@ func runImportOSM(ctx context.Context, log *slog.Logger, report *errreport.Repor
 	defer db.Close()
 	// Extracts and elevation tiles are downloaded with traced clients.
 	client := telemetry.NewClient(0)
-	dem, err := newDEM(telemetry.WithClient(ctx, client), log, demURL, demCache, demBucket)
+	dem, err := setup.DEM(telemetry.WithClient(ctx, client), log, demURL, demCache, demBucket)
 	if err != nil {
 		return err
 	}

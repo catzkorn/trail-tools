@@ -195,7 +195,10 @@ so the proto comments are the agent's documentation; write them for an agent.
 
 ## Development
 
-To run the server with auto-rebuild of the backend, frontend and CSS, run:
+The server is in [`cmd/trailrunn.ing`](cmd/trailrunn.ing), and the
+OpenStreetMap import, which Cloud Run runs as a job, in
+[`cmd/osmimport`](cmd/osmimport). To run the server with auto-rebuild of the
+backend, frontend and CSS, run:
 
 ```sh
 $ make watch
@@ -270,7 +273,7 @@ did in the app:
 Requests made with Go's default HTTP client are traced too. Locally they're
 also logged as warnings, with where they came from. Give that code a client
 from `telemetry.NewClient` instead, as everything else gets one from
-`main.go`.
+`cmd/trailrunn.ing/main.go`.
 
 To send traces elsewhere, set the OTLP gRPC endpoint. To turn tracing off,
 set it to nothing:
@@ -319,8 +322,8 @@ areas, like routing, and report that the area needs importing elsewhere.
 Regions imported before trails were found this way have no trail names or
 points of interest until they are imported again.
 
-Imports can also be run from the command line, e.g. to import a whole
-extract:
+Imports can also be run from the command line with the `osmimport` command
+in [`cmd/osmimport`](cmd/osmimport), e.g. to import a whole extract:
 
 ```sh
 $ make import-osm REGION=liechtenstein PBF=https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf
@@ -355,7 +358,7 @@ servers whose disk doesn't outlive them, like Cloud Run. Tiles missing from
 the directory are read from the bucket before downloading them, downloaded
 tiles are added to it, and tiles that don't exist, e.g. over the sea, are
 recorded in it as empty objects. If the bucket can't be read or written, the
-tiles are downloaded instead. The `import-osm` command takes the same flag.
+tiles are downloaded instead. The `osmimport` command takes the same flag.
 
 ## Deploying
 

@@ -196,7 +196,7 @@ jobs:
       # Federation, without stored credentials.
       id-token: write
     env:
-      KO_DOCKER_REPO: us-west1-docker.pkg.dev/trail-tools-444904/trail-tools/server
+      IMAGE_REPO: us-west1-docker.pkg.dev/trail-tools-444904/trail-tools
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -213,12 +213,14 @@ jobs:
         with:
           workload_identity_provider: projects/296221712346/locations/global/workloadIdentityPools/github/providers/github
           service_account: github-terraform@trail-tools-444904.iam.gserviceaccount.com
-      - name: Build and push the image
-        run: echo "IMAGE=$(go tool ko build --bare --tags "${GITHUB_SHA},latest" .)" >> "$GITHUB_ENV"
+      - name: Build and push the images
+        run: |
+          echo "IMAGE=$(KO_DOCKER_REPO="${IMAGE_REPO}/server" go tool ko build --bare --tags "${GITHUB_SHA},latest" ./cmd/trailrunn.ing)" >> "$GITHUB_ENV"
+          echo "IMPORT_IMAGE=$(KO_DOCKER_REPO="${IMAGE_REPO}/osmimport" go tool ko build --bare --tags "${GITHUB_SHA},latest" ./cmd/osmimport)" >> "$GITHUB_ENV"
       - name: Apply Terraform
         run: |
           terraform -chdir=infra init -input=false
-          terraform -chdir=infra apply -input=false -auto-approve -var "image=${IMAGE}"
+          terraform -chdir=infra apply -input=false -auto-approve -var "image=${IMAGE}" -var "import_image=${IMPORT_IMAGE}"
       - name: Save Go caches
         if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache

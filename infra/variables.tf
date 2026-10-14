@@ -34,6 +34,12 @@ variable "image" {
   default     = ""
 }
 
+variable "import_image" {
+  description = "The container image of the OpenStreetMap import job. CI sets this to the image it built. If empty, the currently deployed image is kept."
+  type        = string
+  default     = ""
+}
+
 variable "service_enabled" {
   description = "Whether to create the Cloud Run service. It requires the database-url secret to have a value."
   type        = bool

@@ -116,8 +116,7 @@ resource "google_cloud_run_v2_job" "import" {
       max_retries = 0
 
       containers {
-        image = local.image
-        args  = ["import-osm"]
+        image = local.import_image
         resources {
           limits = {
             cpu    = "2"

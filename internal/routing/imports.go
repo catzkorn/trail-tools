@@ -29,7 +29,7 @@ const (
 
 const (
 	// importTimeout limits how long an import runs. A job running imports,
-	// with import-osm -import-id, should be stopped after the same time.
+	// with osmimport -import-id, should be stopped after the same time.
 	importTimeout = time.Hour
 	// staleRunningImport is how long after starting a running import is
 	// taken to have stopped without recording its result, such as when its
@@ -178,7 +178,7 @@ func FailImport(ctx context.Context, db *store.DB, id pgtype.UUID, message strin
 }
 
 // RunImport runs a queued import, recording its progress. It is called by
-// the server for imports in the background, and by the import-osm command
+// the server for imports in the background, and by the osmimport command
 // for imports run as a job.
 func RunImport(ctx context.Context, log *slog.Logger, report *errreport.Reporter, client *http.Client, db *store.DB, dem *elevation.DEM, id pgtype.UUID) error {
 	// Start the import only if it's still queued, so it isn't run twice or

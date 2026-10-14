@@ -11,6 +11,14 @@ locals {
   image = (var.image != "" ? var.image
     : length(data.google_cloud_run_v2_service.current) > 0 ? data.google_cloud_run_v2_service.current[0].template[0].containers[0].image
   : "${local.image_repo}:latest")
+  # The import job runs the osmimport command, from its own image. A job
+  # still running the server's image, from when the import was one of its
+  # commands, gets the latest osmimport image.
+  import_image_repo    = "${var.region}-docker.pkg.dev/${var.project}/${google_artifact_registry_repository.images.repository_id}/osmimport"
+  current_import_image = try(data.google_cloud_run_v2_job.current_import[0].template[0].template[0].containers[0].image, "")
+  import_image = (var.import_image != "" ? var.import_image
+    : startswith(local.current_import_image, "${local.import_image_repo}@") || startswith(local.current_import_image, "${local.import_image_repo}:") ? local.current_import_image
+  : "${local.import_image_repo}:latest")
   strava = var.strava_client_id != ""
 }
 
@@ -123,6 +131,12 @@ resource "google_billing_budget" "budget" {
   }
 
   depends_on = [google_project_service.services]
+}
+
+data "google_cloud_run_v2_job" "current_import" {
+  count    = var.service_enabled && var.import_image == "" ? 1 : 0
+  name     = "${local.service_name}-import"
+  location = var.region
 }
 
 data "google_cloud_run_v2_service" "current" {

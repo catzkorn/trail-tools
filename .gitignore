@@ -3,6 +3,8 @@ localhost.pem
 
 # Binaries built with go build
 /trail-tools
+/trailrunn.ing
+/osmimport
 
 # Trip report photos stored locally, see -photo-dir
 /photos/

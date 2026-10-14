@@ -4,8 +4,13 @@ output "url" {
 }
 
 output "image_repository" {
-  description = "The repository to push images to, for KO_DOCKER_REPO."
+  description = "The repository to push the server's images to, for KO_DOCKER_REPO."
   value       = local.image_repo
+}
+
+output "import_image_repository" {
+  description = "The repository to push the OpenStreetMap import job's images to, for KO_DOCKER_REPO."
+  value       = local.import_image_repo
 }
 
 output "workload_identity_provider" {
