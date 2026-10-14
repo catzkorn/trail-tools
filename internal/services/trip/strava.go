@@ -164,6 +164,8 @@ func (s *Service) importPhotos(ctx context.Context, report *trips.Report, activi
 
 // downloadPhoto downloads a photo from Strava's CDN.
 func (s *Service) downloadPhoto(ctx context.Context, imageURL string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, photoDownloadTimeout)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imageURL, nil)
 	if err != nil {
 		return nil, err

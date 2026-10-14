@@ -90,6 +90,15 @@ db: ## Start the postgres container, with PostGIS and pgRouting
 		$(CONTAINER_BIN) run --rm --name postgres -p 5432:5432 -d --memory 4g -e POSTGRES_PASSWORD=password trail-tools-postgres:$(PG_TAG); \
 	fi
 
+.PHONY: grafana
+grafana: ## Start Grafana with Tempo, which the server sends traces to, on http://localhost:3000
+	@if $(CONTAINER_RUNNING) | grep -qx otel-lgtm; then \
+		echo "otel-lgtm already running"; \
+	else \
+		$(CONTAINER_BIN) run --rm --name otel-lgtm -d --memory 4g -p 3000:3000 -p 4317:4317 grafana/otel-lgtm:latest >/dev/null && \
+		echo "Grafana is starting on http://localhost:3000"; \
+	fi
+
 .PHONY: sqlc
 sqlc:
 	go tool sqlc generate
@@ -213,8 +222,8 @@ lint: web-lint buf-lint go-lint ## Run all linters
 format: go-format web-format buf-format ## Run all formatters
 
 .PHONY: clean
-clean: ## Stop the db container
-	@for c in postgres; do \
+clean: ## Stop the db and Grafana containers
+	@for c in postgres otel-lgtm; do \
 		if $(CONTAINER_RUNNING) | grep -qx $$c; then \
 			echo "stopping $$c"; $(CONTAINER_BIN) stop $$c >/dev/null; \
 		else \

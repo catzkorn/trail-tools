@@ -41,6 +41,9 @@ resource "google_cloud_run_v2_service" "app" {
             TRAIL_TOOLS_LOG_LEVEL  = "info"
             # Errors are reported to Error Reporting rather than logged.
             TRAIL_TOOLS_ERROR_REPORTING_PROJECT = var.project
+            TRAIL_TOOLS_OTLP_ENDPOINT           = "https://telemetry.googleapis.com"
+            TRAIL_TOOLS_TRACE_PROJECT           = var.project
+            TRAIL_TOOLS_TRACE_SAMPLE_RATE       = tostring(var.trace_sample_rate)
             TRAIL_TOOLS_IMPORT_JOB              = google_cloud_run_v2_job.import[0].id
             TRAIL_TOOLS_PHOTO_BUCKET            = google_storage_bucket.photos.name
             TRAIL_TOOLS_DEM_BUCKET              = google_storage_bucket.dem.name
@@ -88,6 +91,7 @@ resource "google_cloud_run_v2_service" "app" {
     google_storage_bucket_iam_member.run_photos,
     google_storage_bucket_iam_member.run_dem,
     google_project_iam_member.run_error_reporting,
+    google_project_iam_member.run_tracing,
   ]
 }
 
@@ -133,6 +137,18 @@ resource "google_cloud_run_v2_job" "import" {
           value = var.project
         }
         env {
+          name  = "TRAIL_TOOLS_OTLP_ENDPOINT"
+          value = "https://telemetry.googleapis.com"
+        }
+        env {
+          name  = "TRAIL_TOOLS_TRACE_PROJECT"
+          value = var.project
+        }
+        env {
+          name  = "TRAIL_TOOLS_TRACE_SAMPLE_RATE"
+          value = tostring(var.trace_sample_rate)
+        }
+        env {
           name = "TRAIL_TOOLS_DATABASE_URL"
           value_source {
             secret_key_ref {
@@ -149,6 +165,7 @@ resource "google_cloud_run_v2_job" "import" {
     google_secret_manager_secret_iam_member.run,
     google_storage_bucket_iam_member.run_dem,
     google_project_iam_member.run_error_reporting,
+    google_project_iam_member.run_tracing,
   ]
 }
 
@@ -215,6 +232,16 @@ resource "google_cloud_scheduler_job" "strava_sync" {
 resource "google_project_iam_member" "run_error_reporting" {
   project = var.project
   role    = "roles/errorreporting.writer"
+  member  = google_service_account.run.member
+
+  depends_on = [google_project_service.services]
+}
+
+# Lets the service and the import job export traces, which is free up to
+# 2.5 million spans a month.
+resource "google_project_iam_member" "run_tracing" {
+  project = var.project
+  role    = "roles/cloudtrace.agent"
   member  = google_service_account.run.member
 
   depends_on = [google_project_service.services]

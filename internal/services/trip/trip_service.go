@@ -87,8 +87,12 @@ type Service struct {
 // NewService creates a new Service. syncer refreshes activities from Strava
 // before importing their photos, and may be nil if Strava isn't configured.
 // Photos are stored in blobs. baseURL is the public URL of the server, used
-// for the URLs of reports and photos.
-func NewService(log *slog.Logger, report *errreport.Reporter, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, baseURL string) *Service {
+// for the URLs of reports and photos. Photos are downloaded from Strava with
+// client, or the default client if it's nil.
+func NewService(log *slog.Logger, report *errreport.Reporter, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, client *http.Client, baseURL string) *Service {
+	if client == nil {
+		client = http.DefaultClient
+	}
 	return &Service{
 		log:        log,
 		report:     report,
@@ -98,7 +102,7 @@ func NewService(log *slog.Logger, report *errreport.Reporter, repo TripRepositor
 		blobs:      blobs,
 		baseURL:    strings.TrimSuffix(baseURL, "/"),
 		nowFn:      time.Now,
-		httpClient: &http.Client{Timeout: photoDownloadTimeout},
+		httpClient: client,
 	}
 }
 

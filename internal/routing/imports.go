@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/elevation"
@@ -179,7 +180,7 @@ func FailImport(ctx context.Context, db *store.DB, id pgtype.UUID, message strin
 // RunImport runs a queued import, recording its progress. It is called by
 // the server for imports in the background, and by the import-osm command
 // for imports run as a job.
-func RunImport(ctx context.Context, log *slog.Logger, report *errreport.Reporter, db *store.DB, dem *elevation.DEM, id pgtype.UUID) error {
+func RunImport(ctx context.Context, log *slog.Logger, report *errreport.Reporter, client *http.Client, db *store.DB, dem *elevation.DEM, id pgtype.UUID) error {
 	// Start the import only if it's still queued, so it isn't run twice or
 	// run after it was taken to have never started.
 	r, err := scanImport(db.QueryRow(ctx, `update routing_imports set state = 'running', message = '',
@@ -191,7 +192,7 @@ func RunImport(ctx context.Context, log *slog.Logger, report *errreport.Reporter
 	case err != nil:
 		err = fmt.Errorf("failed to start the import: %w", err)
 	default:
-		err = runImport(ctx, log, db, dem, r)
+		err = runImport(ctx, log, client, db, dem, r)
 	}
 	if err != nil {
 		// Record the failure even if ctx was cancelled.
@@ -204,7 +205,7 @@ func RunImport(ctx context.Context, log *slog.Logger, report *errreport.Reporter
 }
 
 // runImport runs a started import and records its result.
-func runImport(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevation.DEM, r *ImportRecord) error {
+func runImport(ctx context.Context, log *slog.Logger, client *http.Client, db *store.DB, dem *elevation.DEM, r *ImportRecord) error {
 	sources := make([]string, len(r.Extracts))
 	for i, x := range r.Extracts {
 		sources[i] = x.URL
@@ -212,10 +213,11 @@ func runImport(ctx context.Context, log *slog.Logger, db *store.DB, dem *elevati
 	importCtx, cancel := context.WithTimeout(ctx, importTimeout)
 	defer cancel()
 	count, err := Import(importCtx, log, db, ImportConfig{
-		Region:  r.Region,
-		Sources: sources,
-		Bounds:  r.Bounds,
-		DEM:     dem,
+		Region:     r.Region,
+		Sources:    sources,
+		Bounds:     r.Bounds,
+		DEM:        dem,
+		HTTPClient: client,
 	})
 	if err != nil {
 		return err

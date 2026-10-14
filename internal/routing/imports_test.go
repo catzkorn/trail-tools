@@ -46,7 +46,7 @@ func TestRunImport(t *testing.T) {
 	db := storetest.New(t)
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dem := elevation.NewDEM("http://localhost:0", t.TempDir())
+	dem := elevation.NewDEM("http://localhost:0", t.TempDir(), nil)
 
 	// Only one import is queued or running at a time.
 	r := createImport(t, db)
@@ -55,14 +55,14 @@ func TestRunImport(t *testing.T) {
 	}
 
 	// A failed import records why, and isn't run again.
-	if err := routing.RunImport(ctx, log, errreport.NewLocal(log), db, dem, r.ID); err == nil {
+	if err := routing.RunImport(ctx, log, errreport.NewLocal(log), nil, db, dem, r.ID); err == nil {
 		t.Fatal("RunImport: want an error for a missing extract")
 	}
 	failed, err := routing.GetImport(ctx, db, r.ID)
 	if err != nil || failed.State != routing.ImportFailed || failed.Message == "" || !failed.FinishTime.Valid {
 		t.Fatalf("GetImport: %+v %v", failed, err)
 	}
-	if err := routing.RunImport(ctx, log, errreport.NewLocal(log), db, dem, r.ID); err == nil {
+	if err := routing.RunImport(ctx, log, errreport.NewLocal(log), nil, db, dem, r.ID); err == nil {
 		t.Error("RunImport: want an error for an import that isn't queued")
 	}
 	wantImport(t, db, r.ID, routing.ImportFailed, failed.Message)
@@ -72,7 +72,7 @@ func TestRunImport(t *testing.T) {
 	if _, err := db.Exec(ctx, "update routing_imports set state = 'done' where id = $1", r.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := routing.RunImport(ctx, log, errreport.NewLocal(log), db, dem, r.ID); err == nil {
+	if err := routing.RunImport(ctx, log, errreport.NewLocal(log), nil, db, dem, r.ID); err == nil {
 		t.Error("RunImport: want an error for an import that isn't queued")
 	}
 	if err := routing.FailImport(ctx, db, r.ID, "too late"); err != nil {
@@ -85,7 +85,7 @@ func TestRunImport(t *testing.T) {
 	r = createImport(t, db)
 	stopped, cancel := context.WithCancel(ctx)
 	cancel()
-	runner := routing.NewLocalRunner(stopped, log, errreport.NewLocal(log), db, dem)
+	runner := routing.NewLocalRunner(stopped, log, errreport.NewLocal(log), nil, db, dem)
 	if err := runner.Run(ctx, r.ID); err != nil {
 		t.Fatal(err)
 	}

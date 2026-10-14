@@ -63,9 +63,13 @@ type cachedTile struct {
 	tile     *hgtTile
 }
 
-// NewDEM creates a DEM that downloads tiles from baseURL into cacheDir.
-func NewDEM(baseURL, cacheDir string) *DEM {
-	return &DEM{baseURL: baseURL, cacheDir: cacheDir, client: http.DefaultClient}
+// NewDEM creates a DEM that downloads tiles from baseURL into cacheDir with
+// client, or the default client if it's nil.
+func NewDEM(baseURL, cacheDir string, client *http.Client) *DEM {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return &DEM{baseURL: baseURL, cacheDir: cacheDir, client: client}
 }
 
 // SetTileStore makes the DEM look for tiles missing from the cache directory

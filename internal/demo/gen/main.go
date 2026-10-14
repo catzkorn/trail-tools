@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Wrote %d ways with %d nodes and %d points of interest\n", len(data.Ways), len(data.Nodes.IDs), len(data.Features))
-	patch, err := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir).Patch(ctx, b)
+	patch, err := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir, nil).Patch(ctx, b)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func main() {
 // the foot accessible ways and points of interest within them, as an import
 // does.
 func readExtract(ctx context.Context, b geo.Bounds) (*routing.OSM, error) {
-	extracts, err := routing.NewExtracts(routing.DefaultGeofabrikIndexURL).Find(ctx, b)
+	extracts, err := routing.NewExtracts(routing.DefaultGeofabrikIndexURL, nil).Find(ctx, b)
 	if err != nil {
 		return nil, err
 	}

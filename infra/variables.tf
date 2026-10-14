@@ -52,6 +52,12 @@ variable "domain_enabled" {
   default     = false
 }
 
+variable "trace_sample_rate" {
+  description = "The fraction of traces to sample, from 0 to 1. Cloud Trace is free for the first 2.5 million spans a month, which all traces stay well within at the app's traffic."
+  type        = number
+  default     = 1
+}
+
 variable "strava_client_id" {
   description = "The Strava API application's client ID. Empty to disable Strava. The client secret is read from the strava-client-secret secret."
   type        = string

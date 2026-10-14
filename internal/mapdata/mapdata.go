@@ -38,14 +38,15 @@ func (c Config) withDefaults() Config {
 	if c.NominatimURL == "" {
 		c.NominatimURL = "https://nominatim.openstreetmap.org"
 	}
-	if c.Elevation == nil {
-		c.Elevation = elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir)
-	}
+
 	if c.ForecastURL == "" {
 		c.ForecastURL = "https://api.open-meteo.com/v1/forecast"
 	}
 	if c.HTTPClient == nil {
 		c.HTTPClient = &http.Client{Timeout: 60 * time.Second}
+	}
+	if c.Elevation == nil {
+		c.Elevation = elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir, c.HTTPClient)
 	}
 	return c
 }

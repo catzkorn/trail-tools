@@ -213,6 +213,75 @@ To view available make targets, run:
 $ make help
 ```
 
+### Tracing
+
+The server is traced with [OpenTelemetry](https://opentelemetry.io):
+
+- **Requests it serves:** RPCs are named by their procedure, e.g.
+  `/trips.v1.TripReportService/GetTripReport`, and other requests by
+  their route, e.g. `GET /routes/`. Static assets aren't traced.
+- **Database queries:** named by their sqlc query, e.g.
+  `ListActivityTracksInBounds`.
+- **Requests it makes:** to Strava, Open-Meteo, Nominatim, the elevation
+  tiles, Geofabrik, LiveTrack and Google Cloud, named by their host, e.g.
+  `GET api.open-meteo.com`.
+
+Traces carry the W3C trace context, so a request's spans form one trace.
+
+Locally, the server sends traces over OTLP to `http://localhost:4317`, and
+quietly drops them if nothing is listening. To look at them, start Grafana
+with [Tempo](https://grafana.com/oss/tempo/) using the
+[`grafana/otel-lgtm`](https://github.com/grafana/docker-otel-lgtm) container,
+then run the server as usual:
+
+```sh
+$ make grafana
+$ make watch
+```
+
+`make grafana` runs the container like this, with 4 GB of memory, as it
+bundles several services and stalls under the default 1 GB after a while:
+
+```sh
+$ container run --rm --name otel-lgtm -d --memory 4g -p 3000:3000 -p 4317:4317 grafana/otel-lgtm:latest
+```
+
+Open Grafana on http://localhost:3000; there's no need to sign in.
+Locally, every trace is sampled. To find the trace of something you just
+did in the app:
+
+- **Drilldown → Traces** in the sidebar breaks traces down by span name,
+  with their rate, errors and duration, and links to each trace's
+  waterfall.
+- **Explore**, with the Tempo data source, searches with
+  [TraceQL](https://grafana.com/docs/tempo/latest/traceql/), e.g.:
+
+  ```
+  { resource.service.name = "trail-tools" }
+  { name = "/geo.v1.GeoService/ListHeatmapTracks" && duration > 500ms }
+  { name = "ListActivityTracksInBounds" }
+  { name = "GET api.open-meteo.com" }
+  { kind = client && status = error }
+  ```
+
+  The second query finds slow heatmap requests. Each trace shows the
+  queries and outgoing requests of the request.
+
+Requests made with Go's default HTTP client are traced too. Locally they're
+also logged as warnings, with where they came from. Give that code a client
+from `telemetry.NewClient` instead, as everything else gets one from
+`main.go`.
+
+To send traces elsewhere, set the OTLP gRPC endpoint. To turn tracing off,
+set it to nothing:
+
+```sh
+$ TRAIL_TOOLS_OTLP_ENDPOINT=http://collector.example:4317 make run
+$ TRAIL_TOOLS_OTLP_ENDPOINT= make run
+```
+
+`make clean` stops Grafana along with Postgres.
+
 ### Adding an RPC
 
 1. Add the RPC to the service in `api/<domain>/v1/*.proto`, with comments
@@ -318,6 +387,21 @@ $ export GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)
 $ terraform -chdir=infra init
 $ terraform -chdir=infra apply
 ```
+
+### Traces and errors
+
+On Cloud Run, the server sends traces with OTLP to Google Cloud's Telemetry
+API (`telemetry.googleapis.com`), to view in
+[Cloud Trace](https://console.cloud.google.com/traces). Cloud Trace is free
+for the first 2.5 million spans a month, which the app stays well within, so
+every trace is sampled. Set `trace_sample_rate` in Terraform to sample fewer.
+
+Errors are reported to
+[Error Reporting](https://console.cloud.google.com/errors), which groups
+them by where they happened and can email about new ones. It's free.
+
+There are no custom metrics, as they're billed by the sample. Cloud Run's
+own metrics show the requests, latencies and instances.
 
 ### Secrets
 

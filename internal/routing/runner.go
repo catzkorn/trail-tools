@@ -3,6 +3,7 @@ package routing
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"sync"
 
 	"github.com/catzkorn/trail-tools/internal/elevation"
@@ -18,6 +19,7 @@ type LocalRunner struct {
 	ctx    context.Context
 	log    *slog.Logger
 	report *errreport.Reporter
+	client *http.Client
 	db     *store.DB
 	dem    *elevation.DEM
 	mu     sync.Mutex
@@ -26,8 +28,8 @@ type LocalRunner struct {
 
 // NewLocalRunner creates a new LocalRunner. Imports are cancelled when ctx
 // is done, and recorded as failed, including those still waiting to run.
-func NewLocalRunner(ctx context.Context, log *slog.Logger, report *errreport.Reporter, db *store.DB, dem *elevation.DEM) *LocalRunner {
-	return &LocalRunner{ctx: ctx, log: log, report: report, db: db, dem: dem}
+func NewLocalRunner(ctx context.Context, log *slog.Logger, report *errreport.Reporter, client *http.Client, db *store.DB, dem *elevation.DEM) *LocalRunner {
+	return &LocalRunner{ctx: ctx, log: log, report: report, client: client, db: db, dem: dem}
 }
 
 // Run starts running an import in the background.
@@ -35,7 +37,7 @@ func (r *LocalRunner) Run(_ context.Context, id pgtype.UUID) error {
 	r.wg.Go(func() {
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		if err := RunImport(r.ctx, r.log, r.report, r.db, r.dem, id); err != nil {
+		if err := RunImport(r.ctx, r.log, r.report, r.client, r.db, r.dem, id); err != nil {
 			r.report.Report(r.ctx, "Failed to import OpenStreetMap data", err)
 		}
 	})

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
+	"google.golang.org/api/option"
 )
 
 // Reporter reports errors.
@@ -28,15 +29,16 @@ type Reporter struct {
 
 // New returns a Reporter that reports errors to Error Reporting in a
 // project, from a service at a version, e.g. a Cloud Run service and
-// revision. Close it to send the errors not yet sent.
-func New(ctx context.Context, project, service, version string, log *slog.Logger) (*Reporter, error) {
+// revision. Close it to send the errors not yet sent. The options configure
+// the client, e.g. to trace its calls.
+func New(ctx context.Context, project, service, version string, log *slog.Logger, opts ...option.ClientOption) (*Reporter, error) {
 	client, err := errorreporting.NewClient(ctx, project, errorreporting.Config{
 		ServiceName:    service,
 		ServiceVersion: version,
 		OnError: func(err error) {
 			log.WarnContext(ctx, "Failed to report an error to Error Reporting", slog.String("error", err.Error()))
 		},
-	})
+	}, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Error Reporting client: %w", err)
 	}

@@ -69,12 +69,14 @@ import (
 	"github.com/catzkorn/trail-tools/internal/services/user"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/catzkorn/trail-tools/internal/strava"
+	"github.com/catzkorn/trail-tools/internal/telemetry"
 	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/catzkorn/trail-tools/web"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/johanbrandhorst/reload"
 	"gitlab.com/greyxor/slogor"
+	"google.golang.org/api/option"
 )
 
 const (
@@ -82,6 +84,15 @@ const (
 	defaultPort     = "8080"
 	// mcpPath is the path of the MCP server.
 	mcpPath = "/mcp"
+)
+
+// Timeouts of outgoing requests, as the clients had before they were
+// traced.
+const (
+	mapDataTimeout   = 60 * time.Second
+	stravaTimeout    = 60 * time.Second
+	liveTrackTimeout = 20 * time.Second
+	geofabrikTimeout = 2 * time.Minute
 )
 
 // maxRequestBytes limits the size of API requests. GPX files imported as
@@ -103,6 +114,21 @@ var (
 		"error-reporting-project",
 		"",
 		"The Google Cloud project to report errors to with Error Reporting, using the application default credentials. If unset, errors are logged",
+	)
+	otlpEndpoint = flag.String(
+		"otlp-endpoint",
+		telemetry.LocalEndpoint,
+		"The OTLP gRPC endpoint to export traces to: a local collector like Grafana Tempo, or https://telemetry.googleapis.com with -trace-project. Empty disables tracing",
+	)
+	traceProject = flag.String(
+		"trace-project",
+		"",
+		"The Google Cloud project to export traces to, using the application default credentials",
+	)
+	traceSampleRate = flag.Float64(
+		"trace-sample-rate",
+		1,
+		"The fraction of traces to sample, from 0 to 1",
 	)
 	databaseUrl = flag.String(
 		"database-url",
@@ -238,6 +264,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		os.Exit(1)
 	}
+	stopTracing, err := initTracing(context.Background(), logger, *otlpEndpoint, *traceProject, *traceSampleRate)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set up tracing: %v\n", err)
+		os.Exit(1)
+	}
 	report, err := newReporter(context.Background(), logger, *errorReportingProject)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
@@ -276,10 +307,11 @@ func main() {
 	if err != nil {
 		report.Report(context.Background(), "Failed running app", err)
 	}
-	// Send the errors not yet sent before exiting.
+	// Send the errors and traces not yet sent before exiting.
 	if closeErr := report.Close(); closeErr != nil {
 		logger.Warn("Failed to send the remaining error reports", slog.String("error", closeErr.Error()))
 	}
+	stopTracing()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -292,10 +324,52 @@ func newReporter(ctx context.Context, log *slog.Logger, project string) (*errrep
 	if project == "" {
 		return errreport.NewLocal(log), nil
 	}
-	// Cloud Run sets these for services and jobs.
-	service := cmp.Or(os.Getenv("K_SERVICE"), os.Getenv("CLOUD_RUN_JOB"), "trail-tools")
-	version := cmp.Or(os.Getenv("K_REVISION"), os.Getenv("CLOUD_RUN_EXECUTION"))
-	return errreport.New(ctx, project, service, version, log)
+	return errreport.New(ctx, project, serviceName(), serviceVersion(), log,
+		option.WithGRPCDialOption(telemetry.GRPCDialOption()))
+}
+
+// serviceName returns the name of the Cloud Run service or job the app runs
+// as, or "trail-tools" outside of Cloud Run.
+func serviceName() string {
+	return cmp.Or(os.Getenv("K_SERVICE"), os.Getenv("CLOUD_RUN_JOB"), "trail-tools")
+}
+
+// serviceVersion returns the Cloud Run revision or job execution the app
+// runs as, if any.
+func serviceVersion() string {
+	return cmp.Or(os.Getenv("K_REVISION"), os.Getenv("CLOUD_RUN_EXECUTION"))
+}
+
+// tracingShutdownTimeout bounds sending the remaining traces on exit.
+const tracingShutdownTimeout = 5 * time.Second
+
+// initTracing exports traces to an OTLP endpoint, and traces requests made
+// with the default HTTP client. Outside of Google Cloud, such requests are
+// logged too, so their callers can be given a traced client. The returned
+// function sends the remaining traces.
+func initTracing(ctx context.Context, log *slog.Logger, endpoint, project string, sampleRate float64) (func(), error) {
+	shutdown, err := telemetry.Init(ctx, &telemetry.Config{
+		Endpoint:       endpoint,
+		GCPProject:     project,
+		ServiceName:    serviceName(),
+		ServiceVersion: serviceVersion(),
+		SampleRate:     sampleRate,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if project == "" {
+		telemetry.TraceDefaultTransport(log)
+	} else {
+		telemetry.TraceDefaultTransport(nil)
+	}
+	return func() {
+		ctx, cancel := context.WithTimeout(context.Background(), tracingShutdownTimeout)
+		defer cancel()
+		if err := shutdown(ctx); err != nil {
+			log.Warn("Failed to send the remaining traces", slog.String("error", err.Error()))
+		}
+	}, nil
 }
 
 func run(
@@ -394,11 +468,15 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create trip repository: %w", err)
 	}
+	// Every outgoing request is traced: clients are made by the telemetry
+	// package, and Google's API clients take theirs from the context.
+	googleCtx := telemetry.WithClient(ctx, telemetry.NewClient(0))
+
 	// Photos are stored in Cloud Storage on Cloud Run, whose file system
 	// doesn't outlive an instance, and in a local directory otherwise.
 	var photos blob.Store
 	if photoBucket != "" {
-		photos, err = blob.NewGCS(ctx, photoBucket)
+		photos, err = blob.NewGCS(googleCtx, photoBucket)
 		if err != nil {
 			return fmt.Errorf("failed to create the photo bucket client: %w", err)
 		}
@@ -412,11 +490,12 @@ func run(
 	}
 	// Elevations come from public elevation tiles, for routes and for imports
 	// run in the server.
-	dem, err := newDEM(ctx, log, elevation.DefaultURL, elevation.DefaultCacheDir, demBucket)
+	dem, err := newDEM(googleCtx, log, elevation.DefaultURL, elevation.DefaultCacheDir, demBucket)
 	if err != nil {
 		return err
 	}
 	mapConfig.Elevation = dem
+	mapConfig.HTTPClient = cmp.Or(mapConfig.HTTPClient, telemetry.NewClient(mapDataTimeout))
 	mapData := mapdata.New(mapConfig)
 
 	// Strava is optional, as it requires API credentials.
@@ -451,17 +530,18 @@ func run(
 			RedirectURL:  baseURL + stravasvc.CallbackPath,
 			// The client treats 0 as the default.
 			BackgroundReserve: cmp.Or(stravaBackgroundReserve, -1),
+			HTTPClient:        telemetry.NewClient(stravaTimeout),
 		}
 		if fakeStravaServer != nil {
 			conf.BaseURL = fakeStravaServer.APIURL()
 			conf.OAuthBaseURL = fakeStravaServer.OAuthURL()
-			conf.HTTPClient = fakeStravaServer.Client()
+			conf.HTTPClient = &http.Client{Transport: telemetry.Transport(fakeStravaServer.Client().Transport)}
 		}
 		stravaClient := strava.New(conf)
 		background := stravaSyncMode == "background"
 		var trigger stravasvc.Trigger
 		if !background && stravaSyncJob != "" {
-			job, err := cloudscheduler.NewJob(ctx, stravaSyncJob)
+			job, err := cloudscheduler.NewJob(googleCtx, stravaSyncJob)
 			if err != nil {
 				return fmt.Errorf("failed to create the Strava sync job client: %w", err)
 			}
@@ -492,14 +572,14 @@ func run(
 	geoService := geosvc.NewService(log, mapData, routing.NewFinder(db), activityRepo)
 	planService := plan.NewService(log, report, planRepo, routeRepo, activityRepo, mapData)
 	raceService := race.NewService(log, report, raceRepo, routeRepo)
-	racePlanService := raceplan.NewService(log, report, raceRepo, routeRepo, livetrack.New("", nil), baseURL)
+	racePlanService := raceplan.NewService(log, report, raceRepo, routeRepo, livetrack.New("", telemetry.NewClient(liveTrackTimeout)), baseURL)
 	// Activities are synced from Strava before importing their photos into
 	// trip reports, if Strava is configured.
 	var activitySyncer trip.ActivitySyncer
 	if stravaSyncer != nil {
 		activitySyncer = stravaSyncer
 	}
-	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, baseURL)
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, telemetry.NewClient(0), baseURL)
 	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
@@ -509,17 +589,17 @@ func run(
 	// Cloud Run, so they run as a Cloud Run job there.
 	var importRunner mapdatasvc.ImportRunner
 	if importJob != "" {
-		job, err := cloudrun.NewJob(ctx, importJob)
+		job, err := cloudrun.NewJob(googleCtx, importJob)
 		if err != nil {
 			return fmt.Errorf("failed to create the import job client: %w", err)
 		}
 		importRunner = jobImportRunner{job: job}
 	} else {
-		localRunner := routing.NewLocalRunner(ctx, log, report, db, dem)
+		localRunner := routing.NewLocalRunner(ctx, log, report, telemetry.NewClient(0), db, dem)
 		defer localRunner.Wait()
 		importRunner = localRunner
 	}
-	mapDataService := mapdatasvc.NewService(log, report, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL), importRunner)
+	mapDataService := mapdatasvc.NewService(log, report, db, routing.NewExtracts(routing.DefaultGeofabrikIndexURL, telemetry.NewClient(geofabrikTimeout)), importRunner)
 
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
@@ -597,7 +677,7 @@ func run(
 	}
 	// Serve the scheduled sync endpoint, only for the scheduler
 	if stravaSyncer != nil && !stravaSyncer.Background() {
-		syncHandler, err := authn.RequireGoogleServiceAccount(ctx, log, schedulerAudience, schedulerServiceAccount,
+		syncHandler, err := authn.RequireGoogleServiceAccount(googleCtx, log, schedulerAudience, schedulerServiceAccount,
 			stravasvc.SyncHandler(report, stravaSyncer))
 		if err != nil {
 			return fmt.Errorf("failed to create scheduled sync handler: %w", err)
@@ -656,8 +736,9 @@ func run(
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
 	mux.Handle(trip.ProfilePath, authenticate(raceReportService.PageHandler(serveDir != "", tripService.PageHandler(serveDir != ""))))
 
+	// Requests are traced, and named after the routes they match.
+	srvHandler := telemetry.Routes(mux)
 	// Add auto-reloading middleware if serving from a directory
-	var srvHandler http.Handler = mux
 	if serveDir != "" {
 		srvHandler, err = reload.NewMiddleware(srvHandler, serveDir, log)
 		if err != nil {
@@ -672,7 +753,7 @@ func run(
 
 	srv := &http.Server{
 		Addr:      address,
-		Handler:   srvHandler,
+		Handler:   telemetry.Handler(srvHandler),
 		Protocols: protocols,
 	}
 	serveFn := srv.ListenAndServe
@@ -740,7 +821,7 @@ func setFlagsFromEnv(fs *flag.FlagSet) error {
 // caches them in the Cloud Storage bucket, if set. On Cloud Run, the cache
 // directory is in memory and lost when an instance or job stops.
 func newDEM(ctx context.Context, log *slog.Logger, baseURL, cacheDir, bucket string) (*elevation.DEM, error) {
-	dem := elevation.NewDEM(baseURL, cacheDir)
+	dem := elevation.NewDEM(baseURL, cacheDir, telemetry.NewClient(0))
 	if bucket != "" {
 		tiles, err := blob.NewGCS(ctx, bucket)
 		if err != nil {
