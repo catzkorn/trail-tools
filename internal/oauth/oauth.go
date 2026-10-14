@@ -251,6 +251,9 @@ var allowedRedirectHosts = []string{
 	// https://code.visualstudio.com/api/extension-guides/ai/mcp
 	"vscode.dev",
 	"insiders.vscode.dev",
+	// Can't find a reference for this, but it was provided by Gemini when trying
+	// to register the MCP server.
+	"oauth-redirect.googleusercontent.com",
 }
 
 // allowedRedirectSchemes are the private use URI schemes of desktop MCP
