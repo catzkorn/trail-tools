@@ -23,6 +23,7 @@ func TestValidateRedirectURI(t *testing.T) {
 		"https://chatgpt.com/connector_platform_oauth_redirect",
 		"https://vscode.dev/redirect",
 		"cursor://anysphere.cursor-mcp/oauth/callback",
+		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-12345-trailrunn.ing",
 	} {
 		if err := validateRedirectURI(uri); err != nil {
 			t.Errorf("validateRedirectURI(%q) = %v, want nil", uri, err)
@@ -41,6 +42,13 @@ func TestValidateRedirectURI(t *testing.T) {
 		"data:text/html,hi",
 		"ftp://localhost/callback",
 		"/relative/callback",
+		// Google's relay forwards to any Cloud project, so only Gemini's
+		// connectors are allowed.
+		"https://oauth-redirect.googleusercontent.com/r/evil-project",
+		"https://oauth-redirect.googleusercontent.com/",
+		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1/../../r/evil-project",
+		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1%2F..%2Fevil-project",
+		"http://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1",
 	} {
 		if err := validateRedirectURI(uri); err == nil {
 			t.Errorf("validateRedirectURI(%q) = nil, want an error", uri)
@@ -114,6 +122,18 @@ func TestRegister(t *testing.T) {
 	}
 	if res["token_endpoint_auth_method"] != "none" || res["client_secret"] != nil {
 		t.Errorf("got registration %v, want a public client", res)
+	}
+
+	// Clients asking for more than is supported get what is.
+	status, res = register(t, ts, `{"client_name":"Gemini","redirect_uris":["https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1-trailrunn.ing"],"grant_types":["authorization_code","refresh_token","client_credentials"],"response_types":["code","token"],"scope":"offline_access"}`)
+	if status != http.StatusCreated {
+		t.Fatalf("got status %d: %v", status, res)
+	}
+	if grants, _ := json.Marshal(res["grant_types"]); string(grants) != `["authorization_code","refresh_token"]` {
+		t.Errorf("got grant types %s", grants)
+	}
+	if responses, _ := json.Marshal(res["response_types"]); string(responses) != `["code"]` {
+		t.Errorf("got response types %s", responses)
 	}
 
 	for _, tc := range []struct {

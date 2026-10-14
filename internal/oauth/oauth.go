@@ -32,6 +32,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"slices"
 	"strings"
 	"time"
@@ -251,9 +252,17 @@ var allowedRedirectHosts = []string{
 	// https://code.visualstudio.com/api/extension-guides/ai/mcp
 	"vscode.dev",
 	"insiders.vscode.dev",
-	// Can't find a reference for this, but it was provided by Gemini when trying
-	// to register the MCP server.
-	"oauth-redirect.googleusercontent.com",
+}
+
+// allowedRedirectPrefixes are prefixes of HTTPS redirect URIs of MCP clients
+// on shared hosts, where only some paths belong to the client.
+var allowedRedirectPrefixes = []string{
+	// Gemini's custom MCP connectors redirect through Google's OAuth relay,
+	// which forwards /r/<id> to the Google Cloud project with that ID, so the
+	// host can't be allowed as a whole. Gemini's IDs start with
+	// user_bound_custom-mcp-, which no Cloud project ID can, as those can't
+	// contain underscores.
+	"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-",
 }
 
 // allowedRedirectSchemes are the private use URI schemes of desktop MCP
@@ -285,7 +294,7 @@ func validateRedirectURI(uri string) error {
 		}
 		return nil
 	case "https":
-		if isLoopback(u.Hostname()) || slices.Contains(allowedRedirectHosts, u.Hostname()) {
+		if isLoopback(u.Hostname()) || slices.Contains(allowedRedirectHosts, u.Hostname()) || hasAllowedPrefix(u) {
 			return nil
 		}
 		return fmt.Errorf("host %q is not a known MCP client", u.Hostname())
@@ -295,6 +304,19 @@ func validateRedirectURI(uri string) error {
 		}
 		return fmt.Errorf("scheme %q is not allowed", u.Scheme)
 	}
+}
+
+// hasAllowedPrefix returns whether a redirect URI has one of the allowed
+// prefixes. Paths with dot segments or escaped slashes don't, as they could
+// lead elsewhere once resolved.
+func hasAllowedPrefix(u *url.URL) bool {
+	if path.Clean(u.Path) != u.Path || u.RawPath != "" {
+		return false
+	}
+	target := u.Scheme + "://" + u.Host + u.Path
+	return slices.ContainsFunc(allowedRedirectPrefixes, func(prefix string) bool {
+		return strings.HasPrefix(target, prefix)
+	})
 }
 
 func isLoopback(host string) bool {
@@ -327,21 +349,32 @@ func matchRedirectURI(registered, requested string) bool {
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var meta oauthex.ClientRegistrationMetadata
+	// Rejected registrations are logged, as clients rarely show why.
+	reject := func(code, description string) {
+		s.log.WarnContext(r.Context(), "Rejected OAuth client registration",
+			slog.String("error", code),
+			slog.String("description", description),
+			slog.String("client_name", meta.ClientName),
+			slog.Any("redirect_uris", meta.RedirectURIs),
+			slog.Any("grant_types", meta.GrantTypes),
+			slog.Any("response_types", meta.ResponseTypes),
+			slog.String("user_agent", r.UserAgent()),
+		)
+		writeError(w, http.StatusBadRequest, code, description)
+	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&meta); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_client_metadata", "invalid JSON: "+err.Error())
+		reject("invalid_client_metadata", "invalid JSON: "+err.Error())
 		return
 	}
-	for _, grantType := range meta.GrantTypes {
-		if grantType != "authorization_code" && grantType != "refresh_token" {
-			writeError(w, http.StatusBadRequest, "invalid_client_metadata", fmt.Sprintf("unsupported grant type %q", grantType))
-			return
-		}
+	// Clients may ask for more than is supported; they get what is, as long
+	// as that includes the authorization code flow (RFC 7591 section 3.2.1).
+	if len(meta.GrantTypes) > 0 && !slices.Contains(meta.GrantTypes, "authorization_code") {
+		reject("invalid_client_metadata", "the authorization_code grant type is required")
+		return
 	}
-	for _, responseType := range meta.ResponseTypes {
-		if responseType != "code" {
-			writeError(w, http.StatusBadRequest, "invalid_client_metadata", fmt.Sprintf("unsupported response type %q", responseType))
-			return
-		}
+	if len(meta.ResponseTypes) > 0 && !slices.Contains(meta.ResponseTypes, "code") {
+		reject("invalid_client_metadata", `the "code" response type is required`)
+		return
 	}
 	c := &client{
 		Name:         strings.TrimSpace(meta.ClientName),
@@ -352,7 +385,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		if len(c.RedirectURIs) > 0 && len(c.RedirectURIs) <= maxRedirectURIs && len(c.Name) <= maxClientNameLength {
 			code = "invalid_redirect_uri"
 		}
-		writeError(w, http.StatusBadRequest, code, err.Error())
+		reject(code, err.Error())
 		return
 	}
 	clientID, err := encodeClientID(c)
