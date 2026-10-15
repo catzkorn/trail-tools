@@ -87,7 +87,7 @@ func (s *Service) importPhotos(ctx context.Context, report *trips.Report, activi
 	// Without Strava, the photos from the last sync are imported.
 	if s.syncer != nil {
 		if err := s.syncer.SyncActivity(ctx, userID, activity.StravaID); err != nil && !errors.Is(err, store.ErrNotFound) {
-			s.log.WarnContext(ctx, "Failed to sync the activity before importing its photos", slogor.Err(err))
+			s.report.Report(ctx, "Failed to sync the activity before importing its photos", err)
 		}
 	}
 	stravaPhotos, err := s.activities.ListActivityPhotos(ctx, userID, report.ActivityID)
@@ -127,7 +127,7 @@ func (s *Service) importPhotos(ctx context.Context, report *trips.Report, activi
 		log := s.log.With(slog.String("strava_photo_id", p.StravaID))
 		data, err := s.downloadPhoto(ctx, p.URL)
 		if err != nil {
-			log.WarnContext(ctx, "Failed to download a photo from Strava", slogor.Err(err))
+			s.report.Report(ctx, "Failed to download a photo from Strava", err, slog.String("strava_photo_id", p.StravaID))
 			result.failed++
 			continue
 		}
@@ -164,6 +164,8 @@ func (s *Service) importPhotos(ctx context.Context, report *trips.Report, activi
 
 // downloadPhoto downloads a photo from Strava's CDN.
 func (s *Service) downloadPhoto(ctx context.Context, imageURL string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, photoDownloadTimeout)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imageURL, nil)
 	if err != nil {
 		return nil, err

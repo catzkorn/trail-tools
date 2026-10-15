@@ -8,18 +8,41 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"strings"
 
+	"github.com/exaring/otelpgx"
 	migrate "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	pgxmigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	decimal "github.com/jackc/pgx-shopspring-decimal"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/multitracer"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/tracelog"
 	slogadapter "github.com/mcosta74/pgx-slog"
 )
+
+// querySpanName names a query's span after its sqlc name, e.g. "GetRoute"
+// for a query starting with "-- name: GetRoute :one", or else its first
+// words.
+func querySpanName(stmt string) string {
+	stmt = strings.TrimSpace(stmt)
+	if name, ok := strings.CutPrefix(stmt, "-- name: "); ok {
+		name, _, _ = strings.Cut(name, " ")
+		return name
+	}
+	first, _, _ := strings.Cut(stmt, "\n")
+	if len(first) > maxSpanNameLength {
+		first = first[:maxSpanNameLength] + "…"
+	}
+	return first
+}
+
+// maxSpanNameLength is the length span names of queries without a name are
+// cut to.
+const maxSpanNameLength = 60
 
 //go:embed migrations/*.sql
 var fs embed.FS
@@ -35,10 +58,15 @@ func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse postgres URI: %w", err)
 	}
-	poolConf.ConnConfig.Tracer = &tracelog.TraceLog{
-		Logger:   &logLevelMapper{wrapped: slogadapter.NewLogger(logger)},
-		LogLevel: tracelog.LogLevelTrace,
-	}
+	poolConf.ConnConfig.Tracer = multitracer.New(
+		&tracelog.TraceLog{
+			Logger:   &logLevelMapper{wrapped: slogadapter.NewLogger(logger)},
+			LogLevel: tracelog.LogLevelTrace,
+		},
+		// Queries are traced with the global trace provider, named by sqlc's
+		// query names.
+		otelpgx.NewTracer(otelpgx.WithSpanNameFunc(querySpanName)),
+	)
 
 	// Validate and/or run migrations
 	err = validateSchema(*poolConf.ConnConfig, pgURL.Scheme)

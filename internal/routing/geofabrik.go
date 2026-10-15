@@ -129,9 +129,13 @@ type Extracts struct {
 	fetched  time.Time
 }
 
-// NewExtracts creates a new Extracts using the index at url.
-func NewExtracts(url string) *Extracts {
-	return &Extracts{url: url, client: &http.Client{Timeout: 2 * time.Minute}}
+// NewExtracts creates a new Extracts using the index at url, fetched with
+// client, or a client with a timeout if it's nil.
+func NewExtracts(url string, client *http.Client) *Extracts {
+	if client == nil {
+		client = &http.Client{Timeout: 2 * time.Minute}
+	}
+	return &Extracts{url: url, client: client}
 }
 
 // Find returns the extracts to read to import the bounds: at points across

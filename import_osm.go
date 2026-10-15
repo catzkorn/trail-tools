@@ -18,6 +18,7 @@ import (
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/catzkorn/trail-tools/internal/telemetry"
 )
 
 // importOSM runs the import-osm command, which loads OpenStreetMap extracts
@@ -42,6 +43,9 @@ func importOSM(args []string) int {
 	logLevel := fs.String("log-level", "info", "The log level to use")
 	logFormat := fs.String("log-format", "text", "The log format: \"text\" for terminals, or \"json\" for Cloud Logging")
 	errorReportingProject := fs.String("error-reporting-project", "", "The Google Cloud project to report errors to with Error Reporting. If unset, errors are logged")
+	otlpEndpoint := fs.String("otlp-endpoint", telemetry.LocalEndpoint, "The OTLP gRPC endpoint to export traces to. Empty disables tracing")
+	traceProject := fs.String("trace-project", "", "The Google Cloud project to export traces to, using the application default credentials")
+	traceSampleRate := fs.Float64("trace-sample-rate", 1, "The fraction of traces to sample, from 0 to 1")
 	_ = fs.Parse(args)
 	if err := setFlagsFromEnv(fs); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set flags from the environment: %v\n", err)
@@ -52,12 +56,23 @@ func importOSM(args []string) int {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		return 1
 	}
+	stopTracing, err := initTracing(context.Background(), *otlpEndpoint, *traceProject, *traceSampleRate)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set up tracing: %v\n", err)
+		return 1
+	}
 	report, err := newReporter(context.Background(), log, *errorReportingProject)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
 		return 1
 	}
+	telemetry.TraceDefaultTransport(report)
+	// Send the traces and errors not yet sent before exiting. Error
+	// Reporting goes last, to report failing to send the traces.
 	defer func() {
+		if err := stopTracing(); err != nil {
+			report.Report(context.Background(), "Failed to send the remaining traces", err)
+		}
 		if err := report.Close(); err != nil {
 			log.Warn("Failed to send the remaining error reports", slog.String("error", err.Error()))
 		}
@@ -96,7 +111,9 @@ func runImportOSM(ctx context.Context, log *slog.Logger, report *errreport.Repor
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 	defer db.Close()
-	dem, err := newDEM(ctx, log, demURL, demCache, demBucket)
+	// Extracts and elevation tiles are downloaded with traced clients.
+	client := telemetry.NewClient(0)
+	dem, err := newDEM(telemetry.WithClient(ctx, client), log, report, demURL, demCache, demBucket)
 	if err != nil {
 		return err
 	}
@@ -105,13 +122,14 @@ func runImportOSM(ctx context.Context, log *slog.Logger, report *errreport.Repor
 		if err != nil {
 			return fmt.Errorf("invalid import-id: %w", err)
 		}
-		return routing.RunImport(ctx, log, report, db, dem, id)
+		return routing.RunImport(ctx, log, report, client, db, dem, id)
 	}
 	_, err = routing.Import(ctx, log, db, routing.ImportConfig{
-		Region:  region,
-		Sources: strings.Split(source, ","),
-		Bounds:  bounds,
-		DEM:     dem,
+		Region:     region,
+		Sources:    strings.Split(source, ","),
+		Bounds:     bounds,
+		DEM:        dem,
+		HTTPClient: client,
 	})
 	return err
 }

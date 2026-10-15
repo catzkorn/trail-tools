@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -28,6 +29,8 @@ type ImportConfig struct {
 	Bounds geo.Bounds
 	// The elevation model.
 	DEM *elevation.DEM
+	// Downloads the extracts given by URL. Defaults to the default client.
+	HTTPClient *http.Client
 }
 
 // Import loads the foot accessible ways and points of interest of
@@ -41,7 +44,7 @@ func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConf
 	// Extracts are read one at a time, and only what's inside the bounds is
 	// kept, so memory grows with the area rather than the extracts.
 	for _, source := range conf.Sources {
-		more, err := readSource(ctx, log, source, conf.Bounds)
+		more, err := readSource(ctx, log, cmp.Or(conf.HTTPClient, http.DefaultClient), source, conf.Bounds)
 		if err != nil {
 			return 0, err
 		}
@@ -58,11 +61,11 @@ func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConf
 
 // readSource reads an OpenStreetMap extract from a file or URL with ReadPBF.
 // A downloaded extract is removed once read.
-func readSource(ctx context.Context, log *slog.Logger, source string, bounds geo.Bounds) (*OSM, error) {
+func readSource(ctx context.Context, log *slog.Logger, client *http.Client, source string, bounds geo.Bounds) (*OSM, error) {
 	path := source
 	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
 		log.InfoContext(ctx, "Downloading the OpenStreetMap extract", slog.String("url", source))
-		downloaded, err := download(ctx, source)
+		downloaded, err := download(ctx, client, source)
 		if err != nil {
 			return nil, err
 		}
@@ -73,12 +76,12 @@ func readSource(ctx context.Context, log *slog.Logger, source string, bounds geo
 }
 
 // download saves a URL to a temporary file and returns its path.
-func download(ctx context.Context, url string) (string, error) {
+func download(ctx context.Context, client *http.Client, url string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to download %s: %w", url, err)
 	}

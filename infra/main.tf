@@ -21,6 +21,10 @@ resource "google_project_service" "services" {
     "cloudresourcemanager.googleapis.com",
     "cloudscheduler.googleapis.com",
     "clouderrorreporting.googleapis.com",
+    # Traces are exported with OTLP to the Telemetry API, and viewed in
+    # Cloud Trace.
+    "cloudtrace.googleapis.com",
+    "telemetry.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "run.googleapis.com",

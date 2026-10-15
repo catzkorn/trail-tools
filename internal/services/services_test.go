@@ -119,7 +119,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	activityRepo, err := activities.NewRepository(log, db)
+	activityRepo, err := activities.NewRepository(report, db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	userService := user.NewService(log, report, userRepo, userRepo, photos)
-	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, "https://trail.example")
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, nil, "https://trail.example")
 	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
 
 	// Start listening before creating the handler, as the OAuth server needs
