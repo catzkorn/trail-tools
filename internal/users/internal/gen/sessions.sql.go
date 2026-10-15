@@ -37,12 +37,29 @@ func (q *Queries) DeleteSession(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getSessionUser = `-- name: GetSessionUser :one
-select user_id from sessions where sessions.id = $1 and sessions.expiry > now()
+select p.id, p.user_handle, p.name, u.is_admin, u.avatar_key from sessions s
+join passkey_users p on p.id = s.user_id
+join users u on u.id = s.user_id
+where s.id = $1 and s.expiry > now()
 `
 
-func (q *Queries) GetSessionUser(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error) {
+type GetSessionUserRow struct {
+	ID         pgtype.UUID
+	UserHandle []byte
+	Name       string
+	IsAdmin    bool
+	AvatarKey  pgtype.Text
+}
+
+func (q *Queries) GetSessionUser(ctx context.Context, id pgtype.UUID) (*GetSessionUserRow, error) {
 	row := q.db.QueryRow(ctx, getSessionUser, id)
-	var user_id pgtype.UUID
-	err := row.Scan(&user_id)
-	return user_id, err
+	var i GetSessionUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserHandle,
+		&i.Name,
+		&i.IsAdmin,
+		&i.AvatarKey,
+	)
+	return &i, err
 }

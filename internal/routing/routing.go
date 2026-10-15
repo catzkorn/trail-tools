@@ -184,29 +184,34 @@ func (e *edge) length() float64 {
 
 // Route computes a path between two points.
 func (r *Router) Route(ctx context.Context, req Request) (*Path, error) {
-	tx, err := r.db.Begin(ctx)
+	from, err := snap(ctx, r.db, req.From)
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
-	from, err := snap(ctx, tx, req.From)
+	to, err := snap(ctx, r.db, req.To)
 	if err != nil {
 		return nil, err
 	}
-	to, err := snap(ctx, tx, req.To)
-	if err != nil {
-		return nil, err
-	}
+	// The preferred paths are stored in a temporary table, which the search
+	// needs a transaction for. Without them, it runs without one, saving the
+	// round trips of starting and ending it.
+	var db store.Querier = r.db
 	prefer := len(req.Prefer) > 0
 	if prefer {
+		tx, err := r.db.Begin(ctx)
+		if err != nil {
+			return nil, err
+		}
+		defer tx.Rollback(ctx)
 		if err := savePreferred(ctx, tx, req.Prefer); err != nil {
 			return nil, err
 		}
+		db = tx
 	}
 	cost, reverseCost := costs(req.Profile, prefer)
 	margin := math.Max(minSearchMarginMeters, geo.Distance(req.From, req.To)/2)
 	for range searchAttempts {
-		path, err := search(ctx, tx, from, to, cost, reverseCost, margin)
+		path, err := search(ctx, db, from, to, cost, reverseCost, margin)
 		if err != nil || path != nil {
 			return path, err
 		}
@@ -216,8 +221,8 @@ func (r *Router) Route(ctx context.Context, req Request) (*Path, error) {
 }
 
 // snap returns the position on the nearest edge to a point.
-func snap(ctx context.Context, tx pgx.Tx, p geo.Point) (position, error) {
-	row := tx.QueryRow(ctx, `select `+edgeColumns+`,
+func snap(ctx context.Context, db store.Querier, p geo.Point) (position, error) {
+	row := db.QueryRow(ctx, `select `+edgeColumns+`,
 		ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography)
 	from routing_edges
 	order by geom <-> ST_SetSRID(ST_MakePoint($1, $2), 4326)
@@ -232,7 +237,7 @@ func snap(ctx context.Context, tx pgx.Tx, p geo.Point) (position, error) {
 	}
 	if distance > maxSnapMeters {
 		var covered bool
-		if err := tx.QueryRow(ctx, `select exists (select 1 from routing_regions
+		if err := db.QueryRow(ctx, `select exists (select 1 from routing_regions
 			where ST_Contains(bounds, ST_SetSRID(ST_MakePoint($1, $2), 4326)))`, p.Lng, p.Lat).Scan(&covered); err != nil {
 			return position{}, fmt.Errorf("failed to check the imported regions: %w", err)
 		}
@@ -302,14 +307,16 @@ type candidate struct {
 
 // search finds the cheapest path between two positions, within margin
 // meters of them. It returns nil if there is none in the area.
-func search(ctx context.Context, tx pgx.Tx, from, to position, cost, reverseCost string, margin float64) (*Path, error) {
+func search(ctx context.Context, db store.Querier, from, to position, cost, reverseCost string, margin float64) (*Path, error) {
 	// The costs of the snapped edges, to cost the partial edges at the ends.
 	edgeCosts := map[int64][2]float64{}
-	rows, err := tx.Query(ctx, `select id, `+cost+`, `+reverseCost+` from routing_edges where id = any($1)`,
+	rows, err := db.Query(ctx, `select id, `+cost+`, `+reverseCost+` from routing_edges where id = any($1)`,
 		[]int64{from.edge.id, to.edge.id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to cost the snapped edges: %w", err)
 	}
+	// The rows hold a connection of the pool until they're closed.
+	defer rows.Close()
 	for rows.Next() {
 		var id int64
 		var forward, backward float64
@@ -338,13 +345,14 @@ func search(ctx context.Context, tx pgx.Tx, from, to position, cost, reverseCost
 	edgesSQL := fmt.Sprintf(`select id, source, target, %s as cost, %s as reverse_cost
 		from routing_edges where geom && ST_MakeEnvelope(%f, %f, %f, %f, 4326)`,
 		cost, reverseCost, bounds.MinLng, bounds.MinLat, bounds.MaxLng, bounds.MaxLat)
-	rows, err = tx.Query(ctx, `select start_vid, end_vid, node, edge, agg_cost
+	rows, err = db.Query(ctx, `select start_vid, end_vid, node, edge, agg_cost
 		from pgr_dijkstra($1, $2::bigint[], $3::bigint[], directed => true)
 		order by start_vid, end_vid, path_seq`,
 		edgesSQL, []int64{starts[0].vertex, starts[1].vertex}, []int64{ends[0].vertex, ends[1].vertex})
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for a path: %w", err)
 	}
+	defer rows.Close()
 	type step struct{ node, edge int64 }
 	type route struct {
 		start, end int64
@@ -415,7 +423,7 @@ func search(ctx context.Context, tx pgx.Tx, from, to position, cost, reverseCost
 	for i, s := range bestRoute.steps {
 		ids[i] = s.edge
 	}
-	edges, err := loadEdges(ctx, tx, ids)
+	edges, err := loadEdges(ctx, db, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -435,8 +443,8 @@ func search(ctx context.Context, tx pgx.Tx, from, to position, cost, reverseCost
 	return b.path(), nil
 }
 
-func loadEdges(ctx context.Context, tx pgx.Tx, ids []int64) (map[int64]*edge, error) {
-	rows, err := tx.Query(ctx, `select `+edgeColumns+` from routing_edges where id = any($1)`, ids)
+func loadEdges(ctx context.Context, db store.Querier, ids []int64) (map[int64]*edge, error) {
+	rows, err := db.Query(ctx, `select `+edgeColumns+` from routing_edges where id = any($1)`, ids)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load the path's edges: %w", err)
 	}

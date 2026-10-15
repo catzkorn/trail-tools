@@ -217,62 +217,77 @@ var AllRacePlanSections = []RacePlanSection{
 
 // CreateRacePlan stores a new race plan for the plan's user and race.
 func (r *Repository) CreateRacePlan(ctx context.Context, plan *RacePlan) (*RacePlan, error) {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer tx.Rollback(context.Background())
-	q := r.q.WithTx(tx)
-	id, err := q.CreateRacePlan(ctx, &gen.CreateRacePlanParams{
-		UserID:                     plan.UserID,
-		RaceID:                     plan.RaceID,
-		GoalsAFinishSeconds:        plan.Goals.AFinishSeconds,
-		GoalsBFinishSeconds:        plan.Goals.BFinishSeconds,
-		GoalsCFinishSeconds:        plan.Goals.CFinishSeconds,
-		GoalsNotes:                 plan.Goals.Notes,
-		PacingStrategy:             plan.Pacing.Strategy,
-		PacingHikeGradePercent:     plan.Pacing.HikeGradePercent,
-		PacingHeartRateCapBpm:      plan.Pacing.HeartRateCapBpm,
-		PacingNotes:                plan.Pacing.Notes,
-		NutritionCarbsGramsPerHour: plan.Nutrition.CarbsGramsPerHour,
-		NutritionFluidMlPerHour:    plan.Nutrition.FluidMlPerHour,
-		NutritionSodiumMgPerHour:   plan.Nutrition.SodiumMgPerHour,
-		NutritionNotes:             plan.Nutrition.Notes,
-		CrewHasCrew:                plan.Crew.HasCrew,
-		CrewMembers:                plan.Crew.Members,
-		CrewNotes:                  plan.Crew.Notes,
-		MentalMantras:              nonNil(plan.Mental.Mantras),
-		MentalNotes:                plan.Mental.Notes,
-		Notes:                      plan.Notes,
+	var id pgtype.UUID
+	var p planReader
+	err := r.db.Transact(ctx, func(b *store.Batch) error {
+		read(b, &id, "create race plan", func(q *gen.Queries) (pgtype.UUID, error) {
+			return q.CreateRacePlan(ctx, &gen.CreateRacePlanParams{
+				UserID:                     plan.UserID,
+				RaceID:                     plan.RaceID,
+				GoalsAFinishSeconds:        plan.Goals.AFinishSeconds,
+				GoalsBFinishSeconds:        plan.Goals.BFinishSeconds,
+				GoalsCFinishSeconds:        plan.Goals.CFinishSeconds,
+				GoalsNotes:                 plan.Goals.Notes,
+				PacingStrategy:             plan.Pacing.Strategy,
+				PacingHikeGradePercent:     plan.Pacing.HikeGradePercent,
+				PacingHeartRateCapBpm:      plan.Pacing.HeartRateCapBpm,
+				PacingNotes:                plan.Pacing.Notes,
+				NutritionCarbsGramsPerHour: plan.Nutrition.CarbsGramsPerHour,
+				NutritionFluidMlPerHour:    plan.Nutrition.FluidMlPerHour,
+				NutritionSodiumMgPerHour:   plan.Nutrition.SodiumMgPerHour,
+				NutritionNotes:             plan.Nutrition.Notes,
+				CrewHasCrew:                plan.Crew.HasCrew,
+				CrewMembers:                plan.Crew.Members,
+				CrewNotes:                  plan.Crew.Notes,
+				MentalMantras:              nonNil(plan.Mental.Mantras),
+				MentalNotes:                plan.Mental.Notes,
+				Notes:                      plan.Notes,
+			})
+		})
+		return nil
+	}, func(b *store.Batch) error {
+		// The columns of the sections were set above, and the new plan has
+		// no child rows to replace.
+		q := gen.New(b)
+		if err := createCheckpoints(ctx, q, id, plan.Checkpoints); err != nil {
+			return err
+		}
+		if err := createNutritionProducts(ctx, q, id, plan.Nutrition.Products); err != nil {
+			return err
+		}
+		if err := createGear(ctx, q, id, plan.Gear); err != nil {
+			return err
+		}
+		if err := createContingencies(ctx, q, id, plan.Contingencies); err != nil {
+			return err
+		}
+		if err := createRaceMorning(ctx, q, id, plan.RaceMorning); err != nil {
+			return err
+		}
+		p.queuePlan(ctx, b, id, func(q *gen.Queries) (*gen.RacePlan, error) {
+			return q.GetRacePlan(ctx, &gen.GetRacePlanParams{ID: id, UserID: plan.UserID})
+		})
+		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create race plan: %w", err)
+		return nil, writeError("create race plan", err)
 	}
-	// The columns of the other sections were set above.
-	for _, section := range []RacePlanSection{SectionCheckpoints, SectionNutrition, SectionGear, SectionContingencies, SectionRaceMorning} {
-		if err := writeSection(ctx, q, id, plan, section); err != nil {
-			return nil, err
-		}
-	}
-	created, err := getRacePlan(ctx, q, plan.UserID, id)
-	if err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return created, nil
+	return p.plan()
 }
 
 // GetRacePlan gets one of the user's race plans.
 func (r *Repository) GetRacePlan(ctx context.Context, userID, planID pgtype.UUID) (*RacePlan, error) {
-	var plan *RacePlan
-	err := r.read(ctx, func(q *gen.Queries) error {
-		var err error
-		plan, err = getRacePlan(ctx, q, userID, planID)
-		return err
+	var p planReader
+	err := r.db.ReadSnapshot(ctx, func(b *store.Batch) error {
+		p.queuePlan(ctx, b, planID, func(q *gen.Queries) (*gen.RacePlan, error) {
+			return q.GetRacePlan(ctx, &gen.GetRacePlanParams{ID: planID, UserID: userID})
+		})
+		return nil
 	})
-	return plan, err
+	if err != nil {
+		return nil, err
+	}
+	return p.plan()
 }
 
 // GetSharedRacePlan gets a shared race plan and its race by share token.
@@ -280,79 +295,85 @@ func (r *Repository) GetSharedRacePlan(ctx context.Context, token string) (*Race
 	if token == "" {
 		return nil, nil, store.ErrNotFound
 	}
-	var plan *RacePlan
-	var race *Race
-	err := r.read(ctx, func(q *gen.Queries) error {
-		row, err := q.GetRacePlanByShareToken(ctx, pgtype.Text{String: token, Valid: true})
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return store.ErrNotFound
-			}
-			return fmt.Errorf("failed to get shared race plan: %w", err)
-		}
-		plans, err := loadRacePlans(ctx, q, []*gen.RacePlan{row})
-		if err != nil {
-			return err
-		}
-		dbRace, err := q.GetRaceByID(ctx, row.RaceID)
-		if err != nil {
-			return fmt.Errorf("failed to get race: %w", err)
-		}
-		plan, race = plans[0], raceFromDB(dbRace)
+	var p planReader
+	var race *gen.Race
+	err := r.db.ReadSnapshot(ctx, func(b *store.Batch) error {
+		p.queueRow(b, func(q *gen.Queries) (*gen.RacePlan, error) {
+			return q.GetRacePlanByShareToken(ctx, pgtype.Text{String: token, Valid: true})
+		})
+		return nil
+	}, func(b *store.Batch) error {
+		row := p.rows[0]
+		p.queueChildren(ctx, b, []pgtype.UUID{row.ID})
+		read(b, &race, "get race", func(q *gen.Queries) (*gen.Race, error) {
+			return q.GetRaceByID(ctx, row.RaceID)
+		})
 		return nil
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	return plan, race, nil
+	plan, err := p.plan()
+	if err != nil {
+		return nil, nil, err
+	}
+	return plan, raceFromDB(race), nil
 }
 
 // ListRacePlans lists the user's race plans in creation order.
 func (r *Repository) ListRacePlans(ctx context.Context, userID pgtype.UUID) ([]*RacePlan, error) {
-	var plans []*RacePlan
-	err := r.read(ctx, func(q *gen.Queries) error {
-		rows, err := q.ListRacePlans(ctx, userID)
-		if err != nil {
-			return fmt.Errorf("failed to list race plans: %w", err)
+	var p planReader
+	err := r.db.ReadSnapshot(ctx, func(b *store.Batch) error {
+		read(b, &p.rows, "list race plans", func(q *gen.Queries) ([]*gen.RacePlan, error) {
+			return q.ListRacePlans(ctx, userID)
+		})
+		return nil
+	}, func(b *store.Batch) error {
+		ids := make([]pgtype.UUID, len(p.rows))
+		for i, row := range p.rows {
+			ids[i] = row.ID
 		}
-		plans, err = loadRacePlans(ctx, q, rows)
-		return err
+		p.queueChildren(ctx, b, ids)
+		return nil
 	})
-	return plans, err
+	if err != nil {
+		return nil, err
+	}
+	return p.plans()
 }
 
 // UpdateRacePlan replaces the given sections of one of the user's race
 // plans, identified by the plan's ID and user ID, leaving the other sections
 // unchanged. It returns the updated plan.
 func (r *Repository) UpdateRacePlan(ctx context.Context, plan *RacePlan, sections []RacePlanSection) (*RacePlan, error) {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer tx.Rollback(context.Background())
-	q := r.q.WithTx(tx)
-	// Touching the plan checks it belongs to the user, and locks it so that
-	// concurrent updates of the same section don't interleave.
-	n, err := q.TouchRacePlan(ctx, &gen.TouchRacePlanParams{ID: plan.ID, UserID: plan.UserID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to update race plan: %w", err)
-	}
-	if n == 0 {
-		return nil, store.ErrNotFound
-	}
-	for _, section := range sections {
-		if err := writeSection(ctx, q, plan.ID, plan, section); err != nil {
-			return nil, err
+	var touched int64
+	var p planReader
+	err := r.db.Transact(ctx, func(b *store.Batch) error {
+		// Touching the plan checks it belongs to the user, and locks it so
+		// that concurrent updates of the same section don't interleave.
+		read(b, &touched, "update race plan", func(q *gen.Queries) (int64, error) {
+			return q.TouchRacePlan(ctx, &gen.TouchRacePlanParams{ID: plan.ID, UserID: plan.UserID})
+		})
+		return nil
+	}, func(b *store.Batch) error {
+		if touched == 0 {
+			return store.ErrNotFound
 		}
-	}
-	updated, err := getRacePlan(ctx, q, plan.UserID, plan.ID)
+		q := gen.New(b)
+		for _, section := range sections {
+			if err := writeSection(ctx, q, plan.ID, plan, section); err != nil {
+				return err
+			}
+		}
+		p.queuePlan(ctx, b, plan.ID, func(q *gen.Queries) (*gen.RacePlan, error) {
+			return q.GetRacePlan(ctx, &gen.GetRacePlanParams{ID: plan.ID, UserID: plan.UserID})
+		})
+		return nil
+	})
 	if err != nil {
-		return nil, err
+		return nil, writeError("update race plan", err)
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return updated, nil
+	return p.plan()
 }
 
 // ShareRacePlan creates a share token for one of the user's race plans, or
@@ -397,45 +418,43 @@ func (r *Repository) DeleteRacePlan(ctx context.Context, userID, planID pgtype.U
 // check the plan may be updated, e.g. that it belongs to the user or the
 // share token matches.
 func (r *Repository) UpdateRaceDay(ctx context.Context, planID pgtype.UUID, raceDay *RaceDay, fields RaceDayFields) (*RacePlan, error) {
-	tx, err := r.db.Begin(ctx)
+	var p planReader
+	err := r.db.Transact(ctx, func(b *store.Batch) error {
+		// Locking the plan serializes concurrent updates of the splits.
+		var locked pgtype.UUID
+		read(b, &locked, "lock race plan", func(q *gen.Queries) (pgtype.UUID, error) {
+			return q.LockRacePlan(ctx, planID)
+		})
+		return nil
+	}, func(b *store.Batch) error {
+		q := gen.New(b)
+		if fields.LivetrackURL {
+			if err := q.SetRaceDayLivetrackURL(ctx, &gen.SetRaceDayLivetrackURLParams{ID: planID, RaceDayLivetrackURL: raceDay.LivetrackURL}); err != nil {
+				return fmt.Errorf("failed to set LiveTrack URL: %w", err)
+			}
+		}
+		if fields.StartTime {
+			if err := q.SetRaceDayStartTime(ctx, &gen.SetRaceDayStartTimeParams{ID: planID, RaceDayStartTime: timeToPG(raceDay.StartTime)}); err != nil {
+				return fmt.Errorf("failed to set start time: %w", err)
+			}
+		}
+		if fields.Splits {
+			if err := q.DeleteRacePlanSplits(ctx, planID); err != nil {
+				return fmt.Errorf("failed to delete splits: %w", err)
+			}
+			if err := upsertSplits(ctx, q, planID, raceDay.Splits); err != nil {
+				return err
+			}
+		}
+		p.queuePlan(ctx, b, planID, func(q *gen.Queries) (*gen.RacePlan, error) {
+			return q.GetRacePlanByID(ctx, planID)
+		})
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to start transaction: %w", err)
+		return nil, splitsError("update race day", err)
 	}
-	defer tx.Rollback(context.Background())
-	q := r.q.WithTx(tx)
-	// Locking the plan serializes concurrent updates of the splits.
-	if _, err := q.LockRacePlan(ctx, planID); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, store.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to lock race plan: %w", err)
-	}
-	if fields.LivetrackURL {
-		if err := q.SetRaceDayLivetrackURL(ctx, &gen.SetRaceDayLivetrackURLParams{ID: planID, RaceDayLivetrackURL: raceDay.LivetrackURL}); err != nil {
-			return nil, fmt.Errorf("failed to set LiveTrack URL: %w", err)
-		}
-	}
-	if fields.StartTime {
-		if err := q.SetRaceDayStartTime(ctx, &gen.SetRaceDayStartTimeParams{ID: planID, RaceDayStartTime: timeToPG(raceDay.StartTime)}); err != nil {
-			return nil, fmt.Errorf("failed to set start time: %w", err)
-		}
-	}
-	if fields.Splits {
-		if err := q.DeleteRacePlanSplits(ctx, planID); err != nil {
-			return nil, fmt.Errorf("failed to delete splits: %w", err)
-		}
-		if err := upsertSplits(ctx, q, planID, raceDay.Splits); err != nil {
-			return nil, err
-		}
-	}
-	updated, err := getRacePlanByID(ctx, q, planID)
-	if err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return updated, nil
+	return p.plan()
 }
 
 // SetCheckpointSplit sets the recorded times at a single checkpoint of a race
@@ -444,12 +463,10 @@ func (r *Repository) UpdateRaceDay(ctx context.Context, planID pgtype.UUID, race
 // plan may be updated, e.g. that it belongs to the user or the share token
 // matches.
 func (r *Repository) SetCheckpointSplit(ctx context.Context, planID pgtype.UUID, split *CheckpointSplit) (*RacePlan, error) {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer tx.Rollback(context.Background())
-	q := r.q.WithTx(tx)
+	// The split is set and the plan read in a single batch, which runs in an
+	// implicit transaction.
+	var b store.Batch
+	q := gen.New(&b)
 	if split.ArrivalTime.IsZero() && split.DepartureTime.IsZero() {
 		if err := q.DeleteRacePlanSplit(ctx, &gen.DeleteRacePlanSplitParams{PlanID: planID, CheckpointPosition: split.CheckpointIndex}); err != nil {
 			return nil, fmt.Errorf("failed to delete split: %w", err)
@@ -457,14 +474,14 @@ func (r *Repository) SetCheckpointSplit(ctx context.Context, planID pgtype.UUID,
 	} else if err := upsertSplits(ctx, q, planID, []*CheckpointSplit{split}); err != nil {
 		return nil, err
 	}
-	updated, err := getRacePlanByID(ctx, q, planID)
-	if err != nil {
-		return nil, err
+	var p planReader
+	p.queuePlan(ctx, &b, planID, func(q *gen.Queries) (*gen.RacePlan, error) {
+		return q.GetRacePlanByID(ctx, planID)
+	})
+	if err := b.Send(ctx, r.db); err != nil {
+		return nil, splitsError("set split", err)
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return updated, nil
+	return p.plan()
 }
 
 func upsertSplits(ctx context.Context, q *gen.Queries, planID pgtype.UUID, splits []*CheckpointSplit) error {
@@ -478,56 +495,100 @@ func upsertSplits(ctx context.Context, q *gen.Queries, planID pgtype.UUID, split
 		params.DepartureTimes = append(params.DepartureTimes, timeToPG(split.DepartureTime))
 	}
 	if err := q.UpsertRacePlanSplits(ctx, params); err != nil {
-		// A foreign key violation means the checkpoint doesn't exist.
-		if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return ErrCheckpointNotFound
-		}
 		return fmt.Errorf("failed to set splits: %w", err)
 	}
 	return nil
 }
 
-// read runs fn in a read only transaction, so that a plan and its child rows
-// are read from the same snapshot.
-func (r *Repository) read(ctx context.Context, fn func(q *gen.Queries) error) error {
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer tx.Rollback(context.Background())
-	if err := fn(r.q.WithTx(tx)); err != nil {
+// writeError returns the error of writing to a plan.
+func writeError(op string, err error) error {
+	if errors.Is(err, store.ErrNotFound) {
 		return err
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return nil
+	return fmt.Errorf("failed to %s: %w", op, err)
 }
 
-func getRacePlanByID(ctx context.Context, q *gen.Queries, planID pgtype.UUID) (*RacePlan, error) {
-	row, err := q.GetRacePlanByID(ctx, planID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, store.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to get race plan: %w", err)
+// splitsError returns the error of setting a plan's splits.
+func splitsError(op string, err error) error {
+	// A foreign key violation means the checkpoint of a split doesn't exist.
+	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		return ErrCheckpointNotFound
 	}
-	plans, err := loadRacePlans(ctx, q, []*gen.RacePlan{row})
-	if err != nil {
-		return nil, err
-	}
-	return plans[0], nil
+	return writeError(op, err)
 }
 
-func getRacePlan(ctx context.Context, q *gen.Queries, userID, planID pgtype.UUID) (*RacePlan, error) {
-	row, err := q.GetRacePlan(ctx, &gen.GetRacePlanParams{ID: planID, UserID: userID})
-	if err != nil {
+// read queues a query whose results are read into dst. The query's error is
+// wrapped with what it does, and pgx.ErrNoRows replaced with
+// store.ErrNotFound.
+func read[T any](b *store.Batch, dst *T, does string, query func(q *gen.Queries) (T, error)) {
+	b.Read(func(db store.Querier) error {
+		v, err := query(gen.New(db))
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, store.ErrNotFound
+			return store.ErrNotFound
 		}
-		return nil, fmt.Errorf("failed to get race plan: %w", err)
-	}
-	plans, err := loadRacePlans(ctx, q, []*gen.RacePlan{row})
+		if err != nil {
+			return fmt.Errorf("failed to %s: %w", does, err)
+		}
+		*dst = v
+		return nil
+	})
+}
+
+// planReader reads race plans and their child rows with batched queries.
+type planReader struct {
+	rows          []*gen.RacePlan
+	checkpoints   []*gen.RacePlanCheckpoint
+	intakes       []*gen.RacePlanIntake
+	products      []*gen.RacePlanNutritionProduct
+	gear          []*gen.RacePlanGear
+	contingencies []*gen.RacePlanContingency
+	raceMorning   []*gen.RacePlanRaceMorning
+	splits        []*gen.RacePlanSplit
+}
+
+// queuePlan queues reading a plan, with query, and its child rows, by the
+// plan's ID. If query finds no plan, sending the batch returns
+// store.ErrNotFound.
+func (p *planReader) queuePlan(ctx context.Context, b *store.Batch, planID pgtype.UUID, query func(q *gen.Queries) (*gen.RacePlan, error)) {
+	p.queueRow(b, query)
+	p.queueChildren(ctx, b, []pgtype.UUID{planID})
+}
+
+// queueRow queues reading a plan row with query. If query finds no plan,
+// sending the batch returns store.ErrNotFound.
+func (p *planReader) queueRow(b *store.Batch, query func(q *gen.Queries) (*gen.RacePlan, error)) {
+	p.rows = make([]*gen.RacePlan, 1)
+	read(b, &p.rows[0], "get race plan", query)
+}
+
+// queueChildren queues reading the child rows of plans.
+func (p *planReader) queueChildren(ctx context.Context, b *store.Batch, ids []pgtype.UUID) {
+	read(b, &p.checkpoints, "list checkpoints", func(q *gen.Queries) ([]*gen.RacePlanCheckpoint, error) {
+		return q.ListRacePlanCheckpoints(ctx, ids)
+	})
+	read(b, &p.intakes, "list intakes", func(q *gen.Queries) ([]*gen.RacePlanIntake, error) {
+		return q.ListRacePlanIntakes(ctx, ids)
+	})
+	read(b, &p.products, "list nutrition products", func(q *gen.Queries) ([]*gen.RacePlanNutritionProduct, error) {
+		return q.ListRacePlanNutritionProducts(ctx, ids)
+	})
+	read(b, &p.gear, "list gear", func(q *gen.Queries) ([]*gen.RacePlanGear, error) {
+		return q.ListRacePlanGear(ctx, ids)
+	})
+	read(b, &p.contingencies, "list contingencies", func(q *gen.Queries) ([]*gen.RacePlanContingency, error) {
+		return q.ListRacePlanContingencies(ctx, ids)
+	})
+	read(b, &p.raceMorning, "list race morning", func(q *gen.Queries) ([]*gen.RacePlanRaceMorning, error) {
+		return q.ListRacePlanRaceMorning(ctx, ids)
+	})
+	read(b, &p.splits, "list splits", func(q *gen.Queries) ([]*gen.RacePlanSplit, error) {
+		return q.ListRacePlanSplits(ctx, ids)
+	})
+}
+
+// plan returns the plan read by queuePlan.
+func (p *planReader) plan() (*RacePlan, error) {
+	plans, err := p.plans()
 	if err != nil {
 		return nil, err
 	}
@@ -540,26 +601,17 @@ type checkpointKey struct {
 	position int32
 }
 
-// loadRacePlans converts plan rows and loads their child rows.
-func loadRacePlans(ctx context.Context, q *gen.Queries, rows []*gen.RacePlan) ([]*RacePlan, error) {
-	plans := make([]*RacePlan, len(rows))
-	if len(rows) == 0 {
-		return plans, nil
-	}
-	ids := make([]pgtype.UUID, len(rows))
-	byID := make(map[pgtype.UUID]*RacePlan, len(rows))
-	for i, row := range rows {
+// plans converts the plan rows read and adds their child rows.
+func (p *planReader) plans() ([]*RacePlan, error) {
+	plans := make([]*RacePlan, len(p.rows))
+	byID := make(map[pgtype.UUID]*RacePlan, len(p.rows))
+	for i, row := range p.rows {
 		plans[i] = planFromDB(row)
-		ids[i] = row.ID
 		byID[row.ID] = plans[i]
 	}
 
-	dbCheckpoints, err := q.ListRacePlanCheckpoints(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list checkpoints: %w", err)
-	}
-	checkpoints := make(map[checkpointKey]*Checkpoint, len(dbCheckpoints))
-	for _, c := range dbCheckpoints {
+	checkpoints := make(map[checkpointKey]*Checkpoint, len(p.checkpoints))
+	for _, c := range p.checkpoints {
 		cp := &Checkpoint{
 			Name:                  c.Name,
 			DistanceMeters:        c.DistanceMeters,
@@ -581,11 +633,7 @@ func loadRacePlans(ctx context.Context, q *gen.Queries, rows []*gen.RacePlan) ([
 		checkpoints[checkpointKey{c.PlanID, c.Position}] = cp
 	}
 
-	intakes, err := q.ListRacePlanIntakes(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list intakes: %w", err)
-	}
-	for _, i := range intakes {
+	for _, i := range p.intakes {
 		cp, ok := checkpoints[checkpointKey{i.PlanID, i.CheckpointPosition}]
 		if !ok {
 			return nil, fmt.Errorf("intake for unknown checkpoint %d", i.CheckpointPosition)
@@ -593,26 +641,18 @@ func loadRacePlans(ctx context.Context, q *gen.Queries, rows []*gen.RacePlan) ([
 		cp.Intake = append(cp.Intake, &Intake{Product: i.Product, Quantity: i.Quantity})
 	}
 
-	products, err := q.ListRacePlanNutritionProducts(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list nutrition products: %w", err)
-	}
-	for _, p := range products {
-		plan := byID[p.PlanID]
+	for _, product := range p.products {
+		plan := byID[product.PlanID]
 		plan.Nutrition.Products = append(plan.Nutrition.Products, &NutritionProduct{
-			Name:       p.Name,
-			CarbsGrams: p.CarbsGrams,
-			SodiumMg:   p.SodiumMg,
-			FluidMl:    p.FluidMl,
-			CaffeineMg: p.CaffeineMg,
+			Name:       product.Name,
+			CarbsGrams: product.CarbsGrams,
+			SodiumMg:   product.SodiumMg,
+			FluidMl:    product.FluidMl,
+			CaffeineMg: product.CaffeineMg,
 		})
 	}
 
-	gear, err := q.ListRacePlanGear(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list gear: %w", err)
-	}
-	for _, g := range gear {
+	for _, g := range p.gear {
 		plan := byID[g.PlanID]
 		plan.Gear = append(plan.Gear, &GearItem{
 			Name:      g.Name,
@@ -623,11 +663,7 @@ func loadRacePlans(ctx context.Context, q *gen.Queries, rows []*gen.RacePlan) ([
 		})
 	}
 
-	contingencies, err := q.ListRacePlanContingencies(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list contingencies: %w", err)
-	}
-	for _, c := range contingencies {
+	for _, c := range p.contingencies {
 		plan := byID[c.PlanID]
 		plan.Contingencies = append(plan.Contingencies, &Contingency{
 			Scenario: ContingencyScenario(c.Scenario),
@@ -636,20 +672,12 @@ func loadRacePlans(ctx context.Context, q *gen.Queries, rows []*gen.RacePlan) ([
 		})
 	}
 
-	raceMorning, err := q.ListRacePlanRaceMorning(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list race morning: %w", err)
-	}
-	for _, t := range raceMorning {
+	for _, t := range p.raceMorning {
 		plan := byID[t.PlanID]
 		plan.RaceMorning = append(plan.RaceMorning, &TimelineItem{Time: t.Time, Description: t.Description})
 	}
 
-	splits, err := q.ListRacePlanSplits(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list splits: %w", err)
-	}
-	for _, split := range splits {
+	for _, split := range p.splits {
 		plan := byID[split.PlanID]
 		plan.RaceDay.Splits = append(plan.RaceDay.Splits, &CheckpointSplit{
 			CheckpointIndex: split.CheckpointPosition,
@@ -731,6 +759,42 @@ func writeCheckpoints(ctx context.Context, q *gen.Queries, planID pgtype.UUID, c
 	if err := q.DeleteRacePlanIntakes(ctx, planID); err != nil {
 		return err
 	}
+	cps, intakes := checkpointParams(planID, checkpoints)
+	if len(checkpoints) > 0 {
+		if err := q.UpsertRacePlanCheckpoints(ctx, cps); err != nil {
+			return err
+		}
+	}
+	if err := q.DeleteRacePlanCheckpointsFrom(ctx, &gen.DeleteRacePlanCheckpointsFromParams{
+		PlanID:       planID,
+		FromPosition: int32(len(checkpoints)),
+	}); err != nil {
+		return err
+	}
+	if len(intakes.Positions) > 0 {
+		return q.CreateRacePlanIntakes(ctx, intakes)
+	}
+	return nil
+}
+
+// createCheckpoints creates the checkpoints of a plan that has none.
+func createCheckpoints(ctx context.Context, q *gen.Queries, planID pgtype.UUID, checkpoints []*Checkpoint) error {
+	if len(checkpoints) == 0 {
+		return nil
+	}
+	cps, intakes := checkpointParams(planID, checkpoints)
+	if err := q.UpsertRacePlanCheckpoints(ctx, cps); err != nil {
+		return err
+	}
+	if len(intakes.Positions) > 0 {
+		return q.CreateRacePlanIntakes(ctx, intakes)
+	}
+	return nil
+}
+
+// checkpointParams returns the parameters to store checkpoints and their
+// intakes.
+func checkpointParams(planID pgtype.UUID, checkpoints []*Checkpoint) (*gen.UpsertRacePlanCheckpointsParams, *gen.CreateRacePlanIntakesParams) {
 	cps := &gen.UpsertRacePlanCheckpointsParams{PlanID: planID}
 	intakes := &gen.CreateRacePlanIntakesParams{PlanID: planID}
 	for i, cp := range checkpoints {
@@ -756,27 +820,17 @@ func writeCheckpoints(ctx context.Context, q *gen.Queries, planID pgtype.UUID, c
 			intakes.Quantities = append(intakes.Quantities, intake.Quantity)
 		}
 	}
-	if len(checkpoints) > 0 {
-		if err := q.UpsertRacePlanCheckpoints(ctx, cps); err != nil {
-			return err
-		}
-	}
-	if err := q.DeleteRacePlanCheckpointsFrom(ctx, &gen.DeleteRacePlanCheckpointsFromParams{
-		PlanID:       planID,
-		FromPosition: int32(len(checkpoints)),
-	}); err != nil {
-		return err
-	}
-	if len(intakes.Positions) > 0 {
-		return q.CreateRacePlanIntakes(ctx, intakes)
-	}
-	return nil
+	return cps, intakes
 }
 
 func writeNutritionProducts(ctx context.Context, q *gen.Queries, planID pgtype.UUID, products []*NutritionProduct) error {
 	if err := q.DeleteRacePlanNutritionProducts(ctx, planID); err != nil {
 		return err
 	}
+	return createNutritionProducts(ctx, q, planID, products)
+}
+
+func createNutritionProducts(ctx context.Context, q *gen.Queries, planID pgtype.UUID, products []*NutritionProduct) error {
 	if len(products) == 0 {
 		return nil
 	}
@@ -796,6 +850,10 @@ func writeGear(ctx context.Context, q *gen.Queries, planID pgtype.UUID, gear []*
 	if err := q.DeleteRacePlanGear(ctx, planID); err != nil {
 		return err
 	}
+	return createGear(ctx, q, planID, gear)
+}
+
+func createGear(ctx context.Context, q *gen.Queries, planID pgtype.UUID, gear []*GearItem) error {
 	if len(gear) == 0 {
 		return nil
 	}
@@ -815,6 +873,10 @@ func writeContingencies(ctx context.Context, q *gen.Queries, planID pgtype.UUID,
 	if err := q.DeleteRacePlanContingencies(ctx, planID); err != nil {
 		return err
 	}
+	return createContingencies(ctx, q, planID, contingencies)
+}
+
+func createContingencies(ctx context.Context, q *gen.Queries, planID pgtype.UUID, contingencies []*Contingency) error {
 	if len(contingencies) == 0 {
 		return nil
 	}
@@ -832,6 +894,10 @@ func writeRaceMorning(ctx context.Context, q *gen.Queries, planID pgtype.UUID, i
 	if err := q.DeleteRacePlanRaceMorning(ctx, planID); err != nil {
 		return err
 	}
+	return createRaceMorning(ctx, q, planID, items)
+}
+
+func createRaceMorning(ctx context.Context, q *gen.Queries, planID pgtype.UUID, items []*TimelineItem) error {
 	if len(items) == 0 {
 		return nil
 	}
