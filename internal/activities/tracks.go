@@ -107,7 +107,7 @@ func (r *Repository) appendTrack(ctx context.Context, tracks []Track, activityID
 	}
 	points, err := geo.DecodePolyline(polyline)
 	if err != nil {
-		r.log.WarnContext(ctx, "Skipping undecodable track", slog.String("activity_id", store.UUIDToString(activityID)), slog.String("error", err.Error()))
+		r.report.Report(ctx, "Skipping undecodable track", err, slog.String("activity_id", store.UUIDToString(activityID)))
 		return tracks
 	}
 	return append(tracks, Track{ActivityID: activityID, Points: points})
@@ -128,7 +128,7 @@ func (r *Repository) backfillTracks(ctx context.Context, activityIDs []pgtype.UU
 			if err != nil {
 				// Stored as empty, so they aren't decoded again, and the
 				// summary polyline is used instead.
-				r.log.WarnContext(ctx, "Undecodable streams", slog.String("activity_id", store.UUIDToString(row.ActivityID)), slog.String("error", err.Error()))
+				r.report.Report(ctx, "Undecodable streams", err, slog.String("activity_id", store.UUIDToString(row.ActivityID)))
 			}
 			if err := r.q.SetActivityTrack(ctx, &gen.SetActivityTrackParams{ActivityID: row.ActivityID, TrackPolyline: track}); err != nil {
 				return nil, fmt.Errorf("failed to store track: %w", err)

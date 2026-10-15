@@ -18,8 +18,8 @@ import (
 	"sync"
 
 	"github.com/catzkorn/trail-tools/internal/blob"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
-	"gitlab.com/greyxor/slogor"
 )
 
 // DefaultURL is the base URL of the elevation tiles: SRTM derived 1x1 degree
@@ -49,8 +49,8 @@ type DEM struct {
 	mu sync.Mutex
 	// An optional durable cache of the tiles, e.g. a Cloud Storage bucket,
 	// for when the cache directory doesn't outlive the process.
-	store blob.Store
-	log   *slog.Logger
+	store  blob.Store
+	report *errreport.Reporter
 	// The most recently used tiles, most recent first. A nil tile records
 	// that there is no tile, e.g. over the sea.
 	tiles []cachedTile
@@ -74,12 +74,12 @@ func NewDEM(baseURL, cacheDir string, client *http.Client) *DEM {
 
 // SetTileStore makes the DEM look for tiles missing from the cache directory
 // in store before downloading them, and add the tiles it downloads to it.
-// Failing to read or write the store only logs a warning, as the tiles can
-// be downloaded instead.
-func (d *DEM) SetTileStore(store blob.Store, log *slog.Logger) {
+// Failing to read or write the store is reported, but the tiles are
+// downloaded instead.
+func (d *DEM) SetTileStore(store blob.Store, report *errreport.Reporter) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.store, d.log = store, log
+	d.store, d.report = store, report
 }
 
 // cachedTile returns the tile with the south west corner lat, lng, loading it
@@ -193,8 +193,8 @@ func (d *DEM) fetch(ctx context.Context, name, path string) error {
 			return writeFile(path, data)
 		}
 		if !errors.Is(err, blob.ErrNotFound) && ctx.Err() == nil {
-			d.log.WarnContext(ctx, "Failed to read an elevation tile from the tile store, downloading it",
-				slog.String("tile", name), slogor.Err(err))
+			d.report.Report(ctx, "Failed to read an elevation tile from the tile store, downloading it", err,
+				slog.String("tile", name))
 		}
 	}
 	data, err := d.download(ctx, name)
@@ -206,8 +206,8 @@ func (d *DEM) fetch(ctx context.Context, name, path string) error {
 	}
 	if d.store != nil {
 		if err := d.store.Put(ctx, key, data, "application/gzip"); err != nil && ctx.Err() == nil {
-			d.log.WarnContext(ctx, "Failed to add an elevation tile to the tile store",
-				slog.String("tile", name), slogor.Err(err))
+			d.report.Report(ctx, "Failed to add an elevation tile to the tile store", err,
+				slog.String("tile", name))
 		}
 	}
 	return nil

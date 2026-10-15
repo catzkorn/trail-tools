@@ -6,10 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/catzkorn/trail-tools/internal/activities/internal/gen"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
@@ -18,17 +18,18 @@ import (
 
 // Repository stores activities and Strava connections.
 type Repository struct {
-	log *slog.Logger
-	db  *store.DB
-	q   *gen.Queries
+	report *errreport.Reporter
+	db     *store.DB
+	q      *gen.Queries
 }
 
-// NewRepository creates a new Repository from the provided logger and database.
-func NewRepository(log *slog.Logger, db *store.DB) (*Repository, error) {
+// NewRepository creates a new Repository on the database, reporting data it
+// can't decode.
+func NewRepository(report *errreport.Reporter, db *store.DB) (*Repository, error) {
 	return &Repository{
-		log: log,
-		db:  db,
-		q:   gen.New(db),
+		report: report,
+		db:     db,
+		q:      gen.New(db),
 	}, nil
 }
 

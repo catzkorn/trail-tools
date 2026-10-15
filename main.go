@@ -264,7 +264,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		os.Exit(1)
 	}
-	stopTracing, err := initTracing(context.Background(), logger, *otlpEndpoint, *traceProject, *traceSampleRate)
+	stopTracing, err := initTracing(context.Background(), *otlpEndpoint, *traceProject, *traceSampleRate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up tracing: %v\n", err)
 		os.Exit(1)
@@ -274,6 +274,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
 		os.Exit(1)
 	}
+	telemetry.TraceDefaultTransport(report)
 	// Cloud Run sends SIGTERM to stop instances.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	err = run(
@@ -307,11 +308,14 @@ func main() {
 	if err != nil {
 		report.Report(context.Background(), "Failed running app", err)
 	}
-	// Send the errors and traces not yet sent before exiting.
+	// Send the traces and errors not yet sent before exiting. Error
+	// Reporting goes last, to report failing to send the traces.
+	if traceErr := stopTracing(); traceErr != nil {
+		report.Report(context.Background(), "Failed to send the remaining traces", traceErr)
+	}
 	if closeErr := report.Close(); closeErr != nil {
 		logger.Warn("Failed to send the remaining error reports", slog.String("error", closeErr.Error()))
 	}
-	stopTracing()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -343,11 +347,9 @@ func serviceVersion() string {
 // tracingShutdownTimeout bounds sending the remaining traces on exit.
 const tracingShutdownTimeout = 5 * time.Second
 
-// initTracing exports traces to an OTLP endpoint, and traces requests made
-// with the default HTTP client. Outside of Google Cloud, such requests are
-// logged too, so their callers can be given a traced client. The returned
-// function sends the remaining traces.
-func initTracing(ctx context.Context, log *slog.Logger, endpoint, project string, sampleRate float64) (func(), error) {
+// initTracing exports traces to an OTLP endpoint. The returned function
+// sends the remaining traces.
+func initTracing(ctx context.Context, endpoint, project string, sampleRate float64) (func() error, error) {
 	shutdown, err := telemetry.Init(ctx, &telemetry.Config{
 		Endpoint:       endpoint,
 		GCPProject:     project,
@@ -358,17 +360,10 @@ func initTracing(ctx context.Context, log *slog.Logger, endpoint, project string
 	if err != nil {
 		return nil, err
 	}
-	if project == "" {
-		telemetry.TraceDefaultTransport(log)
-	} else {
-		telemetry.TraceDefaultTransport(nil)
-	}
-	return func() {
+	return func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), tracingShutdownTimeout)
 		defer cancel()
-		if err := shutdown(ctx); err != nil {
-			log.Warn("Failed to send the remaining traces", slog.String("error", err.Error()))
-		}
+		return shutdown(ctx)
 	}, nil
 }
 
@@ -448,7 +443,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create athlete directory: %w", err)
 	}
-	activityRepo, err := activities.NewRepository(log, db)
+	activityRepo, err := activities.NewRepository(report, db)
 	if err != nil {
 		return fmt.Errorf("failed to create activity repository: %w", err)
 	}
@@ -490,7 +485,7 @@ func run(
 	}
 	// Elevations come from public elevation tiles, for routes and for imports
 	// run in the server.
-	dem, err := newDEM(googleCtx, log, elevation.DefaultURL, elevation.DefaultCacheDir, demBucket)
+	dem, err := newDEM(googleCtx, log, report, elevation.DefaultURL, elevation.DefaultCacheDir, demBucket)
 	if err != nil {
 		return err
 	}
@@ -820,14 +815,14 @@ func setFlagsFromEnv(fs *flag.FlagSet) error {
 // newDEM creates a DEM that downloads tiles from baseURL into cacheDir, and
 // caches them in the Cloud Storage bucket, if set. On Cloud Run, the cache
 // directory is in memory and lost when an instance or job stops.
-func newDEM(ctx context.Context, log *slog.Logger, baseURL, cacheDir, bucket string) (*elevation.DEM, error) {
+func newDEM(ctx context.Context, log *slog.Logger, report *errreport.Reporter, baseURL, cacheDir, bucket string) (*elevation.DEM, error) {
 	dem := elevation.NewDEM(baseURL, cacheDir, telemetry.NewClient(0))
 	if bucket != "" {
 		tiles, err := blob.NewGCS(ctx, bucket)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the elevation tile bucket client: %w", err)
 		}
-		dem.SetTileStore(tiles, log)
+		dem.SetTileStore(tiles, report)
 		log.InfoContext(ctx, "Caching elevation tiles in Cloud Storage", slog.String("bucket", bucket))
 	}
 	return dem, nil

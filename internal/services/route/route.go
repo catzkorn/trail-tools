@@ -281,10 +281,14 @@ func (s *Service) routeFromTrack(ctx context.Context, route *routes.Route, track
 		case ctx.Err() != nil:
 			return "", s.toConnectError(err, "failed to snap the track to the map")
 		}
-		s.log.WarnContext(ctx, "Failed to snap a track to the map, following it with straight legs", slogor.Err(err))
+		// Tracks outside the imported map data can't be snapped, but other
+		// failures are unexpected.
 		reason := ""
 		if errors.Is(err, errInvalidRoute) {
 			reason = fmt.Sprintf(" (%v)", errors.Unwrap(err))
+			s.log.InfoContext(ctx, "Following a track with straight legs, as it can't be snapped to the map", slogor.Err(err))
+		} else {
+			s.report.Report(ctx, "Failed to snap a track to the map, following it with straight legs", err)
 		}
 		route.Waypoints, route.Legs = legsFromTrack(track)
 		for i := range route.Legs {

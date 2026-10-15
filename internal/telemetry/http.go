@@ -2,14 +2,14 @@ package telemetry
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 	"net/http"
-	"regexp"
-	"runtime"
 	"strings"
 	"time"
+	"unicode"
 
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
@@ -38,7 +38,9 @@ func Transport(base http.RoundTripper) http.RoundTripper {
 }
 
 // clientSpanName names a request after its method and host, e.g. "GET
-// api.open-meteo.com". Paths would make too many span names, e.g. with IDs.
+// api.open-meteo.com". Many paths have IDs or names, like Strava's
+// activities, elevation tiles and stored objects, which would make a span
+// name for each. The span's url.full attribute has the whole URL.
 func clientSpanName(_ string, r *http.Request) string {
 	if r.URL == nil || r.URL.Host == "" {
 		return r.Method
@@ -59,45 +61,28 @@ func GRPCDialOption() grpc.DialOption {
 	return grpc.WithStatsHandler(otelgrpc.NewClientHandler())
 }
 
+// errDefaultClient is reported for requests sent with the default client.
+var errDefaultClient = errors.New("give the caller a client from telemetry.NewClient")
+
 // TraceDefaultTransport traces the requests sent with http.DefaultClient
-// and http.DefaultTransport, by code that wasn't given a client. If log is
-// set, it also logs where such requests come from, so they can be given
-// one: use this while developing.
-func TraceDefaultTransport(log *slog.Logger) {
-	traced := Transport(nil)
-	if log != nil {
-		traced = reportingTransport{traced: traced, log: log}
-	}
+// and http.DefaultTransport, by code that wasn't given a client, and reports
+// them, so the code can be given one. The report's stack trace shows where
+// the request came from.
+func TraceDefaultTransport(report *errreport.Reporter) {
+	traced := reportingTransport{traced: Transport(nil), report: report}
 	http.DefaultTransport = traced
 	http.DefaultClient = &http.Client{Transport: traced}
 }
 
-// reportingTransport logs the caller of each request.
+// reportingTransport reports each request.
 type reportingTransport struct {
 	traced http.RoundTripper
-	log    *slog.Logger
+	report *errreport.Reporter
 }
 
 func (t reportingTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	t.log.WarnContext(r.Context(), "A request used the default HTTP client; give the caller a client from telemetry.NewClient",
-		slog.String("url", r.URL.Redacted()), slog.String("caller", caller()))
+	t.report.Report(r.Context(), "A request used the default HTTP client", errDefaultClient, slog.String("host", r.URL.Host))
 	return t.traced.RoundTrip(r)
-}
-
-// caller returns the first function outside net/http and this package on
-// the stack.
-func caller() string {
-	pcs := make([]uintptr, 32)
-	frames := runtime.CallersFrames(pcs[:runtime.Callers(3, pcs)])
-	for {
-		frame, more := frames.Next()
-		if !strings.HasPrefix(frame.Function, "net/http.") && !strings.Contains(frame.Function, "/internal/telemetry.") {
-			return fmt.Sprintf("%s (%s:%d)", frame.Function, frame.File, frame.Line)
-		}
-		if !more {
-			return "unknown"
-		}
-	}
 }
 
 // Handler traces the requests to an HTTP server, except for static
@@ -129,14 +114,19 @@ func Routes(mux http.Handler) http.Handler {
 	})
 }
 
-// connectProcedure matches the paths of Connect RPCs, e.g.
-// /trips.v1.TripReportService/GetTripReport.
-var connectProcedure = regexp.MustCompile(`^/[a-z0-9_]+(\.[a-z0-9_]+)*\.v[0-9]+\.[A-Za-z0-9_]+/[A-Za-z0-9_]+$`)
+// isProcedure reports whether a path is a Connect RPC's: a service's full
+// name and a method, e.g. /trips.v1.TripReportService/GetTripReport. Method
+// names start with a capital letter, unlike the paths of /.well-known/.
+func isProcedure(path string) bool {
+	service, method, ok := strings.Cut(strings.TrimPrefix(path, "/"), "/")
+	return ok && strings.Contains(service, ".") && !strings.HasPrefix(service, ".") &&
+		method != "" && !strings.Contains(method, "/") && unicode.IsUpper(rune(method[0]))
+}
 
 // serverSpanName names a request after its RPC, or its method and the
 // route it matched once that's known, e.g. "GET /routes/".
 func serverSpanName(_ string, r *http.Request) string {
-	if connectProcedure.MatchString(r.URL.Path) {
+	if isProcedure(r.URL.Path) {
 		return r.URL.Path
 	}
 	if r.Pattern != "" {

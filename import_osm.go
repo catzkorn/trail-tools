@@ -56,18 +56,23 @@ func importOSM(args []string) int {
 		fmt.Fprintf(os.Stderr, "Failed to set up logging: %v\n", err)
 		return 1
 	}
-	stopTracing, err := initTracing(context.Background(), log, *otlpEndpoint, *traceProject, *traceSampleRate)
+	stopTracing, err := initTracing(context.Background(), *otlpEndpoint, *traceProject, *traceSampleRate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up tracing: %v\n", err)
 		return 1
 	}
-	defer stopTracing()
 	report, err := newReporter(context.Background(), log, *errorReportingProject)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up error reporting: %v\n", err)
 		return 1
 	}
+	telemetry.TraceDefaultTransport(report)
+	// Send the traces and errors not yet sent before exiting. Error
+	// Reporting goes last, to report failing to send the traces.
 	defer func() {
+		if err := stopTracing(); err != nil {
+			report.Report(context.Background(), "Failed to send the remaining traces", err)
+		}
 		if err := report.Close(); err != nil {
 			log.Warn("Failed to send the remaining error reports", slog.String("error", err.Error()))
 		}
@@ -108,7 +113,7 @@ func runImportOSM(ctx context.Context, log *slog.Logger, report *errreport.Repor
 	defer db.Close()
 	// Extracts and elevation tiles are downloaded with traced clients.
 	client := telemetry.NewClient(0)
-	dem, err := newDEM(telemetry.WithClient(ctx, client), log, demURL, demCache, demBucket)
+	dem, err := newDEM(telemetry.WithClient(ctx, client), log, report, demURL, demCache, demBucket)
 	if err != nil {
 		return err
 	}

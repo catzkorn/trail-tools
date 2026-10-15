@@ -1,12 +1,18 @@
 package telemetry
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
+
+	"github.com/catzkorn/trail-tools/internal/errreport"
+	"go.opentelemetry.io/otel/attribute"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -30,6 +36,46 @@ func TestServerSpanName(t *testing.T) {
 		if got := serverSpanName("", r); got != tc.want {
 			t.Errorf("serverSpanName(%s %s, %q) = %q, want %q", tc.method, tc.path, tc.pattern, got, tc.want)
 		}
+	}
+}
+
+func TestIsProcedure(t *testing.T) {
+	t.Parallel()
+	for path, want := range map[string]bool{
+		"/trips.v1.TripReportService/GetTripReport": true,
+		"/users.v1.UserService/GetCurrentUser":      true,
+		"/.well-known/oauth-authorization-server":   false,
+		"/trips.v1.TripReportService/":              false,
+		"/trips.v1.TripReportService/Get/Extra":     false,
+		"/routes/abc.fit":                           false,
+		"/index.js":                                 false,
+		"/":                                         false,
+	} {
+		if got := isProcedure(path); got != want {
+			t.Errorf("isProcedure(%q) = %v, want %v", path, got, want)
+		}
+	}
+}
+
+// TestTraceDefaultTransport checks that requests with the default client
+// are traced and reported.
+func TestTraceDefaultTransport(t *testing.T) {
+	// Replaces the default transport, so not parallel.
+	prevTransport, prevClient := http.DefaultTransport, http.DefaultClient
+	t.Cleanup(func() {
+		http.DefaultTransport, http.DefaultClient = prevTransport, prevClient
+	})
+	var buf bytes.Buffer
+	TraceDefaultTransport(errreport.NewLocal(slog.New(slog.NewTextHandler(&buf, nil))))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	t.Cleanup(srv.Close)
+	resp, err := http.Get(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if got := buf.String(); !strings.Contains(got, `msg="A request used the default HTTP client"`) {
+		t.Errorf("the request wasn't reported: %q", got)
 	}
 }
 
@@ -112,6 +158,12 @@ func TestTracing(t *testing.T) {
 	for _, s := range clientSpans {
 		if s.Name != "GET "+host {
 			t.Errorf("client span %q, want it named after the host", s.Name)
+		}
+		// The span has the URL, with its path.
+		if !slices.ContainsFunc(s.Attributes, func(a attribute.KeyValue) bool {
+			return a.Key == "url.full" && strings.HasPrefix(a.Value.AsString(), srv.URL+"/")
+		}) {
+			t.Errorf("client span %q has no url.full: %v", s.Name, s.Attributes)
 		}
 	}
 	server := serverSpans[0]

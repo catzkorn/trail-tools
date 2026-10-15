@@ -38,7 +38,6 @@ func (c Config) withDefaults() Config {
 	if c.NominatimURL == "" {
 		c.NominatimURL = "https://nominatim.openstreetmap.org"
 	}
-
 	if c.ForecastURL == "" {
 		c.ForecastURL = "https://api.open-meteo.com/v1/forecast"
 	}

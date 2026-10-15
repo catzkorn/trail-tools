@@ -119,7 +119,7 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	activityRepo, err := activities.NewRepository(log, db)
+	activityRepo, err := activities.NewRepository(report, db)
 	if err != nil {
 		t.Fatal(err)
 	}

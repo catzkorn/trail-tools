@@ -17,6 +17,7 @@ import (
 
 	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/elevation"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/geo"
 )
 
@@ -214,7 +215,7 @@ func TestDEMTileStore(t *testing.T) {
 	// Downloaded tiles are added to the store, and missing tiles recorded
 	// as empty objects.
 	dem := elevation.NewDEM(url, t.TempDir(), nil)
-	dem.SetTileStore(store, log)
+	dem.SetTileStore(store, errreport.NewLocal(log))
 	checkElevations(t, dem)
 	checkRequests(t, 1)
 	stored, err := store.Get(ctx, "skadi/N46/N46E007.hgt.gz")
@@ -235,13 +236,13 @@ func TestDEMTileStore(t *testing.T) {
 	// A DEM with an empty cache directory, like after a restart, gets the
 	// tiles from the store without downloading them.
 	restarted := elevation.NewDEM(url, t.TempDir(), nil)
-	restarted.SetTileStore(store, log)
+	restarted.SetTileStore(store, errreport.NewLocal(log))
 	checkElevations(t, restarted)
 	checkRequests(t, 1)
 
 	// When the store fails, the tiles are downloaded.
 	failing := elevation.NewDEM(url, t.TempDir(), nil)
-	failing.SetTileStore(failingStore{}, log)
+	failing.SetTileStore(failingStore{}, errreport.NewLocal(log))
 	checkElevations(t, failing)
 	checkRequests(t, 2)
 }
