@@ -40,10 +40,10 @@ make lint     # Run all linters
 Services implement the generated `*ServiceHandler` interface:
 
 ```go
-// internal/services/athlete/athlete_service.go
-var _ athletesv1connect.AthleteServiceHandler = (*Service)(nil)
+// internal/services/route/route_service.go
+var _ routesv1connect.RouteServiceHandler = (*Service)(nil)
 
-func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athletesv1.CreateAthleteRequest]) (*connect.Response[athletesv1.CreateAthleteResponse], error) {
+func (s *Service) GetRoute(ctx context.Context, req *routesv1.GetRouteRequest) (*routesv1.GetRouteResponse, error) {
     // Authentication via internal/authn context extraction
     // Repository pattern via interface injection
 }
@@ -55,7 +55,7 @@ func (s *Service) CreateAthlete(ctx context.Context, req *connect.Request[athlet
 
 ### Repository Pattern
 
-Services depend on repository interfaces (see `AthleteRepository` in `athlete_service.go`), implemented by SQLC-generated code in `internal/*/internal/`.
+Services depend on repository interfaces (see `RouteRepository` in `route_service.go`), implemented by SQLC-generated code in `internal/*/internal/`.
 
 ### Authentication Flow
 
@@ -70,14 +70,14 @@ Services depend on repository interfaces (see `AthleteRepository` in `athlete_se
 ```tsx
 // Type-safe API calls with generated hooks
 import { useQuery } from "@connectrpc/connect-query";
-import { listAthletes } from "gen/athletes/v1/athletes-AthleteService_connectquery";
+import { listRoutes } from "gen/routes/v1/routes-RouteService_connectquery";
 
-const { data, error } = useQuery(listAthletes);
+const { data, error } = useQuery(listRoutes);
 ```
 
 ### Component Structure
 
-- Pages in `web/pages/` (Athletes.tsx, Settings.tsx)
+- Pages in `web/pages/` (routes.tsx, settings.tsx)
 - Reusable components in `web/components/` with domain-specific folders
 - Base styles via Tailwind CSS with custom `base.css`
 
@@ -89,8 +89,7 @@ All schema changes via numbered migrations in `internal/store/migrations/`. SQLC
 
 ### SQLC Configuration
 
-- Separate configs per domain (`athletes`, `users`, `activities`, `routes`, `races`, `plans`) in `sqlc.yaml`
-- Custom type overrides (e.g., `pg_catalog.numeric` → `decimal.Decimal`)
+- Separate configs per domain (`users`, `activities`, `routes`, `races`, `plans`, ...) in `sqlc.yaml`
 - Pointer structs for nullable fields
 
 ## Key Integration Points
@@ -109,7 +108,6 @@ Go tools are prefixed with `go tool` (e.g., `go tool buf`, `go tool esbuild`, `g
 - **Error Handling**: Use `store.ErrNotFound` for repository not-found cases
 - **Logging**: Structured logging with `slogor` wrapper around `slog`
 - **UUIDs**: PostgreSQL `gen_random_uuid()` for all primary keys
-- **Decimal Precision**: `shopspring/decimal` for financial/scientific precision (blood lactate)
 - **Generated Code**: Never edit files with `// Code generated .* DO NOT EDIT` headers
 
 ## Testing

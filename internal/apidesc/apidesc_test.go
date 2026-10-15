@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	_ "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	_ "github.com/catzkorn/trail-tools/internal/gen/athletes/v1"
 	_ "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	mcpv1 "github.com/catzkorn/trail-tools/internal/gen/mcp/v1"
 	_ "github.com/catzkorn/trail-tools/internal/gen/plans/v1"

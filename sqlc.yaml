@@ -7,25 +7,6 @@ overrides:
       oauth_grant_id: OAuthGrantID
       oauth_authorization_code: OAuthAuthorizationCode
 sql:
-  - name: "athletes"
-    queries: "./internal/athletes/queries"
-    schema: "./internal/store/migrations"
-    engine: "postgresql"
-    gen:
-      go:
-        package: "gen"
-        out: "./internal/athletes/internal/gen"
-        sql_package: "pgx/v5"
-        sql_driver: "github.com/jackc/pgx/v5"
-        emit_interface: false
-        emit_params_struct_pointers: true
-        emit_result_struct_pointers: true
-        emit_enum_valid_method: true
-        overrides:
-          - db_type: "pg_catalog.numeric"
-            go_type:
-              import: "github.com/shopspring/decimal"
-              type: "Decimal"
   - name: "users"
     queries: "./internal/users/queries"
     schema: "./internal/store/migrations"

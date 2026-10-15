@@ -15,7 +15,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	pgxmigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	decimal "github.com/jackc/pgx-shopspring-decimal"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/multitracer"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -169,10 +168,6 @@ func registerEnums(enums []string) func(ctx context.Context, conn *pgx.Conn) err
 			return err
 		}
 		conn.TypeMap().RegisterTypes(types)
-
-		// Register decimal type
-		decimal.Register(conn.TypeMap())
-
 		return nil
 	}
 }

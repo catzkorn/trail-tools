@@ -10,13 +10,11 @@ require (
 	github.com/go-passkeys/go-passkeys v0.4.1
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/google/jsonschema-go v0.4.3
-	github.com/jackc/pgx-shopspring-decimal v0.0.0-20220624020537-1d36b5a1853e
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/johanbrandhorst/reload v1.0.0
 	github.com/mcosta74/pgx-slog v0.4.1
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/qedus/osmpbf v1.2.0
-	github.com/shopspring/decimal v1.5.0
 	gitlab.com/greyxor/slogor v1.7.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.72.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
