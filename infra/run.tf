@@ -35,6 +35,12 @@ resource "google_cloud_run_v2_service" "app" {
       dynamic "env" {
         for_each = merge(
           {
+            # A soft limit on the Go runtime's memory, so that it collects
+            # garbage harder rather than exceed the instance's 512 MiB, which
+            # restarts the only instance. The rest is for what Go doesn't
+            # count: the 55 MB binary, with the embedded frontend, and files
+            # in the in-memory /tmp.
+            GOMEMLIMIT             = "400MiB"
             TRAIL_TOOLS_HOSTNAME   = "0.0.0.0"
             TRAIL_TOOLS_PUBLIC_URL = local.public_url
             TRAIL_TOOLS_LOG_FORMAT = "json"

@@ -19,6 +19,14 @@ import (
 // MaxPixels limits the size of decoded images, to bound memory.
 const MaxPixels = 40_000_000
 
+// maxDecodedBytes limits the memory of decoded images, so that images with
+// more bytes per pixel, like 16 bit PNGs, are limited to fewer pixels.
+const maxDecodedBytes = MaxPixels * 4
+
+// maxScaleBufferBytes limits the buffer of each draw.CatmullRom.Scale, see
+// catmullRom.
+const maxScaleBufferBytes = 8 << 20
+
 // ErrNotImage is returned for uploads that aren't a supported image.
 var ErrNotImage = errors.New("the file is not a JPEG, PNG or WebP image")
 
@@ -31,7 +39,7 @@ func Decode(data []byte) (image.Image, error) {
 	if cfg.Width <= 0 || cfg.Height <= 0 {
 		return nil, ErrNotImage
 	}
-	if cfg.Width*cfg.Height > MaxPixels {
+	if cfg.Width*cfg.Height > MaxPixels || cfg.Width*cfg.Height*bytesPerPixel(cfg.ColorModel) > maxDecodedBytes {
 		return nil, fmt.Errorf("the image is too large: %dx%d pixels, the maximum is %d megapixels", cfg.Width, cfg.Height, MaxPixels/1_000_000)
 	}
 	img, _, err := image.Decode(bytes.NewReader(data))
@@ -70,14 +78,73 @@ func Square(img image.Image, size int) image.Image {
 // scale draws the src rectangle of the image scaled to w by h pixels, on a
 // white background.
 func scale(img image.Image, src image.Rectangle, w, h int) image.Image {
+	img, src = halve(img, src, w, h)
 	dst := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(dst, dst.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
 	if w == src.Dx() && h == src.Dy() {
 		draw.Draw(dst, dst.Bounds(), img, src.Min, draw.Over)
 	} else {
-		draw.CatmullRom.Scale(dst, dst.Bounds(), img, src, draw.Over, nil)
+		catmullRom(dst, img, src)
 	}
 	return dst
+}
+
+// catmullRom draws the src rectangle of the image scaled to dst's bounds
+// over dst. draw.CatmullRom.Scale needs a buffer of 32 bytes for each
+// destination column of each source row, hundreds of megabytes for large
+// photos, so this scales the rows and then the columns, each in bands
+// small enough to bound the buffer. Scaling only rows or columns doesn't mix
+// neighboring bands, so they have no seams.
+func catmullRom(dst *image.RGBA, img image.Image, src image.Rectangle) {
+	w, h, sw, sh := dst.Bounds().Dx(), dst.Bounds().Dy(), src.Dx(), src.Dy()
+	rows := image.NewRGBA(image.Rect(0, 0, w, sh))
+	// The scalers reuse their buffer for every band but a smaller last one.
+	band := min(max(1, maxScaleBufferBytes/(32*w)), sh)
+	scaler := draw.CatmullRom.NewScaler(w, band, sw, band)
+	for y := 0; y < sh; y += band {
+		n := min(band, sh-y)
+		scaler.Scale(rows, image.Rect(0, y, w, y+n),
+			img, image.Rect(src.Min.X, src.Min.Y+y, src.Max.X, src.Min.Y+y+n), draw.Src, nil)
+	}
+	band = min(max(1, maxScaleBufferBytes/(32*sh)), w)
+	scaler = draw.CatmullRom.NewScaler(band, h, band, sh)
+	for x := 0; x < w; x += band {
+		n := min(band, w-x)
+		scaler.Scale(dst, image.Rect(x, 0, x+n, h), rows, image.Rect(x, 0, x+n, sh), draw.Over, nil)
+	}
+}
+
+// halve halves the src rectangle of the image while it's at least twice w
+// by h pixels, returning the halved image and its bounds. Halving with
+// draw.ApproxBiLinear averages each 2 by 2 pixels, roughly for odd sizes,
+// which is cheap and keeps the quality of the final scale, while bounding
+// its work and memory.
+func halve(img image.Image, src image.Rectangle, w, h int) (image.Image, image.Rectangle) {
+	for src.Dx() >= 2*w && src.Dy() >= 2*h {
+		half := image.NewRGBA(image.Rect(0, 0, src.Dx()/2, src.Dy()/2))
+		draw.ApproxBiLinear.Scale(half, half.Bounds(), img, src, draw.Src, nil)
+		img, src = half, half.Bounds()
+	}
+	return img, src
+}
+
+// bytesPerPixel returns the bytes per pixel of decoded images with the color
+// model, at most.
+func bytesPerPixel(m color.Model) int {
+	switch m {
+	case color.GrayModel, color.AlphaModel:
+		return 1
+	case color.Gray16Model, color.Alpha16Model:
+		return 2
+	case color.YCbCrModel:
+		return 3
+	case color.RGBA64Model, color.NRGBA64Model:
+		return 8
+	}
+	if _, ok := m.(color.Palette); ok {
+		return 1
+	}
+	return 4
 }
 
 // EncodeJPEG encodes an image as a JPEG. Encoding drops the metadata of the

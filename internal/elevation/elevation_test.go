@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -240,9 +241,34 @@ func TestDEMTileStore(t *testing.T) {
 	checkElevations(t, restarted)
 	checkRequests(t, 1)
 
+	// A DEM without a cache directory gets the tiles from the store too.
+	noDisk := elevation.NewDEM(url, "", nil)
+	noDisk.SetTileStore(store, errreport.NewLocal(log))
+	checkElevations(t, noDisk)
+	checkRequests(t, 1)
+
 	// When the store fails, the tiles are downloaded.
 	failing := elevation.NewDEM(url, t.TempDir(), nil)
 	failing.SetTileStore(failingStore{}, errreport.NewLocal(log))
 	checkElevations(t, failing)
 	checkRequests(t, 2)
+}
+
+func TestDEMLimitsDownloads(t *testing.T) {
+	t.Parallel()
+	// A tile server sending more data than any tile has.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		chunk := make([]byte, 1<<20)
+		for range 40 {
+			if _, err := w.Write(chunk); err != nil {
+				return
+			}
+		}
+	}))
+	t.Cleanup(srv.Close)
+	dem := elevation.NewDEM(srv.URL, "", nil)
+	_, err := dem.Elevations(context.Background(), []float64{46.5}, []float64{7.5})
+	if err == nil || !strings.Contains(err.Error(), "larger than") {
+		t.Errorf("got error %v, want the download to be too large", err)
+	}
 }

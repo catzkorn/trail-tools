@@ -243,7 +243,7 @@ var (
 		"dem-bucket",
 		"",
 		"The Google Cloud Storage bucket to cache elevation tiles in, using the application default credentials,"+
-			" so they're downloaded once rather than after every restart. If unset, they're only cached on local disk",
+			" so they're downloaded once rather than after every restart, instead of on local disk",
 	)
 )
 
@@ -804,10 +804,15 @@ func setFlagsFromEnv(fs *flag.FlagSet) error {
 	return err
 }
 
-// newDEM creates a DEM that downloads tiles from baseURL into cacheDir, and
-// caches them in the Cloud Storage bucket, if set. On Cloud Run, the cache
-// directory is in memory and lost when an instance or job stops.
+// newDEM creates a DEM that downloads tiles from baseURL and caches them in
+// the Cloud Storage bucket, if set, or else in cacheDir. On Cloud Run, local
+// disk is memory, and a cache directory would grow with every tile used until
+// the instance runs out of memory, so with a bucket tiles aren't cached on
+// disk.
 func newDEM(ctx context.Context, log *slog.Logger, report *errreport.Reporter, baseURL, cacheDir, bucket string) (*elevation.DEM, error) {
+	if bucket != "" {
+		cacheDir = ""
+	}
 	dem := elevation.NewDEM(baseURL, cacheDir, telemetry.NewClient(0))
 	if bucket != "" {
 		tiles, err := blob.NewGCS(ctx, bucket)
