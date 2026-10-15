@@ -23,7 +23,6 @@ import (
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/athletes"
 	"github.com/catzkorn/trail-tools/internal/authn"
 	"github.com/catzkorn/trail-tools/internal/blob"
 	"github.com/catzkorn/trail-tools/internal/cloudrun"
@@ -33,7 +32,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/errreport"
 	"github.com/catzkorn/trail-tools/internal/fakestrava"
 	"github.com/catzkorn/trail-tools/internal/gen/activities/v1/activitiesv1connect"
-	"github.com/catzkorn/trail-tools/internal/gen/athletes/v1/athletesv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/gen/oauth/v1/oauthv1connect"
@@ -54,7 +52,6 @@ import (
 	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/catzkorn/trail-tools/internal/services/activity"
-	"github.com/catzkorn/trail-tools/internal/services/athlete"
 	"github.com/catzkorn/trail-tools/internal/services/auth"
 	geosvc "github.com/catzkorn/trail-tools/internal/services/geo"
 	mapdatasvc "github.com/catzkorn/trail-tools/internal/services/mapdata"
@@ -439,10 +436,6 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create user directory: %w", err)
 	}
-	athletes, err := athletes.NewRepository(log, db)
-	if err != nil {
-		return fmt.Errorf("failed to create athlete directory: %w", err)
-	}
 	activityRepo, err := activities.NewRepository(report, db)
 	if err != nil {
 		return fmt.Errorf("failed to create activity repository: %w", err)
@@ -598,7 +591,6 @@ func run(
 
 	// Register all services on a single Connect server, served by the API mux
 	server := connect.NewServer()
-	athletesv1connect.RegisterAthleteServiceHandler(server, athlete.NewService(log, athletes))
 	usersv1connect.RegisterUserServiceHandler(server, userService)
 	authv1connect.RegisterAuthServiceHandler(server, authService)
 	activitiesv1connect.RegisterActivityServiceHandler(server, activityService)

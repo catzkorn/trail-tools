@@ -1,4 +1,3 @@
-import Athletes from "@components/athletes/athletes";
 import Header from "@components/header/header";
 import Loading from "@components/loading";
 import { Code } from "@connectrpc/connect";
@@ -133,7 +132,6 @@ const App: React.FC = () => {
             <Route path="/trip-reports/:id" element={<TripReportPage />} />
             <Route path="/race-reports" element={<RaceReportsPage />} />
             <Route path="/race-reports/:id" element={<RaceReportPage />} />
-            <Route path="/athletes" element={<Athletes />} />
             <Route path="/settings" element={<SettingsPage user={user} />} />
             <Route path="/map-data" element={<MapDataPage />} />
             <Route path="/oauth/authorize" element={<OAuthConsentPage />} />

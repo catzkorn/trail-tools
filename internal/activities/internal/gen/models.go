@@ -678,28 +678,6 @@ type APIToken struct {
 	ExpireTime   pgtype.Timestamptz
 }
 
-type Activity struct {
-	ID         pgtype.UUID
-	AthleteID  pgtype.UUID
-	CreateTime pgtype.Timestamptz
-	Name       string
-}
-
-type Athlete struct {
-	ID         pgtype.UUID
-	UserID     pgtype.UUID
-	CreateTime pgtype.Timestamptz
-	Name       string
-}
-
-type BloodLactateMeasure struct {
-	ID           pgtype.UUID
-	ActivityID   pgtype.UUID
-	CreateTime   pgtype.Timestamptz
-	MmolPerLiter pgtype.Numeric
-	HeartRateBpm int32
-}
-
 type Invitation struct {
 	ID          pgtype.UUID
 	TokenSHA256 []byte
