@@ -38,7 +38,7 @@ func TestImportStravaPhotos(t *testing.T) {
 	}
 	// The activity isn't connected to Strava here, so the photos from the
 	// last sync are imported.
-	if err := e.activities.SetActivityPhotos(ctx, id, []activities.Photo{
+	if err := e.activities.StoreActivityDetail(ctx, id, &activities.Detail{Description: "Felt good", DeviceName: "Watch", RawJSON: []byte("{}"), Photos: []activities.Photo{
 		{StravaID: "p1", Caption: "Halfway", URL: cdn.URL + "/p1.jpg", Location: &geo.Point{Lat: 0.045, Lng: 0}, RawJSON: []byte("{}")},
 		// 18 minutes in, 30 points along the track.
 		{StravaID: "p2", URL: cdn.URL + "/p2.jpg", TakenTime: tripStart.Add(18 * time.Minute), RawJSON: []byte("{}")},
@@ -50,7 +50,7 @@ func TestImportStravaPhotos(t *testing.T) {
 		},
 		{StravaID: "gone", URL: cdn.URL + "/gone.jpg", RawJSON: []byte("{}")},
 		{StravaID: "text", URL: cdn.URL + "/text.jpg", RawJSON: []byte("{}")},
-	}); err != nil {
+	}}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	created, err := e.trips.CreateTripReport(ctx, tripsv1.CreateTripReportRequest_builder{ActivityId: activityID}.Build())
