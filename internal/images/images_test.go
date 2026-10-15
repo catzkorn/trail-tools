@@ -71,7 +71,7 @@ func TestScaleDownLargeImage(t *testing.T) {
 	if b := got.Bounds(); b.Dx() != 2048 || b.Dy() != 1280 {
 		t.Fatalf("ScaleDown is %dx%d, want 2048x1280", b.Dx(), b.Dy())
 	}
-	if alloc := after.TotalAlloc - before.TotalAlloc; alloc > 150<<20 {
+	if alloc := after.TotalAlloc - before.TotalAlloc; !raceEnabled && alloc > 150<<20 {
 		t.Errorf("ScaleDown allocated %d MB, want at most 150 MB", alloc>>20)
 	}
 	// Every band of rows and columns is scaled.
