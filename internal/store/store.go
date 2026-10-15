@@ -156,21 +156,18 @@ left join pg_catalog.pg_namespace n on n.oid = t.typnamespace
 
 // registerEnums returns a function that registers all enums in the database on each new connection.
 func registerEnums(enums []string) func(ctx context.Context, conn *pgx.Conn) error {
+	names := make([]string, 0, 2*len(enums))
+	for _, enum := range enums {
+		names = append(names, enum, "_"+enum)
+	}
 	return func(ctx context.Context, conn *pgx.Conn) error {
-		// Register all enums
-		for _, enum := range enums {
-			t, err := conn.LoadType(ctx, enum)
-			if err != nil {
-				return err
-			}
-			conn.TypeMap().RegisterType(t)
-
-			ta, err := conn.LoadType(ctx, "_"+enum)
-			if err != nil {
-				return err
-			}
-			conn.TypeMap().RegisterType(ta)
+		// Register all enums and their arrays, loaded with a single query
+		// rather than several per type, as each new connection waits for it.
+		types, err := conn.LoadTypes(ctx, names)
+		if err != nil {
+			return err
 		}
+		conn.TypeMap().RegisterTypes(types)
 		return nil
 	}
 }

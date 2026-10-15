@@ -50,7 +50,7 @@ func (e *env) addTrackedActivity(stravaID int64, summary, track []geo.Point) pgt
 	if b, ok := geo.BoundsOf(track); ok {
 		bounds = &b
 	}
-	if err := e.activities.SetActivityStreams(ctx, id, data, bounds); err != nil {
+	if err := e.activities.StoreActivityDetail(ctx, id, nil, data, bounds); err != nil {
 		e.t.Fatal(err)
 	}
 	return id
