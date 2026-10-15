@@ -194,7 +194,7 @@ func extractNames(extracts []routing.Extract) []string {
 
 func (s *Service) internalError(ctx context.Context, err error) error {
 	s.report.Report(ctx, "Map data request failed", err)
-	return connect.NewError(connect.CodeInternal, "internal error")
+	return connect.NewError(connect.CodeInternal, "internal error").WithCause(err)
 }
 
 // requireAdmin returns an error unless the user is an administrator.

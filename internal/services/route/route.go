@@ -32,7 +32,7 @@ func (s *Service) PreviewRoute(ctx context.Context, req *routesv1.PreviewRouteRe
 	}
 	profiles, err := legProfilesFromProto(route.Profile, req.GetLegProfiles(), len(route.Waypoints))
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to compute route")
+		return nil, s.toConnectError(ctx, err, "failed to compute route")
 	}
 	var existing []routes.Leg
 	if req.GetRouteId() != "" {
@@ -44,7 +44,7 @@ func (s *Service) PreviewRoute(ctx context.Context, req *routesv1.PreviewRouteRe
 	}
 	legs, err := s.buildLegs(ctx, userID, route.Waypoints, profiles, existing)
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to compute route")
+		return nil, s.toConnectError(ctx, err, "failed to compute route")
 	}
 	route.Legs = legs
 	computeStats(route)
@@ -72,11 +72,11 @@ func (s *Service) CreateRoute(ctx context.Context, req *routesv1.CreateRouteRequ
 		route.Waypoints = waypointsFromProto(req.GetWaypoints().GetWaypoints())
 		profiles, err := legProfilesFromProto(route.Profile, req.GetWaypoints().GetLegProfiles(), len(route.Waypoints))
 		if err != nil {
-			return nil, s.toConnectError(err, "failed to compute route")
+			return nil, s.toConnectError(ctx, err, "failed to compute route")
 		}
 		legs, err := s.buildLegs(ctx, userID, route.Waypoints, profiles, nil)
 		if err != nil {
-			return nil, s.toConnectError(err, "failed to compute route")
+			return nil, s.toConnectError(ctx, err, "failed to compute route")
 		}
 		route.Legs = legs
 	default:
@@ -104,7 +104,7 @@ func (s *Service) CreateRoute(ctx context.Context, req *routesv1.CreateRouteRequ
 	computeStats(route)
 	created, err := s.routes.CreateRoute(ctx, route)
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to create route")
+		return nil, s.toConnectError(ctx, err, "failed to create route")
 	}
 	return routesv1.CreateRouteResponse_builder{
 		Route:   routeToProto(created, req.GetIncludePoints()),
@@ -129,7 +129,7 @@ func (s *Service) ListRoutes(ctx context.Context, req *routesv1.ListRoutesReques
 	}
 	list, err := s.routes.ListRoutes(ctx, userID)
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to list routes")
+		return nil, s.toConnectError(ctx, err, "failed to list routes")
 	}
 	protoRoutes := make([]*routesv1.Route, len(list))
 	for i, route := range list {
@@ -159,18 +159,18 @@ func (s *Service) UpdateRoute(ctx context.Context, req *routesv1.UpdateRouteRequ
 		profile := profileFromProto(req.GetWaypoints().GetProfile())
 		profiles, err := legProfilesFromProto(profile, req.GetWaypoints().GetLegProfiles(), len(waypoints))
 		if err != nil {
-			return nil, s.toConnectError(err, "failed to compute route")
+			return nil, s.toConnectError(ctx, err, "failed to compute route")
 		}
 		legs, err := s.buildLegs(ctx, route.UserID, waypoints, profiles, route.Legs)
 		if err != nil {
-			return nil, s.toConnectError(err, "failed to compute route")
+			return nil, s.toConnectError(ctx, err, "failed to compute route")
 		}
 		route.Waypoints, route.Profile, route.Legs = waypoints, profile, legs
 		computeStats(route)
 	}
 	updated, err := s.routes.UpdateRoute(ctx, route)
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to update route")
+		return nil, s.toConnectError(ctx, err, "failed to update route")
 	}
 	return routesv1.UpdateRouteResponse_builder{
 		Route: routeToProto(updated, req.GetIncludePoints()),
@@ -187,7 +187,7 @@ func (s *Service) DeleteRoute(ctx context.Context, req *routesv1.DeleteRouteRequ
 		return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid route ID: %v", err).WithCause(err)
 	}
 	if err := s.routes.DeleteRoute(ctx, userID, routeID); err != nil {
-		return nil, s.toConnectError(err, "failed to delete route")
+		return nil, s.toConnectError(ctx, err, "failed to delete route")
 	}
 	return routesv1.DeleteRouteResponse_builder{}.Build(), nil
 }
@@ -206,7 +206,7 @@ func (s *Service) CheckTrackCoverage(ctx context.Context, req *routesv1.CheckTra
 	}
 	regions, err := s.router.Regions(ctx)
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to check the track's coverage")
+		return nil, s.toConnectError(ctx, err, "failed to check the track's coverage")
 	}
 	return routesv1.CheckTrackCoverageResponse_builder{
 		CoveredFraction: trackCoverage(track.points, regions),
@@ -279,7 +279,7 @@ func (s *Service) routeFromTrack(ctx context.Context, route *routes.Route, track
 			route.Waypoints, route.Legs = waypoints, legs
 			return "", nil
 		case ctx.Err() != nil:
-			return "", s.toConnectError(err, "failed to snap the track to the map")
+			return "", s.toConnectError(ctx, err, "failed to snap the track to the map")
 		}
 		// Tracks outside the imported map data can't be snapped, but other
 		// failures are unexpected.
@@ -313,7 +313,7 @@ func (s *Service) getRoute(ctx context.Context, id string) (*routes.Route, error
 	}
 	route, err := s.routes.GetRoute(ctx, userID, routeID)
 	if err != nil {
-		return nil, s.toConnectError(err, "failed to get route")
+		return nil, s.toConnectError(ctx, err, "failed to get route")
 	}
 	return route, nil
 }
@@ -326,7 +326,7 @@ func (s *Service) activityTrack(ctx context.Context, userID, activityID pgtype.U
 		if errors.Is(err, store.ErrNotFound) {
 			return nil, nil, connect.NewError(connect.CodeNotFound, "activity not found")
 		}
-		return nil, nil, s.toConnectError(err, "failed to get activity")
+		return nil, nil, s.toConnectError(ctx, err, "failed to get activity")
 	}
 	var points []geo.Point
 	data, err := s.activities.GetActivityStreams(ctx, userID, activityID)
@@ -334,17 +334,17 @@ func (s *Service) activityTrack(ctx context.Context, userID, activityID pgtype.U
 	case err == nil:
 		points, err = decodeStreams(data)
 		if err != nil {
-			return nil, nil, s.toConnectError(err, "failed to decode activity streams")
+			return nil, nil, s.toConnectError(ctx, err, "failed to decode activity streams")
 		}
 	case errors.Is(err, store.ErrNotFound):
 		if activity.SummaryPolyline != "" {
 			points, err = geo.DecodePolyline(activity.SummaryPolyline)
 			if err != nil {
-				return nil, nil, s.toConnectError(err, "failed to decode activity polyline")
+				return nil, nil, s.toConnectError(ctx, err, "failed to decode activity polyline")
 			}
 		}
 	default:
-		return nil, nil, s.toConnectError(err, "failed to get activity streams")
+		return nil, nil, s.toConnectError(ctx, err, "failed to get activity streams")
 	}
 	if len(points) < 2 {
 		return nil, nil, connect.NewError(connect.CodeFailedPrecondition, "the activity has no GPS track")
@@ -383,7 +383,7 @@ func decodeStreams(data []byte) ([]geo.Point, error) {
 	return points, nil
 }
 
-func (s *Service) toConnectError(err error, msg string) error {
+func (s *Service) toConnectError(ctx context.Context, err error, msg string) error {
 	switch {
 	case errors.Is(err, store.ErrNotFound):
 		return connect.NewError(connect.CodeNotFound, "route not found")
@@ -392,7 +392,7 @@ func (s *Service) toConnectError(err error, msg string) error {
 	case errors.Is(err, context.Canceled):
 		return connect.NewError(connect.CodeCanceled, err.Error()).WithCause(err)
 	default:
-		s.log.Error(msg, slogor.Err(err))
+		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
 }

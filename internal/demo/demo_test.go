@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"net/http"
 	"slices"
 	"testing"
 
@@ -43,7 +44,7 @@ func TestLoad(t *testing.T) {
 	db := storetest.New(t)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	// No elevation tiles are downloaded for Squamish.
-	dem := elevation.NewDEM("http://invalid.test", t.TempDir(), nil)
+	dem := elevation.NewDEM("http://invalid.test", t.TempDir(), &http.Client{})
 	if err := demo.Load(ctx, log, db, dem); err != nil {
 		t.Fatalf("Load: %v", err)
 	}

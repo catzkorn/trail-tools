@@ -130,11 +130,8 @@ type Extracts struct {
 }
 
 // NewExtracts creates a new Extracts using the index at url, fetched with
-// client, or a client with a timeout if it's nil.
+// client.
 func NewExtracts(url string, client *http.Client) *Extracts {
-	if client == nil {
-		client = &http.Client{Timeout: 2 * time.Minute}
-	}
 	return &Extracts{url: url, client: client}
 }
 

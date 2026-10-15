@@ -30,7 +30,7 @@ type Config struct {
 	Elevation Elevation
 	// The Open-Meteo forecast API URL.
 	ForecastURL string
-	// The HTTP client to use. Defaults to a client with a 60 second timeout.
+	// The HTTP client to use.
 	HTTPClient *http.Client
 }
 
@@ -40,9 +40,6 @@ func (c Config) withDefaults() Config {
 	}
 	if c.ForecastURL == "" {
 		c.ForecastURL = "https://api.open-meteo.com/v1/forecast"
-	}
-	if c.HTTPClient == nil {
-		c.HTTPClient = &http.Client{Timeout: 60 * time.Second}
 	}
 	if c.Elevation == nil {
 		c.Elevation = elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir, c.HTTPClient)

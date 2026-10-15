@@ -95,7 +95,7 @@ func TestTrack(t *testing.T) {
 	fake := &fakeLiveTrack{start: start, points: 5, pageSize: 3}
 	srv := httptest.NewServer(fake)
 	t.Cleanup(srv.Close)
-	client := New(srv.URL, nil)
+	client := New(srv.URL, srv.Client())
 	now := start.Add(10 * time.Minute)
 	client.nowFn = func() time.Time { return now }
 	ctx := context.Background()

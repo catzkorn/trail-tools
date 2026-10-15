@@ -110,11 +110,11 @@ buf:
 
 .PHONY: buf-lint
 buf-lint:
-	cd api && go tool buf lint
+	go tool buf lint
 
 .PHONY: buf-format
 buf-format:
-	cd api && go tool buf format -w
+	go tool buf format -w
 
 .PHONY: go-format
 go-format:

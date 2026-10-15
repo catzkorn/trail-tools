@@ -113,7 +113,8 @@ type Config struct {
 	BaseURL string
 	// Defaults to https://www.strava.com/oauth.
 	OAuthBaseURL string
-	HTTPClient   *http.Client
+	// Sends the requests to Strava.
+	HTTPClient *http.Client
 	// The fraction of each rate limit window, the 15 minute and the daily
 	// one, that background requests leave for interactive requests.
 	// Defaults to DefaultBackgroundReserve. Negative values disable the
@@ -128,9 +129,6 @@ func New(conf Config) *Client {
 	}
 	if conf.OAuthBaseURL == "" {
 		conf.OAuthBaseURL = "https://www.strava.com/oauth"
-	}
-	if conf.HTTPClient == nil {
-		conf.HTTPClient = &http.Client{Timeout: 60 * time.Second}
 	}
 	switch {
 	case conf.BackgroundReserve == 0:
