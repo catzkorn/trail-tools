@@ -24,16 +24,14 @@ type SyncRepository interface {
 	ListStravaConnections(ctx context.Context) ([]*activities.StravaConnection, error)
 	UpdateStravaTokens(ctx context.Context, userID pgtype.UUID, accessToken, refreshToken string, expiry time.Time) error
 	UpdateStravaSyncState(ctx context.Context, userID pgtype.UUID, state activities.SyncState, message string, resumeTime, lastSyncTime time.Time) error
-	UpdateStravaListBefore(ctx context.Context, userID pgtype.UUID, listBefore time.Time) error
 	UpsertActivity(ctx context.Context, userID pgtype.UUID, a *activities.ActivitySummary) (pgtype.UUID, error)
+	StoreListedActivities(ctx context.Context, userID pgtype.UUID, page []*activities.ActivitySummary, listBefore time.Time) error
 	LatestActivityStartTime(ctx context.Context, userID pgtype.UUID) (time.Time, error)
 	ListActivitiesWithoutStreams(ctx context.Context, userID pgtype.UUID, limit int32) ([]activities.PendingStreams, error)
 	GetActivity(ctx context.Context, userID, activityID pgtype.UUID) (*activities.Activity, error)
 	RequestActivitySync(ctx context.Context, userID, activityID pgtype.UUID) error
 	CountActivities(ctx context.Context, userID pgtype.UUID) (total, pendingStreams int64, err error)
-	SetActivityDetail(ctx context.Context, activityID pgtype.UUID, description, deviceName string, rawJSON []byte) error
-	SetActivityStreams(ctx context.Context, activityID pgtype.UUID, streams []byte, bounds *geo.Bounds) error
-	SetActivityPhotos(ctx context.Context, activityID pgtype.UUID, photos []activities.Photo) error
+	StoreActivityDetail(ctx context.Context, activityID pgtype.UUID, detail *activities.Detail, streams []byte, bounds *geo.Bounds) error
 	DeleteActivityByStravaID(ctx context.Context, userID pgtype.UUID, stravaID int64) error
 }
 
@@ -164,7 +162,7 @@ func (s *Syncer) Request(ctx context.Context, userID pgtype.UUID, full bool) err
 		}
 		if full {
 			// List all activities, as if an earlier listing was interrupted.
-			if err := s.repo.UpdateStravaListBefore(ctx, userID, s.nowFn()); err != nil {
+			if err := s.repo.StoreListedActivities(ctx, userID, nil, s.nowFn()); err != nil {
 				return err
 			}
 		}
@@ -360,7 +358,8 @@ func (s *Syncer) runSync(ctx context.Context, log *slog.Logger, userID pgtype.UU
 		if err != nil {
 			return fmt.Errorf("failed to list activities: %w", err)
 		}
-		progressed, reachedSince := false, false
+		var page []*activities.ActivitySummary
+		reachedSince := false
 		for _, a := range list {
 			if a.StartDate.Before(since) {
 				reachedSince = true
@@ -370,20 +369,18 @@ func (s *Syncer) runSync(ctx context.Context, log *slog.Logger, userID pgtype.UU
 				// Listed already.
 				continue
 			}
-			if _, err := s.repo.UpsertActivity(ctx, userID, summaryFromStrava(a)); err != nil {
-				return err
-			}
-			before, progressed = a.StartDate, true
-			fetched++
+			page = append(page, summaryFromStrava(a))
+			before = a.StartDate
 		}
-		// Record how far the listing got, so an interrupted listing
-		// continues from there.
-		done = reachedSince || !progressed
+		fetched += len(page)
+		// Record how far the listing got with the activities, so an
+		// interrupted listing continues from there.
+		done = reachedSince || len(page) == 0
 		listBefore := before
 		if done {
 			listBefore = time.Time{}
 		}
-		if err := s.repo.UpdateStravaListBefore(ctx, userID, listBefore); err != nil {
+		if err := s.repo.StoreListedActivities(ctx, userID, page, listBefore); err != nil {
 			return err
 		}
 		if err := s.setState(ctx, userID, activities.SyncStateRunning, fmt.Sprintf("Fetched %d activities", fetched), time.Time{}); err != nil {
@@ -481,37 +478,44 @@ func (s *Syncer) claim(ctx context.Context, stravaID int64) (func(), error) {
 }
 
 // syncDetails fetches and stores the details, photos and streams of an
-// activity. Storing the streams marks the activity synced, so they're stored
-// last.
+// activity. The details and streams are fetched at the same time, then the
+// photos, if it has any.
 func (s *Syncer) syncDetails(ctx context.Context, conn *activities.StravaConnection, p activities.PendingStreams) error {
+	// Refresh the token if needed first, so the requests don't refresh it
+	// concurrently.
+	if err := s.withToken(ctx, conn, func(string) error { return nil }); err != nil {
+		return err
+	}
 	var detail *strava.Activity
-	err := s.withToken(ctx, conn, func(token string) error {
-		var err error
-		detail, err = s.client.GetActivity(ctx, token, p.StravaID)
-		return err
+	var detailErr error
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		detailErr = s.withToken(ctx, conn, func(token string) error {
+			var err error
+			detail, err = s.client.GetActivity(ctx, token, p.StravaID)
+			return err
+		})
 	})
+	streams, streamsErr := s.fetchStreams(ctx, conn, p.StravaID)
+	wg.Wait()
 	switch {
-	case errors.Is(err, strava.ErrNotFound):
+	case errors.Is(detailErr, strava.ErrNotFound):
 		// The activity was deleted or made private on Strava.
-	case err != nil:
-		return err
-	default:
-		if err := s.repo.SetActivityDetail(ctx, p.ID, detail.Description, detail.DeviceName, detail.Raw); err != nil {
-			return err
-		}
-		photos, err := s.fetchPhotos(ctx, conn, detail)
-		if err != nil {
-			return err
-		}
-		if err := s.repo.SetActivityPhotos(ctx, p.ID, photos); err != nil {
+		detail = nil
+	case detailErr != nil:
+		return detailErr
+	}
+	if streamsErr != nil {
+		return streamsErr
+	}
+	var photos []activities.Photo
+	if detail != nil {
+		var err error
+		if photos, err = s.fetchPhotos(ctx, conn, detail); err != nil {
 			return err
 		}
 	}
-	streams, err := s.fetchStreams(ctx, conn, p.StravaID)
-	if err != nil {
-		return err
-	}
-	return s.storeStreams(ctx, p.ID, streams, detail != nil && detail.IsFootSport())
+	return s.store(ctx, p.ID, detail, photos, streams)
 }
 
 // fetchPhotos fetches the photos of an activity, if it has any.
@@ -561,17 +565,22 @@ func (s *Syncer) fetchStreams(ctx context.Context, conn *activities.StravaConnec
 	return streams, err
 }
 
-// storeStreams stores the streams of an activity, which may be nil, and
-// marks the activity synced.
-func (s *Syncer) storeStreams(ctx context.Context, activityID pgtype.UUID, streams *strava.Streams, footSport bool) error {
-	if streams == nil {
-		return s.repo.SetActivityStreams(ctx, activityID, nil, nil)
+// store stores the detail of an activity, which is nil if Strava no
+// longer has it, with its photos, and its streams, which are nil if it has
+// none, and marks it synced.
+func (s *Syncer) store(ctx context.Context, activityID pgtype.UUID, detail *strava.Activity, photos []activities.Photo, streams *strava.Streams) error {
+	var d *activities.Detail
+	if detail != nil {
+		d = &activities.Detail{Description: detail.Description, DeviceName: detail.DeviceName, RawJSON: detail.Raw, Photos: photos}
 	}
-	encoded, bounds, err := encodeStreams(streams, footSport)
+	if streams == nil {
+		return s.repo.StoreActivityDetail(ctx, activityID, d, nil, nil)
+	}
+	encoded, bounds, err := encodeStreams(streams, detail != nil && detail.IsFootSport())
 	if err != nil {
 		return err
 	}
-	return s.repo.SetActivityStreams(ctx, activityID, encoded, bounds)
+	return s.repo.StoreActivityDetail(ctx, activityID, d, encoded, bounds)
 }
 
 // SyncActivity syncs one of the user's activities from Strava right away:
@@ -613,9 +622,6 @@ func (s *Syncer) SyncActivity(ctx context.Context, userID pgtype.UUID, stravaID 
 	if err != nil {
 		return err
 	}
-	if err := s.repo.SetActivityDetail(ctx, id, detail.Description, detail.DeviceName, detail.Raw); err != nil {
-		return err
-	}
 	// Fetch the photos and streams at the same time, to answer webhook
 	// events quickly. Fetching the activity refreshed the token if needed,
 	// so they don't refresh it concurrently.
@@ -630,10 +636,7 @@ func (s *Syncer) SyncActivity(ctx context.Context, userID pgtype.UUID, stravaID 
 	if err := errors.Join(photosErr, streamsErr); err != nil {
 		return err
 	}
-	if err := s.repo.SetActivityPhotos(ctx, id, photos); err != nil {
-		return err
-	}
-	return s.storeStreams(ctx, id, streams, detail.IsFootSport())
+	return s.store(ctx, id, detail, photos, streams)
 }
 
 // SyncPending syncs the details, photos and streams of one of the user's

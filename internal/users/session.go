@@ -16,27 +16,16 @@ func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, er
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
 	}
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start transaction: %w", err)
-	}
-	defer tx.Rollback(context.Background())
-	querier := r.querier.WithTx(tx)
-	userID, err := querier.GetSessionUser(ctx, id)
+	// Every signed in request gets its session, so it's read without a
+	// transaction, which would take two more round trips.
+	userID, err := r.querier.GetSessionUser(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, store.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
-	retUser, err := r.loadUser(ctx, querier, userID)
-	if err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return retUser, nil
+	return r.loadUser(ctx, r.querier, userID)
 }
 
 func (r *Repository) DeleteSession(ctx context.Context, sessionID string) error {

@@ -28,41 +28,23 @@ type Photo struct {
 	RawJSON []byte
 }
 
-// SetActivityPhotos replaces the photos of an activity, in order.
-func (r *Repository) SetActivityPhotos(ctx context.Context, activityID pgtype.UUID, photos []Photo) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
+func insertPhotoParams(activityID pgtype.UUID, position int, p *Photo) *gen.InsertActivityPhotoParams {
+	params := &gen.InsertActivityPhotoParams{
+		ActivityID: activityID,
+		StravaID:   p.StravaID,
+		Position:   int32(position),
+		Caption:    p.Caption,
+		URL:        p.URL,
+		Width:      p.Width,
+		Height:     p.Height,
+		TakenTime:  pgtype.Timestamptz{Time: p.TakenTime, Valid: !p.TakenTime.IsZero()},
+		PhotoJSON:  p.RawJSON,
 	}
-	defer tx.Rollback(context.Background())
-	q := r.q.WithTx(tx)
-	if err := q.DeleteActivityPhotos(ctx, activityID); err != nil {
-		return fmt.Errorf("failed to delete photos: %w", err)
+	if p.Location != nil {
+		params.Lat = pgtype.Float8{Float64: p.Location.Lat, Valid: true}
+		params.Lng = pgtype.Float8{Float64: p.Location.Lng, Valid: true}
 	}
-	for i, p := range photos {
-		params := &gen.InsertActivityPhotoParams{
-			ActivityID: activityID,
-			StravaID:   p.StravaID,
-			Position:   int32(i),
-			Caption:    p.Caption,
-			URL:        p.URL,
-			Width:      p.Width,
-			Height:     p.Height,
-			TakenTime:  pgtype.Timestamptz{Time: p.TakenTime, Valid: !p.TakenTime.IsZero()},
-			PhotoJSON:  p.RawJSON,
-		}
-		if p.Location != nil {
-			params.Lat = pgtype.Float8{Float64: p.Location.Lat, Valid: true}
-			params.Lng = pgtype.Float8{Float64: p.Location.Lng, Valid: true}
-		}
-		if err := q.InsertActivityPhoto(ctx, params); err != nil {
-			return fmt.Errorf("failed to store photo: %w", err)
-		}
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return nil
+	return params
 }
 
 // ListActivityPhotos lists the photos of one of the user's activities, in

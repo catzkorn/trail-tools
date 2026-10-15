@@ -64,9 +64,6 @@ func (e *env) createActivityWithAltitudes(altitudes []float64) string {
 	if err != nil {
 		e.t.Fatal(err)
 	}
-	if err := e.activities.SetActivityDetail(ctx, id, "Felt good", "Watch", []byte("{}")); err != nil {
-		e.t.Fatal(err)
-	}
 	streams := &activitiesv1.ActivityStreams{}
 	for i := range 101 {
 		streams.SetTimeSeconds(append(streams.GetTimeSeconds(), int32(i*36)))
@@ -80,7 +77,7 @@ func (e *env) createActivityWithAltitudes(altitudes []float64) string {
 	if err != nil {
 		e.t.Fatal(err)
 	}
-	if err := e.activities.SetActivityStreams(ctx, id, data, &geo.Bounds{MaxLat: 0.09}); err != nil {
+	if err := e.activities.StoreActivityDetail(ctx, id, &activities.Detail{Description: "Felt good", DeviceName: "Watch", RawJSON: []byte("{}")}, data, &geo.Bounds{MaxLat: 0.09}); err != nil {
 		e.t.Fatal(err)
 	}
 	return store.UUIDToString(id)

@@ -86,6 +86,38 @@ type ActivitySummary struct {
 
 // UpsertActivity creates or updates an activity from Strava.
 func (r *Repository) UpsertActivity(ctx context.Context, userID pgtype.UUID, a *ActivitySummary) (pgtype.UUID, error) {
+	id, err := r.q.UpsertActivity(ctx, upsertActivityParams(userID, a))
+	if err != nil {
+		return pgtype.UUID{}, fmt.Errorf("failed to upsert activity: %w", err)
+	}
+	return id, nil
+}
+
+// StoreListedActivities creates or updates a page of the user's activities
+// listed from Strava, and records how far the listing got: the activities
+// that started before listBefore remain to be listed. A zero listBefore
+// records that the listing finished. It takes a single round trip.
+func (r *Repository) StoreListedActivities(ctx context.Context, userID pgtype.UUID, page []*ActivitySummary, listBefore time.Time) error {
+	var batch store.Batch
+	q := gen.New(&batch)
+	for _, a := range page {
+		if _, err := q.UpsertActivity(ctx, upsertActivityParams(userID, a)); err != nil {
+			return err
+		}
+	}
+	if err := q.UpdateStravaListBefore(ctx, &gen.UpdateStravaListBeforeParams{
+		UserID:     userID,
+		ListBefore: pgtype.Timestamptz{Time: listBefore, Valid: !listBefore.IsZero()},
+	}); err != nil {
+		return err
+	}
+	if err := batch.Send(ctx, r.db); err != nil {
+		return fmt.Errorf("failed to store listed activities: %w", err)
+	}
+	return nil
+}
+
+func upsertActivityParams(userID pgtype.UUID, a *ActivitySummary) *gen.UpsertActivityParams {
 	params := &gen.UpsertActivityParams{
 		UserID:              userID,
 		StravaID:            a.StravaID,
@@ -116,11 +148,7 @@ func (r *Repository) UpsertActivity(ctx context.Context, userID pgtype.UUID, a *
 			}
 		}
 	}
-	id, err := r.q.UpsertActivity(ctx, params)
-	if err != nil {
-		return pgtype.UUID{}, fmt.Errorf("failed to upsert activity: %w", err)
-	}
-	return id, nil
+	return params
 }
 
 // LatestActivityStartTime returns the start time of the user's most recent
@@ -191,37 +219,48 @@ func (r *Repository) CountActivities(ctx context.Context, userID pgtype.UUID) (t
 	return row.Total, row.PendingStreams, nil
 }
 
-// SetActivityDetail stores details only available from Strava's detailed
-// activity endpoint.
-func (r *Repository) SetActivityDetail(ctx context.Context, activityID pgtype.UUID, description, deviceName string, rawJSON []byte) error {
-	if err := r.q.SetActivityDetail(ctx, &gen.SetActivityDetailParams{
-		ID:          activityID,
-		Description: description,
-		DeviceName:  deviceName,
-		DetailJSON:  rawJSON,
-	}); err != nil {
-		return fmt.Errorf("failed to set activity detail: %w", err)
-	}
-	return nil
+// Detail is what Strava's detailed activity adds to an activity's summary.
+type Detail struct {
+	Description string
+	DeviceName  string
+	// The raw Strava response.
+	RawJSON []byte
+	// The activity's photos, in order.
+	Photos []Photo
 }
 
-// SetActivityStreams stores the encoded streams of an activity, with its
-// track, and marks its streams as synced. streams may be nil if the activity
-// has no streams.
-func (r *Repository) SetActivityStreams(ctx context.Context, activityID pgtype.UUID, streams []byte, bounds *geo.Bounds) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
+// StoreActivityDetail stores an activity's detail, replacing its photos,
+// unless detail is nil, and its encoded streams with its track, unless
+// streams is nil, as when it has none. It marks the activity's streams as
+// synced. It takes a single round trip, and stores all of it or none.
+func (r *Repository) StoreActivityDetail(ctx context.Context, activityID pgtype.UUID, detail *Detail, streams []byte, bounds *geo.Bounds) error {
+	var batch store.Batch
+	q := gen.New(&batch)
+	if detail != nil {
+		if err := q.SetActivityDetail(ctx, &gen.SetActivityDetailParams{
+			ID:          activityID,
+			Description: detail.Description,
+			DeviceName:  detail.DeviceName,
+			DetailJSON:  detail.RawJSON,
+		}); err != nil {
+			return err
+		}
+		if err := q.DeleteActivityPhotos(ctx, activityID); err != nil {
+			return err
+		}
+		for i, p := range detail.Photos {
+			if err := q.InsertActivityPhoto(ctx, insertPhotoParams(activityID, i, &p)); err != nil {
+				return err
+			}
+		}
 	}
-	defer tx.Rollback(context.Background())
-	q := r.q.WithTx(tx)
 	params := &gen.MarkActivityStreamsSyncedParams{ID: activityID}
 	if bounds != nil {
 		params.MinLat, params.MinLng = pgtype.Float8{Float64: bounds.MinLat, Valid: true}, pgtype.Float8{Float64: bounds.MinLng, Valid: true}
 		params.MaxLat, params.MaxLng = pgtype.Float8{Float64: bounds.MaxLat, Valid: true}, pgtype.Float8{Float64: bounds.MaxLng, Valid: true}
 	}
 	if err := q.MarkActivityStreamsSynced(ctx, params); err != nil {
-		return fmt.Errorf("failed to mark streams synced: %w", err)
+		return err
 	}
 	if streams != nil {
 		track, err := trackFromStreams(streams)
@@ -229,11 +268,11 @@ func (r *Repository) SetActivityStreams(ctx context.Context, activityID pgtype.U
 			return err
 		}
 		if err := q.UpsertActivityStreams(ctx, &gen.UpsertActivityStreamsParams{ActivityID: activityID, Streams: streams, TrackPolyline: track}); err != nil {
-			return fmt.Errorf("failed to store streams: %w", err)
+			return err
 		}
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+	if err := batch.Send(ctx, r.db); err != nil {
+		return fmt.Errorf("failed to store activity detail: %w", err)
 	}
 	return nil
 }

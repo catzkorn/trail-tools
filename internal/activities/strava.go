@@ -128,19 +128,6 @@ func (r *Repository) UpdateStravaSyncState(ctx context.Context, userID pgtype.UU
 	return nil
 }
 
-// UpdateStravaListBefore records how far an unfinished listing of the
-// user's activities got: the activities that started before listBefore
-// remain to be listed. A zero listBefore records that the listing finished.
-func (r *Repository) UpdateStravaListBefore(ctx context.Context, userID pgtype.UUID, listBefore time.Time) error {
-	if err := r.q.UpdateStravaListBefore(ctx, &gen.UpdateStravaListBeforeParams{
-		UserID:     userID,
-		ListBefore: pgtype.Timestamptz{Time: listBefore, Valid: !listBefore.IsZero()},
-	}); err != nil {
-		return fmt.Errorf("failed to update Strava listing progress: %w", err)
-	}
-	return nil
-}
-
 // DeleteStravaConnection deletes the user's Strava connection.
 func (r *Repository) DeleteStravaConnection(ctx context.Context, userID pgtype.UUID) error {
 	n, err := r.q.DeleteStravaConnection(ctx, userID)
