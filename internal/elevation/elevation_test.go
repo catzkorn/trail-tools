@@ -242,7 +242,7 @@ func TestDEMTileStore(t *testing.T) {
 	checkRequests(t, 1)
 
 	// A DEM without a cache directory gets the tiles from the store too.
-	noDisk := elevation.NewDEM(url, "", nil)
+	noDisk := elevation.NewDEM(url, "", &http.Client{})
 	noDisk.SetTileStore(store, errreport.NewLocal(log))
 	checkElevations(t, noDisk)
 	checkRequests(t, 1)
@@ -266,7 +266,7 @@ func TestDEMLimitsDownloads(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	dem := elevation.NewDEM(srv.URL, "", nil)
+	dem := elevation.NewDEM(srv.URL, "", srv.Client())
 	_, err := dem.Elevations(context.Background(), []float64{46.5}, []float64{7.5})
 	if err == nil || !strings.Contains(err.Error(), "larger than") {
 		t.Errorf("got error %v, want the download to be too large", err)
