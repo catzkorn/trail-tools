@@ -4,6 +4,7 @@
 package elevation
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/binary"
@@ -29,6 +30,14 @@ const DefaultURL = "https://s3.amazonaws.com/elevation-tiles-prod/skadi"
 // DefaultCacheDir is the default directory elevation tiles are cached in.
 var DefaultCacheDir = filepath.Join(os.TempDir(), "trail-tools-dem")
 
+// maxTileBytes is the size of the largest tiles, of 1 arc second samples
+// (3601 a side), uncompressed.
+const maxTileBytes = 3601 * 3601 * 2
+
+// maxDownloadBytes limits the size of downloaded tiles, which are gzipped and
+// so smaller than maxTileBytes.
+const maxDownloadBytes = 32 << 20
+
 // maxCachedTiles is the number of decoded tiles kept in memory. A tile is up
 // to 26 MB, and most routes cover one or two.
 const maxCachedTiles = 3
@@ -37,8 +46,8 @@ const maxCachedTiles = 3
 const demVoid = -32768
 
 // DEM looks up ground elevations from HGT tiles, downloading them to a cache
-// directory as needed, and keeping the most recently used ones decoded in
-// memory. It is safe for concurrent use.
+// directory, if it has one, as needed, and keeping the most recently used
+// ones decoded in memory. It is safe for concurrent use.
 type DEM struct {
 	baseURL  string
 	cacheDir string
@@ -64,7 +73,8 @@ type cachedTile struct {
 }
 
 // NewDEM creates a DEM that downloads tiles from baseURL into cacheDir with
-// client, or the default client if it's nil.
+// client, or the default client if it's nil. If cacheDir is empty, tiles
+// aren't kept on disk, only the most recently used ones in memory.
 func NewDEM(baseURL, cacheDir string, client *http.Client) *DEM {
 	if client == nil {
 		client = http.DefaultClient
@@ -72,10 +82,10 @@ func NewDEM(baseURL, cacheDir string, client *http.Client) *DEM {
 	return &DEM{baseURL: baseURL, cacheDir: cacheDir, client: client}
 }
 
-// SetTileStore makes the DEM look for tiles missing from the cache directory
-// in store before downloading them, and add the tiles it downloads to it.
-// Failing to read or write the store is reported, but the tiles are
-// downloaded instead.
+// SetTileStore makes the DEM look for tiles missing from the cache directory,
+// or all tiles if it has none, in store before downloading them, and add the
+// tiles it downloads to it. Failing to read or write the store is reported,
+// but the tiles are downloaded instead.
 func (d *DEM) SetTileStore(store blob.Store, report *errreport.Reporter) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -139,38 +149,56 @@ func abs(v int) int {
 // there is no tile, e.g. over the sea.
 func (d *DEM) tile(ctx context.Context, lat, lng int) (*hgtTile, error) {
 	name := tileName(lat, lng)
-	path := filepath.Join(d.cacheDir, name+".hgt.gz")
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		if err := d.fetch(ctx, name, path); err != nil {
-			return nil, err
-		}
-	}
-	f, err := os.Open(path)
+	data, err := d.tileData(ctx, name)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	if info, err := f.Stat(); err == nil && info.Size() == 0 {
-		// An empty file records that the tile doesn't exist.
+	if len(data) == 0 {
+		// No data records that the tile doesn't exist.
 		return nil, nil
 	}
-	zr, err := gzip.NewReader(f)
+	zr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read tile %s: %w", name, err)
 	}
-	data, err := io.ReadAll(zr)
+	raw, err := io.ReadAll(io.LimitReader(zr, maxTileBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read tile %s: %w", name, err)
 	}
-	size := int(math.Round(math.Sqrt(float64(len(data) / 2))))
-	if size < 2 || size*size*2 != len(data) {
-		return nil, fmt.Errorf("tile %s has an unexpected size of %d bytes", name, len(data))
+	size := int(math.Round(math.Sqrt(float64(len(raw) / 2))))
+	if size < 2 || size*size*2 != len(raw) || len(raw) > maxTileBytes {
+		return nil, fmt.Errorf("tile %s has an unexpected size of %d bytes", name, len(raw))
 	}
 	t := &hgtTile{lat: lat, lng: lng, size: size, samples: make([]int16, size*size)}
 	for i := range t.samples {
-		t.samples[i] = int16(binary.BigEndian.Uint16(data[2*i:]))
+		t.samples[i] = int16(binary.BigEndian.Uint16(raw[2*i:]))
 	}
 	return t, nil
+}
+
+// tileData returns the gzipped tile from the cache directory, if the DEM
+// has one, or else fetches it and adds it to the cache directory. No data
+// records that the tile doesn't exist.
+func (d *DEM) tileData(ctx context.Context, name string) ([]byte, error) {
+	if d.cacheDir == "" {
+		return d.fetch(ctx, name)
+	}
+	path := filepath.Join(d.cacheDir, name+".hgt.gz")
+	data, err := os.ReadFile(path)
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		return data, err
+	}
+	data, err = d.fetch(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(d.cacheDir, 0o755); err != nil {
+		return nil, err
+	}
+	if err := writeFile(path, data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // tileKey returns the key of a tile in the tile store, following the tile
@@ -179,18 +207,15 @@ func tileKey(name string) string {
 	return "skadi/" + name[:3] + "/" + name + ".hgt.gz"
 }
 
-// fetch writes the tile to path in the cache directory: from the tile store
-// if it has it, or else downloaded and added to the tile store. An empty file
-// or object records that the tile doesn't exist.
-func (d *DEM) fetch(ctx context.Context, name, path string) error {
-	if err := os.MkdirAll(d.cacheDir, 0o755); err != nil {
-		return err
-	}
+// fetch returns the gzipped tile from the tile store if it has it, or else
+// downloads it and adds it to the tile store. No data, or an empty object,
+// records that the tile doesn't exist.
+func (d *DEM) fetch(ctx context.Context, name string) ([]byte, error) {
 	key := tileKey(name)
 	if d.store != nil {
 		data, err := d.store.Get(ctx, key)
 		if err == nil {
-			return writeFile(path, data)
+			return data, nil
 		}
 		if !errors.Is(err, blob.ErrNotFound) && ctx.Err() == nil {
 			d.report.Report(ctx, "Failed to read an elevation tile from the tile store, downloading it", err,
@@ -199,10 +224,7 @@ func (d *DEM) fetch(ctx context.Context, name, path string) error {
 	}
 	data, err := d.download(ctx, name)
 	if err != nil {
-		return err
-	}
-	if err := writeFile(path, data); err != nil {
-		return err
+		return nil, err
 	}
 	if d.store != nil {
 		if err := d.store.Put(ctx, key, data, "application/gzip"); err != nil && ctx.Err() == nil {
@@ -210,7 +232,7 @@ func (d *DEM) fetch(ctx context.Context, name, path string) error {
 				slog.String("tile", name))
 		}
 	}
-	return nil
+	return data, nil
 }
 
 // download downloads the gzipped tile. It returns no data if there is no
@@ -234,9 +256,12 @@ func (d *DEM) download(ctx context.Context, name string) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("failed to download elevation tile %s: status %d", name, resp.StatusCode)
 	}
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxDownloadBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to download elevation tile %s: %w", name, err)
+	}
+	if len(data) > maxDownloadBytes {
+		return nil, fmt.Errorf("elevation tile %s is larger than %d bytes", name, maxDownloadBytes)
 	}
 	return data, nil
 }

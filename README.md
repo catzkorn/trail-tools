@@ -349,13 +349,15 @@ as imports, downloaded as needed and cached, so they don't depend on a rate
 limited API.
 
 Elevation tiles are cached in a directory under the system's temporary
-directory. Set `-dem-bucket` (`TRAIL_TOOLS_DEM_BUCKET`) to also cache them in
-a Google Cloud Storage bucket with the application default credentials, for
-servers whose disk doesn't outlive them, like Cloud Run. Tiles missing from
-the directory are read from the bucket before downloading them, downloaded
-tiles are added to it, and tiles that don't exist, e.g. over the sea, are
-recorded in it as empty objects. If the bucket can't be read or written, the
-tiles are downloaded instead. The `import-osm` command takes the same flag.
+directory. Set `-dem-bucket` (`TRAIL_TOOLS_DEM_BUCKET`) to cache them in a
+Google Cloud Storage bucket with the application default credentials
+instead, for servers whose disk doesn't outlive them, like Cloud Run, where
+the disk is also memory, so a cache directory would grow until the instance
+runs out of it. Tiles are read from the bucket before downloading them,
+downloaded tiles are added to it, and tiles that don't exist, e.g. over the
+sea, are recorded in it as empty objects. If the bucket can't be read or
+written, the tiles are downloaded instead. Either way, the few most recently
+used tiles are kept in memory. The `import-osm` command takes the same flag.
 
 ## Deploying
 
