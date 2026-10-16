@@ -1,16 +1,27 @@
 version: 2
+# Each ecosystem's updates come in a single pull request, which CI merges once
+# its checks pass, see the merge-dependabot job in workflows/ci.yml.
 updates:
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
       interval: "weekly"
+    groups:
+      npm:
+        patterns: ["*"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
 
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      go:
+        patterns: ["*"]
