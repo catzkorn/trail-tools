@@ -5,6 +5,9 @@ on:
     branches:
       - main
   pull_request:
+  # Merging Dependabot's pull requests starts a run on main, as merges with
+  # the workflow's token don't trigger push events.
+  workflow_dispatch:
 
 # A new push to a pull request cancels its now stale run. Runs on main all
 # complete, so each commit is deployed.
@@ -183,7 +186,7 @@ jobs:
 
   deploy:
     name: Deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [format, lint, gen, build, test, mod, terraform]
     runs-on: ubuntu-latest
     # Only one deployment at a time. Terraform also locks its state.
@@ -224,3 +227,27 @@ jobs:
         uses: ./.github/actions/save-go-cache
         with:
           cache-name: deploy
+
+  merge-dependabot:
+    name: Merge Dependabot's pull request
+    # Only pull requests Dependabot opened in this repository, once all checks
+    # pass.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    needs: [format, lint, gen, build, test, mod, terraform]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      # Needed to start the run on main that deploys the merge.
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+    steps:
+      - name: Merge the pull request
+        run: gh pr merge --squash "$PR_URL"
+      - name: Check and deploy main
+        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref main
