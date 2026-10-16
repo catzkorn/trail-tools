@@ -19,8 +19,8 @@ import (
 	"unicode"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/apidesc"
-	"github.com/catzkorn/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/apidesc"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"

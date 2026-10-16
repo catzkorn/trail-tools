@@ -9,11 +9,11 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/demo"
-	"github.com/catzkorn/trail-tools/internal/elevation"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/catzkorn/trail-tools/internal/store/storetest"
+	"github.com/johanbrandhorst/trail-tools/internal/demo"
+	"github.com/johanbrandhorst/trail-tools/internal/elevation"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/store/storetest"
 )
 
 // chief is the first peak of the Stawamus Chief, about 600 m above the sea.

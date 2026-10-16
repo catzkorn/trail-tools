@@ -8,10 +8,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/races/internal/gen"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/races/internal/gen"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // Repository stores races and race plans.

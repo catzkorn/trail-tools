@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities"
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
 	"google.golang.org/protobuf/proto"
 )
 

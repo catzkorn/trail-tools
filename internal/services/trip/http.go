@@ -10,12 +10,12 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/catzkorn/trail-tools/internal/authn"
-	"github.com/catzkorn/trail-tools/internal/blob"
-	"github.com/catzkorn/trail-tools/internal/html"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	"github.com/johanbrandhorst/trail-tools/internal/blob"
+	"github.com/johanbrandhorst/trail-tools/internal/html"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/trips"
 )
 
 // The sizes photos are stored and served in.

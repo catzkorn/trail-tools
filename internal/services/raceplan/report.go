@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/races"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/races"
 )
 
 // PlanOutcome is what a race plan planned, and what was recorded on race

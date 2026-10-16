@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/trips"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/trips"
 )
 
 func TestSlugify(t *testing.T) {

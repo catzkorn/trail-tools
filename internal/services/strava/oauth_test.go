@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 func TestOAuthState(t *testing.T) {

@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/strava"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	stravasvc "github.com/johanbrandhorst/trail-tools/internal/services/strava"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/strava"
 )
 
 func (f *fakeStrava) GetActivityPhotos(_ context.Context, _ string, id int64) ([]*strava.Photo, error) {

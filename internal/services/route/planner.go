@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
-	"github.com/catzkorn/trail-tools/internal/routes"
-	"github.com/catzkorn/trail-tools/internal/routing"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/mapdata"
+	"github.com/johanbrandhorst/trail-tools/internal/routes"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
 	"golang.org/x/sync/errgroup"
 )
 

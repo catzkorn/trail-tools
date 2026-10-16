@@ -5,10 +5,10 @@ import (
 	"sort"
 	"strings"
 
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
-	"github.com/catzkorn/trail-tools/internal/races"
-	"github.com/catzkorn/trail-tools/internal/services/raceplan"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	racesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/races"
+	"github.com/johanbrandhorst/trail-tools/internal/services/raceplan"
 )
 
 // recording is an activity's elapsed time by distance.

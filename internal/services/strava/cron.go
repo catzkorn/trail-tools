@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
 )
 
 // SyncPath is the path of the scheduled sync endpoint.

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/routes"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/routes"
 )
 
 const (

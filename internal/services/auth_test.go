@@ -8,10 +8,10 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
-	authv1 "github.com/catzkorn/trail-tools/internal/gen/auth/v1"
-	"github.com/catzkorn/trail-tools/internal/gen/auth/v1/authv1connect"
-	usersv1 "github.com/catzkorn/trail-tools/internal/gen/users/v1"
-	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
+	authv1 "github.com/johanbrandhorst/trail-tools/internal/gen/auth/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/auth/v1/authv1connect"
+	usersv1 "github.com/johanbrandhorst/trail-tools/internal/gen/users/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/users/v1/usersv1connect"
 )
 
 // browser is a client that keeps the session cookie, like a browser.

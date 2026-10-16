@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/mapdata"
 )
 
 // fakeElevation returns elevations 1000 times the latitude.

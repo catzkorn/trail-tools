@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/authn"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	plansv1 "github.com/catzkorn/trail-tools/internal/gen/plans/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
-	"github.com/catzkorn/trail-tools/internal/plans"
-	"github.com/catzkorn/trail-tools/internal/routes"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	plansv1 "github.com/johanbrandhorst/trail-tools/internal/gen/plans/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/mapdata"
+	"github.com/johanbrandhorst/trail-tools/internal/plans"
+	"github.com/johanbrandhorst/trail-tools/internal/routes"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

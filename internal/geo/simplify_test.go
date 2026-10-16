@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
 )
 
 func TestClip(t *testing.T) {

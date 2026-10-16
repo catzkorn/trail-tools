@@ -13,15 +13,15 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
-	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	stravasvc "github.com/catzkorn/trail-tools/internal/services/strava"
-	"github.com/catzkorn/trail-tools/internal/strava"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	routesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/routes/v1"
+	stravav1 "github.com/johanbrandhorst/trail-tools/internal/gen/strava/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	stravasvc "github.com/johanbrandhorst/trail-tools/internal/services/strava"
+	"github.com/johanbrandhorst/trail-tools/internal/strava"
 )
 
 // fakeStrava is a Strava API with a list of activities. The first request

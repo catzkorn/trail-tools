@@ -16,10 +16,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/blob"
-	"github.com/catzkorn/trail-tools/internal/elevation"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/blob"
+	"github.com/johanbrandhorst/trail-tools/internal/elevation"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
 )
 
 func writeTile(t *testing.T, dir, name string, size int, sample func(row, col int) int16) {
