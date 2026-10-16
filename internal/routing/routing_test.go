@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/catzkorn/trail-tools/internal/store/storetest"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/store/storetest"
 )
 
 // testGraph is a small network south to north from A (0, 0) to B (0.01, 0):

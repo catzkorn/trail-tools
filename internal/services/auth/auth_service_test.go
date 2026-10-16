@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
 )
 
 // adminRepo is a Repository that only knows whether there is an

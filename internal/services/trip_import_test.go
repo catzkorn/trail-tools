@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 func TestImportStravaPhotos(t *testing.T) {

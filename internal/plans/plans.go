@@ -9,11 +9,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/plans/internal/gen"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/plans/internal/gen"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // Repository stores training plans.

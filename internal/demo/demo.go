@@ -17,10 +17,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/catzkorn/trail-tools/internal/elevation"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/elevation"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // Bounds is the area of the data: Squamish, from Murrin Park in the south

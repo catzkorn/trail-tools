@@ -12,11 +12,11 @@ import (
 	"os"
 	"slices"
 
-	"github.com/catzkorn/trail-tools/internal/demo"
-	"github.com/catzkorn/trail-tools/internal/elevation"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/catzkorn/trail-tools/internal/telemetry"
+	"github.com/johanbrandhorst/trail-tools/internal/demo"
+	"github.com/johanbrandhorst/trail-tools/internal/elevation"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/telemetry"
 )
 
 func main() {

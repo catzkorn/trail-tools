@@ -13,11 +13,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/strava"
 )
 
 // WebhookPath is the path Strava sends webhook events to.

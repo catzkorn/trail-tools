@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	stravav1 "github.com/johanbrandhorst/trail-tools/internal/gen/strava/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/strava"
 )
 
 // upsertSummaries stores the summaries of the fake Strava activities, as

@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/authn"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/livetrack"
-	"github.com/catzkorn/trail-tools/internal/protomask"
-	"github.com/catzkorn/trail-tools/internal/races"
-	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	racesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/livetrack"
+	"github.com/johanbrandhorst/trail-tools/internal/protomask"
+	"github.com/johanbrandhorst/trail-tools/internal/races"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

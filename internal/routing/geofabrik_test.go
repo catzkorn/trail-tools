@@ -8,8 +8,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
 )
 
 // geofabrikIndex has a continent with countries in it, and an extract

@@ -11,9 +11,9 @@ import (
 	"unicode/utf8"
 
 	"connectrpc.com/connect/v2"
-	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/trips"
+	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/trips"
 )
 
 func (s *Service) SetTripSections(ctx context.Context, req *tripsv1.SetTripSectionsRequest) (*tripsv1.SetTripSectionsResponse, error) {

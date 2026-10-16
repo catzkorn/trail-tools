@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
 )
 
 func TestValidateRedirectURI(t *testing.T) {

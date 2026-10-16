@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	activitiesv1 "github.com/catzkorn/trail-tools/internal/gen/activities/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/strava"
 	"google.golang.org/protobuf/proto"
 )
 

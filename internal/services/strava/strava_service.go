@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/authn"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	stravav1 "github.com/catzkorn/trail-tools/internal/gen/strava/v1"
-	"github.com/catzkorn/trail-tools/internal/gen/strava/v1/stravav1connect"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/strava"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	stravav1 "github.com/johanbrandhorst/trail-tools/internal/gen/strava/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/strava/v1/stravav1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/strava"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

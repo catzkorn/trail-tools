@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users/internal/gen"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/users/internal/gen"
 )
 
 func (r *Repository) GetSession(ctx context.Context, sessionID string) (User, error) {

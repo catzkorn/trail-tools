@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/authn"
-	usersv1 "github.com/catzkorn/trail-tools/internal/gen/users/v1"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	usersv1 "github.com/johanbrandhorst/trail-tools/internal/gen/users/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/users"
 )
 
 func (s *Service) GetCurrentUser(ctx context.Context, req *usersv1.GetCurrentUserRequest) (*usersv1.GetCurrentUserResponse, error) {

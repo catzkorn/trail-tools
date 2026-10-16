@@ -37,10 +37,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/users"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 )
 

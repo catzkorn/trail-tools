@@ -6,9 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/store/storetest"
 	"github.com/jackc/pgx/v5"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/store/storetest"
 )
 
 func TestBatch(t *testing.T) {

@@ -14,17 +14,17 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	"github.com/catzkorn/trail-tools/internal/authn"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/mapdata"
-	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/catzkorn/trail-tools/internal/services/route"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/mapdata"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/services/route"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 var _ geov1connect.GeoServiceHandler = (*Service)(nil)

@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/races"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/races"
 )
 
 func TestPlannedSeconds(t *testing.T) {

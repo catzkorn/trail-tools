@@ -9,9 +9,9 @@ import (
 	"slices"
 	"sync/atomic"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routes"
-	"github.com/catzkorn/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routes"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
 	"golang.org/x/sync/errgroup"
 )
 

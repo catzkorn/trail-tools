@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/activities/internal/gen"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/activities/internal/gen"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // SyncState is the state of a Strava sync.

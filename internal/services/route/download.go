@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/authn"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // unsafeFilenameChars matches characters that are replaced in download file

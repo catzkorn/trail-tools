@@ -3,8 +3,8 @@
 package plan
 
 import (
-	plansv1 "github.com/catzkorn/trail-tools/internal/gen/plans/v1"
-	"github.com/catzkorn/trail-tools/internal/plans"
+	plansv1 "github.com/johanbrandhorst/trail-tools/internal/gen/plans/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/plans"
 )
 
 var workoutTypes = map[plansv1.WorkoutType]plans.WorkoutType{

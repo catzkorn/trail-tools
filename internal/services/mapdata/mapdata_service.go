@@ -10,15 +10,15 @@ import (
 	"regexp"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/authn"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	routingv1 "github.com/catzkorn/trail-tools/internal/gen/routing/v1"
-	"github.com/catzkorn/trail-tools/internal/gen/routing/v1/routingv1connect"
-	"github.com/catzkorn/trail-tools/internal/geo"
-	"github.com/catzkorn/trail-tools/internal/routing"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/authn"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	routingv1 "github.com/johanbrandhorst/trail-tools/internal/gen/routing/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/routing/v1/routingv1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/routing"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

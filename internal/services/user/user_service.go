@@ -4,11 +4,11 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/catzkorn/trail-tools/internal/blob"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	"github.com/catzkorn/trail-tools/internal/gen/users/v1/usersv1connect"
-	"github.com/catzkorn/trail-tools/internal/users"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/blob"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/users/v1/usersv1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/users"
 )
 
 var _ usersv1connect.UserServiceHandler = (*Service)(nil)

@@ -1,7 +1,7 @@
 package trip
 
 import (
-	"github.com/catzkorn/trail-tools/internal/images"
+	"github.com/johanbrandhorst/trail-tools/internal/images"
 )
 
 const (

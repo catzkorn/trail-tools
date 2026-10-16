@@ -23,8 +23,8 @@ variable "budget_currency" {
   type        = string
 }
 
-variable "github_repository" {
-  description = "The GitHub repository allowed to apply this configuration from its main branch, as owner/name."
+variable "github_repository_id" {
+  description = "The numeric ID of the GitHub repository allowed to apply this configuration from its main branch and plan it in pull requests. Unlike its owner/name, the ID stays the same when the repository is renamed or transferred."
   type        = string
 }
 

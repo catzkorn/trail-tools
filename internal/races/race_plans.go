@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/races/internal/gen"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/races/internal/gen"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // RacePlan is a race plan: a fixed set of sections that every trail race

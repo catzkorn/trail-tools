@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/trips"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/trips"
 	"gitlab.com/greyxor/slogor"
 )
 

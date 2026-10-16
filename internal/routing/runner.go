@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/catzkorn/trail-tools/internal/elevation"
-	"github.com/catzkorn/trail-tools/internal/errreport"
-	"github.com/catzkorn/trail-tools/internal/store"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johanbrandhorst/trail-tools/internal/elevation"
+	"github.com/johanbrandhorst/trail-tools/internal/errreport"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // LocalRunner runs imports in the background of the server, one at a time,

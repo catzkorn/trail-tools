@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
 )
 
 // MaxForecastDays is how far ahead forecasts are available.

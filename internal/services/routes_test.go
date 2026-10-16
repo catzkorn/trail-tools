@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	"github.com/catzkorn/trail-tools/internal/activities"
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	routesv1 "github.com/catzkorn/trail-tools/internal/gen/routes/v1"
-	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/activities"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	routesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/routes/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

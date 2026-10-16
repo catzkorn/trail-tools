@@ -6,11 +6,11 @@ import (
 	"slices"
 	"strings"
 
-	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
-	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
-	"github.com/catzkorn/trail-tools/internal/store"
-	"github.com/catzkorn/trail-tools/internal/trips"
 	"github.com/jackc/pgx/v5/pgtype"
+	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/trips"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

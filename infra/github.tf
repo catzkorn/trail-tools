@@ -13,14 +13,16 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   workload_identity_pool_provider_id = "github"
   display_name                       = "GitHub"
   attribute_mapping = {
-    "google.subject"       = "assertion.sub"
-    "attribute.repository" = "assertion.repository"
-    "attribute.ref"        = "assertion.ref"
+    "google.subject"          = "assertion.sub"
+    "attribute.repository"    = "assertion.repository"
+    "attribute.repository_id" = "assertion.repository_id"
+    "attribute.ref"           = "assertion.ref"
   }
   # Only tokens for the main branch and pull requests of the repository are
   # accepted. Pull requests from forks don't get tokens. Pull requests can
-  # only use the read-only plan service account.
-  attribute_condition = "assertion.repository == '${var.github_repository}' && (assertion.ref == 'refs/heads/main' || assertion.event_name == 'pull_request')"
+  # only use the read-only plan service account. The repository is matched by
+  # its ID, which, unlike its name, survives renames and transfers.
+  attribute_condition = "assertion.repository_id == '${var.github_repository_id}' && (assertion.ref == 'refs/heads/main' || assertion.event_name == 'pull_request')"
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
@@ -68,7 +70,7 @@ resource "google_service_account" "terraform_plan" {
 resource "google_service_account_iam_member" "terraform_plan_github" {
   service_account_id = google_service_account.terraform_plan.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repository}"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository_id/${var.github_repository_id}"
 }
 
 # Read-only roles for planning. Reading the budget additionally needs

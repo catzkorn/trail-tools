@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	racesv1 "github.com/catzkorn/trail-tools/internal/gen/races/v1"
-	"github.com/catzkorn/trail-tools/internal/protomask"
+	racesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/protomask"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 

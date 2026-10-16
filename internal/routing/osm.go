@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"slices"
 
-	"github.com/catzkorn/trail-tools/internal/geo"
+	"github.com/johanbrandhorst/trail-tools/internal/geo"
 	"github.com/qedus/osmpbf"
 )
 

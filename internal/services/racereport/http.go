@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/catzkorn/trail-tools/internal/html"
-	"github.com/catzkorn/trail-tools/internal/services/trip"
-	"github.com/catzkorn/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/html"
+	"github.com/johanbrandhorst/trail-tools/internal/services/trip"
+	"github.com/johanbrandhorst/trail-tools/internal/store"
 )
 
 // PageHandler serves the frontend for public race reports at

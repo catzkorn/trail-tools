@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect/v2"
-	tripsv1 "github.com/catzkorn/trail-tools/internal/gen/trips/v1"
+	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
