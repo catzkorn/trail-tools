@@ -28,6 +28,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/oauth/v1/oauthv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/plans/v1/plansv1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1/lactatev1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/races/v1/racesv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/routes/v1/routesv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/routing/v1/routingv1connect"
@@ -40,6 +41,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/mcp"
 	"github.com/johanbrandhorst/trail-tools/internal/oauth"
 	"github.com/johanbrandhorst/trail-tools/internal/plans"
+	"github.com/johanbrandhorst/trail-tools/internal/lactate"
 	"github.com/johanbrandhorst/trail-tools/internal/races"
 	"github.com/johanbrandhorst/trail-tools/internal/routes"
 	"github.com/johanbrandhorst/trail-tools/internal/routing"
@@ -51,6 +53,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/services/plan"
 	"github.com/johanbrandhorst/trail-tools/internal/services/race"
 	"github.com/johanbrandhorst/trail-tools/internal/services/raceplan"
+	lactatesvc "github.com/johanbrandhorst/trail-tools/internal/services/lactate"
 	"github.com/johanbrandhorst/trail-tools/internal/services/racereport"
 	"github.com/johanbrandhorst/trail-tools/internal/services/route"
 	stravasvc "github.com/johanbrandhorst/trail-tools/internal/services/strava"
@@ -104,6 +107,9 @@ type env struct {
 	trips         tripsv1connect.TripReportServiceClient
 	anonTrips     tripsv1connect.TripReportServiceClient
 	otherTrips    tripsv1connect.TripReportServiceClient
+	// Lactate tests of the user, and of another user.
+	lactate      lactatev1connect.LactateTestServiceClient
+	otherLactate lactatev1connect.LactateTestServiceClient
 }
 
 // consentPage stands in for the frontend's OAuth consent page.
@@ -205,6 +211,11 @@ func newEnv(t *testing.T) *env {
 	racesv1connect.RegisterRacePlanServiceHandler(srv2, racePlanService)
 	tripsv1connect.RegisterTripReportServiceHandler(srv2, tripService)
 	racesv1connect.RegisterRaceReportServiceHandler(srv2, raceReportService)
+	lactateRepo, err := lactate.NewRepository(log, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lactatev1connect.RegisterLactateTestServiceHandler(srv2, lactatesvc.NewService(log, report, lactateRepo))
 	connecthttp.Mount(mux, srv2)
 	mux.Handle(trip.PhotoPath, tripService.PhotoHandler())
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
@@ -256,6 +267,8 @@ func newEnv(t *testing.T) *env {
 	e.raceReports = racesv1connect.NewRaceReportServiceClient(authed)
 	e.anonRaceReports = racesv1connect.NewRaceReportServiceClient(anon)
 	e.otherRaceReports = racesv1connect.NewRaceReportServiceClient(other)
+	e.lactate = lactatev1connect.NewLactateTestServiceClient(authed)
+	e.otherLactate = lactatev1connect.NewLactateTestServiceClient(other)
 	return e
 }
 
