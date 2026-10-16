@@ -149,9 +149,8 @@ type position struct {
 	cost, reverseCost float64
 }
 
-const edgeColumns = `id, source, target, ST_AsGeoJSON(geom), elevations, terrain`
-
-// scanEdge scans the edgeColumns of a row, followed by any extra columns.
+// scanEdge scans an edge from a row's first columns, its id, source, target,
+// ST_AsGeoJSON(geom), elevations and terrain, followed by any extra columns.
 func scanEdge(row pgx.Row, extra ...any) (*edge, error) {
 	var e edge
 	var geojson string

@@ -30,7 +30,10 @@ const (
 	// importing a track.
 	maxImportWaypoints = 60
 	// maxConcurrentLegs is the maximum number of legs routed concurrently.
-	maxConcurrentLegs = 4
+	// Routing mostly waits for round trips to the database, which it barely
+	// loads, so it uses most of the connections the store opens (45, see
+	// store.New), leaving some for other requests.
+	maxConcurrentLegs = 32
 )
 
 // Router routes paths on the map.
