@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	oauthv1 "github.com/catzkorn/trail-tools/internal/gen/oauth/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/oauth/v1/oauthv1connect"
 	"github.com/catzkorn/trail-tools/internal/oauth"
@@ -35,14 +36,16 @@ type GrantRepository interface {
 // Service implements the OAuth service.
 type Service struct {
 	log    *slog.Logger
+	report *errreport.Reporter
 	server AuthorizationServer
 	grants GrantRepository
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, server AuthorizationServer, grants GrantRepository) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, server AuthorizationServer, grants GrantRepository) *Service {
 	return &Service{
 		log:    log,
+		report: report,
 		server: server,
 		grants: grants,
 	}
@@ -83,6 +86,7 @@ func (s *Service) ApproveAuthorization(ctx context.Context, req *oauthv1.Approve
 	}
 	redirectURI, err := s.server.Approve(ctx, userID, authzReq)
 	if err != nil {
+		s.report.Report(ctx, "Failed to approve an authorization", err)
 		return nil, connect.NewError(connect.CodeInternal, "failed to approve authorization").WithCause(err)
 	}
 	return oauthv1.ApproveAuthorizationResponse_builder{
@@ -107,6 +111,7 @@ func (s *Service) ListConnections(ctx context.Context, req *oauthv1.ListConnecti
 	}
 	grants, err := s.grants.ListOAuthGrants(ctx, userID)
 	if err != nil {
+		s.report.Report(ctx, "Failed to list connections", err)
 		return nil, connect.NewError(connect.CodeInternal, "failed to list connections").WithCause(err)
 	}
 	connections := make([]*oauthv1.Connection, len(grants))
@@ -140,6 +145,7 @@ func (s *Service) DeleteConnection(ctx context.Context, req *oauthv1.DeleteConne
 		if errors.Is(err, store.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, "connection not found")
 		}
+		s.report.Report(ctx, "Failed to delete a connection", err)
 		return nil, connect.NewError(connect.CodeInternal, "failed to delete connection").WithCause(err)
 	}
 	return oauthv1.DeleteConnectionResponse_builder{}.Build(), nil

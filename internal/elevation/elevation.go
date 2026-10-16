@@ -73,12 +73,9 @@ type cachedTile struct {
 }
 
 // NewDEM creates a DEM that downloads tiles from baseURL into cacheDir with
-// client, or the default client if it's nil. If cacheDir is empty, tiles
-// aren't kept on disk, only the most recently used ones in memory.
+// client. If cacheDir is empty, tiles aren't kept on disk, only the most
+// recently used ones in memory.
 func NewDEM(baseURL, cacheDir string, client *http.Client) *DEM {
-	if client == nil {
-		client = http.DefaultClient
-	}
 	return &DEM{baseURL: baseURL, cacheDir: cacheDir, client: client}
 }
 

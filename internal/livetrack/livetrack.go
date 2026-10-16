@@ -105,13 +105,11 @@ type sessionState struct {
 	err       error
 }
 
-// New creates a new Client. baseURL defaults to DefaultBaseURL.
+// New creates a new Client that sends requests with httpClient. baseURL
+// defaults to DefaultBaseURL.
 func New(baseURL string, httpClient *http.Client) *Client {
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
-	}
-	if httpClient == nil {
-		httpClient = &http.Client{Timeout: 20 * time.Second}
 	}
 	return &Client{
 		baseURL:    strings.TrimSuffix(baseURL, "/"),

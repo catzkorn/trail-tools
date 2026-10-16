@@ -127,7 +127,7 @@ var (
 		1,
 		"The fraction of traces to sample, from 0 to 1",
 	)
-	databaseUrl = flag.String(
+	databaseURL = flag.String(
 		"database-url",
 		"",
 		"The URL of the postgres database in which to store the state of the application",
@@ -278,7 +278,7 @@ func main() {
 		ctx,
 		logger,
 		report,
-		*databaseUrl,
+		*databaseURL,
 		*hostname,
 		*port,
 		*tlsKeyPath,
@@ -368,7 +368,7 @@ func run(
 	ctx context.Context,
 	log *slog.Logger,
 	report *errreport.Reporter,
-	databaseUrl string,
+	databaseURL string,
 	hostname string,
 	port string,
 	tlsKeyPath string,
@@ -392,7 +392,7 @@ func run(
 	mapConfig mapdata.Config,
 ) error {
 	switch {
-	case databaseUrl == "":
+	case databaseURL == "":
 		return errors.New("database-url is required")
 	case hostname == "":
 		return errors.New("address is required")
@@ -411,7 +411,7 @@ func run(
 	case photoBucket == "" && photoDir == "":
 		return errors.New("photo-bucket or photo-dir is required")
 	}
-	dbUrl, err := url.Parse(databaseUrl)
+	dbURL, err := url.Parse(databaseURL)
 	if err != nil {
 		return fmt.Errorf("failed to parse database-url: %w", err)
 	}
@@ -428,7 +428,7 @@ func run(
 	if publicURL != "" {
 		baseURL = strings.TrimSuffix(publicURL, "/")
 	}
-	db, err := store.New(ctx, log, dbUrl)
+	db, err := store.New(ctx, log, dbURL)
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
 	}
@@ -557,7 +557,7 @@ func run(
 	activityService := activity.NewService(log, report, activityRepo, stravaWebURL)
 	stravaService := stravasvc.NewService(log, report, activityRepo, stravaSyncer, stravaOAuth, stravaWebURL)
 	routeService := route.NewService(log, report, routeRepo, activityRepo, routing.NewRouter(db), mapData)
-	geoService := geosvc.NewService(log, mapData, routing.NewFinder(db), activityRepo)
+	geoService := geosvc.NewService(log, report, mapData, routing.NewFinder(db), activityRepo)
 	planService := plan.NewService(log, report, planRepo, routeRepo, activityRepo, mapData)
 	raceService := race.NewService(log, report, raceRepo, routeRepo)
 	racePlanService := raceplan.NewService(log, report, raceRepo, routeRepo, livetrack.New("", telemetry.NewClient(liveTrackTimeout)), baseURL)
@@ -572,7 +572,7 @@ func run(
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
 	oauthServer := oauth.NewServer(log, report, users, baseURL, mcpPath)
-	oauthService := oauthsvc.NewService(log, oauthServer, users)
+	oauthService := oauthsvc.NewService(log, report, oauthServer, users)
 	// Imports of OpenStreetMap data need more memory than the server has on
 	// Cloud Run, so they run as a Cloud Run job there.
 	var importRunner mapdatasvc.ImportRunner

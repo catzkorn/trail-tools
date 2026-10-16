@@ -32,7 +32,7 @@ func (f *fakeElevation) Points(_ context.Context, points []geo.Point) ([]float64
 func TestFillElevations(t *testing.T) {
 	t.Parallel()
 	elevation := &fakeElevation{}
-	client := mapdata.New(mapdata.Config{Elevation: elevation})
+	client := mapdata.New(mapdata.Config{Elevation: elevation, HTTPClient: &http.Client{}})
 	var points []geo.Point
 	for i := range 250 {
 		points = append(points, geo.Point{Lat: float64(i) * 0.001})
@@ -59,7 +59,7 @@ func TestStatusErrorPlainText(t *testing.T) {
 <p><strong>Error</strong>: runtime error: the server is probably too busy.</p></body></html>`)
 	}))
 	t.Cleanup(srv.Close)
-	client := mapdata.New(mapdata.Config{NominatimURL: srv.URL})
+	client := mapdata.New(mapdata.Config{NominatimURL: srv.URL, HTTPClient: srv.Client()})
 	_, err := client.Search(context.Background(), "Squamish", 5)
 	if err == nil || strings.Contains(err.Error(), "<") || !strings.Contains(err.Error(), "Error : runtime error: the server is probably too busy.") {
 		t.Errorf("unexpected error %v", err)
@@ -76,7 +76,7 @@ func TestHourlyForecast(t *testing.T) {
 		fmt.Fprintf(w, `{"utc_offset_seconds":-25200,"hourly":{"time":[%d,%d],"temperature_2m":[4.5,null],"weather_code":[61,3],"is_day":[0,1]}}`, first, first+3600)
 	}))
 	t.Cleanup(srv.Close)
-	client := mapdata.New(mapdata.Config{ForecastURL: srv.URL, Elevation: &fakeElevation{}})
+	client := mapdata.New(mapdata.Config{ForecastURL: srv.URL, HTTPClient: srv.Client(), Elevation: &fakeElevation{}})
 	weather, err := client.HourlyForecast(context.Background(), geo.Point{Lat: 49.7, Lng: -123.15, Ele: math.NaN()}, start, start.AddDate(0, 1, 0))
 	if err != nil {
 		t.Fatalf("HourlyForecast: %v", err)

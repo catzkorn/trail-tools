@@ -165,7 +165,7 @@ func newEnv(t *testing.T) *env {
 	activityService := activity.NewService(log, report, activityRepo, strava.WebURL)
 	stravaService := stravasvc.NewService(log, report, activityRepo, e.syncer, nil, strava.WebURL)
 	routeService := route.NewService(log, report, routeRepo, activityRepo, e.router, e.mapData)
-	geoService := geosvc.NewService(log, e.mapData, e.mapData, activityRepo)
+	geoService := geosvc.NewService(log, report, e.mapData, e.mapData, activityRepo)
 	planService := plan.NewService(log, report, planRepo, routeRepo, activityRepo, e.mapData)
 	raceService := race.NewService(log, report, raceRepo, routeRepo)
 	e.liveTrack = &fakeLiveTrack{}
@@ -176,7 +176,7 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	userService := user.NewService(log, report, userRepo, userRepo, photos)
-	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, nil, "https://trail.example")
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, &http.Client{}, "https://trail.example")
 	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
 
 	// Start listening before creating the handler, as the OAuth server needs
@@ -188,7 +188,7 @@ func newEnv(t *testing.T) *env {
 
 	mux := http.NewServeMux()
 	server := connect.NewServer()
-	oauthv1connect.RegisterOAuthServiceHandler(server, oauthsvc.NewService(log, oauthServer, userRepo))
+	oauthv1connect.RegisterOAuthServiceHandler(server, oauthsvc.NewService(log, report, oauthServer, userRepo))
 	connecthttp.Mount(mux, server)
 	oauthServer.RegisterHandlers(mux, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.WriteString(w, consentPage)

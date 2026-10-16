@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"path/filepath"
 	"testing"
 
@@ -46,7 +47,7 @@ func TestRunImport(t *testing.T) {
 	db := storetest.New(t)
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dem := elevation.NewDEM("http://localhost:0", t.TempDir(), nil)
+	dem := elevation.NewDEM("http://localhost:0", t.TempDir(), &http.Client{})
 
 	// Only one import is queued or running at a time.
 	r := createImport(t, db)

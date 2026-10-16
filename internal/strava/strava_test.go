@@ -27,7 +27,7 @@ func TestRateLimit(t *testing.T) {
 			"start_date_local": "2026-09-07T08:00:00Z", "timezone": "(GMT+01:00) Europe/London", "average_cadence": 85}]`)
 	}))
 	t.Cleanup(srv.Close)
-	client := New(Config{BaseURL: srv.URL})
+	client := New(Config{BaseURL: srv.URL, HTTPClient: srv.Client()})
 	now := time.Date(2026, 9, 7, 10, 3, 0, 0, time.UTC)
 	client.nowFn = func() time.Time { return now }
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func TestRateLimit(t *testing.T) {
 	if _, err := client.ListActivities(ctx, "token", time.Time{}, 10); err != nil {
 		t.Fatalf("request after reset: %v", err)
 	}
-	if _, err := New(Config{BaseURL: srv.URL}).ListActivities(ctx, "bad", time.Time{}, 10); !errors.Is(err, ErrUnauthorized) {
+	if _, err := New(Config{BaseURL: srv.URL, HTTPClient: srv.Client()}).ListActivities(ctx, "bad", time.Time{}, 10); !errors.Is(err, ErrUnauthorized) {
 		t.Errorf("got %v, want ErrUnauthorized", err)
 	}
 }
@@ -72,7 +72,7 @@ func TestRateLimitPriority(t *testing.T) {
 	t.Cleanup(srv.Close)
 	now := time.Date(2026, 9, 7, 10, 3, 0, 0, time.UTC)
 	newClient := func(reserve float64) *Client {
-		client := New(Config{BaseURL: srv.URL, BackgroundReserve: reserve})
+		client := New(Config{BaseURL: srv.URL, HTTPClient: srv.Client(), BackgroundReserve: reserve})
 		client.nowFn = func() time.Time { return now }
 		return client
 	}
@@ -143,7 +143,7 @@ func TestTooManyRequests(t *testing.T) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	}))
 	t.Cleanup(srv.Close)
-	client := New(Config{BaseURL: srv.URL})
+	client := New(Config{BaseURL: srv.URL, HTTPClient: srv.Client()})
 	now := time.Date(2026, 9, 7, 10, 3, 0, 0, time.UTC)
 	client.nowFn = func() time.Time { return now }
 	_, err := client.GetStreams(context.Background(), "token", 1)
@@ -164,7 +164,7 @@ func TestGetStreams(t *testing.T) {
 		fmt.Fprint(w, `{"latlng": {"data": [[1.5, 2.5], [1.6, 2.6]]}, "altitude": {"data": [10, 11]}, "time": {"data": [0, 5]}}`)
 	}))
 	t.Cleanup(srv.Close)
-	client := New(Config{BaseURL: srv.URL})
+	client := New(Config{BaseURL: srv.URL, HTTPClient: srv.Client()})
 	streams, err := client.GetStreams(context.Background(), "token", 1)
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +204,7 @@ func TestGetActivityPhotos(t *testing.T) {
 		fmt.Fprint(w, photosFixture)
 	}))
 	t.Cleanup(srv.Close)
-	client := New(Config{BaseURL: srv.URL})
+	client := New(Config{BaseURL: srv.URL, HTTPClient: srv.Client()})
 	photos, err := client.GetActivityPhotos(context.Background(), "token", 1)
 	if err != nil {
 		t.Fatal(err)
@@ -258,7 +258,7 @@ func TestPushSubscriptions(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	client := New(Config{ClientID: "id", ClientSecret: "secret", BaseURL: srv.URL})
+	client := New(Config{ClientID: "id", ClientSecret: "secret", BaseURL: srv.URL, HTTPClient: srv.Client()})
 	ctx := context.Background()
 
 	if _, err := client.CreatePushSubscription(ctx, "https://trail.example/strava/webhook", "wrong"); err == nil || !strings.Contains(err.Error(), "not verifiable") {
@@ -281,7 +281,7 @@ func TestPushSubscriptions(t *testing.T) {
 	if err := client.DeletePushSubscription(ctx, 1); !errors.Is(err, ErrNotFound) {
 		t.Errorf("got %v, want ErrNotFound", err)
 	}
-	if _, err := New(Config{ClientID: "id", ClientSecret: "wrong", BaseURL: srv.URL}).ListPushSubscriptions(ctx); err == nil {
+	if _, err := New(Config{ClientID: "id", ClientSecret: "wrong", BaseURL: srv.URL, HTTPClient: srv.Client()}).ListPushSubscriptions(ctx); err == nil {
 		t.Error("wrong client secret should fail")
 	}
 }

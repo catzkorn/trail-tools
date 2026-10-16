@@ -1,7 +1,6 @@
 package routing
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -29,7 +28,7 @@ type ImportConfig struct {
 	Bounds geo.Bounds
 	// The elevation model.
 	DEM *elevation.DEM
-	// Downloads the extracts given by URL. Defaults to the default client.
+	// Downloads the extracts given by URL.
 	HTTPClient *http.Client
 }
 
@@ -44,7 +43,7 @@ func Import(ctx context.Context, log *slog.Logger, db *store.DB, conf ImportConf
 	// Extracts are read one at a time, and only what's inside the bounds is
 	// kept, so memory grows with the area rather than the extracts.
 	for _, source := range conf.Sources {
-		more, err := readSource(ctx, log, cmp.Or(conf.HTTPClient, http.DefaultClient), source, conf.Bounds)
+		more, err := readSource(ctx, log, conf.HTTPClient, source, conf.Bounds)
 		if err != nil {
 			return 0, err
 		}

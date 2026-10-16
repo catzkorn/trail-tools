@@ -16,12 +16,14 @@ import (
 	"github.com/catzkorn/trail-tools/internal/elevation"
 	"github.com/catzkorn/trail-tools/internal/geo"
 	"github.com/catzkorn/trail-tools/internal/routing"
+	"github.com/catzkorn/trail-tools/internal/telemetry"
 )
 
 func main() {
 	ctx := context.Background()
 	b := demo.Bounds
-	data, err := readExtract(ctx, b)
+	client := telemetry.NewClient(0)
+	data, err := readExtract(ctx, client, b)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Wrote %d ways with %d nodes and %d points of interest\n", len(data.Ways), len(data.Nodes.IDs), len(data.Features))
-	patch, err := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir, nil).Patch(ctx, b)
+	patch, err := elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir, client).Patch(ctx, b)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,8 +45,8 @@ func main() {
 // readExtract downloads the Geofabrik extract covering the bounds, and reads
 // the foot accessible ways and points of interest within them, as an import
 // does.
-func readExtract(ctx context.Context, b geo.Bounds) (*routing.OSM, error) {
-	extracts, err := routing.NewExtracts(routing.DefaultGeofabrikIndexURL, nil).Find(ctx, b)
+func readExtract(ctx context.Context, client *http.Client, b geo.Bounds) (*routing.OSM, error) {
+	extracts, err := routing.NewExtracts(routing.DefaultGeofabrikIndexURL, client).Find(ctx, b)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func readExtract(ctx context.Context, b geo.Bounds) (*routing.OSM, error) {
 		return nil, fmt.Errorf("got extracts %+v, want one", extracts)
 	}
 	fmt.Printf("Downloading %s\n", extracts[0].URL)
-	path, err := download(ctx, extracts[0].URL)
+	path, err := download(ctx, client, extracts[0].URL)
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +62,12 @@ func readExtract(ctx context.Context, b geo.Bounds) (*routing.OSM, error) {
 	return routing.ReadPBF(ctx, path, b)
 }
 
-func download(ctx context.Context, url string) (string, error) {
+func download(ctx context.Context, client *http.Client, url string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}

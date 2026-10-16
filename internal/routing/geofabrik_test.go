@@ -43,7 +43,7 @@ func TestExtractsFind(t *testing.T) {
 		_, _ = w.Write([]byte(geofabrikIndex))
 	}))
 	t.Cleanup(srv.Close)
-	extracts := routing.NewExtracts(srv.URL, nil)
+	extracts := routing.NewExtracts(srv.URL, srv.Client())
 	ctx := context.Background()
 
 	tests := []struct {

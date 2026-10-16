@@ -16,6 +16,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/catzkorn/trail-tools/internal/activities"
 	"github.com/catzkorn/trail-tools/internal/authn"
+	"github.com/catzkorn/trail-tools/internal/errreport"
 	geov1 "github.com/catzkorn/trail-tools/internal/gen/geo/v1"
 	"github.com/catzkorn/trail-tools/internal/gen/geo/v1/geov1connect"
 	"github.com/catzkorn/trail-tools/internal/geo"
@@ -47,15 +48,17 @@ type TrackRepository interface {
 // Service implements API handlers for the geo service.
 type Service struct {
 	log     *slog.Logger
+	report  *errreport.Reporter
 	mapData MapData
 	finder  Finder
 	tracks  TrackRepository
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, mapData MapData, finder Finder, tracks TrackRepository) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, mapData MapData, finder Finder, tracks TrackRepository) *Service {
 	return &Service{
 		log:     log,
+		report:  report,
 		mapData: mapData,
 		finder:  finder,
 		tracks:  tracks,
@@ -116,7 +119,7 @@ func (s *Service) FindTrails(ctx context.Context, req *geov1.FindTrailsRequest) 
 	}
 	ways, err := s.finder.FindTrails(ctx, center, radius, limit)
 	if err != nil {
-		return nil, findError(err)
+		return nil, s.findError(ctx, err)
 	}
 	type trail struct {
 		proto  *geov1.Trail
@@ -195,11 +198,20 @@ func poiKindToProto(kind geo.FeatureKind) geov1.PointOfInterestKind {
 
 // findError returns the API error for a failure to find trails or points
 // of interest.
-func findError(err error) error {
+func (s *Service) findError(ctx context.Context, err error) error {
 	if errors.Is(err, routing.ErrNoMapData) {
 		return connect.NewError(connect.CodeFailedPrecondition, "no map data has been imported for this area; import it on the map data page first").WithCause(err)
 	}
-	return connect.NewError(connect.CodeInternal, "failed to query the map data").WithCause(err)
+	return s.internalError(ctx, err, "failed to query the map data")
+}
+
+// internalError reports err, unless the request was cancelled, as the map
+// cancels its requests when it moves, and returns an Internal error.
+func (s *Service) internalError(ctx context.Context, err error, msg string) error {
+	if ctx.Err() == nil {
+		s.report.Report(ctx, msg, err)
+	}
+	return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 }
 
 func (s *Service) FindPointsOfInterest(ctx context.Context, req *geov1.FindPointsOfInterestRequest) (*geov1.FindPointsOfInterestResponse, error) {
@@ -227,7 +239,7 @@ func (s *Service) FindPointsOfInterest(ctx context.Context, req *geov1.FindPoint
 	}
 	features, err := s.finder.FindFeatures(ctx, center, radius, featureKinds)
 	if err != nil {
-		return nil, findError(err)
+		return nil, s.findError(ctx, err)
 	}
 	var points []*geov1.PointOfInterest
 	for _, f := range features {
@@ -301,7 +313,7 @@ func (s *Service) ListHeatmapTracks(ctx context.Context, req *geov1.ListHeatmapT
 	}
 	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, time.Time{}, time.Time{}, tolerance)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, "failed to list tracks").WithCause(err)
+		return nil, s.internalError(ctx, err, "failed to list tracks")
 	}
 	var parts [][]geo.Point
 	for _, track := range tracks {
@@ -367,7 +379,7 @@ func (s *Service) GetPersonalHeatmap(ctx context.Context, req *geov1.GetPersonal
 	// Tracks accurate to a quarter of a cell count in the right cells.
 	tracks, err := s.tracks.ListTracksInBounds(ctx, userID, bounds, startDate, endDate, cellSize/4)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, "failed to list tracks").WithCause(err)
+		return nil, s.internalError(ctx, err, "failed to list tracks")
 	}
 	counts := map[int]int32{}
 	for _, track := range tracks {

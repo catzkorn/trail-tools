@@ -113,7 +113,8 @@ type Config struct {
 	BaseURL string
 	// Defaults to https://www.strava.com/oauth.
 	OAuthBaseURL string
-	HTTPClient   *http.Client
+	// Sends the requests to Strava. Required.
+	HTTPClient *http.Client
 	// The fraction of each rate limit window, the 15 minute and the daily
 	// one, that background requests leave for interactive requests.
 	// Defaults to DefaultBackgroundReserve. Negative values disable the
@@ -121,16 +122,16 @@ type Config struct {
 	BackgroundReserve float64
 }
 
-// New creates a new Client.
+// New creates a new Client. It panics if conf has no HTTPClient.
 func New(conf Config) *Client {
+	if conf.HTTPClient == nil {
+		panic("strava: Config.HTTPClient is required")
+	}
 	if conf.BaseURL == "" {
 		conf.BaseURL = DefaultBaseURL
 	}
 	if conf.OAuthBaseURL == "" {
 		conf.OAuthBaseURL = "https://www.strava.com/oauth"
-	}
-	if conf.HTTPClient == nil {
-		conf.HTTPClient = &http.Client{Timeout: 60 * time.Second}
 	}
 	switch {
 	case conf.BackgroundReserve == 0:

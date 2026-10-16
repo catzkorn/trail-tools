@@ -30,7 +30,7 @@ type Config struct {
 	Elevation Elevation
 	// The Open-Meteo forecast API URL.
 	ForecastURL string
-	// The HTTP client to use. Defaults to a client with a 60 second timeout.
+	// The HTTP client to use. Required.
 	HTTPClient *http.Client
 }
 
@@ -40,9 +40,6 @@ func (c Config) withDefaults() Config {
 	}
 	if c.ForecastURL == "" {
 		c.ForecastURL = "https://api.open-meteo.com/v1/forecast"
-	}
-	if c.HTTPClient == nil {
-		c.HTTPClient = &http.Client{Timeout: 60 * time.Second}
 	}
 	if c.Elevation == nil {
 		c.Elevation = elevation.NewDEM(elevation.DefaultURL, elevation.DefaultCacheDir, c.HTTPClient)
@@ -56,8 +53,11 @@ type Client struct {
 	nominatim *throttle
 }
 
-// New creates a new Client.
+// New creates a new Client. It panics if conf has no HTTPClient.
 func New(conf Config) *Client {
+	if conf.HTTPClient == nil {
+		panic("mapdata: Config.HTTPClient is required")
+	}
 	return &Client{
 		conf: conf.withDefaults(),
 		// Nominatim's usage policy allows at most 1 request per second.

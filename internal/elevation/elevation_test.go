@@ -67,7 +67,7 @@ func TestDEM(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The URL is never used, as the tiles are cached.
-	dem := elevation.NewDEM("http://invalid.test", dir, nil)
+	dem := elevation.NewDEM("http://invalid.test", dir, &http.Client{})
 	elevations, err := dem.Elevations(context.Background(), []float64{46.5, 46.25, 0.5}, []float64{7.25, 7.75, 0.5})
 	if err != nil {
 		t.Fatalf("Elevations: %v", err)
@@ -92,7 +92,7 @@ func TestPatch(t *testing.T) {
 		return int16(1000 + col*10 + row)
 	})
 	ctx := context.Background()
-	dem := elevation.NewDEM("http://invalid.test", dir, nil)
+	dem := elevation.NewDEM("http://invalid.test", dir, &http.Client{})
 	patch, err := dem.Patch(ctx, geo.Bounds{MinLat: 46.35, MinLng: 7.25, MaxLat: 46.62, MaxLng: 7.5})
 	if err != nil {
 		t.Fatalf("Patch: %v", err)
@@ -117,7 +117,7 @@ func TestPatch(t *testing.T) {
 	// With the patch, points in it are looked up without the tile, and
 	// others from the tiles.
 	empty := t.TempDir()
-	withPatch := elevation.NewDEM("http://invalid.test", empty, nil)
+	withPatch := elevation.NewDEM("http://invalid.test", empty, &http.Client{})
 	withPatch.AddPatch(read)
 	got, err := withPatch.Elevations(ctx, []float64{46.45, 46.6}, []float64{7.35, 7.3})
 	if err != nil {
@@ -215,7 +215,7 @@ func TestDEMTileStore(t *testing.T) {
 
 	// Downloaded tiles are added to the store, and missing tiles recorded
 	// as empty objects.
-	dem := elevation.NewDEM(url, t.TempDir(), nil)
+	dem := elevation.NewDEM(url, t.TempDir(), &http.Client{})
 	dem.SetTileStore(store, errreport.NewLocal(log))
 	checkElevations(t, dem)
 	checkRequests(t, 1)
@@ -236,19 +236,19 @@ func TestDEMTileStore(t *testing.T) {
 
 	// A DEM with an empty cache directory, like after a restart, gets the
 	// tiles from the store without downloading them.
-	restarted := elevation.NewDEM(url, t.TempDir(), nil)
+	restarted := elevation.NewDEM(url, t.TempDir(), &http.Client{})
 	restarted.SetTileStore(store, errreport.NewLocal(log))
 	checkElevations(t, restarted)
 	checkRequests(t, 1)
 
 	// A DEM without a cache directory gets the tiles from the store too.
-	noDisk := elevation.NewDEM(url, "", nil)
+	noDisk := elevation.NewDEM(url, "", &http.Client{})
 	noDisk.SetTileStore(store, errreport.NewLocal(log))
 	checkElevations(t, noDisk)
 	checkRequests(t, 1)
 
 	// When the store fails, the tiles are downloaded.
-	failing := elevation.NewDEM(url, t.TempDir(), nil)
+	failing := elevation.NewDEM(url, t.TempDir(), &http.Client{})
 	failing.SetTileStore(failingStore{}, errreport.NewLocal(log))
 	checkElevations(t, failing)
 	checkRequests(t, 2)
@@ -266,7 +266,7 @@ func TestDEMLimitsDownloads(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	dem := elevation.NewDEM(srv.URL, "", nil)
+	dem := elevation.NewDEM(srv.URL, "", srv.Client())
 	_, err := dem.Elevations(context.Background(), []float64{46.5}, []float64{7.5})
 	if err == nil || !strings.Contains(err.Error(), "larger than") {
 		t.Errorf("got error %v, want the download to be too large", err)
