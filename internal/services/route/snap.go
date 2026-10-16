@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"slices"
+	"sync"
 	"sync/atomic"
 
 	"github.com/johanbrandhorst/trail-tools/internal/geo"
@@ -62,6 +63,10 @@ type trackSnapper struct {
 	// sem limits concurrent routing calls.
 	sem   chan struct{}
 	calls atomic.Int32
+	// unmergeable holds the sections between legs' ends that no single
+	// routed leg follows, so merging doesn't try them again.
+	mu          sync.Mutex
+	unmergeable map[[2]int]bool
 }
 
 // snapTrack turns a recorded track into an editable route that follows it
@@ -75,10 +80,11 @@ func (s *Service) snapTrack(ctx context.Context, track []geo.Point) ([]routes.La
 		return nil, nil, fmt.Errorf("%w: the track is too short", errInvalidRoute)
 	}
 	t := &trackSnapper{
-		s:      s,
-		points: points,
-		dists:  geo.CumulativeDistances(points),
-		sem:    make(chan struct{}, maxConcurrentLegs),
+		s:           s,
+		points:      points,
+		dists:       geo.CumulativeDistances(points),
+		sem:         make(chan struct{}, maxConcurrentLegs),
+		unmergeable: map[[2]int]bool{},
 	}
 	legs, err := t.fit(ctx, 0, len(points)-1)
 	if err != nil {
@@ -228,30 +234,83 @@ func (t *trackSnapper) straight(i, j int) []snapLeg {
 }
 
 // merge removes waypoints between two legs where a single leg still follows
-// the track.
+// the track. Neighboring legs are merged in rounds, so their routing calls
+// run concurrently: every other pair of legs, then the pairs in between,
+// until neither merges any more.
 func (t *trackSnapper) merge(ctx context.Context, legs []snapLeg) ([]snapLeg, error) {
-	for k := 0; k+1 < len(legs); {
-		first, second := legs[k], legs[k+1]
-		var merged *snapLeg
-		switch {
-		case first.path == nil && second.path == nil:
-			if straight := t.straight(first.from, second.to); len(straight) == 1 {
-				merged = &straight[0]
-			}
-		case first.path != nil && second.path != nil:
-			leg, _, err := t.route(ctx, first.from, second.to)
+	for {
+		merged := false
+		for _, offset := range []int{0, 1} {
+			var changed bool
+			var err error
+			legs, changed, err = t.mergeRound(ctx, legs, offset)
 			if err != nil {
 				return nil, err
 			}
-			merged = leg
+			merged = merged || changed
 		}
-		if merged == nil {
-			k++
+		if !merged {
+			return legs, nil
+		}
+	}
+}
+
+// mergeRound tries to merge the pairs of legs starting at offset, every
+// other leg, concurrently. It returns whether any merged.
+func (t *trackSnapper) mergeRound(ctx context.Context, legs []snapLeg, offset int) ([]snapLeg, bool, error) {
+	// merged[k] is the leg replacing legs[k] and legs[k+1], if they merge.
+	merged := make([]*snapLeg, len(legs))
+	g, ctx := errgroup.WithContext(ctx)
+	for k := offset; k+1 < len(legs); k += 2 {
+		g.Go(func() error {
+			var err error
+			merged[k], err = t.mergePair(ctx, legs[k], legs[k+1])
+			return err
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, false, err
+	}
+	result := make([]snapLeg, 0, len(legs))
+	changed := false
+	for k := 0; k < len(legs); {
+		if merged[k] != nil {
+			result = append(result, *merged[k])
+			changed = true
+			k += 2
 			continue
 		}
-		legs = append(append(legs[:k:k], *merged), legs[k+2:]...)
+		result = append(result, legs[k])
+		k++
 	}
-	return legs, nil
+	return result, changed, nil
+}
+
+// mergePair returns a single leg that follows the track from the start of
+// first to the end of second, or nil if there is none.
+func (t *trackSnapper) mergePair(ctx context.Context, first, second snapLeg) (*snapLeg, error) {
+	switch {
+	case first.path == nil && second.path == nil:
+		if straight := t.straight(first.from, second.to); len(straight) == 1 {
+			return &straight[0], nil
+		}
+	case first.path != nil && second.path != nil:
+		section := [2]int{first.from, second.to}
+		t.mu.Lock()
+		tried := t.unmergeable[section]
+		t.mu.Unlock()
+		if tried {
+			return nil, nil
+		}
+		leg, _, err := t.route(ctx, first.from, second.to)
+		if err != nil || leg != nil {
+			return leg, err
+		}
+		t.mu.Lock()
+		t.unmergeable[section] = true
+		t.mu.Unlock()
+	}
+	return nil, nil
 }
 
 // build creates the route's waypoints and legs. Waypoints next to a routed

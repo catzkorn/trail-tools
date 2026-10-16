@@ -50,6 +50,15 @@ type DB struct {
 	*pgxpool.Pool
 }
 
+// maxConns is the most connections a server opens to the database, rather
+// than pgx's default of 4 on a single CPU, so requests like routing, which
+// mostly wait for round trips, can run many queries at once. Neon's smallest
+// compute accepts 97 connections. During a deploy the old and new instances
+// run side by side, and the import job needs a few more, so each instance
+// stays below half of them. A pool_max_conns parameter in the database URL
+// overrides it.
+const maxConns = 45
+
 // New creates a new Directory, connecting it to the postgres server on
 // the URL provided.
 func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) {
@@ -63,6 +72,9 @@ func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) 
 	// outlive a Cloud Run instance. []byte parameters are sent as bytea, so
 	// sqlc.yaml maps JSON columns to json.RawMessage.
 	poolConf.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
+	if !pgURL.Query().Has("pool_max_conns") {
+		poolConf.MaxConns = maxConns
+	}
 	poolConf.ConnConfig.Tracer = multitracer.New(
 		&tracelog.TraceLog{
 			Logger:   &logLevelMapper{wrapped: slogadapter.NewLogger(logger)},
