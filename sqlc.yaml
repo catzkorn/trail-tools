@@ -13,6 +13,8 @@ overrides:
         go_type:
           import: "encoding/json"
           type: "RawMessage"
+      # Overrides only apply to columns of the same nullability, and some JSON
+      # columns, like strava_activities.detail_json, are nullable.
       - db_type: "jsonb"
         nullable: true
         go_type:
