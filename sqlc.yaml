@@ -6,6 +6,20 @@ overrides:
       oauth_grant: OAuthGrant
       oauth_grant_id: OAuthGrantID
       oauth_authorization_code: OAuthAuthorizationCode
+    # Queries send their parameters as text for the database to type (see
+    # store.New), which sends []byte as bytea, so JSON needs its own type.
+    overrides:
+      - db_type: "jsonb"
+        go_type:
+          import: "encoding/json"
+          type: "RawMessage"
+      # Overrides only apply to columns of the same nullability, and some JSON
+      # columns, like strava_activities.detail_json, are nullable.
+      - db_type: "jsonb"
+        nullable: true
+        go_type:
+          import: "encoding/json"
+          type: "RawMessage"
 sql:
   - name: "users"
     queries: "./internal/users/queries"
