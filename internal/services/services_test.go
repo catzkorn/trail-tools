@@ -215,10 +215,12 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lactatev1connect.RegisterLactateTestServiceHandler(srv2, lactatesvc.NewService(log, report, lactateRepo))
+	lactateService := lactatesvc.NewService(log, report, lactateRepo)
+	lactatev1connect.RegisterLactateTestServiceHandler(srv2, lactateService)
 	connecthttp.Mount(mux, srv2)
 	mux.Handle(trip.PhotoPath, tripService.PhotoHandler())
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
+	mux.Handle(lactatesvc.WorkoutPath, lactateService.WorkoutHandler())
 	mux.Handle(trip.ProfilePath, raceReportService.PageHandler(false, tripService.PageHandler(false)))
 
 	mux.Handle("/routes/", routeService.DownloadHandler(http.NotFoundHandler()))

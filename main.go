@@ -731,6 +731,8 @@ func run(
 	// metadata for search engines and link previews.
 	mux.Handle(trip.PhotoPath, authenticate(tripService.PhotoHandler()))
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
+	// The guided lactate test as a Garmin workout. It holds no user data.
+	mux.Handle(lactatesvc.WorkoutPath, lactateService.WorkoutHandler())
 	mux.Handle(trip.ProfilePath, authenticate(raceReportService.PageHandler(serveDir != "", tripService.PageHandler(serveDir != ""))))
 
 	// Requests are traced, and named after the routes they match.

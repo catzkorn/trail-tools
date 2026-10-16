@@ -1,6 +1,8 @@
 import { create } from "@bufbuild/protobuf";
 import { PREPARATION, SamplingTips } from "@components/lactate/lactate-bits";
 import {
+  DEFAULT_END_HEART_RATE,
+  DEFAULT_RANGE_BPM,
   DEFAULT_STAGE_MINUTES,
   DEFAULT_START_HEART_RATE,
   DEFAULT_STEP_BPM,
@@ -26,6 +28,7 @@ import {
   useQuery,
   useTransport,
 } from "@connectrpc/connect-query";
+import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { skipToken, useQueryClient } from "@tanstack/react-query";
 import {
   createLactateTest,
@@ -62,9 +65,15 @@ interface Settings {
   startHeartRate: number;
   stepBpm: number;
   stageMinutes: number;
+  // The heart rate of the Garmin workout's last stage.
+  endHeartRate: number;
+  // How far the heart rate may stray from a stage's on the Garmin workout.
+  rangeBpm: number;
 }
 
 const DEFAULT_SETTINGS: Settings = {
+  endHeartRate: DEFAULT_END_HEART_RATE,
+  rangeBpm: DEFAULT_RANGE_BPM,
   stageMinutes: DEFAULT_STAGE_MINUTES,
   startHeartRate: DEFAULT_START_HEART_RATE,
   stepBpm: DEFAULT_STEP_BPM,
@@ -88,6 +97,8 @@ const readSettings = (): Settings | undefined => {
         : DEFAULT_SETTINGS[key];
     };
     return {
+      endHeartRate: field("endHeartRate"),
+      rangeBpm: field("rangeBpm"),
       stageMinutes: field("stageMinutes"),
       startHeartRate: field("startHeartRate"),
       stepBpm: field("stepBpm"),
@@ -95,6 +106,18 @@ const readSettings = (): Settings | undefined => {
   } catch {
     return undefined;
   }
+};
+
+// WorkoutURL returns the URL of the Garmin workout of a test's settings.
+const workoutURL = (settings: Settings): string => {
+  const query = new URLSearchParams({
+    end: String(settings.endHeartRate),
+    minutes: String(settings.stageMinutes),
+    range: String(settings.rangeBpm),
+    start: String(settings.startHeartRate),
+    step: String(settings.stepBpm),
+  });
+  return `/lactate-tests/workout.fit?${query.toString()}`;
 };
 
 /**
@@ -244,6 +267,39 @@ const Prepare: React.FC<PrepareProps> = ({ settings, onChange, onStart }) => {
             "Stage length (minutes)",
             "At least 3, so lactate settles."
           )}
+        </div>
+      </Card>
+      <Card title="Garmin workout">
+        <div className="flex flex-col gap-3 text-sm text-gray-700">
+          <p>
+            Run the stages as a workout on your watch, which alerts you when
+            your heart rate leaves each stage's range, and waits for you to
+            press lap after each sample.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {field(
+              "endHeartRate",
+              "Last stage (bpm)",
+              "Where the workout ends."
+            )}
+            {field(
+              "rangeBpm",
+              "Range (± bpm)",
+              `e.g. ${settings.startHeartRate - settings.rangeBpm}–${settings.startHeartRate + settings.rangeBpm} for the first stage.`
+            )}
+          </div>
+          <a
+            href={workoutURL(settings)}
+            download
+            className={`${secondaryButton} self-start`}
+          >
+            <ArrowDownTrayIcon className="size-4" />
+            Download the workout
+          </a>
+          <p className="text-xs text-gray-500">
+            Copy the .fit file to the GARMIN/NewFiles folder of your watch over
+            USB, and it shows up in your workouts.
+          </p>
         </div>
       </Card>
       <button

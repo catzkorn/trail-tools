@@ -1,13 +1,12 @@
 package geo
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"io"
 	"math"
 	"time"
-	"unicode/utf8"
+
+	"github.com/johanbrandhorst/trail-tools/internal/fit"
 )
 
 // CoursePointType is the kind of a course point, as numbered in the FIT
@@ -45,22 +44,8 @@ type FITCourse struct {
 	Start time.Time
 }
 
-// fitEpoch is the start of FIT timestamps.
-var fitEpoch = time.Date(1989, 12, 31, 0, 0, 0, 0, time.UTC)
-
-// FIT base types.
-const (
-	fitEnum   = 0x00
-	fitUint8  = 0x02
-	fitString = 0x07
-	fitUint16 = 0x84
-	fitSint32 = 0x85
-	fitUint32 = 0x86
-)
-
 // FIT global message numbers.
 const (
-	fitFileID      = 0
 	fitLap         = 19
 	fitRecord      = 20
 	fitEvent       = 21
@@ -78,53 +63,6 @@ const (
 	// fitInvalidUint16 marks an unknown uint16 value, like an altitude.
 	fitInvalidUint16 = 0xFFFF
 )
-
-type fitField struct {
-	num, size, baseType uint8
-}
-
-// fitWriter writes FIT messages to a buffer.
-type fitWriter struct {
-	buf bytes.Buffer
-}
-
-// define writes a definition message for a local message type.
-func (f *fitWriter) define(local uint8, global uint16, fields ...fitField) {
-	f.buf.WriteByte(0x40 | local)
-	// Reserved, then little endian.
-	f.buf.Write([]byte{0, 0})
-	_ = binary.Write(&f.buf, binary.LittleEndian, global)
-	f.buf.WriteByte(uint8(len(fields)))
-	for _, field := range fields {
-		f.buf.Write([]byte{field.num, field.size, field.baseType})
-	}
-}
-
-// data writes a data message for a local message type. The values must
-// match its definition: fixed size integers, or strings padded to their
-// field size with fitString.
-func (f *fitWriter) data(local uint8, values ...any) {
-	f.buf.WriteByte(local)
-	for _, v := range values {
-		_ = binary.Write(&f.buf, binary.LittleEndian, v)
-	}
-}
-
-// fitStringValue returns s as a zero terminated string of size bytes,
-// truncated at a character boundary if it is too long.
-func fitStringValue(s string, size int) []byte {
-	b := make([]byte, size)
-	for len(s) > size-1 {
-		_, n := utf8.DecodeLastRuneInString(s)
-		s = s[:len(s)-n]
-	}
-	copy(b, s)
-	return b
-}
-
-func fitTime(t time.Time) uint32 {
-	return uint32(t.Sub(fitEpoch) / time.Second)
-}
 
 func semicircles(degrees float64) int32 {
 	return int32(math.Round(degrees * (1 << 31) / 180))
@@ -149,7 +87,7 @@ func WriteFITCourse(w io.Writer, c *FITCourse) error {
 	}
 	dists := CumulativeDistances(c.Points)
 	timeAt := func(i int) uint32 {
-		return fitTime(c.Start.Add(time.Duration(c.ElapsedSeconds[i] * float64(time.Second))))
+		return fit.Time(c.Start.Add(time.Duration(c.ElapsedSeconds[i] * float64(time.Second))))
 	}
 	first, last := c.Points[0], c.Points[len(c.Points)-1]
 	start, end := timeAt(0), timeAt(len(c.Points)-1)
@@ -160,86 +98,74 @@ func WriteFITCourse(w io.Writer, c *FITCourse) error {
 	gain, loss := ElevationGainLoss(elevations)
 	elapsedMillis := uint32(math.Round((c.ElapsedSeconds[len(c.Points)-1] - c.ElapsedSeconds[0]) * 1000))
 
-	var f fitWriter
-	f.define(0, fitFileID,
-		fitField{0, 1, fitEnum},   // Type.
-		fitField{1, 2, fitUint16}, // Manufacturer.
-		fitField{2, 2, fitUint16}, // Product.
-		fitField{4, 4, fitUint32}, // Time created.
+	var f fit.Writer
+	f.Define(0, fit.FileIDMessage,
+		fit.EnumField(0),   // Type.
+		fit.Uint16Field(1), // Manufacturer.
+		fit.Uint16Field(2), // Product.
+		fit.Uint32Field(4), // Time created.
 	)
 	// A course file from a development manufacturer.
-	f.data(0, uint8(6), uint16(255), uint16(0), start)
-	f.define(1, fitCourse,
-		fitField{4, 1, fitEnum},             // Sport.
-		fitField{5, fitNameSize, fitString}, // Name.
+	f.Data(0, uint8(fit.FileCourse), uint16(fit.DevelopmentManufacturer), uint16(0), start)
+	f.Define(1, fitCourse,
+		fit.EnumField(4),                // Sport.
+		fit.StringField(5, fitNameSize), // Name.
 	)
-	f.data(1, uint8(1), fitStringValue(c.Name, fitNameSize))
-	f.define(2, fitLap,
-		fitField{253, 4, fitUint32}, // Timestamp.
-		fitField{2, 4, fitUint32},   // Start time.
-		fitField{3, 4, fitSint32},   // Start latitude.
-		fitField{4, 4, fitSint32},   // Start longitude.
-		fitField{5, 4, fitSint32},   // End latitude.
-		fitField{6, 4, fitSint32},   // End longitude.
-		fitField{7, 4, fitUint32},   // Total elapsed time in milliseconds.
-		fitField{8, 4, fitUint32},   // Total timer time in milliseconds.
-		fitField{9, 4, fitUint32},   // Total distance in centimeters.
-		fitField{21, 2, fitUint16},  // Total ascent in meters.
-		fitField{22, 2, fitUint16},  // Total descent in meters.
+	f.Data(1, uint8(1), fit.StringValue(c.Name, fitNameSize))
+	f.Define(2, fitLap,
+		fit.Uint32Field(253), // Timestamp.
+		fit.Uint32Field(2),   // Start time.
+		fit.Sint32Field(3),   // Start latitude.
+		fit.Sint32Field(4),   // Start longitude.
+		fit.Sint32Field(5),   // End latitude.
+		fit.Sint32Field(6),   // End longitude.
+		fit.Uint32Field(7),   // Total elapsed time in milliseconds.
+		fit.Uint32Field(8),   // Total timer time in milliseconds.
+		fit.Uint32Field(9),   // Total distance in centimeters.
+		fit.Uint16Field(21),  // Total ascent in meters.
+		fit.Uint16Field(22),  // Total descent in meters.
 	)
-	f.data(2, end, start,
+	f.Data(2, end, start,
 		semicircles(first.Lat), semicircles(first.Lng), semicircles(last.Lat), semicircles(last.Lng),
 		elapsedMillis, elapsedMillis, uint32(math.Round(dists[len(dists)-1]*100)),
 		uint16(math.Round(gain)), uint16(math.Round(loss)))
-	f.define(3, fitEvent,
-		fitField{253, 4, fitUint32}, // Timestamp.
-		fitField{0, 1, fitEnum},     // Event.
-		fitField{1, 1, fitEnum},     // Event type.
-		fitField{4, 1, fitUint8},    // Event group.
+	f.Define(3, fitEvent,
+		fit.Uint32Field(253), // Timestamp.
+		fit.EnumField(0),     // Event.
+		fit.EnumField(1),     // Event type.
+		fit.Uint8Field(4),    // Event group.
 	)
 	// The timer starts at the start, and stops at the finish.
-	f.data(3, start, uint8(0), uint8(0), uint8(0))
-	f.define(4, fitRecord,
-		fitField{253, 4, fitUint32}, // Timestamp.
-		fitField{0, 4, fitSint32},   // Latitude.
-		fitField{1, 4, fitSint32},   // Longitude.
-		fitField{2, 2, fitUint16},   // Altitude.
-		fitField{5, 4, fitUint32},   // Distance in centimeters.
+	f.Data(3, start, uint8(0), uint8(0), uint8(0))
+	f.Define(4, fitRecord,
+		fit.Uint32Field(253), // Timestamp.
+		fit.Sint32Field(0),   // Latitude.
+		fit.Sint32Field(1),   // Longitude.
+		fit.Uint16Field(2),   // Altitude.
+		fit.Uint32Field(5),   // Distance in centimeters.
 	)
 	for i, p := range c.Points {
-		f.data(4, timeAt(i), semicircles(p.Lat), semicircles(p.Lng), fitAltitude(p.Ele), uint32(math.Round(dists[i]*100)))
+		f.Data(4, timeAt(i), semicircles(p.Lat), semicircles(p.Lng), fitAltitude(p.Ele), uint32(math.Round(dists[i]*100)))
 	}
-	f.data(3, end, uint8(0), uint8(9), uint8(0))
+	f.Data(3, end, uint8(0), uint8(9), uint8(0))
 	if len(c.CoursePoints) > 0 {
-		f.define(5, fitCoursePoint,
-			fitField{1, 4, fitUint32},                // Timestamp.
-			fitField{2, 4, fitSint32},                // Latitude.
-			fitField{3, 4, fitSint32},                // Longitude.
-			fitField{4, 4, fitUint32},                // Distance in centimeters.
-			fitField{5, 1, fitEnum},                  // Type.
-			fitField{6, fitPointNameSize, fitString}, // Name.
+		f.Define(5, fitCoursePoint,
+			fit.Uint32Field(1),                   // Timestamp.
+			fit.Sint32Field(2),                   // Latitude.
+			fit.Sint32Field(3),                   // Longitude.
+			fit.Uint32Field(4),                   // Distance in centimeters.
+			fit.EnumField(5),                     // Type.
+			fit.StringField(6, fitPointNameSize), // Name.
 		)
 	}
 	for _, cp := range c.CoursePoints {
 		d := min(max(cp.DistanceMeters, 0), dists[len(dists)-1])
 		p := pointAtDistance(c.Points, dists, d)
-		at := fitTime(c.Start.Add(time.Duration(cp.ElapsedSeconds * float64(time.Second))))
-		f.data(5, at, semicircles(p.Lat), semicircles(p.Lng), uint32(math.Round(d*100)), uint8(cp.Type), fitStringValue(cp.Name, fitPointNameSize))
+		at := fit.Time(c.Start.Add(time.Duration(cp.ElapsedSeconds * float64(time.Second))))
+		f.Data(5, at, semicircles(p.Lat), semicircles(p.Lng), uint32(math.Round(d*100)), uint8(cp.Type), fit.StringValue(cp.Name, fitPointNameSize))
 	}
 
-	header := make([]byte, 14)
-	header[0] = 14
-	// Protocol version 2.0, profile version 21.00.
-	header[1] = 0x20
-	binary.LittleEndian.PutUint16(header[2:], 2100)
-	binary.LittleEndian.PutUint32(header[4:], uint32(f.buf.Len()))
-	copy(header[8:], ".FIT")
-	binary.LittleEndian.PutUint16(header[12:], fitCRC(0, header[:12]))
-	crc := fitCRC(fitCRC(0, header), f.buf.Bytes())
-	file := append(header, f.buf.Bytes()...)
-	file = binary.LittleEndian.AppendUint16(file, crc)
-	_, err := w.Write(file)
-	return err
+	return f.WriteFile(w)
 }
 
 // pointAtDistance returns the point at a distance along the points.
@@ -255,24 +181,6 @@ func pointAtDistance(points []Point, dists []float64, d float64) Point {
 		return Interpolate(points[i-1], points[i], (d-dists[i-1])/segment)
 	}
 	return points[len(points)-1]
-}
-
-var fitCRCTable = [16]uint16{
-	0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
-	0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400,
-}
-
-// fitCRC updates a FIT CRC with data.
-func fitCRC(crc uint16, data []byte) uint16 {
-	for _, b := range data {
-		tmp := fitCRCTable[crc&0xF]
-		crc = (crc >> 4) & 0x0FFF
-		crc = crc ^ tmp ^ fitCRCTable[b&0xF]
-		tmp = fitCRCTable[crc&0xF]
-		crc = (crc >> 4) & 0x0FFF
-		crc = crc ^ tmp ^ fitCRCTable[(b>>4)&0xF]
-	}
-	return crc
 }
 
 // ElapsedSeconds estimates the elapsed seconds at each point of a track:

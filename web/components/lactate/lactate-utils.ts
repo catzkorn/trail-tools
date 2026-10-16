@@ -7,6 +7,15 @@ import { ThresholdDefinition } from "gen/lactate/v1/lactate_pb";
  */
 export const DEFAULT_START_HEART_RATE = 100;
 
+// DEFAULT_END_HEART_RATE is the heart rate of a Garmin workout's last stage.
+export const DEFAULT_END_HEART_RATE = 180;
+
+/**
+ * DEFAULT_RANGE_BPM is how far the heart rate may stray from a stage's on a
+ * Garmin workout, e.g. 95 to 105 bpm for 100.
+ */
+export const DEFAULT_RANGE_BPM = 5;
+
 // DEFAULT_STEP_BPM is how much higher each stage's heart rate is.
 export const DEFAULT_STEP_BPM = 10;
 

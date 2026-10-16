@@ -2,10 +2,16 @@ package services_test
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"slices"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect/v2"
+	"github.com/johanbrandhorst/trail-tools/internal/fit/fittest"
 	lactatev1 "github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1"
+	lactatesvc "github.com/johanbrandhorst/trail-tools/internal/services/lactate"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
@@ -116,5 +122,53 @@ func TestLactateTests(t *testing.T) {
 	}
 	if _, err := e.lactate.GetLactateTest(ctx, lactatev1.GetLactateTestRequest_builder{Id: test.GetId()}.Build()); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("got the deleted test: %v", err)
+	}
+}
+
+func TestLactateTestWorkout(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	get := func(query string) *http.Response {
+		t.Helper()
+		resp, err := e.srv.Client().Get(e.srv.URL + lactatesvc.WorkoutPath + query)
+		if err != nil {
+			t.Fatalf("GET: %v", err)
+		}
+		t.Cleanup(func() { _ = resp.Body.Close() })
+		return resp
+	}
+
+	// Stages from 100 to 120 bpm, each followed by a step to sample in,
+	// between a warm-up and a cool-down.
+	resp := get("?start=100&step=10&end=120&minutes=5&range=5")
+	if resp.StatusCode != http.StatusOK || !strings.Contains(resp.Header.Get("Content-Disposition"), "lactate-test.fit") {
+		t.Fatalf("got status %d and disposition %q", resp.StatusCode, resp.Header.Get("Content-Disposition"))
+	}
+	file, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	var ranges [][2]uint64
+	for _, m := range fittest.Decode(t, file) {
+		if m.Global == 27 {
+			names = append(names, m.String(0))
+			ranges = append(ranges, [2]uint64{m.Uint(t, 5), m.Uint(t, 6)})
+		}
+	}
+	want := []string{"Warm up", "100 bpm", "Sample", "110 bpm", "Sample", "120 bpm", "Sample", "Cool down"}
+	if !slices.Equal(names, want) {
+		t.Fatalf("got steps %q, want %q", names, want)
+	}
+	// Heart rates are offset by 100 in the file.
+	if ranges[1] != [2]uint64{195, 205} || ranges[5] != [2]uint64{215, 225} {
+		t.Errorf("got ranges %v, want 95-105 and 115-125 bpm", ranges)
+	}
+
+	// Invalid stages are rejected.
+	for _, query := range []string{"?start=10", "?start=150&end=120", "?start=60&step=2&end=200"} {
+		if resp := get(query); resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("%s: got status %d, want 400", query, resp.StatusCode)
+		}
 	}
 }
