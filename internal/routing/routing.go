@@ -216,7 +216,6 @@ func (r *Router) Route(ctx context.Context, req Request) (*Path, error) {
 		margin *= 4
 	}
 	return nil, fmt.Errorf("%w: no path was found between the points", ErrNotRoutable)
-
 }
 
 // snap returns the positions on the nearest edges to points, with the costs
