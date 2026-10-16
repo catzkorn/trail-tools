@@ -5,8 +5,9 @@ on:
     branches:
       - main
   pull_request:
-  # Merging Dependabot's pull requests starts a run on main, as merges with
-  # the workflow's token don't trigger push events.
+  # Commits and merges with the workflow's token don't trigger workflows, so
+  # the Dependabot jobs start runs themselves: on a pull request's branch to
+  # check regenerated code, and on main to deploy a merge.
   workflow_dispatch:
 
 # A new push to a pull request cancels its now stale run. Runs on main all
@@ -228,14 +229,61 @@ jobs:
         with:
           cache-name: deploy
 
-  merge-dependabot:
-    name: Merge Dependabot's pull request
-    # Only pull requests Dependabot opened in this repository, once all checks
-    # pass.
+  regenerate-dependabot:
+    name: Regenerate code for Dependabot's pull request
+    # Dependabot updates dependencies without regenerating the code that
+    # depends on them, like the web app's bundle. Only pull requests
+    # Dependabot opened in this repository.
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.user.login == 'dependabot[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # Needed to start the checks of the regenerated commit.
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          cache-name: gen
+      - name: Run make gen
+        run: |
+          make web-deps
+          make gen
+      - name: Commit the regenerated code
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Regenerate code"
+          git push
+          # Pushes with the workflow's token don't trigger workflows, so start
+          # the checks of the new commit, which merge it if they pass.
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+
+  merge-dependabot:
+    name: Merge Dependabot's pull request
+    # Pull requests Dependabot opened in this repository, once all checks
+    # pass: those of the pull request, or of its branch, which
+    # regenerate-dependabot checks after committing regenerated code.
+    if: >-
+      (github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' &&
+      startsWith(github.ref, 'refs/heads/dependabot/'))
     needs: [format, lint, gen, build, test, mod, terraform]
     runs-on: ubuntu-latest
     permissions:
@@ -245,9 +293,17 @@ jobs:
       actions: write
     env:
       GH_TOKEN: ${{ github.token }}
-      PR_URL: ${{ github.event.pull_request.html_url }}
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+      # The commit the checks ran on.
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Merge the pull request
-        run: gh pr merge --squash "$PR_URL"
+        run: |
+          author=$(gh pr view "$BRANCH" --repo "$GITHUB_REPOSITORY" --json author --jq .author.login)
+          if [ "$author" != "app/dependabot" ]; then
+            echo "The pull request of $BRANCH is by $author, not Dependabot"
+            exit 1
+          fi
+          gh pr merge "$BRANCH" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$HEAD_SHA"
       - name: Check and deploy main
         run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref main
