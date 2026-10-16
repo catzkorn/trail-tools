@@ -10,6 +10,9 @@ import CalendarPage from "pages/calendar";
 import DashboardPage from "pages/dashboard";
 import ForecastPage from "pages/forecast";
 import InvitePage from "pages/invite";
+import LactateTestPage from "pages/lactate-test";
+import LactateTestRunPage from "pages/lactate-test-run";
+import LactateTestsPage from "pages/lactate-tests";
 import MapDataPage from "pages/map-data";
 import OAuthConsentPage from "pages/oauth-consent";
 import PlanPage from "pages/plan";
@@ -132,6 +135,13 @@ const App: React.FC = () => {
             <Route path="/trip-reports/:id" element={<TripReportPage />} />
             <Route path="/race-reports" element={<RaceReportsPage />} />
             <Route path="/race-reports/:id" element={<RaceReportPage />} />
+            <Route path="/lactate-tests" element={<LactateTestsPage />} />
+            <Route path="/lactate-tests/new" element={<LactateTestRunPage />} />
+            <Route path="/lactate-tests/:id" element={<LactateTestPage />} />
+            <Route
+              path="/lactate-tests/:id/run"
+              element={<LactateTestRunPage />}
+            />
             <Route path="/settings" element={<SettingsPage user={user} />} />
             <Route path="/map-data" element={<MapDataPage />} />
             <Route path="/oauth/authorize" element={<OAuthConsentPage />} />

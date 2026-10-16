@@ -53,6 +53,11 @@ const GROUPS: NavGroup[] = [
         to: "/plans",
       },
       {
+        description: "Find your aerobic threshold heart rate",
+        label: "Lactate tests",
+        to: "/lactate-tests",
+      },
+      {
         description: "Draw routes and import courses",
         label: "Routes",
         to: "/routes",

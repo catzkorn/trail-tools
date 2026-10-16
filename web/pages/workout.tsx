@@ -1,4 +1,5 @@
 import ElevationProfile from "@components/charts/elevation-profile";
+import { useAerobicThreshold } from "@components/lactate/use-aerobic-threshold";
 import Loading from "@components/loading";
 import { FitBounds, PointMarker, PolylineLayer } from "@components/map/layers";
 import MapView from "@components/map/map-view";
@@ -57,8 +58,13 @@ const Paragraphs: React.FC<{ text: string }> = ({ text }) =>
       </p>
     ));
 
-// Goal shows what the workout is for and its targets.
+/**
+ * Goal shows what the workout is for and its targets. Base workouts stay
+ * below the user's aerobic threshold, if a lactate test found it.
+ */
 const Goal: React.FC<{ workout: Workout }> = ({ workout }) => {
+  const threshold = useAerobicThreshold();
+  const capped = workout.type === WorkoutType.BASE && threshold !== undefined;
   const targets: { label: string; value: string }[] = [];
   if (workout.targetDistanceMeters > 0) {
     targets.push({
@@ -84,6 +90,12 @@ const Goal: React.FC<{ workout: Workout }> = ({ workout }) => {
       value: terrainStyle(workout.targetTerrain).label,
     });
   }
+  if (capped) {
+    targets.push({
+      label: "Heart rate",
+      value: `Under ${threshold.heartRateBpm} bpm`,
+    });
+  }
   return (
     <Card title="Goal">
       <div className="flex flex-col gap-4">
@@ -100,6 +112,18 @@ const Goal: React.FC<{ workout: Workout }> = ({ workout }) => {
               </div>
             ))}
           </dl>
+        )}
+        {capped && (
+          <p className="text-sm text-gray-600">
+            Your aerobic threshold, from your{" "}
+            <Link
+              to={`/lactate-tests/${threshold.test.id}`}
+              className={linkClass}
+            >
+              lactate test on {formatDate(threshold.test.date)}
+            </Link>
+            . Keeping below it keeps the workout easy.
+          </p>
         )}
         {workout.description.trim() === "" ? (
           targets.length === 0 && (
