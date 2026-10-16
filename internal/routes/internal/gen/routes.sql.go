@@ -7,6 +7,7 @@ package gen
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -33,9 +34,9 @@ type CreateRouteParams struct {
 	Description string
 	Profile     RoutingProfile
 	Source      RouteSource
-	Waypoints   []byte
-	Legs        []byte
-	Stats       []byte
+	Waypoints   json.RawMessage
+	Legs        json.RawMessage
+	Stats       json.RawMessage
 }
 
 func (q *Queries) CreateRoute(ctx context.Context, arg *CreateRouteParams) (*Route, error) {
@@ -127,8 +128,8 @@ type ListRoutesRow struct {
 	Description string
 	Profile     RoutingProfile
 	Source      RouteSource
-	Waypoints   []byte
-	Stats       []byte
+	Waypoints   json.RawMessage
+	Stats       json.RawMessage
 	CreateTime  pgtype.Timestamptz
 	UpdateTime  pgtype.Timestamptz
 }
@@ -183,9 +184,9 @@ type UpdateRouteParams struct {
 	Name        string
 	Description string
 	Profile     RoutingProfile
-	Waypoints   []byte
-	Legs        []byte
-	Stats       []byte
+	Waypoints   json.RawMessage
+	Legs        json.RawMessage
+	Stats       json.RawMessage
 }
 
 func (q *Queries) UpdateRoute(ctx context.Context, arg *UpdateRouteParams) (*Route, error) {

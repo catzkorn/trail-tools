@@ -7,6 +7,7 @@ package gen
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -549,7 +550,7 @@ type SetActivityDetailParams struct {
 	ID          pgtype.UUID
 	Description string
 	DeviceName  string
-	DetailJSON  []byte
+	DetailJSON  json.RawMessage
 }
 
 func (q *Queries) SetActivityDetail(ctx context.Context, arg *SetActivityDetailParams) error {
@@ -655,7 +656,7 @@ type UpsertActivityParams struct {
 	AverageCadenceSpm   float64
 	SummaryPolyline     string
 	RelativeEffort      int32
-	SummaryJSON         []byte
+	SummaryJSON         json.RawMessage
 	MinLat              pgtype.Float8
 	MinLng              pgtype.Float8
 	MaxLat              pgtype.Float8

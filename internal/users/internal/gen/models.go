@@ -6,6 +6,7 @@ package gen
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -940,9 +941,9 @@ type Route struct {
 	Description string
 	Profile     RoutingProfile
 	Source      RouteSource
-	Waypoints   []byte
-	Legs        []byte
-	Stats       []byte
+	Waypoints   json.RawMessage
+	Legs        json.RawMessage
+	Stats       json.RawMessage
 	CreateTime  pgtype.Timestamptz
 	UpdateTime  pgtype.Timestamptz
 }
@@ -1020,8 +1021,8 @@ type StravaActivity struct {
 	DeviceName          string
 	RelativeEffort      int32
 	PhotoCount          int32
-	SummaryJSON         []byte
-	DetailJSON          []byte
+	SummaryJSON         json.RawMessage
+	DetailJSON          json.RawMessage
 	MinLat              pgtype.Float8
 	MinLng              pgtype.Float8
 	MaxLat              pgtype.Float8
@@ -1043,7 +1044,7 @@ type StravaActivityPhoto struct {
 	Lat        pgtype.Float8
 	Lng        pgtype.Float8
 	TakenTime  pgtype.Timestamptz
-	PhotoJSON  []byte
+	PhotoJSON  json.RawMessage
 }
 
 type StravaActivityStream struct {

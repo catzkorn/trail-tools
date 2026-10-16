@@ -57,6 +57,12 @@ func New(ctx context.Context, logger *slog.Logger, pgURL *url.URL) (*DB, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse postgres URI: %w", err)
 	}
+	// Send each query in a single round trip, with its parameters as text for
+	// the database to type. By default, pgx first prepares each query on each
+	// connection, which takes another round trip, and connections rarely
+	// outlive a Cloud Run instance. []byte parameters are sent as bytea, so
+	// sqlc.yaml maps JSON columns to json.RawMessage.
+	poolConf.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
 	poolConf.ConnConfig.Tracer = multitracer.New(
 		&tracelog.TraceLog{
 			Logger:   &logLevelMapper{wrapped: slogadapter.NewLogger(logger)},

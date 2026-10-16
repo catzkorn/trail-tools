@@ -7,6 +7,7 @@ package gen
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -51,7 +52,7 @@ type InsertActivityPhotoParams struct {
 	Lat        pgtype.Float8
 	Lng        pgtype.Float8
 	TakenTime  pgtype.Timestamptz
-	PhotoJSON  []byte
+	PhotoJSON  json.RawMessage
 }
 
 func (q *Queries) InsertActivityPhoto(ctx context.Context, arg *InsertActivityPhotoParams) error {
