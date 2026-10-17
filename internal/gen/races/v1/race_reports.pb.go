@@ -3108,13 +3108,14 @@ func (b0 GetPublicRaceReportRequest_builder) Build() *GetPublicRaceReportRequest
 }
 
 type GetPublicRaceReportResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Report     *RaceReport            `protobuf:"bytes,1,opt,name=report,proto3"`
-	xxx_hidden_Comparison *RaceComparison        `protobuf:"bytes,2,opt,name=comparison,proto3"`
-	xxx_hidden_AuthorName string                 `protobuf:"bytes,3,opt,name=author_name,json=authorName,proto3"`
-	xxx_hidden_Track      *[]*v1.RoutePoint      `protobuf:"bytes,4,rep,name=track,proto3"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Report      *RaceReport            `protobuf:"bytes,1,opt,name=report,proto3"`
+	xxx_hidden_Comparison  *RaceComparison        `protobuf:"bytes,2,opt,name=comparison,proto3"`
+	xxx_hidden_AuthorName  string                 `protobuf:"bytes,3,opt,name=author_name,json=authorName,proto3"`
+	xxx_hidden_Track       *[]*v1.RoutePoint      `protobuf:"bytes,4,rep,name=track,proto3"`
+	xxx_hidden_TrackBreaks []int32                `protobuf:"varint,5,rep,packed,name=track_breaks,json=trackBreaks,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetPublicRaceReportResponse) Reset() {
@@ -3172,6 +3173,13 @@ func (x *GetPublicRaceReportResponse) GetTrack() []*v1.RoutePoint {
 	return nil
 }
 
+func (x *GetPublicRaceReportResponse) GetTrackBreaks() []int32 {
+	if x != nil {
+		return x.xxx_hidden_TrackBreaks
+	}
+	return nil
+}
+
 func (x *GetPublicRaceReportResponse) SetReport(v *RaceReport) {
 	x.xxx_hidden_Report = v
 }
@@ -3186,6 +3194,10 @@ func (x *GetPublicRaceReportResponse) SetAuthorName(v string) {
 
 func (x *GetPublicRaceReportResponse) SetTrack(v []*v1.RoutePoint) {
 	x.xxx_hidden_Track = &v
+}
+
+func (x *GetPublicRaceReportResponse) SetTrackBreaks(v []int32) {
+	x.xxx_hidden_TrackBreaks = v
 }
 
 func (x *GetPublicRaceReportResponse) HasReport() bool {
@@ -3219,8 +3231,13 @@ type GetPublicRaceReportResponse_builder struct {
 	Comparison *RaceComparison
 	// The display name of the author.
 	AuthorName string
-	// The report's track, which the segments are distances along.
+	// The report's track, without the stretches in the author's privacy
+	// zones, see UserService. Its distances are along the whole track, like the
+	// segments'.
 	Track []*v1.RoutePoint
+	// The indexes of the track's points that start a new piece of it, after a
+	// stretch hidden in a privacy zone. Don't join them to the point before.
+	TrackBreaks []int32
 }
 
 func (b0 GetPublicRaceReportResponse_builder) Build() *GetPublicRaceReportResponse {
@@ -3231,6 +3248,7 @@ func (b0 GetPublicRaceReportResponse_builder) Build() *GetPublicRaceReportRespon
 	x.xxx_hidden_Comparison = b.Comparison
 	x.xxx_hidden_AuthorName = b.AuthorName
 	x.xxx_hidden_Track = &b.Track
+	x.xxx_hidden_TrackBreaks = b.TrackBreaks
 	return m0
 }
 
@@ -3400,7 +3418,7 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\areports\x18\x01 \x03(\v2\x14.races.v1.RaceReportR\areports\"H\n" +
 	"\x1aGetPublicRaceReportRequest\x12\x16\n" +
 	"\x06handle\x18\x01 \x01(\tR\x06handle\x12\x12\n" +
-	"\x04slug\x18\x02 \x01(\tR\x04slug\"\xd3\x01\n" +
+	"\x04slug\x18\x02 \x01(\tR\x04slug\"\xf6\x01\n" +
 	"\x1bGetPublicRaceReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\x128\n" +
 	"\n" +
@@ -3408,7 +3426,8 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"comparison\x12\x1f\n" +
 	"\vauthor_name\x18\x03 \x01(\tR\n" +
 	"authorName\x12+\n" +
-	"\x05track\x18\x04 \x03(\v2\x15.routes.v1.RoutePointR\x05track*|\n" +
+	"\x05track\x18\x04 \x03(\v2\x15.routes.v1.RoutePointR\x05track\x12!\n" +
+	"\ftrack_breaks\x18\x05 \x03(\x05R\vtrackBreaks*|\n" +
 	"\x11ActualTimesSource\x12#\n" +
 	"\x1fACTUAL_TIMES_SOURCE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cACTUAL_TIMES_SOURCE_ACTIVITY\x10\x01\x12 \n" +

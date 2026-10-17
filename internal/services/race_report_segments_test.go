@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect/v2"
 	racesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"
+	usersv1 "github.com/johanbrandhorst/trail-tools/internal/gen/users/v1"
 )
 
 func TestRaceReportSegments(t *testing.T) {
@@ -98,5 +99,18 @@ func TestRaceReportSegments(t *testing.T) {
 	}
 	if len(public.GetReport().GetSegments()) != 2 || len(public.GetTrack()) != len(track) {
 		t.Errorf("got %d segments and %d track points, want 2 and the whole track of %d", len(public.GetReport().GetSegments()), len(public.GetTrack()), len(track))
+	}
+
+	// A privacy zone around the middle hides the track there.
+	if _, err := e.users.SetPrivacyZones(ctx, usersv1.SetPrivacyZonesRequest_builder{
+		Zones: []*usersv1.PrivacyZone{usersv1.PrivacyZone_builder{Lat: 0.045, Lng: 0, RadiusMeters: 500}.Build()},
+	}.Build()); err != nil {
+		t.Fatalf("SetPrivacyZones: %v", err)
+	}
+	if public, err = e.anonRaceReports.GetPublicRaceReport(ctx, racesv1.GetPublicRaceReportRequest_builder{Handle: "jane-doe", Slug: "ridge-10k"}.Build()); err != nil {
+		t.Fatalf("GetPublicRaceReport: %v", err)
+	}
+	if visible, breaks := public.GetTrack(), public.GetTrackBreaks(); len(visible) >= len(track) || len(breaks) != 1 {
+		t.Errorf("got %d of %d track points with breaks %v, want the middle hidden", len(visible), len(track), breaks)
 	}
 }

@@ -24,22 +24,30 @@ type AvatarRepository interface {
 }
 
 // Service implements API handlers for the user service.
+// PrivacyZoneRepository stores privacy zones.
+type PrivacyZoneRepository interface {
+	ListPrivacyZones(ctx context.Context, userID pgtype.UUID) ([]users.PrivacyZone, error)
+	SetPrivacyZones(ctx context.Context, userID pgtype.UUID, zones []users.PrivacyZone) error
+}
+
 type Service struct {
 	log     *slog.Logger
 	report  *errreport.Reporter
 	tokens  APITokenRepository
 	avatars AvatarRepository
+	zones   PrivacyZoneRepository
 	blobs   blob.Store
 }
 
 // NewService creates a new Service from the provided logger, repositories
 // and the blob store avatar images are stored in.
-func NewService(log *slog.Logger, report *errreport.Reporter, tokens APITokenRepository, avatars AvatarRepository, blobs blob.Store) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, tokens APITokenRepository, avatars AvatarRepository, zones PrivacyZoneRepository, blobs blob.Store) *Service {
 	return &Service{
 		log:     log,
 		report:  report,
 		tokens:  tokens,
 		avatars: avatars,
+		zones:   zones,
 		blobs:   blobs,
 	}
 }

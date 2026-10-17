@@ -80,9 +80,6 @@ type Report struct {
 	// report has no track, or it wasn't loaded.
 	Track    []byte
 	HasTrack bool
-	// How far around the start and finish of the track is hidden on the
-	// public page.
-	HiddenEndsMeters int32
 	// The photo shown on top of the report, if one was chosen. Use
 	// CoverPhoto for the photo to show.
 	CoverPhotoID pgtype.UUID
@@ -345,8 +342,6 @@ type ReportUpdate struct {
 	ID, UserID  pgtype.UUID
 	Title, Slug *string
 	Date        *time.Time
-	// How far around the start and finish of the track to hide.
-	HiddenEndsMeters *int32
 	// The photo shown on top of the report, or an invalid UUID to use the
 	// first photo.
 	CoverPhotoID *pgtype.UUID
@@ -366,9 +361,6 @@ func (r *Repository) UpdateReport(ctx context.Context, u *ReportUpdate) (*Report
 	}
 	if u.Date != nil {
 		params.Date = store.DateToPG(*u.Date)
-	}
-	if u.HiddenEndsMeters != nil {
-		params.HiddenEndsMeters = pgtype.Int4{Int32: *u.HiddenEndsMeters, Valid: true}
 	}
 	if u.CoverPhotoID != nil {
 		params.SetCoverPhoto = true
@@ -753,7 +745,6 @@ func reportFromDB(row *gen.TripReport) *Report {
 		ElevationGainMeters: row.ElevationGainMeters,
 		Track:               row.Track,
 		HasTrack:            row.Track != nil,
-		HiddenEndsMeters:    row.HiddenEndsMeters,
 		CoverPhotoID:        row.CoverPhotoID,
 		Tags:                row.Tags,
 		Published:           row.Published,

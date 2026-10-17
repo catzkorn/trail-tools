@@ -181,9 +181,9 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	userService := user.NewService(log, report, userRepo, userRepo, photos)
-	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, &http.Client{}, "https://trail.example")
-	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, "https://trail.example")
+	userService := user.NewService(log, report, userRepo, userRepo, userRepo, photos)
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, e.syncer, photos, userRepo, &http.Client{}, "https://trail.example")
+	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, userRepo, "https://trail.example")
 
 	// Start listening before creating the handler, as the OAuth server needs
 	// the URL of the server.

@@ -789,6 +789,16 @@ type PointsOfInterest struct {
 	ElevationMeters pgtype.Float4
 }
 
+type PrivacyZone struct {
+	ID           pgtype.UUID
+	UserID       pgtype.UUID
+	Name         string
+	Lat          float64
+	Lng          float64
+	RadiusMeters int32
+	CreateTime   pgtype.Timestamptz
+}
+
 type PublicProfile struct {
 	UserID      pgtype.UUID
 	Handle      string
@@ -1152,7 +1162,6 @@ type TripReport struct {
 	PublishTime         pgtype.Timestamptz
 	CreateTime          pgtype.Timestamptz
 	UpdateTime          pgtype.Timestamptz
-	HiddenEndsMeters    int32
 	CoverPhotoID        pgtype.UUID
 	Tags                []string
 }

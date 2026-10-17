@@ -59,7 +59,6 @@ func (s *Service) reportToProto(r *trips.Report, st *story, profile *trips.Profi
 		Stats:            stats.Build(),
 		Published:        r.Published,
 		HasTrack:         r.HasTrack,
-		HiddenEndsMeters: r.HiddenEndsMeters,
 		Tags:             tagsToProto(r.Tags),
 		CreateTime:       timestamppb.New(r.CreateTime),
 		UpdateTime:       timestamppb.New(r.UpdateTime),

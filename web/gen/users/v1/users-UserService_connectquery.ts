@@ -47,3 +47,18 @@ export const uploadAvatar = UserService.method.uploadAvatar;
  * @generated from rpc users.v1.UserService.DeleteAvatar
  */
 export const deleteAvatar = UserService.method.deleteAvatar;
+
+/**
+ * List the user's privacy zones: places, like their home, around which
+ * their tracks and photos are hidden on public pages.
+ *
+ * @generated from rpc users.v1.UserService.ListPrivacyZones
+ */
+export const listPrivacyZones = UserService.method.listPrivacyZones;
+
+/**
+ * Replace the user's privacy zones.
+ *
+ * @generated from rpc users.v1.UserService.SetPrivacyZones
+ */
+export const setPrivacyZones = UserService.method.setPrivacyZones;

@@ -69,7 +69,6 @@ update trip_reports set
   title = coalesce(sqlc.narg(title), title),
   slug = coalesce(sqlc.narg(slug), slug),
   date = coalesce(sqlc.narg(date), date),
-  hidden_ends_meters = coalesce(sqlc.narg(hidden_ends_meters), hidden_ends_meters),
   cover_photo_id = case
     when sqlc.arg(set_cover_photo)::boolean then sqlc.narg(cover_photo_id)::uuid
     else cover_photo_id
