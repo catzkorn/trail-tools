@@ -5,6 +5,7 @@ import {
   SECTIONS,
 } from "@components/races/race-report-bits";
 import type { SectionKey } from "@components/races/race-report-bits";
+import { SegmentsEditor } from "@components/races/race-segments";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
 import { CheckboxField, TextField } from "@components/ui/fields";
@@ -341,6 +342,8 @@ const RaceReportPage: React.FC = () => {
   const navigate = useNavigate();
   const { isPending, isError, data, error, refetch } = useQuery(getRaceReport, {
     id,
+    // The track, for the segments' map and elevation profile.
+    includeTrack: true,
   });
   const profileQuery = useQuery(getProfile);
   const handle = profileQuery.data?.profile?.handle;
@@ -507,6 +510,22 @@ const RaceReportPage: React.FC = () => {
           </Card>
         </div>
       </div>
+      <Card title="Segments">
+        {report.hasTrack ? (
+          <SegmentsEditor
+            // A new activity, and with it a new track, resets the editor.
+            key={`${report.id}-${report.activityId}`}
+            report={report}
+            track={data.track}
+            onSaved={invalidate}
+          />
+        ) : (
+          <p className="text-sm text-gray-600">
+            Set the race's activity in the story to comment on stretches of its
+            track.
+          </p>
+        )}
+      </Card>
     </div>
   );
 };
