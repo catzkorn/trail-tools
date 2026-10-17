@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect/v2"
 	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/track"
 	"github.com/johanbrandhorst/trail-tools/internal/trips"
 )
 
@@ -94,20 +95,20 @@ func (s *Service) SuggestTripSections(ctx context.Context, req *tripsv1.SuggestT
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get trip report")
 	}
-	t, err := decodeTrack(report.Track)
+	t, err := track.Decode(report.Track)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
 	if t == nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, "the report has no track to suggest sections from")
 	}
-	eles := make([]float64, len(t.points))
-	for i, p := range t.points {
+	eles := make([]float64, len(t.Points))
+	for i, p := range t.Points {
 		eles[i] = p.Ele
 	}
-	segs, err := suggestSegments(t.dists, eles)
+	segs, err := track.SuggestSegments(t.Dists, eles)
 	if err != nil {
-		if errors.Is(err, errNoProfile) {
+		if errors.Is(err, track.ErrNoProfile) {
 			return nil, connect.NewError(connect.CodeFailedPrecondition, "the report's track has no elevations to suggest sections from")
 		}
 		return nil, s.toConnectError(ctx, err, "failed to suggest sections")
@@ -124,7 +125,7 @@ func (s *Service) SuggestTripSections(ctx context.Context, req *tripsv1.SuggestT
 // suggestedSections returns a section for each segment, with the photos
 // taken along it in the order they were taken. Photos without a place on
 // the track go first in the first section, in their current order.
-func suggestedSections(segs []*segment, photos []*trips.Photo) []*tripsv1.TripSection {
+func suggestedSections(segs []*track.Segment, photos []*trips.Photo) []*tripsv1.TripSection {
 	placed := slices.Clone(photos)
 	slices.SortStableFunc(placed, func(a, b *trips.Photo) int {
 		return cmp.Compare(photoDistance(a), photoDistance(b))
@@ -135,7 +136,7 @@ func suggestedSections(segs []*segment, photos []*trips.Photo) []*tripsv1.TripSe
 		if d := photoDistance(p); d >= 0 {
 			// The last segment that starts at or before the photo, so photos
 			// past the end go in the last one.
-			for i+1 < len(segs) && segs[i+1].startMeters <= d {
+			for i+1 < len(segs) && segs[i+1].StartMeters <= d {
 				i++
 			}
 		}
@@ -144,9 +145,9 @@ func suggestedSections(segs []*segment, photos []*trips.Photo) []*tripsv1.TripSe
 	sections := make([]*tripsv1.TripSection, len(segs))
 	for i, seg := range segs {
 		sections[i] = tripsv1.TripSection_builder{
-			Title:               seg.name,
-			StartDistanceMeters: &seg.startMeters,
-			EndDistanceMeters:   &seg.endMeters,
+			Title:               seg.Name,
+			StartDistanceMeters: &seg.StartMeters,
+			EndDistanceMeters:   &seg.EndMeters,
 			PhotoIds:            ids[i],
 		}.Build()
 	}

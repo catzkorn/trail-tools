@@ -1,4 +1,4 @@
-package trip
+package track
 
 import (
 	"errors"
@@ -37,7 +37,7 @@ func linear(points ...float64) func(km float64) float64 {
 type wantSegment struct {
 	kind segmentKind
 	// The name, or its start if it ends with "…".
-	name string
+	Name string
 	// The kilometer where the segment ends.
 	endKm float64
 }
@@ -131,7 +131,7 @@ func TestSuggestSegments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dists, eles := syntheticProfile(tt.km, tt.noise, tt.ele)
-			segs, err := suggestSegments(dists, eles)
+			segs, err := SuggestSegments(dists, eles)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,19 +143,19 @@ func TestSuggestSegments(t *testing.T) {
 				if s.kind != w.kind {
 					t.Errorf("segment %d is a %v, want a %v:\n%s", i, s.kind, w.kind, describeSegments(segs))
 				}
-				if prefix, ok := strings.CutSuffix(w.name, "…"); ok && !strings.HasPrefix(s.name, prefix) || !ok && s.name != w.name {
-					t.Errorf("segment %d is named %q, want %q", i, s.name, w.name)
+				if prefix, ok := strings.CutSuffix(w.Name, "…"); ok && !strings.HasPrefix(s.Name, prefix) || !ok && s.Name != w.Name {
+					t.Errorf("segment %d is named %q, want %q", i, s.Name, w.Name)
 				}
-				if math.Abs(s.endMeters/1000-w.endKm) > 0.6 {
-					t.Errorf("segment %d ends at %.1f km, want %.1f km", i, s.endMeters/1000, w.endKm)
+				if math.Abs(s.EndMeters/1000-w.endKm) > 0.6 {
+					t.Errorf("segment %d ends at %.1f km, want %.1f km", i, s.EndMeters/1000, w.endKm)
 				}
 			}
-			if segs[0].startMeters != 0 || segs[len(segs)-1].endMeters != tt.km*1000 {
-				t.Errorf("segments cover %.0f to %.0f m, want the whole track", segs[0].startMeters, segs[len(segs)-1].endMeters)
+			if segs[0].StartMeters != 0 || segs[len(segs)-1].EndMeters != tt.km*1000 {
+				t.Errorf("segments cover %.0f to %.0f m, want the whole track", segs[0].StartMeters, segs[len(segs)-1].EndMeters)
 			}
 			for i := 1; i < len(segs); i++ {
-				if segs[i].startMeters != segs[i-1].endMeters {
-					t.Errorf("segment %d starts at %.0f m, but the one before ends at %.0f m", i, segs[i].startMeters, segs[i-1].endMeters)
+				if segs[i].StartMeters != segs[i-1].EndMeters {
+					t.Errorf("segment %d starts at %.0f m, but the one before ends at %.0f m", i, segs[i].StartMeters, segs[i-1].EndMeters)
 				}
 			}
 		})
@@ -167,7 +167,7 @@ func TestSuggestSegmentsLimitsSections(t *testing.T) {
 	dists, eles := syntheticProfile(48, 2, func(km float64) float64 {
 		return 1000 + 200*math.Sin(2*math.Pi*km/4)
 	})
-	segs, err := suggestSegments(dists, eles)
+	segs, err := SuggestSegments(dists, eles)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,12 +182,12 @@ func TestSuggestSegmentsWithoutProfile(t *testing.T) {
 		{math.NaN(), math.NaN(), math.NaN()},
 		{100, math.NaN(), math.NaN()},
 	} {
-		if _, err := suggestSegments(dists, eles); !errors.Is(err, errNoProfile) {
-			t.Errorf("suggestSegments(%v) = %v, want errNoProfile", eles, err)
+		if _, err := SuggestSegments(dists, eles); !errors.Is(err, ErrNoProfile) {
+			t.Errorf("SuggestSegments(%v) = %v, want ErrNoProfile", eles, err)
 		}
 	}
-	if _, err := suggestSegments([]float64{0, 500}, []float64{100, 120}); !errors.Is(err, errNoProfile) {
-		t.Errorf("suggestSegments on 500 m = %v, want errNoProfile", err)
+	if _, err := SuggestSegments([]float64{0, 500}, []float64{100, 120}); !errors.Is(err, ErrNoProfile) {
+		t.Errorf("SuggestSegments on 500 m = %v, want ErrNoProfile", err)
 	}
 }
 
@@ -222,17 +222,17 @@ func TestFormatKilometers(t *testing.T) {
 	}
 }
 
-func describeSegments(segs []*segment) string {
+func describeSegments(segs []*Segment) string {
 	var b strings.Builder
 	for _, s := range segs {
 		b.WriteString("  ")
 		b.WriteString(s.kind.String())
 		b.WriteString(" ")
-		b.WriteString(formatKilometers(s.startMeters))
+		b.WriteString(formatKilometers(s.StartMeters))
 		b.WriteString(" to ")
-		b.WriteString(formatKilometers(s.endMeters))
+		b.WriteString(formatKilometers(s.EndMeters))
 		b.WriteString(": ")
-		b.WriteString(s.name)
+		b.WriteString(s.Name)
 		b.WriteString("\n")
 	}
 	return b.String()

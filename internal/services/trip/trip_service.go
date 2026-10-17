@@ -26,6 +26,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/geo"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/track"
 	"github.com/johanbrandhorst/trail-tools/internal/trips"
 	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/proto"
@@ -225,7 +226,7 @@ func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, ac
 			if err := proto.Unmarshal(data, &streams); err != nil {
 				return "", s.toConnectError(ctx, err, "failed to decode streams")
 			}
-			t = trackFromStreams(&streams)
+			t = track.FromStreams(&streams)
 		case errors.Is(err, store.ErrNotFound):
 			// The activity has no streams, e.g. a manual entry.
 		default:
@@ -233,7 +234,7 @@ func (s *Service) fillFromActivity(ctx context.Context, report *trips.Report, ac
 		}
 	}
 	if t == nil {
-		t = trackFromPolyline(a.SummaryPolyline)
+		t = track.FromPolyline(a.SummaryPolyline)
 	}
 	if t != nil {
 		report.Track, err = proto.Marshal(t)
@@ -259,11 +260,11 @@ func (s *Service) GetTripReport(ctx context.Context, req *tripsv1.GetTripReportR
 	}
 	b := tripsv1.GetTripReportResponse_builder{Report: resp}
 	if req.GetIncludeTrack() {
-		t, err := decodeTrack(report.Track)
+		t, err := track.Decode(report.Track)
 		if err != nil {
 			return nil, s.toConnectError(ctx, err, "failed to get track")
 		}
-		b.Track = t.routePoints()
+		b.Track = t.RoutePoints()
 	}
 	return b.Build(), nil
 }
@@ -461,7 +462,7 @@ func (s *Service) UploadTripPhoto(ctx context.Context, req *tripsv1.UploadTripPh
 			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 		}
 	}
-	t, err := decodeTrack(report.Track)
+	t, err := track.Decode(report.Track)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
@@ -484,9 +485,9 @@ func (s *Service) UploadTripPhoto(ctx context.Context, req *tripsv1.UploadTripPh
 // it has one. Photo GPS positions are often far off, e.g. from a phone in a
 // pocket, while the track records where the activity went. It returns nil if
 // neither is known.
-func placePhoto(report *trips.Report, t *track, gps *geov1.LatLng, takenTime time.Time) (*trips.Location, error) {
+func placePhoto(report *trips.Report, t *track.Track, gps *geov1.LatLng, takenTime time.Time) (*trips.Location, error) {
 	if !takenTime.IsZero() && !report.StartTime.IsZero() {
-		if p, dist, ok := t.positionAt(takenTime.Sub(report.StartTime).Seconds()); ok {
+		if p, dist, ok := t.PositionAt(takenTime.Sub(report.StartTime).Seconds()); ok {
 			return &trips.Location{
 				Lat:                    p.Lat,
 				Lng:                    p.Lng,
@@ -557,7 +558,7 @@ func (s *Service) UpdateTripPhoto(ctx context.Context, req *tripsv1.UpdateTripPh
 		if err != nil {
 			return nil, s.toConnectError(ctx, err, "failed to get trip report")
 		}
-		t, err := decodeTrack(report.Track)
+		t, err := track.Decode(report.Track)
 		if err != nil {
 			return nil, s.toConnectError(ctx, err, "failed to get track")
 		}
@@ -675,14 +676,14 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to list photos")
 	}
-	t, err := decodeTrack(report.Track)
+	t, err := track.Decode(report.Track)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
 	// Hide the ends of the track, and the photos taken there.
 	radius := float64(report.HiddenEndsMeters)
-	points := t.routePoints()
-	if from, to, ok := t.visibleRange(radius); ok {
+	points := t.RoutePoints()
+	if from, to, ok := t.VisibleRange(radius); ok {
 		points = points[from : to+1]
 	} else {
 		points = nil
@@ -690,7 +691,7 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 	visible := make([]*trips.Photo, len(photos[report.ID]))
 	for i, p := range photos[report.ID] {
 		visible[i] = p
-		if p.Location != nil && t.nearEnds(geo.Point{Lat: p.Location.Lat, Lng: p.Location.Lng}, radius) {
+		if p.Location != nil && t.NearEnds(geo.Point{Lat: p.Location.Lat, Lng: p.Location.Lng}, radius) {
 			hidden := *p
 			hidden.Location = nil
 			visible[i] = &hidden
@@ -842,13 +843,13 @@ func parseLocalTime(value, timezone string) (time.Time, error) {
 
 // locationFromProto validates a location and finds its distance along the
 // track.
-func locationFromProto(ll *geov1.LatLng, source trips.LocationSource, t *track) (*trips.Location, error) {
+func locationFromProto(ll *geov1.LatLng, source trips.LocationSource, t *track.Track) (*trips.Location, error) {
 	lat, lng := ll.GetLat(), ll.GetLng()
 	if math.IsNaN(lat) || math.IsNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
 		return nil, errors.New("the location must have a latitude between -90 and 90 and a longitude between -180 and 180")
 	}
 	loc := &trips.Location{Lat: lat, Lng: lng, Source: source}
-	loc.TrackDistanceMeters, loc.HasTrackDistanceMeters = t.nearestDistance(geo.Point{Lat: lat, Lng: lng})
+	loc.TrackDistanceMeters, loc.HasTrackDistanceMeters = t.NearestDistance(geo.Point{Lat: lat, Lng: lng})
 	return loc, nil
 }
 
