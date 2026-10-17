@@ -18,6 +18,7 @@ import { PageHeader } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import {
   ghostButton,
+  inputClass,
   linkClass,
   primaryButton,
   secondaryButton,
@@ -223,14 +224,79 @@ const Timer: React.FC<TimerProps> = ({ minutes }) => {
   );
 };
 
+/**
+ * Baseline is how a test gets its baseline: measured at rest before the
+ * warm-up, a known value entered instead, or none.
+ */
+type Baseline =
+  | { mode: "measure" }
+  | { mode: "known"; mmolPerLiter: number }
+  | { mode: "skip" };
+
 interface PrepareProps {
   settings: Settings;
+  // The user's latest test, to start where it did.
+  previous: LactateTest | undefined;
+  pending: boolean;
   onChange: (settings: Settings) => void;
-  onStart: () => void;
+  onStart: (baseline: Baseline) => void;
 }
 
+/**
+ * THRESHOLD_MARGIN_STAGES is how many stages below the last aerobic
+ * threshold a test can start, to approach it from below.
+ */
+const THRESHOLD_MARGIN_STAGES = 2;
+
+/**
+ * StartOptions returns the first stages to suggest from the previous test:
+ * where it started, and a couple of stages below its aerobic threshold.
+ */
+const startOptions = (
+  previous: LactateTest | undefined,
+  stepBpm: number
+): { label: string; heartRate: number }[] => {
+  const options: { label: string; heartRate: number }[] = [];
+  const start = previous?.stages[0]?.heartRateBpm;
+  if (start !== undefined) {
+    options.push({
+      heartRate: start,
+      label: `Where your last test started: ${start} bpm`,
+    });
+  }
+  const threshold = previous?.aerobicThresholdHeartRateBpm ?? 0;
+  if (threshold > 0) {
+    // Rounded down to 5 bpm, a heart rate that's easy to hold.
+    const below =
+      Math.floor((threshold - THRESHOLD_MARGIN_STAGES * stepBpm) / 5) * 5;
+    if (below !== start) {
+      options.push({
+        heartRate: below,
+        label: `Below your last threshold of ${threshold} bpm: ${below} bpm`,
+      });
+    }
+  }
+  return options;
+};
+
 // Prepare goes through the checklist and the test's settings.
-const Prepare: React.FC<PrepareProps> = ({ settings, onChange, onStart }) => {
+const Prepare: React.FC<PrepareProps> = ({
+  settings,
+  previous,
+  pending,
+  onChange,
+  onStart,
+}) => {
+  // The last test's resting reading, or else its lowest.
+  let previousBaseline = previous?.restingLactateMmolPerLiter ?? 0;
+  if (previousBaseline === 0) {
+    previousBaseline = previous?.lowestLactateMmolPerLiter ?? 0;
+  }
+  const [mode, setMode] = useState<Baseline["mode"]>("measure");
+  const [known, setKnown] = useState(
+    previousBaseline > 0 ? String(previousBaseline) : ""
+  );
+  const knownValue = Number(known.replace(",", "."));
   const field = (key: keyof Settings, label: string, hint: string) => (
     <TextField
       label={label}
@@ -268,6 +334,77 @@ const Prepare: React.FC<PrepareProps> = ({ settings, onChange, onStart }) => {
             "At least 3, so lactate settles."
           )}
         </div>
+        {startOptions(previous, settings.stepBpm).length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {startOptions(previous, settings.stepBpm).map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                className={secondaryButton}
+                onClick={() => {
+                  onChange({ ...settings, startHeartRate: option.heartRate });
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+      <Card title="Baseline">
+        <fieldset className="flex flex-col gap-2 text-sm text-gray-700">
+          <legend className="sr-only">Baseline</legend>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="baseline"
+              checked={mode === "measure"}
+              onChange={() => {
+                setMode("measure");
+              }}
+            />
+            Measure my resting lactate first
+          </label>
+          <label className="flex flex-wrap items-center gap-2">
+            <input
+              type="radio"
+              name="baseline"
+              checked={mode === "known"}
+              onChange={() => {
+                setMode("known");
+              }}
+            />
+            I know my baseline:
+            <input
+              className={`${inputClass} w-24`}
+              inputMode="decimal"
+              aria-label="Baseline lactate (mmol/L)"
+              value={known}
+              onFocus={() => {
+                setMode("known");
+              }}
+              onChange={(event) => {
+                setKnown(event.target.value);
+              }}
+            />
+            mmol/L
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="baseline"
+              checked={mode === "skip"}
+              onChange={() => {
+                setMode("skip");
+              }}
+            />
+            Skip the baseline
+          </label>
+          <p className="text-xs text-gray-500">
+            The baseline counts as the resting reading, for the lowest + 1
+            mmol/L definition.
+          </p>
+        </fieldset>
       </Card>
       <Card title="Garmin workout">
         <div className="flex flex-col gap-3 text-sm text-gray-700">
@@ -306,13 +443,23 @@ const Prepare: React.FC<PrepareProps> = ({ settings, onChange, onStart }) => {
         type="button"
         className={`${primaryButton} self-start`}
         disabled={
+          pending ||
           settings.startHeartRate < 40 ||
           settings.stepBpm < 1 ||
-          settings.stageMinutes < 1
+          settings.stageMinutes < 1 ||
+          (mode === "known" && !(knownValue > 0))
         }
-        onClick={onStart}
+        onClick={() => {
+          if (mode === "known") {
+            onStart({ mmolPerLiter: knownValue, mode });
+          } else {
+            onStart({ mode });
+          }
+        }}
       >
-        Measure your resting lactate
+        {mode === "measure"
+          ? "Measure your resting lactate"
+          : "Start the warm-up"}
       </button>
     </div>
   );
@@ -652,11 +799,26 @@ const LactateTestRunPage: React.FC = () => {
   if (phase === "prepare") {
     content = (
       <Prepare
+        // The baseline is filled in from the previous test once it loads.
+        key={tests.data?.tests[0]?.id ?? ""}
         settings={settings}
+        previous={tests.data?.tests[0]}
+        pending={createTest.isPending}
         onChange={setChosen}
-        onStart={() => {
+        onStart={(baseline) => {
           writeStorage(SETTINGS_KEY, JSON.stringify(settings));
-          setPhase("resting");
+          if (baseline.mode === "measure") {
+            setPhase("resting");
+            return;
+          }
+          // Without a resting reading to take, the warm-up is next.
+          createTest.mutate({
+            test: {
+              date: today(),
+              restingLactateMmolPerLiter:
+                baseline.mode === "known" ? baseline.mmolPerLiter : 0,
+            },
+          });
         }}
       />
     );
