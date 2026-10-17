@@ -212,7 +212,7 @@ type TripReportServiceClient interface {
 	// List the user's trip reports, drafts and published, most recent trip
 	// first.
 	ListTripReports(context.Context, *v1.ListTripReportsRequest) (*v1.ListTripReportsResponse, error)
-	// Update the title, slug, date or privacy of a trip report. The slug of a
+	// Update the title, slug, date or cover photo of a trip report. The slug of a
 	// published report can't be changed, so that its URL stays stable. The
 	// story is changed with SetTripSections.
 	UpdateTripReport(context.Context, *v1.UpdateTripReportRequest) (*v1.UpdateTripReportResponse, error)
@@ -284,7 +284,7 @@ type TripReportServiceHandler interface {
 	// List the user's trip reports, drafts and published, most recent trip
 	// first.
 	ListTripReports(context.Context, *v1.ListTripReportsRequest) (*v1.ListTripReportsResponse, error)
-	// Update the title, slug, date or privacy of a trip report. The slug of a
+	// Update the title, slug, date or cover photo of a trip report. The slug of a
 	// published report can't be changed, so that its URL stays stable. The
 	// story is changed with SetTripSections.
 	UpdateTripReport(context.Context, *v1.UpdateTripReportRequest) (*v1.UpdateTripReportResponse, error)

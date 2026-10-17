@@ -45,7 +45,7 @@ const Toggle: React.FC<ToggleProps> = ({ label, checked, onChange, note }) => (
   </label>
 );
 
-const PlaceSearch: React.FC = () => {
+export const PlaceSearch: React.FC = () => {
   const map = useMap();
   const [query, setQuery] = useState("");
   const [places, setPlaces] = useState<Place[]>([]);

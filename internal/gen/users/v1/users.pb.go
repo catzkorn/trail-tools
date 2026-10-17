@@ -22,6 +22,349 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// A privacy zone: a circle around a place, like the user's home, within
+// which their tracks and photos are hidden on public pages, like trip and
+// race reports.
+type PrivacyZone struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id           string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name         string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Lat          float64                `protobuf:"fixed64,3,opt,name=lat,proto3"`
+	xxx_hidden_Lng          float64                `protobuf:"fixed64,4,opt,name=lng,proto3"`
+	xxx_hidden_RadiusMeters int32                  `protobuf:"varint,5,opt,name=radius_meters,json=radiusMeters,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *PrivacyZone) Reset() {
+	*x = PrivacyZone{}
+	mi := &file_users_v1_users_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrivacyZone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrivacyZone) ProtoMessage() {}
+
+func (x *PrivacyZone) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *PrivacyZone) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *PrivacyZone) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *PrivacyZone) GetLat() float64 {
+	if x != nil {
+		return x.xxx_hidden_Lat
+	}
+	return 0
+}
+
+func (x *PrivacyZone) GetLng() float64 {
+	if x != nil {
+		return x.xxx_hidden_Lng
+	}
+	return 0
+}
+
+func (x *PrivacyZone) GetRadiusMeters() int32 {
+	if x != nil {
+		return x.xxx_hidden_RadiusMeters
+	}
+	return 0
+}
+
+func (x *PrivacyZone) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *PrivacyZone) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *PrivacyZone) SetLat(v float64) {
+	x.xxx_hidden_Lat = v
+}
+
+func (x *PrivacyZone) SetLng(v float64) {
+	x.xxx_hidden_Lng = v
+}
+
+func (x *PrivacyZone) SetRadiusMeters(v int32) {
+	x.xxx_hidden_RadiusMeters = v
+}
+
+type PrivacyZone_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the zone.
+	Id string
+	// A name for the user, e.g. "Home". At most 100 characters.
+	Name string
+	// The center of the zone.
+	Lat float64
+	Lng float64
+	// The radius of the zone in meters, from 100 to 5000.
+	RadiusMeters int32
+}
+
+func (b0 PrivacyZone_builder) Build() *PrivacyZone {
+	m0 := &PrivacyZone{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Lat = b.Lat
+	x.xxx_hidden_Lng = b.Lng
+	x.xxx_hidden_RadiusMeters = b.RadiusMeters
+	return m0
+}
+
+type ListPrivacyZonesRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPrivacyZonesRequest) Reset() {
+	*x = ListPrivacyZonesRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPrivacyZonesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPrivacyZonesRequest) ProtoMessage() {}
+
+func (x *ListPrivacyZonesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type ListPrivacyZonesRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 ListPrivacyZonesRequest_builder) Build() *ListPrivacyZonesRequest {
+	m0 := &ListPrivacyZonesRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type ListPrivacyZonesResponse struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Zones *[]*PrivacyZone        `protobuf:"bytes,1,rep,name=zones,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ListPrivacyZonesResponse) Reset() {
+	*x = ListPrivacyZonesResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPrivacyZonesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPrivacyZonesResponse) ProtoMessage() {}
+
+func (x *ListPrivacyZonesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ListPrivacyZonesResponse) GetZones() []*PrivacyZone {
+	if x != nil {
+		if x.xxx_hidden_Zones != nil {
+			return *x.xxx_hidden_Zones
+		}
+	}
+	return nil
+}
+
+func (x *ListPrivacyZonesResponse) SetZones(v []*PrivacyZone) {
+	x.xxx_hidden_Zones = &v
+}
+
+type ListPrivacyZonesResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The user's zones, the oldest first.
+	Zones []*PrivacyZone
+}
+
+func (b0 ListPrivacyZonesResponse_builder) Build() *ListPrivacyZonesResponse {
+	m0 := &ListPrivacyZonesResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Zones = &b.Zones
+	return m0
+}
+
+type SetPrivacyZonesRequest struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Zones *[]*PrivacyZone        `protobuf:"bytes,1,rep,name=zones,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetPrivacyZonesRequest) Reset() {
+	*x = SetPrivacyZonesRequest{}
+	mi := &file_users_v1_users_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetPrivacyZonesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetPrivacyZonesRequest) ProtoMessage() {}
+
+func (x *SetPrivacyZonesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SetPrivacyZonesRequest) GetZones() []*PrivacyZone {
+	if x != nil {
+		if x.xxx_hidden_Zones != nil {
+			return *x.xxx_hidden_Zones
+		}
+	}
+	return nil
+}
+
+func (x *SetPrivacyZonesRequest) SetZones(v []*PrivacyZone) {
+	x.xxx_hidden_Zones = &v
+}
+
+type SetPrivacyZonesRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The zones, at most 20. Empty to remove them all.
+	Zones []*PrivacyZone
+}
+
+func (b0 SetPrivacyZonesRequest_builder) Build() *SetPrivacyZonesRequest {
+	m0 := &SetPrivacyZonesRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Zones = &b.Zones
+	return m0
+}
+
+type SetPrivacyZonesResponse struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Zones *[]*PrivacyZone        `protobuf:"bytes,1,rep,name=zones,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetPrivacyZonesResponse) Reset() {
+	*x = SetPrivacyZonesResponse{}
+	mi := &file_users_v1_users_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetPrivacyZonesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetPrivacyZonesResponse) ProtoMessage() {}
+
+func (x *SetPrivacyZonesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_v1_users_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SetPrivacyZonesResponse) GetZones() []*PrivacyZone {
+	if x != nil {
+		if x.xxx_hidden_Zones != nil {
+			return *x.xxx_hidden_Zones
+		}
+	}
+	return nil
+}
+
+func (x *SetPrivacyZonesResponse) SetZones(v []*PrivacyZone) {
+	x.xxx_hidden_Zones = &v
+}
+
+type SetPrivacyZonesResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The user's zones.
+	Zones []*PrivacyZone
+}
+
+func (b0 SetPrivacyZonesResponse_builder) Build() *SetPrivacyZonesResponse {
+	m0 := &SetPrivacyZonesResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Zones = &b.Zones
+	return m0
+}
+
 type User struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3"`
@@ -37,7 +380,7 @@ type User struct {
 
 func (x *User) Reset() {
 	*x = User{}
-	mi := &file_users_v1_users_proto_msgTypes[0]
+	mi := &file_users_v1_users_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -49,7 +392,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[0]
+	mi := &file_users_v1_users_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -174,7 +517,7 @@ type GetCurrentUserRequest struct {
 
 func (x *GetCurrentUserRequest) Reset() {
 	*x = GetCurrentUserRequest{}
-	mi := &file_users_v1_users_proto_msgTypes[1]
+	mi := &file_users_v1_users_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -186,7 +529,7 @@ func (x *GetCurrentUserRequest) String() string {
 func (*GetCurrentUserRequest) ProtoMessage() {}
 
 func (x *GetCurrentUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[1]
+	mi := &file_users_v1_users_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -218,7 +561,7 @@ type GetCurrentUserResponse struct {
 
 func (x *GetCurrentUserResponse) Reset() {
 	*x = GetCurrentUserResponse{}
-	mi := &file_users_v1_users_proto_msgTypes[2]
+	mi := &file_users_v1_users_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -230,7 +573,7 @@ func (x *GetCurrentUserResponse) String() string {
 func (*GetCurrentUserResponse) ProtoMessage() {}
 
 func (x *GetCurrentUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[2]
+	mi := &file_users_v1_users_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -290,7 +633,7 @@ type APIToken struct {
 
 func (x *APIToken) Reset() {
 	*x = APIToken{}
-	mi := &file_users_v1_users_proto_msgTypes[3]
+	mi := &file_users_v1_users_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -302,7 +645,7 @@ func (x *APIToken) String() string {
 func (*APIToken) ProtoMessage() {}
 
 func (x *APIToken) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[3]
+	mi := &file_users_v1_users_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -412,7 +755,7 @@ type CreateAPITokenRequest struct {
 
 func (x *CreateAPITokenRequest) Reset() {
 	*x = CreateAPITokenRequest{}
-	mi := &file_users_v1_users_proto_msgTypes[4]
+	mi := &file_users_v1_users_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +767,7 @@ func (x *CreateAPITokenRequest) String() string {
 func (*CreateAPITokenRequest) ProtoMessage() {}
 
 func (x *CreateAPITokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[4]
+	mi := &file_users_v1_users_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -471,7 +814,7 @@ type CreateAPITokenResponse struct {
 
 func (x *CreateAPITokenResponse) Reset() {
 	*x = CreateAPITokenResponse{}
-	mi := &file_users_v1_users_proto_msgTypes[5]
+	mi := &file_users_v1_users_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -483,7 +826,7 @@ func (x *CreateAPITokenResponse) String() string {
 func (*CreateAPITokenResponse) ProtoMessage() {}
 
 func (x *CreateAPITokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[5]
+	mi := &file_users_v1_users_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -553,7 +896,7 @@ type ListAPITokensRequest struct {
 
 func (x *ListAPITokensRequest) Reset() {
 	*x = ListAPITokensRequest{}
-	mi := &file_users_v1_users_proto_msgTypes[6]
+	mi := &file_users_v1_users_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -565,7 +908,7 @@ func (x *ListAPITokensRequest) String() string {
 func (*ListAPITokensRequest) ProtoMessage() {}
 
 func (x *ListAPITokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[6]
+	mi := &file_users_v1_users_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -597,7 +940,7 @@ type ListAPITokensResponse struct {
 
 func (x *ListAPITokensResponse) Reset() {
 	*x = ListAPITokensResponse{}
-	mi := &file_users_v1_users_proto_msgTypes[7]
+	mi := &file_users_v1_users_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -609,7 +952,7 @@ func (x *ListAPITokensResponse) String() string {
 func (*ListAPITokensResponse) ProtoMessage() {}
 
 func (x *ListAPITokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[7]
+	mi := &file_users_v1_users_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -657,7 +1000,7 @@ type DeleteAPITokenRequest struct {
 
 func (x *DeleteAPITokenRequest) Reset() {
 	*x = DeleteAPITokenRequest{}
-	mi := &file_users_v1_users_proto_msgTypes[8]
+	mi := &file_users_v1_users_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -669,7 +1012,7 @@ func (x *DeleteAPITokenRequest) String() string {
 func (*DeleteAPITokenRequest) ProtoMessage() {}
 
 func (x *DeleteAPITokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[8]
+	mi := &file_users_v1_users_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -714,7 +1057,7 @@ type DeleteAPITokenResponse struct {
 
 func (x *DeleteAPITokenResponse) Reset() {
 	*x = DeleteAPITokenResponse{}
-	mi := &file_users_v1_users_proto_msgTypes[9]
+	mi := &file_users_v1_users_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -726,7 +1069,7 @@ func (x *DeleteAPITokenResponse) String() string {
 func (*DeleteAPITokenResponse) ProtoMessage() {}
 
 func (x *DeleteAPITokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[9]
+	mi := &file_users_v1_users_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -758,7 +1101,7 @@ type UploadAvatarRequest struct {
 
 func (x *UploadAvatarRequest) Reset() {
 	*x = UploadAvatarRequest{}
-	mi := &file_users_v1_users_proto_msgTypes[10]
+	mi := &file_users_v1_users_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -770,7 +1113,7 @@ func (x *UploadAvatarRequest) String() string {
 func (*UploadAvatarRequest) ProtoMessage() {}
 
 func (x *UploadAvatarRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[10]
+	mi := &file_users_v1_users_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +1162,7 @@ type UploadAvatarResponse struct {
 
 func (x *UploadAvatarResponse) Reset() {
 	*x = UploadAvatarResponse{}
-	mi := &file_users_v1_users_proto_msgTypes[11]
+	mi := &file_users_v1_users_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -831,7 +1174,7 @@ func (x *UploadAvatarResponse) String() string {
 func (*UploadAvatarResponse) ProtoMessage() {}
 
 func (x *UploadAvatarResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[11]
+	mi := &file_users_v1_users_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -887,7 +1230,7 @@ type DeleteAvatarRequest struct {
 
 func (x *DeleteAvatarRequest) Reset() {
 	*x = DeleteAvatarRequest{}
-	mi := &file_users_v1_users_proto_msgTypes[12]
+	mi := &file_users_v1_users_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -899,7 +1242,7 @@ func (x *DeleteAvatarRequest) String() string {
 func (*DeleteAvatarRequest) ProtoMessage() {}
 
 func (x *DeleteAvatarRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[12]
+	mi := &file_users_v1_users_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -931,7 +1274,7 @@ type DeleteAvatarResponse struct {
 
 func (x *DeleteAvatarResponse) Reset() {
 	*x = DeleteAvatarResponse{}
-	mi := &file_users_v1_users_proto_msgTypes[13]
+	mi := &file_users_v1_users_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -943,7 +1286,7 @@ func (x *DeleteAvatarResponse) String() string {
 func (*DeleteAvatarResponse) ProtoMessage() {}
 
 func (x *DeleteAvatarResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_users_v1_users_proto_msgTypes[13]
+	mi := &file_users_v1_users_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -995,7 +1338,20 @@ var File_users_v1_users_proto protoreflect.FileDescriptor
 
 const file_users_v1_users_proto_rawDesc = "" +
 	"\n" +
-	"\x14users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\xb5\x01\n" +
+	"\x14users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\x82\x01\n" +
+	"\vPrivacyZone\x12\x16\n" +
+	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
+	"\x03lat\x18\x03 \x01(\x01R\x03lat\x12\x10\n" +
+	"\x03lng\x18\x04 \x01(\x01R\x03lng\x12#\n" +
+	"\rradius_meters\x18\x05 \x01(\x05R\fradiusMeters\"\x19\n" +
+	"\x17ListPrivacyZonesRequest\"G\n" +
+	"\x18ListPrivacyZonesResponse\x12+\n" +
+	"\x05zones\x18\x01 \x03(\v2\x15.users.v1.PrivacyZoneR\x05zones\"E\n" +
+	"\x16SetPrivacyZonesRequest\x12+\n" +
+	"\x05zones\x18\x01 \x03(\v2\x15.users.v1.PrivacyZoneR\x05zones\"F\n" +
+	"\x17SetPrivacyZonesResponse\x12+\n" +
+	"\x05zones\x18\x01 \x03(\v2\x15.users.v1.PrivacyZoneR\x05zones\"\xb5\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
@@ -1033,60 +1389,74 @@ const file_users_v1_users_proto_rawDesc = "" +
 	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user\"\x15\n" +
 	"\x13DeleteAvatarRequest\":\n" +
 	"\x14DeleteAvatarResponse\x12\"\n" +
-	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user2\xa4\x04\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.users.v1.UserR\x04user2\xe7\x05\n" +
 	"\vUserService\x12S\n" +
 	"\x0eGetCurrentUser\x12\x1f.users.v1.GetCurrentUserRequest\x1a .users.v1.GetCurrentUserResponse\x12[\n" +
 	"\x0eCreateAPIToken\x12\x1f.users.v1.CreateAPITokenRequest\x1a .users.v1.CreateAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12X\n" +
 	"\rListAPITokens\x12\x1e.users.v1.ListAPITokensRequest\x1a\x1f.users.v1.ListAPITokensResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12[\n" +
 	"\x0eDeleteAPIToken\x12\x1f.users.v1.DeleteAPITokenRequest\x1a .users.v1.DeleteAPITokenResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12U\n" +
 	"\fUploadAvatar\x12\x1d.users.v1.UploadAvatarRequest\x1a\x1e.users.v1.UploadAvatarResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12U\n" +
-	"\fDeleteAvatar\x12\x1d.users.v1.DeleteAvatarRequest\x1a\x1e.users.v1.DeleteAvatarResponse\"\x06\xa2\x9f\x19\x02\b\x01B\xa1\x01\n" +
+	"\fDeleteAvatar\x12\x1d.users.v1.DeleteAvatarRequest\x1a\x1e.users.v1.DeleteAvatarResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12a\n" +
+	"\x10ListPrivacyZones\x12!.users.v1.ListPrivacyZonesRequest\x1a\".users.v1.ListPrivacyZonesResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12^\n" +
+	"\x0fSetPrivacyZones\x12 .users.v1.SetPrivacyZonesRequest\x1a!.users.v1.SetPrivacyZonesResponse\"\x06\xa2\x9f\x19\x02\b\x01B\xa1\x01\n" +
 	"\fcom.users.v1B\n" +
 	"UsersProtoP\x01ZDgithub.com/johanbrandhorst/trail-tools/internal/gen/users/v1;usersv1\xa2\x02\x03UXX\xaa\x02\bUsers.V1\xca\x02\bUsers\\V1\xe2\x02\x14Users\\V1\\GPBMetadata\xea\x02\tUsers::V1b\x06proto3"
 
-var file_users_v1_users_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_users_v1_users_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_users_v1_users_proto_goTypes = []any{
-	(*User)(nil),                   // 0: users.v1.User
-	(*GetCurrentUserRequest)(nil),  // 1: users.v1.GetCurrentUserRequest
-	(*GetCurrentUserResponse)(nil), // 2: users.v1.GetCurrentUserResponse
-	(*APIToken)(nil),               // 3: users.v1.APIToken
-	(*CreateAPITokenRequest)(nil),  // 4: users.v1.CreateAPITokenRequest
-	(*CreateAPITokenResponse)(nil), // 5: users.v1.CreateAPITokenResponse
-	(*ListAPITokensRequest)(nil),   // 6: users.v1.ListAPITokensRequest
-	(*ListAPITokensResponse)(nil),  // 7: users.v1.ListAPITokensResponse
-	(*DeleteAPITokenRequest)(nil),  // 8: users.v1.DeleteAPITokenRequest
-	(*DeleteAPITokenResponse)(nil), // 9: users.v1.DeleteAPITokenResponse
-	(*UploadAvatarRequest)(nil),    // 10: users.v1.UploadAvatarRequest
-	(*UploadAvatarResponse)(nil),   // 11: users.v1.UploadAvatarResponse
-	(*DeleteAvatarRequest)(nil),    // 12: users.v1.DeleteAvatarRequest
-	(*DeleteAvatarResponse)(nil),   // 13: users.v1.DeleteAvatarResponse
-	(*timestamppb.Timestamp)(nil),  // 14: google.protobuf.Timestamp
+	(*PrivacyZone)(nil),              // 0: users.v1.PrivacyZone
+	(*ListPrivacyZonesRequest)(nil),  // 1: users.v1.ListPrivacyZonesRequest
+	(*ListPrivacyZonesResponse)(nil), // 2: users.v1.ListPrivacyZonesResponse
+	(*SetPrivacyZonesRequest)(nil),   // 3: users.v1.SetPrivacyZonesRequest
+	(*SetPrivacyZonesResponse)(nil),  // 4: users.v1.SetPrivacyZonesResponse
+	(*User)(nil),                     // 5: users.v1.User
+	(*GetCurrentUserRequest)(nil),    // 6: users.v1.GetCurrentUserRequest
+	(*GetCurrentUserResponse)(nil),   // 7: users.v1.GetCurrentUserResponse
+	(*APIToken)(nil),                 // 8: users.v1.APIToken
+	(*CreateAPITokenRequest)(nil),    // 9: users.v1.CreateAPITokenRequest
+	(*CreateAPITokenResponse)(nil),   // 10: users.v1.CreateAPITokenResponse
+	(*ListAPITokensRequest)(nil),     // 11: users.v1.ListAPITokensRequest
+	(*ListAPITokensResponse)(nil),    // 12: users.v1.ListAPITokensResponse
+	(*DeleteAPITokenRequest)(nil),    // 13: users.v1.DeleteAPITokenRequest
+	(*DeleteAPITokenResponse)(nil),   // 14: users.v1.DeleteAPITokenResponse
+	(*UploadAvatarRequest)(nil),      // 15: users.v1.UploadAvatarRequest
+	(*UploadAvatarResponse)(nil),     // 16: users.v1.UploadAvatarResponse
+	(*DeleteAvatarRequest)(nil),      // 17: users.v1.DeleteAvatarRequest
+	(*DeleteAvatarResponse)(nil),     // 18: users.v1.DeleteAvatarResponse
+	(*timestamppb.Timestamp)(nil),    // 19: google.protobuf.Timestamp
 }
 var file_users_v1_users_proto_depIdxs = []int32{
-	0,  // 0: users.v1.GetCurrentUserResponse.user:type_name -> users.v1.User
-	14, // 1: users.v1.APIToken.create_time:type_name -> google.protobuf.Timestamp
-	14, // 2: users.v1.APIToken.last_used_time:type_name -> google.protobuf.Timestamp
-	3,  // 3: users.v1.CreateAPITokenResponse.token:type_name -> users.v1.APIToken
-	3,  // 4: users.v1.ListAPITokensResponse.tokens:type_name -> users.v1.APIToken
-	0,  // 5: users.v1.UploadAvatarResponse.user:type_name -> users.v1.User
-	0,  // 6: users.v1.DeleteAvatarResponse.user:type_name -> users.v1.User
-	1,  // 7: users.v1.UserService.GetCurrentUser:input_type -> users.v1.GetCurrentUserRequest
-	4,  // 8: users.v1.UserService.CreateAPIToken:input_type -> users.v1.CreateAPITokenRequest
-	6,  // 9: users.v1.UserService.ListAPITokens:input_type -> users.v1.ListAPITokensRequest
-	8,  // 10: users.v1.UserService.DeleteAPIToken:input_type -> users.v1.DeleteAPITokenRequest
-	10, // 11: users.v1.UserService.UploadAvatar:input_type -> users.v1.UploadAvatarRequest
-	12, // 12: users.v1.UserService.DeleteAvatar:input_type -> users.v1.DeleteAvatarRequest
-	2,  // 13: users.v1.UserService.GetCurrentUser:output_type -> users.v1.GetCurrentUserResponse
-	5,  // 14: users.v1.UserService.CreateAPIToken:output_type -> users.v1.CreateAPITokenResponse
-	7,  // 15: users.v1.UserService.ListAPITokens:output_type -> users.v1.ListAPITokensResponse
-	9,  // 16: users.v1.UserService.DeleteAPIToken:output_type -> users.v1.DeleteAPITokenResponse
-	11, // 17: users.v1.UserService.UploadAvatar:output_type -> users.v1.UploadAvatarResponse
-	13, // 18: users.v1.UserService.DeleteAvatar:output_type -> users.v1.DeleteAvatarResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	0,  // 0: users.v1.ListPrivacyZonesResponse.zones:type_name -> users.v1.PrivacyZone
+	0,  // 1: users.v1.SetPrivacyZonesRequest.zones:type_name -> users.v1.PrivacyZone
+	0,  // 2: users.v1.SetPrivacyZonesResponse.zones:type_name -> users.v1.PrivacyZone
+	5,  // 3: users.v1.GetCurrentUserResponse.user:type_name -> users.v1.User
+	19, // 4: users.v1.APIToken.create_time:type_name -> google.protobuf.Timestamp
+	19, // 5: users.v1.APIToken.last_used_time:type_name -> google.protobuf.Timestamp
+	8,  // 6: users.v1.CreateAPITokenResponse.token:type_name -> users.v1.APIToken
+	8,  // 7: users.v1.ListAPITokensResponse.tokens:type_name -> users.v1.APIToken
+	5,  // 8: users.v1.UploadAvatarResponse.user:type_name -> users.v1.User
+	5,  // 9: users.v1.DeleteAvatarResponse.user:type_name -> users.v1.User
+	6,  // 10: users.v1.UserService.GetCurrentUser:input_type -> users.v1.GetCurrentUserRequest
+	9,  // 11: users.v1.UserService.CreateAPIToken:input_type -> users.v1.CreateAPITokenRequest
+	11, // 12: users.v1.UserService.ListAPITokens:input_type -> users.v1.ListAPITokensRequest
+	13, // 13: users.v1.UserService.DeleteAPIToken:input_type -> users.v1.DeleteAPITokenRequest
+	15, // 14: users.v1.UserService.UploadAvatar:input_type -> users.v1.UploadAvatarRequest
+	17, // 15: users.v1.UserService.DeleteAvatar:input_type -> users.v1.DeleteAvatarRequest
+	1,  // 16: users.v1.UserService.ListPrivacyZones:input_type -> users.v1.ListPrivacyZonesRequest
+	3,  // 17: users.v1.UserService.SetPrivacyZones:input_type -> users.v1.SetPrivacyZonesRequest
+	7,  // 18: users.v1.UserService.GetCurrentUser:output_type -> users.v1.GetCurrentUserResponse
+	10, // 19: users.v1.UserService.CreateAPIToken:output_type -> users.v1.CreateAPITokenResponse
+	12, // 20: users.v1.UserService.ListAPITokens:output_type -> users.v1.ListAPITokensResponse
+	14, // 21: users.v1.UserService.DeleteAPIToken:output_type -> users.v1.DeleteAPITokenResponse
+	16, // 22: users.v1.UserService.UploadAvatar:output_type -> users.v1.UploadAvatarResponse
+	18, // 23: users.v1.UserService.DeleteAvatar:output_type -> users.v1.DeleteAvatarResponse
+	2,  // 24: users.v1.UserService.ListPrivacyZones:output_type -> users.v1.ListPrivacyZonesResponse
+	4,  // 25: users.v1.UserService.SetPrivacyZones:output_type -> users.v1.SetPrivacyZonesResponse
+	18, // [18:26] is the sub-list for method output_type
+	10, // [10:18] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_users_v1_users_proto_init() }
@@ -1100,7 +1470,7 @@ func file_users_v1_users_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_v1_users_proto_rawDesc), len(file_users_v1_users_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

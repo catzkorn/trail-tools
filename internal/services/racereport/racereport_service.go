@@ -24,6 +24,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"github.com/johanbrandhorst/trail-tools/internal/track"
 	"github.com/johanbrandhorst/trail-tools/internal/trips"
+	"github.com/johanbrandhorst/trail-tools/internal/users"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -84,6 +85,12 @@ type Plans interface {
 	PlanOutcome(ctx context.Context, userID, raceID pgtype.UUID) (*raceplan.PlanOutcome, error)
 }
 
+// PrivacyZoneRepository lists the privacy zones tracks are hidden in on
+// public pages.
+type PrivacyZoneRepository interface {
+	ListPrivacyZones(ctx context.Context, userID pgtype.UUID) ([]users.PrivacyZone, error)
+}
+
 // Service implements API handlers for the race report service.
 type Service struct {
 	log        *slog.Logger
@@ -92,12 +99,13 @@ type Service struct {
 	activities ActivityRepository
 	profiles   ProfileRepository
 	plans      Plans
+	zones      PrivacyZoneRepository
 	baseURL    string
 }
 
 // NewService creates a new Service. baseURL is the public URL of the server,
 // used for the URLs of reports.
-func NewService(log *slog.Logger, report *errreport.Reporter, repo ReportRepository, activities ActivityRepository, profiles ProfileRepository, plans Plans, baseURL string) *Service {
+func NewService(log *slog.Logger, report *errreport.Reporter, repo ReportRepository, activities ActivityRepository, profiles ProfileRepository, plans Plans, zones PrivacyZoneRepository, baseURL string) *Service {
 	return &Service{
 		log:        log,
 		report:     report,
@@ -105,6 +113,7 @@ func NewService(log *slog.Logger, report *errreport.Reporter, repo ReportReposit
 		activities: activities,
 		profiles:   profiles,
 		plans:      plans,
+		zones:      zones,
 		baseURL:    strings.TrimSuffix(baseURL, "/"),
 	}
 }
@@ -516,12 +525,22 @@ func (s *Service) GetPublicRaceReport(ctx context.Context, req *racesv1.GetPubli
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to decode race report track")
 	}
-	return racesv1.GetPublicRaceReportResponse_builder{
+	// The track is hidden in the author's privacy zones.
+	zones, err := s.zones.ListPrivacyZones(ctx, report.UserID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list privacy zones")
+	}
+	resp := racesv1.GetPublicRaceReportResponse_builder{
 		Report:     reportProto,
 		Comparison: comparison,
 		AuthorName: profile.DisplayName,
-		Track:      t.RoutePoints(),
-	}.Build(), nil
+	}.Build()
+	if t != nil {
+		points, breaks := t.PublicPoints(trackZones(zones))
+		resp.SetTrack(points)
+		resp.SetTrackBreaks(breaks)
+	}
+	return resp, nil
 }
 
 // PublicReport gets a race report by its author's handle and slug, if it is
@@ -659,4 +678,13 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
+}
+
+// trackZones returns privacy zones as the zones tracks are hidden in.
+func trackZones(zones []users.PrivacyZone) []track.Zone {
+	out := make([]track.Zone, len(zones))
+	for i, z := range zones {
+		out[i] = track.Zone{Center: z.Center, RadiusMeters: float64(z.RadiusMeters)}
+	}
+	return out
 }

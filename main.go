@@ -556,7 +556,7 @@ func run(
 		log.InfoContext(ctx, "Strava sync disabled, set -strava-client-id and -strava-client-secret to enable it")
 	}
 
-	userService := user.NewService(log, report, users, users, photos)
+	userService := user.NewService(log, report, users, users, users, photos)
 	authService, err := auth.NewService(log, report, users, baseURL, adminBootstrapToken)
 	if err != nil {
 		return fmt.Errorf("failed to create auth service: %w", err)
@@ -574,8 +574,8 @@ func run(
 	if stravaSyncer != nil {
 		activitySyncer = stravaSyncer
 	}
-	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, telemetry.NewClient(0), baseURL)
-	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
+	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, users, telemetry.NewClient(0), baseURL)
+	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, users, baseURL)
 	lactateService := lactatesvc.NewService(log, report, lactateRepo, baseURL)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.

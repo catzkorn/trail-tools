@@ -3,6 +3,7 @@ import AvatarCard from "@components/settings/avatar-card";
 import Connections from "@components/settings/connections";
 import Invitations from "@components/settings/invitations";
 import Passkeys from "@components/settings/passkeys";
+import PrivacyZonesCard from "@components/settings/privacy-zones";
 import PublicProfileCard from "@components/settings/public-profile";
 import StravaCard from "@components/strava/strava-card";
 import Card from "@components/ui/card";
@@ -260,6 +261,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => (
       </div>
       <div className="flex flex-col gap-4">
         <PublicProfileCard />
+        <PrivacyZonesCard />
         <ApiTokens />
         <Connections />
         <McpInstructions />

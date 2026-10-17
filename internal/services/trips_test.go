@@ -20,6 +20,7 @@ import (
 	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
 	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
 	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
+	usersv1 "github.com/johanbrandhorst/trail-tools/internal/gen/users/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/geo"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"google.golang.org/protobuf/proto"
@@ -325,12 +326,29 @@ func TestTripReports(t *testing.T) {
 	if public.GetReport().GetTitle() != "Up the ridge" || public.GetAuthor().GetHandle() != "jane-doe" {
 		t.Errorf("unexpected public report %v", public.GetReport())
 	}
-	// By default the track is hidden within 500 m of its start and finish:
-	// of 101 points 100 m apart, the first and last 5.
-	if track := public.GetTrack(); len(track) != 91 || track[0].GetDistanceMeters() != 500 {
-		t.Errorf("got %d public track points from %v m, want 91 from 500 m", len(track), track[0].GetDistanceMeters())
+	// Without privacy zones, the whole track is public.
+	if track := public.GetTrack(); len(track) != 101 || len(public.GetTrackBreaks()) != 0 {
+		t.Errorf("got %d public track points and breaks %v, want the whole track", len(track), public.GetTrackBreaks())
 	}
-	// A photo near the start is shown without its place on the map.
+	// Zones around the start and the middle hide the track there: of 101
+	// points 100 m apart, the first 5 and the 5 around 5 km, which splits
+	// the rest in two.
+	zone := func(lat float64, radius int32) *usersv1.PrivacyZone {
+		return usersv1.PrivacyZone_builder{Name: "Home", Lat: lat, Lng: 0, RadiusMeters: radius}.Build()
+	}
+	if _, err := e.users.SetPrivacyZones(ctx, usersv1.SetPrivacyZonesRequest_builder{
+		Zones: []*usersv1.PrivacyZone{zone(0, 450), zone(0.045, 250)},
+	}.Build()); err != nil {
+		t.Fatalf("SetPrivacyZones: %v", err)
+	}
+	if public, err = e.anonTrips.GetPublicTripReport(ctx, publicReq); err != nil {
+		t.Fatal(err)
+	}
+	if track, breaks := public.GetTrack(), public.GetTrackBreaks(); len(track) != 91 || track[0].GetDistanceMeters() != 500 ||
+		len(breaks) != 1 || track[breaks[0]].GetDistanceMeters() != 5300 {
+		t.Errorf("got %d public track points from %v m with breaks %v, want 91 from 500 m, broken at 5300 m", len(track), track[0].GetDistanceMeters(), breaks)
+	}
+	// A photo in a zone is shown without its place on the map.
 	photo, err := e.trips.UploadTripPhoto(ctx, tripsv1.UploadTripPhotoRequest_builder{
 		ReportId: report.GetId(),
 		Data:     testJPEG(t, 300, 200),
@@ -343,11 +361,11 @@ func TestTripReports(t *testing.T) {
 		t.Fatal(err)
 	}
 	if photos := public.GetReport().GetPhotos(); len(photos) != 1 || photos[0].HasLocation() || photos[0].HasTrackDistanceMeters() {
-		t.Errorf("got public photos %v, want the photo near the start without its location", photos)
+		t.Errorf("got public photos %v, want the photo in the zone without its location", photos)
 	}
-	// Hiding can be turned off.
-	if _, err := e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), HiddenEndsMeters: new(int32(0))}.Build()); err != nil {
-		t.Fatalf("UpdateTripReport: %v", err)
+	// Removing the zones shows everything again.
+	if _, err := e.users.SetPrivacyZones(ctx, &usersv1.SetPrivacyZonesRequest{}); err != nil {
+		t.Fatalf("SetPrivacyZones: %v", err)
 	}
 	if public, err = e.anonTrips.GetPublicTripReport(ctx, publicReq); err != nil {
 		t.Fatal(err)
@@ -358,7 +376,7 @@ func TestTripReports(t *testing.T) {
 	if _, err := e.trips.DeleteTripPhoto(ctx, tripsv1.DeleteTripPhotoRequest_builder{Id: photo.GetPhoto().GetId()}.Build()); err != nil {
 		t.Fatal(err)
 	}
-	_, err = e.trips.UpdateTripReport(ctx, tripsv1.UpdateTripReportRequest_builder{Id: report.GetId(), HiddenEndsMeters: new(int32(5000))}.Build())
+	_, err = e.users.SetPrivacyZones(ctx, usersv1.SetPrivacyZonesRequest_builder{Zones: []*usersv1.PrivacyZone{zone(0, 50)}}.Build())
 	wantCode(t, err, connect.CodeInvalidArgument)
 	publicProfile, err = e.anonTrips.GetPublicProfile(ctx, tripsv1.GetPublicProfileRequest_builder{Handle: "jane-doe"}.Build())
 	if err != nil || len(publicProfile.GetReports()) != 1 || publicProfile.GetReports()[0].GetSlug() != "ridge-run" {

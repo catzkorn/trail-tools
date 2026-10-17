@@ -79,7 +79,11 @@ const PublicRaceReportPage: React.FC = () => {
   const segments = report.segments.length > 0 && data.track.length > 1 && (
     <section className="flex flex-col gap-3">
       <h2 className="text-xl font-semibold text-gray-900">Along the course</h2>
-      <SegmentsView segments={report.segments} track={data.track} />
+      <SegmentsView
+        segments={report.segments}
+        track={data.track}
+        breaks={data.trackBreaks}
+      />
     </section>
   );
 

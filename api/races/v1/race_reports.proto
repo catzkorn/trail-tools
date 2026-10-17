@@ -384,6 +384,11 @@ message GetPublicRaceReportResponse {
   RaceComparison comparison = 2;
   // The display name of the author.
   string author_name = 3;
-  // The report's track, which the segments are distances along.
+  // The report's track, without the stretches in the author's privacy
+  // zones, see UserService. Its distances are along the whole track, like the
+  // segments'.
   repeated routes.v1.RoutePoint track = 4;
+  // The indexes of the track's points that start a new piece of it, after a
+  // stretch hidden in a privacy zone. Don't join them to the point before.
+  repeated int32 track_breaks = 5;
 }

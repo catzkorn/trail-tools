@@ -183,31 +183,3 @@ func (t *Track) RoutePoints() []*routesv1.RoutePoint {
 	}
 	return points
 }
-
-// VisibleRange returns the indexes of the first and last point of the track
-// outside the circles of the radius around its start and finish: from where
-// it first leaves the circle around its start to where it last enters the
-// circle around its finish. ok is false if no point is outside them.
-func (t *Track) VisibleRange(radius float64) (from, to int, ok bool) {
-	if t == nil || len(t.Points) == 0 {
-		return 0, 0, false
-	}
-	start, finish := t.Points[0], t.Points[len(t.Points)-1]
-	from, to = 0, len(t.Points)-1
-	for from <= to && geo.Distance(t.Points[from], start) < radius {
-		from++
-	}
-	for to >= from && geo.Distance(t.Points[to], finish) < radius {
-		to--
-	}
-	return from, to, from <= to
-}
-
-// NearEnds returns whether a point is within the radius of the start or
-// finish of the track.
-func (t *Track) NearEnds(p geo.Point, radius float64) bool {
-	if t == nil || len(t.Points) == 0 || radius <= 0 {
-		return false
-	}
-	return geo.Distance(p, t.Points[0]) < radius || geo.Distance(p, t.Points[len(t.Points)-1]) < radius
-}

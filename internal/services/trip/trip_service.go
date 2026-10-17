@@ -22,12 +22,14 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/errreport"
 	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
 	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	routesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/routes/v1"
 	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/geo"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"github.com/johanbrandhorst/trail-tools/internal/track"
 	"github.com/johanbrandhorst/trail-tools/internal/trips"
+	"github.com/johanbrandhorst/trail-tools/internal/users"
 	"gitlab.com/greyxor/slogor"
 	"google.golang.org/protobuf/proto"
 )
@@ -67,6 +69,12 @@ type ActivityRepository interface {
 }
 
 // ActivitySyncer syncs an activity from Strava.
+// PrivacyZoneRepository lists the privacy zones tracks and photos are hidden
+// in on public pages.
+type PrivacyZoneRepository interface {
+	ListPrivacyZones(ctx context.Context, userID pgtype.UUID) ([]users.PrivacyZone, error)
+}
+
 type ActivitySyncer interface {
 	SyncActivity(ctx context.Context, userID pgtype.UUID, stravaID int64) error
 }
@@ -79,6 +87,7 @@ type Service struct {
 	activities ActivityRepository
 	syncer     ActivitySyncer
 	blobs      blob.Store
+	zones      PrivacyZoneRepository
 	baseURL    string
 	nowFn      func() time.Time
 	// Downloads photos from Strava.
@@ -90,8 +99,11 @@ type Service struct {
 // Photos are stored in blobs. baseURL is the public URL of the server, used
 // for the URLs of reports and photos. Photos are downloaded from Strava with
 // client.
-func NewService(log *slog.Logger, report *errreport.Reporter, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, client *http.Client, baseURL string) *Service {
+// zones are the privacy zones tracks and photos are hidden in on public
+// pages.
+func NewService(log *slog.Logger, report *errreport.Reporter, repo TripRepository, activities ActivityRepository, syncer ActivitySyncer, blobs blob.Store, zones PrivacyZoneRepository, client *http.Client, baseURL string) *Service {
 	return &Service{
+		zones:      zones,
 		log:        log,
 		report:     report,
 		repo:       repo,
@@ -119,10 +131,7 @@ const (
 	// maxSections is the most sections a report can have.
 	maxSections = 50
 	// excerptLength is the length of the excerpts of reports in lists.
-	excerptLength = 220
-	// maxHiddenEndsMeters is the largest radius hidden around the ends of a
-	// public track.
-	maxHiddenEndsMeters  = 2000
+	excerptLength        = 220
 	maxCaptionLength     = 2000
 	maxDisplayNameLength = 80
 	maxPhotosPerReport   = 200
@@ -333,13 +342,6 @@ func (s *Service) UpdateTripReport(ctx context.Context, req *tripsv1.UpdateTripR
 			return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 		}
 		update.Date = &date
-	}
-	if req.HasHiddenEndsMeters() {
-		hidden := req.GetHiddenEndsMeters()
-		if hidden < 0 || hidden > maxHiddenEndsMeters {
-			return nil, connect.Errorf(connect.CodeInvalidArgument, "hidden_ends_meters must be from 0 to %d", maxHiddenEndsMeters)
-		}
-		update.HiddenEndsMeters = &hidden
 	}
 	if req.HasCoverPhotoId() {
 		var cover pgtype.UUID
@@ -680,18 +682,22 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}
-	// Hide the ends of the track, and the photos taken there.
-	radius := float64(report.HiddenEndsMeters)
-	points := t.RoutePoints()
-	if from, to, ok := t.VisibleRange(radius); ok {
-		points = points[from : to+1]
-	} else {
-		points = nil
+	// Hide the track in the author's privacy zones, and the photos taken
+	// there.
+	zoneList, err := s.zones.ListPrivacyZones(ctx, report.UserID)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to list privacy zones")
+	}
+	zones := trackZones(zoneList)
+	var points []*routesv1.RoutePoint
+	var breaks []int32
+	if t != nil {
+		points, breaks = t.PublicPoints(zones)
 	}
 	visible := make([]*trips.Photo, len(photos[report.ID]))
 	for i, p := range photos[report.ID] {
 		visible[i] = p
-		if p.Location != nil && t.NearEnds(geo.Point{Lat: p.Location.Lat, Lng: p.Location.Lng}, radius) {
+		if p.Location != nil && track.InZones(geo.Point{Lat: p.Location.Lat, Lng: p.Location.Lng}, zones) {
 			hidden := *p
 			hidden.Location = nil
 			visible[i] = &hidden
@@ -702,9 +708,10 @@ func (s *Service) GetPublicTripReport(ctx context.Context, req *tripsv1.GetPubli
 		return nil, s.toConnectError(ctx, err, "failed to list sections")
 	}
 	return tripsv1.GetPublicTripReportResponse_builder{
-		Report: s.reportToProto(report, newStory(sections[report.ID], visible), profile),
-		Author: s.profileToProto(profile),
-		Track:  points,
+		Report:      s.reportToProto(report, newStory(sections[report.ID], visible), profile),
+		Author:      s.profileToProto(profile),
+		Track:       points,
+		TrackBreaks: breaks,
 	}.Build(), nil
 }
 
@@ -877,4 +884,13 @@ func (s *Service) toConnectError(ctx context.Context, err error, msg string) err
 		s.report.Report(ctx, msg, err)
 		return connect.NewError(connect.CodeInternal, msg).WithCause(err)
 	}
+}
+
+// trackZones returns privacy zones as the zones tracks are hidden in.
+func trackZones(zones []users.PrivacyZone) []track.Zone {
+	out := make([]track.Zone, len(zones))
+	for i, z := range zones {
+		out[i] = track.Zone{Center: z.Center, RadiusMeters: float64(z.RadiusMeters)}
+	}
+	return out
 }

@@ -36,6 +36,12 @@ const (
 	UserServiceUploadAvatarProcedure = "/users.v1.UserService/UploadAvatar"
 	// UserServiceDeleteAvatarProcedure is the procedure name of the UserService's DeleteAvatar RPC.
 	UserServiceDeleteAvatarProcedure = "/users.v1.UserService/DeleteAvatar"
+	// UserServiceListPrivacyZonesProcedure is the procedure name of the UserService's ListPrivacyZones
+	// RPC.
+	UserServiceListPrivacyZonesProcedure = "/users.v1.UserService/ListPrivacyZones"
+	// UserServiceSetPrivacyZonesProcedure is the procedure name of the UserService's SetPrivacyZones
+	// RPC.
+	UserServiceSetPrivacyZonesProcedure = "/users.v1.UserService/SetPrivacyZones"
 )
 
 var (
@@ -81,6 +87,20 @@ var (
 			Procedure:  UserServiceDeleteAvatarProcedure,
 		}
 	})
+	userServiceListPrivacyZonesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("ListPrivacyZones"),
+			Procedure:  UserServiceListPrivacyZonesProcedure,
+		}
+	})
+	userServiceSetPrivacyZonesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_users_v1_users_proto.Services().ByName("UserService").Methods().ByName("SetPrivacyZones"),
+			Procedure:  UserServiceSetPrivacyZonesProcedure,
+		}
+	})
 )
 
 // UserServiceClient is a client for the users.v1.UserService service.
@@ -99,6 +119,11 @@ type UserServiceClient interface {
 	UploadAvatar(context.Context, *v1.UploadAvatarRequest) (*v1.UploadAvatarResponse, error)
 	// Remove the user's avatar.
 	DeleteAvatar(context.Context, *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error)
+	// List the user's privacy zones: places, like their home, around which
+	// their tracks and photos are hidden on public pages.
+	ListPrivacyZones(context.Context, *v1.ListPrivacyZonesRequest) (*v1.ListPrivacyZonesResponse, error)
+	// Replace the user's privacy zones.
+	SetPrivacyZones(context.Context, *v1.SetPrivacyZonesRequest) (*v1.SetPrivacyZonesResponse, error)
 }
 
 // NewUserServiceClient constructs a client for the users.v1.UserService service. Multiple service
@@ -123,6 +148,11 @@ type UserServiceHandler interface {
 	UploadAvatar(context.Context, *v1.UploadAvatarRequest) (*v1.UploadAvatarResponse, error)
 	// Remove the user's avatar.
 	DeleteAvatar(context.Context, *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error)
+	// List the user's privacy zones: places, like their home, around which
+	// their tracks and photos are hidden on public pages.
+	ListPrivacyZones(context.Context, *v1.ListPrivacyZonesRequest) (*v1.ListPrivacyZonesResponse, error)
+	// Replace the user's privacy zones.
+	SetPrivacyZones(context.Context, *v1.SetPrivacyZonesRequest) (*v1.SetPrivacyZonesResponse, error)
 }
 
 // RegisterUserServiceHandler registers svc as the users.v1.UserService implementation on server.
@@ -135,6 +165,8 @@ func RegisterUserServiceHandler(server *connect.Server, svc UserServiceHandler) 
 		connect.Method{Spec: userServiceDeleteAPITokenSpec(), Handler: adapter.deleteAPIToken},
 		connect.Method{Spec: userServiceUploadAvatarSpec(), Handler: adapter.uploadAvatar},
 		connect.Method{Spec: userServiceDeleteAvatarSpec(), Handler: adapter.deleteAvatar},
+		connect.Method{Spec: userServiceListPrivacyZonesSpec(), Handler: adapter.listPrivacyZones},
+		connect.Method{Spec: userServiceSetPrivacyZonesSpec(), Handler: adapter.setPrivacyZones},
 	)
 }
 
@@ -163,6 +195,14 @@ func (UnimplementedUserServiceHandler) UploadAvatar(context.Context, *v1.UploadA
 
 func (UnimplementedUserServiceHandler) DeleteAvatar(context.Context, *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.DeleteAvatar is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) ListPrivacyZones(context.Context, *v1.ListPrivacyZonesRequest) (*v1.ListPrivacyZonesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.ListPrivacyZones is not implemented")
+}
+
+func (UnimplementedUserServiceHandler) SetPrivacyZones(context.Context, *v1.SetPrivacyZonesRequest) (*v1.SetPrivacyZonesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "users.v1.UserService.SetPrivacyZones is not implemented")
 }
 
 type userServiceClient struct {
@@ -212,6 +252,22 @@ func (c *userServiceClient) UploadAvatar(ctx context.Context, req *v1.UploadAvat
 func (c *userServiceClient) DeleteAvatar(ctx context.Context, req *v1.DeleteAvatarRequest) (*v1.DeleteAvatarResponse, error) {
 	var res v1.DeleteAvatarResponse
 	if err := c.client.CallUnary(ctx, userServiceDeleteAvatarSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) ListPrivacyZones(ctx context.Context, req *v1.ListPrivacyZonesRequest) (*v1.ListPrivacyZonesResponse, error) {
+	var res v1.ListPrivacyZonesResponse
+	if err := c.client.CallUnary(ctx, userServiceListPrivacyZonesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *userServiceClient) SetPrivacyZones(ctx context.Context, req *v1.SetPrivacyZonesRequest) (*v1.SetPrivacyZonesResponse, error) {
+	var res v1.SetPrivacyZonesResponse
+	if err := c.client.CallUnary(ctx, userServiceSetPrivacyZonesSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -285,6 +341,30 @@ func (h userServiceHandler) deleteAvatar(ctx context.Context, _ connect.Spec, st
 		return err
 	}
 	res, err := h.svc.DeleteAvatar(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) listPrivacyZones(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListPrivacyZonesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListPrivacyZones(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h userServiceHandler) setPrivacyZones(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SetPrivacyZonesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SetPrivacyZones(ctx, &req)
 	if err != nil {
 		return err
 	}

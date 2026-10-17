@@ -5,7 +5,8 @@ package users.v1;
 import "google/protobuf/timestamp.proto";
 import "mcp/v1/options.proto";
 
-// UserService provides information about the signed in user.
+// UserService provides information about the signed in user, and their
+// settings.
 service UserService {
   // Get the signed in user.
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
@@ -31,6 +32,47 @@ service UserService {
   rpc DeleteAvatar(DeleteAvatarRequest) returns (DeleteAvatarResponse) {
     option (mcp.v1.method).exclude = true;
   }
+  // List the user's privacy zones: places, like their home, around which
+  // their tracks and photos are hidden on public pages.
+  rpc ListPrivacyZones(ListPrivacyZonesRequest) returns (ListPrivacyZonesResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // Replace the user's privacy zones.
+  rpc SetPrivacyZones(SetPrivacyZonesRequest) returns (SetPrivacyZonesResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+}
+
+// A privacy zone: a circle around a place, like the user's home, within
+// which their tracks and photos are hidden on public pages, like trip and
+// race reports.
+message PrivacyZone {
+  // The ID of the zone.
+  string id = 1 [(mcp.v1.field).output_only = true];
+  // A name for the user, e.g. "Home". At most 100 characters.
+  string name = 2;
+  // The center of the zone.
+  double lat = 3;
+  double lng = 4;
+  // The radius of the zone in meters, from 100 to 5000.
+  int32 radius_meters = 5;
+}
+
+message ListPrivacyZonesRequest {}
+
+message ListPrivacyZonesResponse {
+  // The user's zones, the oldest first.
+  repeated PrivacyZone zones = 1;
+}
+
+message SetPrivacyZonesRequest {
+  // The zones, at most 20. Empty to remove them all.
+  repeated PrivacyZone zones = 1;
+}
+
+message SetPrivacyZonesResponse {
+  // The user's zones.
+  repeated PrivacyZone zones = 1;
 }
 
 message User {
