@@ -703,6 +703,16 @@ type LactateTest struct {
 	UpdateTime                 pgtype.Timestamptz
 }
 
+type LactateTestShare struct {
+	ID             pgtype.UUID
+	UserID         pgtype.UUID
+	TokenSHA256    []byte
+	RecorderSHA256 []byte
+	TestID         pgtype.UUID
+	ExpireTime     pgtype.Timestamptz
+	CreateTime     pgtype.Timestamptz
+}
+
 type OAuthAuthorizationCode struct {
 	CodeSHA256    []byte
 	UserID        pgtype.UUID

@@ -5,6 +5,7 @@ import {
   formatMmol,
   latestThreshold,
 } from "@components/lactate/lactate-utils";
+import ShareDialog from "@components/lactate/share-dialog";
 import Loading from "@components/loading";
 import Card from "@components/ui/card";
 import { EmptyState, PageHeader, Stat } from "@components/ui/misc";
@@ -18,7 +19,7 @@ import {
   thClass,
 } from "@components/ui/styles";
 import { useQuery } from "@connectrpc/connect-query";
-import { PlayIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, PlusIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { listLactateTests } from "gen/lactate/v1/lactate-LactateTestService_connectquery";
 import type { LactateTest } from "gen/lactate/v1/lactate_pb";
 import { ThresholdDefinition } from "gen/lactate/v1/lactate_pb";
@@ -109,6 +110,7 @@ const LactateTestsPage: React.FC = () => {
     {}
   );
   const [adding, setAdding] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   let content: React.ReactNode = null;
   if (isPending) {
@@ -192,7 +194,17 @@ const LactateTestsPage: React.FC = () => {
         title="Lactate tests"
         subtitle="Find your aerobic threshold, the heart rate at the top of your easy running."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={secondaryButton}
+              onClick={() => {
+                setSharing(true);
+              }}
+            >
+              <ShareIcon className="size-4" />
+              Let someone record
+            </button>
             <button
               type="button"
               className={secondaryButton}
@@ -211,6 +223,13 @@ const LactateTestsPage: React.FC = () => {
         }
       />
       {content}
+      {sharing && (
+        <ShareDialog
+          onClose={() => {
+            setSharing(false);
+          }}
+        />
+      )}
       {adding && (
         <LactateTestDialog
           test={undefined}

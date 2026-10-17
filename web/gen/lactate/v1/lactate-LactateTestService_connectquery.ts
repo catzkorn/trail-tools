@@ -39,3 +39,45 @@ export const updateLactateTest = LactateTestService.method.updateLactateTest;
  * @generated from rpc lactate.v1.LactateTestService.DeleteLactateTest
  */
 export const deleteLactateTest = LactateTestService.method.deleteLactateTest;
+
+/**
+ * Create a recording link, which lets someone record a lactate test for
+ * the user without signing in, e.g. a friend holding the lactate meter
+ * during the test. The link works for 24 hours, in the first browser that
+ * opens it, and records one test, which is the user's like any other.
+ *
+ * @generated from rpc lactate.v1.LactateTestService.CreateLactateTestShare
+ */
+export const createLactateTestShare = LactateTestService.method.createLactateTestShare;
+
+/**
+ * List the user's recording links that haven't expired, the latest first.
+ *
+ * @generated from rpc lactate.v1.LactateTestService.ListLactateTestShares
+ */
+export const listLactateTestShares = LactateTestService.method.listLactateTestShares;
+
+/**
+ * Delete a recording link, so it can't record any more. A test it
+ * recorded is kept.
+ *
+ * @generated from rpc lactate.v1.LactateTestService.DeleteLactateTestShare
+ */
+export const deleteLactateTestShare = LactateTestService.method.deleteLactateTestShare;
+
+/**
+ * Get the recording of the browser that opened a recording link, which
+ * the link's page records with. Authenticated by the browser's cookie, not
+ * the user's.
+ *
+ * @generated from rpc lactate.v1.LactateTestService.GetLactateTestRecording
+ */
+export const getLactateTestRecording = LactateTestService.method.getLactateTestRecording;
+
+/**
+ * Save the test of the recording of the browser that opened a recording
+ * link, creating it with the first save, and replacing it after.
+ *
+ * @generated from rpc lactate.v1.LactateTestService.RecordLactateTest
+ */
+export const recordLactateTest = LactateTestService.method.recordLactateTest;

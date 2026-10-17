@@ -33,6 +33,27 @@ service LactateTestService {
   rpc UpdateLactateTest(UpdateLactateTestRequest) returns (UpdateLactateTestResponse);
   // Delete a lactate test.
   rpc DeleteLactateTest(DeleteLactateTestRequest) returns (DeleteLactateTestResponse);
+  // Create a recording link, which lets someone record a lactate test for
+  // the user without signing in, e.g. a friend holding the lactate meter
+  // during the test. The link works for 24 hours, in the first browser that
+  // opens it, and records one test, which is the user's like any other.
+  rpc CreateLactateTestShare(CreateLactateTestShareRequest) returns (CreateLactateTestShareResponse);
+  // List the user's recording links that haven't expired, the latest first.
+  rpc ListLactateTestShares(ListLactateTestSharesRequest) returns (ListLactateTestSharesResponse);
+  // Delete a recording link, so it can't record any more. A test it
+  // recorded is kept.
+  rpc DeleteLactateTestShare(DeleteLactateTestShareRequest) returns (DeleteLactateTestShareResponse);
+  // Get the recording of the browser that opened a recording link, which
+  // the link's page records with. Authenticated by the browser's cookie, not
+  // the user's.
+  rpc GetLactateTestRecording(GetLactateTestRecordingRequest) returns (GetLactateTestRecordingResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
+  // Save the test of the recording of the browser that opened a recording
+  // link, creating it with the first save, and replacing it after.
+  rpc RecordLactateTest(RecordLactateTestRequest) returns (RecordLactateTestResponse) {
+    option (mcp.v1.method).exclude = true;
+  }
 }
 
 // A blood lactate test.
@@ -147,3 +168,64 @@ message DeleteLactateTestRequest {
 }
 
 message DeleteLactateTestResponse {}
+
+// A recording link, which lets someone record a lactate test for the user
+// without signing in.
+message LactateTestShare {
+  // The ID of the link.
+  string id = 1 [(mcp.v1.field).output_only = true];
+  // The link to send. Only set when it's created: only a hash of it is
+  // kept.
+  string url = 2 [(mcp.v1.field).output_only = true];
+  // Whether a browser opened the link. Only that browser can record with it.
+  bool opened = 3 [(mcp.v1.field).output_only = true];
+  // The ID of the test recorded with the link. Empty until the first
+  // reading is saved.
+  string test_id = 4 [(mcp.v1.field).output_only = true];
+  // When the link stops working.
+  google.protobuf.Timestamp expire_time = 5 [(mcp.v1.field).output_only = true];
+  // When the link was created.
+  google.protobuf.Timestamp create_time = 6 [(mcp.v1.field).output_only = true];
+}
+
+message CreateLactateTestShareRequest {}
+
+message CreateLactateTestShareResponse {
+  // The created link, with its URL.
+  LactateTestShare share = 1;
+}
+
+message ListLactateTestSharesRequest {}
+
+message ListLactateTestSharesResponse {
+  // The user's links that haven't expired, the latest first.
+  repeated LactateTestShare shares = 1;
+}
+
+message DeleteLactateTestShareRequest {
+  // The ID of the link to delete.
+  string id = 1;
+}
+
+message DeleteLactateTestShareResponse {}
+
+message GetLactateTestRecordingRequest {}
+
+message GetLactateTestRecordingResponse {
+  // The name of the user the test is recorded for.
+  string owner_name = 1;
+  // When the link stops working.
+  google.protobuf.Timestamp expire_time = 2;
+  // The test recorded so far. Unset until the first save.
+  LactateTest test = 3;
+}
+
+message RecordLactateTestRequest {
+  // The test to save. Its ID is ignored.
+  LactateTest test = 1;
+}
+
+message RecordLactateTestResponse {
+  // The saved test.
+  LactateTest test = 1;
+}

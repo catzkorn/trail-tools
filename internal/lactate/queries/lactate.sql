@@ -34,3 +34,35 @@ returning *;
 -- name: DeleteLactateTest :execrows
 delete from lactate_tests
 where id = $1 and user_id = $2;
+
+-- name: CreateLactateTestShare :one
+insert into lactate_test_shares (user_id, token_sha256, expire_time)
+values ($1, $2, $3)
+returning *;
+
+-- name: ListLactateTestShares :many
+select * from lactate_test_shares
+where user_id = $1 and expire_time > now()
+order by create_time desc;
+
+-- name: DeleteLactateTestShare :execrows
+delete from lactate_test_shares
+where id = $1 and user_id = $2;
+
+-- name: GetLactateTestShareByToken :one
+select * from lactate_test_shares
+where token_sha256 = $1 and expire_time > now();
+
+-- name: OpenLactateTestShare :execrows
+-- Records the browser that opened a link, unless another one did first.
+update lactate_test_shares set recorder_sha256 = $2
+where id = $1 and recorder_sha256 is null and expire_time > now();
+
+-- name: GetLactateTestRecording :one
+select s.*, u.name as owner_name from lactate_test_shares s
+join passkey_users u on u.id = s.user_id
+where s.recorder_sha256 = $1 and s.expire_time > now();
+
+-- name: SetLactateTestShareTest :exec
+update lactate_test_shares set test_id = $2
+where id = $1;

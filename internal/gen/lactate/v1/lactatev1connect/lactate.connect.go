@@ -39,6 +39,21 @@ const (
 	// LactateTestServiceDeleteLactateTestProcedure is the procedure name of the LactateTestService's
 	// DeleteLactateTest RPC.
 	LactateTestServiceDeleteLactateTestProcedure = "/lactate.v1.LactateTestService/DeleteLactateTest"
+	// LactateTestServiceCreateLactateTestShareProcedure is the procedure name of the
+	// LactateTestService's CreateLactateTestShare RPC.
+	LactateTestServiceCreateLactateTestShareProcedure = "/lactate.v1.LactateTestService/CreateLactateTestShare"
+	// LactateTestServiceListLactateTestSharesProcedure is the procedure name of the
+	// LactateTestService's ListLactateTestShares RPC.
+	LactateTestServiceListLactateTestSharesProcedure = "/lactate.v1.LactateTestService/ListLactateTestShares"
+	// LactateTestServiceDeleteLactateTestShareProcedure is the procedure name of the
+	// LactateTestService's DeleteLactateTestShare RPC.
+	LactateTestServiceDeleteLactateTestShareProcedure = "/lactate.v1.LactateTestService/DeleteLactateTestShare"
+	// LactateTestServiceGetLactateTestRecordingProcedure is the procedure name of the
+	// LactateTestService's GetLactateTestRecording RPC.
+	LactateTestServiceGetLactateTestRecordingProcedure = "/lactate.v1.LactateTestService/GetLactateTestRecording"
+	// LactateTestServiceRecordLactateTestProcedure is the procedure name of the LactateTestService's
+	// RecordLactateTest RPC.
+	LactateTestServiceRecordLactateTestProcedure = "/lactate.v1.LactateTestService/RecordLactateTest"
 )
 
 var (
@@ -77,6 +92,41 @@ var (
 			Procedure:  LactateTestServiceDeleteLactateTestProcedure,
 		}
 	})
+	lactateTestServiceCreateLactateTestShareSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_lactate_v1_lactate_proto.Services().ByName("LactateTestService").Methods().ByName("CreateLactateTestShare"),
+			Procedure:  LactateTestServiceCreateLactateTestShareProcedure,
+		}
+	})
+	lactateTestServiceListLactateTestSharesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_lactate_v1_lactate_proto.Services().ByName("LactateTestService").Methods().ByName("ListLactateTestShares"),
+			Procedure:  LactateTestServiceListLactateTestSharesProcedure,
+		}
+	})
+	lactateTestServiceDeleteLactateTestShareSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_lactate_v1_lactate_proto.Services().ByName("LactateTestService").Methods().ByName("DeleteLactateTestShare"),
+			Procedure:  LactateTestServiceDeleteLactateTestShareProcedure,
+		}
+	})
+	lactateTestServiceGetLactateTestRecordingSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_lactate_v1_lactate_proto.Services().ByName("LactateTestService").Methods().ByName("GetLactateTestRecording"),
+			Procedure:  LactateTestServiceGetLactateTestRecordingProcedure,
+		}
+	})
+	lactateTestServiceRecordLactateTestSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_lactate_v1_lactate_proto.Services().ByName("LactateTestService").Methods().ByName("RecordLactateTest"),
+			Procedure:  LactateTestServiceRecordLactateTestProcedure,
+		}
+	})
 )
 
 // LactateTestServiceClient is a client for the lactate.v1.LactateTestService service.
@@ -92,6 +142,23 @@ type LactateTestServiceClient interface {
 	UpdateLactateTest(context.Context, *v1.UpdateLactateTestRequest) (*v1.UpdateLactateTestResponse, error)
 	// Delete a lactate test.
 	DeleteLactateTest(context.Context, *v1.DeleteLactateTestRequest) (*v1.DeleteLactateTestResponse, error)
+	// Create a recording link, which lets someone record a lactate test for
+	// the user without signing in, e.g. a friend holding the lactate meter
+	// during the test. The link works for 24 hours, in the first browser that
+	// opens it, and records one test, which is the user's like any other.
+	CreateLactateTestShare(context.Context, *v1.CreateLactateTestShareRequest) (*v1.CreateLactateTestShareResponse, error)
+	// List the user's recording links that haven't expired, the latest first.
+	ListLactateTestShares(context.Context, *v1.ListLactateTestSharesRequest) (*v1.ListLactateTestSharesResponse, error)
+	// Delete a recording link, so it can't record any more. A test it
+	// recorded is kept.
+	DeleteLactateTestShare(context.Context, *v1.DeleteLactateTestShareRequest) (*v1.DeleteLactateTestShareResponse, error)
+	// Get the recording of the browser that opened a recording link, which
+	// the link's page records with. Authenticated by the browser's cookie, not
+	// the user's.
+	GetLactateTestRecording(context.Context, *v1.GetLactateTestRecordingRequest) (*v1.GetLactateTestRecordingResponse, error)
+	// Save the test of the recording of the browser that opened a recording
+	// link, creating it with the first save, and replacing it after.
+	RecordLactateTest(context.Context, *v1.RecordLactateTestRequest) (*v1.RecordLactateTestResponse, error)
 }
 
 // NewLactateTestServiceClient constructs a client for the lactate.v1.LactateTestService service.
@@ -113,6 +180,23 @@ type LactateTestServiceHandler interface {
 	UpdateLactateTest(context.Context, *v1.UpdateLactateTestRequest) (*v1.UpdateLactateTestResponse, error)
 	// Delete a lactate test.
 	DeleteLactateTest(context.Context, *v1.DeleteLactateTestRequest) (*v1.DeleteLactateTestResponse, error)
+	// Create a recording link, which lets someone record a lactate test for
+	// the user without signing in, e.g. a friend holding the lactate meter
+	// during the test. The link works for 24 hours, in the first browser that
+	// opens it, and records one test, which is the user's like any other.
+	CreateLactateTestShare(context.Context, *v1.CreateLactateTestShareRequest) (*v1.CreateLactateTestShareResponse, error)
+	// List the user's recording links that haven't expired, the latest first.
+	ListLactateTestShares(context.Context, *v1.ListLactateTestSharesRequest) (*v1.ListLactateTestSharesResponse, error)
+	// Delete a recording link, so it can't record any more. A test it
+	// recorded is kept.
+	DeleteLactateTestShare(context.Context, *v1.DeleteLactateTestShareRequest) (*v1.DeleteLactateTestShareResponse, error)
+	// Get the recording of the browser that opened a recording link, which
+	// the link's page records with. Authenticated by the browser's cookie, not
+	// the user's.
+	GetLactateTestRecording(context.Context, *v1.GetLactateTestRecordingRequest) (*v1.GetLactateTestRecordingResponse, error)
+	// Save the test of the recording of the browser that opened a recording
+	// link, creating it with the first save, and replacing it after.
+	RecordLactateTest(context.Context, *v1.RecordLactateTestRequest) (*v1.RecordLactateTestResponse, error)
 }
 
 // RegisterLactateTestServiceHandler registers svc as the lactate.v1.LactateTestService
@@ -125,6 +209,11 @@ func RegisterLactateTestServiceHandler(server *connect.Server, svc LactateTestSe
 		connect.Method{Spec: lactateTestServiceListLactateTestsSpec(), Handler: adapter.listLactateTests},
 		connect.Method{Spec: lactateTestServiceUpdateLactateTestSpec(), Handler: adapter.updateLactateTest},
 		connect.Method{Spec: lactateTestServiceDeleteLactateTestSpec(), Handler: adapter.deleteLactateTest},
+		connect.Method{Spec: lactateTestServiceCreateLactateTestShareSpec(), Handler: adapter.createLactateTestShare},
+		connect.Method{Spec: lactateTestServiceListLactateTestSharesSpec(), Handler: adapter.listLactateTestShares},
+		connect.Method{Spec: lactateTestServiceDeleteLactateTestShareSpec(), Handler: adapter.deleteLactateTestShare},
+		connect.Method{Spec: lactateTestServiceGetLactateTestRecordingSpec(), Handler: adapter.getLactateTestRecording},
+		connect.Method{Spec: lactateTestServiceRecordLactateTestSpec(), Handler: adapter.recordLactateTest},
 	)
 }
 
@@ -149,6 +238,26 @@ func (UnimplementedLactateTestServiceHandler) UpdateLactateTest(context.Context,
 
 func (UnimplementedLactateTestServiceHandler) DeleteLactateTest(context.Context, *v1.DeleteLactateTestRequest) (*v1.DeleteLactateTestResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "lactate.v1.LactateTestService.DeleteLactateTest is not implemented")
+}
+
+func (UnimplementedLactateTestServiceHandler) CreateLactateTestShare(context.Context, *v1.CreateLactateTestShareRequest) (*v1.CreateLactateTestShareResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "lactate.v1.LactateTestService.CreateLactateTestShare is not implemented")
+}
+
+func (UnimplementedLactateTestServiceHandler) ListLactateTestShares(context.Context, *v1.ListLactateTestSharesRequest) (*v1.ListLactateTestSharesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "lactate.v1.LactateTestService.ListLactateTestShares is not implemented")
+}
+
+func (UnimplementedLactateTestServiceHandler) DeleteLactateTestShare(context.Context, *v1.DeleteLactateTestShareRequest) (*v1.DeleteLactateTestShareResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "lactate.v1.LactateTestService.DeleteLactateTestShare is not implemented")
+}
+
+func (UnimplementedLactateTestServiceHandler) GetLactateTestRecording(context.Context, *v1.GetLactateTestRecordingRequest) (*v1.GetLactateTestRecordingResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "lactate.v1.LactateTestService.GetLactateTestRecording is not implemented")
+}
+
+func (UnimplementedLactateTestServiceHandler) RecordLactateTest(context.Context, *v1.RecordLactateTestRequest) (*v1.RecordLactateTestResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "lactate.v1.LactateTestService.RecordLactateTest is not implemented")
 }
 
 type lactateTestServiceClient struct {
@@ -190,6 +299,46 @@ func (c *lactateTestServiceClient) UpdateLactateTest(ctx context.Context, req *v
 func (c *lactateTestServiceClient) DeleteLactateTest(ctx context.Context, req *v1.DeleteLactateTestRequest) (*v1.DeleteLactateTestResponse, error) {
 	var res v1.DeleteLactateTestResponse
 	if err := c.client.CallUnary(ctx, lactateTestServiceDeleteLactateTestSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *lactateTestServiceClient) CreateLactateTestShare(ctx context.Context, req *v1.CreateLactateTestShareRequest) (*v1.CreateLactateTestShareResponse, error) {
+	var res v1.CreateLactateTestShareResponse
+	if err := c.client.CallUnary(ctx, lactateTestServiceCreateLactateTestShareSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *lactateTestServiceClient) ListLactateTestShares(ctx context.Context, req *v1.ListLactateTestSharesRequest) (*v1.ListLactateTestSharesResponse, error) {
+	var res v1.ListLactateTestSharesResponse
+	if err := c.client.CallUnary(ctx, lactateTestServiceListLactateTestSharesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *lactateTestServiceClient) DeleteLactateTestShare(ctx context.Context, req *v1.DeleteLactateTestShareRequest) (*v1.DeleteLactateTestShareResponse, error) {
+	var res v1.DeleteLactateTestShareResponse
+	if err := c.client.CallUnary(ctx, lactateTestServiceDeleteLactateTestShareSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *lactateTestServiceClient) GetLactateTestRecording(ctx context.Context, req *v1.GetLactateTestRecordingRequest) (*v1.GetLactateTestRecordingResponse, error) {
+	var res v1.GetLactateTestRecordingResponse
+	if err := c.client.CallUnary(ctx, lactateTestServiceGetLactateTestRecordingSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *lactateTestServiceClient) RecordLactateTest(ctx context.Context, req *v1.RecordLactateTestRequest) (*v1.RecordLactateTestResponse, error) {
+	var res v1.RecordLactateTestResponse
+	if err := c.client.CallUnary(ctx, lactateTestServiceRecordLactateTestSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -251,6 +400,66 @@ func (h lactateTestServiceHandler) deleteLactateTest(ctx context.Context, _ conn
 		return err
 	}
 	res, err := h.svc.DeleteLactateTest(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h lactateTestServiceHandler) createLactateTestShare(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateLactateTestShareRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateLactateTestShare(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h lactateTestServiceHandler) listLactateTestShares(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListLactateTestSharesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListLactateTestShares(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h lactateTestServiceHandler) deleteLactateTestShare(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteLactateTestShareRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteLactateTestShare(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h lactateTestServiceHandler) getLactateTestRecording(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetLactateTestRecordingRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetLactateTestRecording(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h lactateTestServiceHandler) recordLactateTest(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RecordLactateTestRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RecordLactateTest(ctx, &req)
 	if err != nil {
 		return err
 	}

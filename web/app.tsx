@@ -24,6 +24,7 @@ import RacePlanPage from "pages/race-plan";
 import RaceReportPage from "pages/race-report";
 import RaceReportsPage from "pages/race-reports";
 import RacesPage from "pages/races";
+import RecordLactateTestPage from "pages/record-lactate-test";
 import RoutePage from "pages/route";
 import RoutesPage from "pages/routes";
 import SettingsPage from "pages/settings";
@@ -116,6 +117,10 @@ const App: React.FC = () => {
         <Route path="/u/:handle" element={<PublicProfilePage />} />
         <Route path="/u/:handle/:slug" element={<PublicTripReportPage />} />
         <Route path="/invite/:token" element={<InvitePage />} />
+        <Route
+          path="/record/lactate-test"
+          element={<RecordLactateTestPage />}
+        />
         {user !== null && (
           <>
             <Route path="/" element={<DashboardPage user={user} />} />

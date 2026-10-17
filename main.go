@@ -576,7 +576,7 @@ func run(
 	}
 	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, telemetry.NewClient(0), baseURL)
 	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
-	lactateService := lactatesvc.NewService(log, report, lactateRepo)
+	lactateService := lactatesvc.NewService(log, report, lactateRepo, baseURL)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
 	oauthServer := oauth.NewServer(log, report, users, baseURL, mcpPath)
@@ -618,7 +618,9 @@ func run(
 
 	// Wrap the API mux in the authn middleware. Each service checks
 	// authentication itself.
-	authHandler, err := authn.NewAuthnMiddleware(ctx, log, report, users, apiMux)
+	// Browsers that opened a lactate test recording link record with its
+	// cookie, signed in or not.
+	authHandler, err := authn.NewAuthnMiddleware(ctx, log, report, users, lactatesvc.RecorderMiddleware(apiMux))
 	if err != nil {
 		return fmt.Errorf("failed to create authentication middleware: %w", err)
 	}
@@ -733,6 +735,7 @@ func run(
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
 	// The guided lactate test as a Garmin workout. It holds no user data.
 	mux.Handle(lactatesvc.WorkoutPath, lactateService.WorkoutHandler())
+	mux.Handle(lactatesvc.SharePath, lactateService.ShareHandler())
 	mux.Handle(trip.ProfilePath, authenticate(raceReportService.PageHandler(serveDir != "", tripService.PageHandler(serveDir != ""))))
 
 	// Requests are traced, and named after the routes they match.

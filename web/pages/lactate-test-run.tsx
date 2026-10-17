@@ -23,6 +23,7 @@ import {
   primaryButton,
   secondaryButton,
 } from "@components/ui/styles";
+import type { ConnectError } from "@connectrpc/connect";
 import {
   createConnectQueryKey,
   useMutation,
@@ -708,128 +709,99 @@ const continuedPhase = (test: LactateTest | undefined): Phase | undefined => {
   return test.stages.length === 0 ? "warm-up" : "stage";
 };
 
+export interface GuidedTestProps {
+  // The test so far, or undefined until it's created.
+  test: LactateTest | undefined;
+  // The user's latest test, to start where it did, if there is one.
+  previous: LactateTest | undefined;
+  pending: boolean;
+  error: ConnectError | null;
+  // Create creates the test, with its resting reading, 0 if none.
+  create: (restingMmolPerLiter: number) => Promise<void>;
+  // SaveStages replaces the stages of the test.
+  saveStages: (test: LactateTest, stages: LactateStage[]) => Promise<void>;
+  onFinish: (test: LactateTest) => void;
+}
+
 /**
- * LactateTestRunPage guides the user through a lactate test as they run it:
- * the checklist, the resting reading, the warm-up, and each stage, saving
- * each reading as it's entered, so the test can be continued later.
+ * GuidedTest guides a lactate test as it's run: the checklist, the resting
+ * reading, the warm-up, and each stage, saving each reading as it's entered,
+ * so the test can be continued later.
  */
-const LactateTestRunPage: React.FC = () => {
-  const { id } = useParams();
-  const queryClient = useQueryClient();
-  const transport = useTransport();
-  const navigate = useNavigate();
-  const tests = useQuery(listLactateTests, {});
-  const test = useQuery(getLactateTest, id === undefined ? skipToken : { id });
+export const GuidedTest: React.FC<GuidedTestProps> = ({
+  test: loaded,
+  previous,
+  pending,
+  error,
+  create: createTest,
+  saveStages: save,
+  onFinish,
+}) => {
   // The settings the user chose, now or for the last guided test.
   const [chosen, setChosen] = useState(readSettings);
   /**
    * Without settings of their own, guided tests start where the last test
    * started, so tests are comparable.
    */
-  const lastStart = tests.data?.tests[0]?.stages[0]?.heartRateBpm;
+  const lastStart = previous?.stages[0]?.heartRateBpm;
   const settings = chosen ?? {
     ...DEFAULT_SETTINGS,
     startHeartRate: lastStart ?? DEFAULT_SETTINGS.startHeartRate,
   };
   const [chosenPhase, setPhase] = useState<Phase | undefined>(
-    id === undefined ? "prepare" : undefined
+    loaded === undefined ? "prepare" : undefined
   );
-  const loaded = test.data?.test;
   const phase = chosenPhase ?? continuedPhase(loaded);
 
-  const store = (updated: LactateTest | undefined): void => {
-    if (updated === undefined) {
-      return;
-    }
-    queryClient.setQueryData(
-      createConnectQueryKey({
-        cardinality: "finite",
-        input: { id: updated.id },
-        schema: getLactateTest,
-        transport,
-      }),
-      create(GetLactateTestResponseSchema, { test: updated })
-    );
-  };
-  const createTest = useMutation(createLactateTest, {
-    onSuccess: async (response) => {
-      store(response.test);
-      await invalidateServices(queryClient, [LactateTestService]);
-      if (response.test !== undefined) {
-        void navigate(`/lactate-tests/${response.test.id}/run`, {
-          replace: true,
-        });
-        setPhase("warm-up");
-      }
-    },
-  });
-  const update = useMutation(updateLactateTest, {
-    onSuccess: async (response) => {
-      store(response.test);
-      await invalidateServices(queryClient, [LactateTestService]);
-    },
-  });
-
   const saveStages = (current: LactateTest, stages: LactateStage[]): void => {
-    update.mutate(
-      { test: { id: current.id, stages }, updateMask: { paths: ["stages"] } },
-      {
-        onSuccess: () => {
-          setPhase(stages.length > current.stages.length ? "reading" : "stage");
-        },
-      }
-    );
+    save(current, stages)
+      .then(() => {
+        setPhase(stages.length > current.stages.length ? "reading" : "stage");
+      })
+      .catch(() => {
+        // The error is shown below, and the stage can be saved again.
+      });
   };
-
-  if (id !== undefined && test.isPending) {
-    return <Loading />;
-  }
-  if (test.isError) {
-    return (
-      <QueryError
-        error={test.error}
-        onRetry={() => {
-          void test.refetch();
-        }}
-      />
-    );
-  }
 
   let content: React.ReactNode = null;
   if (phase === "prepare") {
     content = (
       <Prepare
-        // The baseline is filled in from the previous test once it loads.
-        key={tests.data?.tests[0]?.id ?? ""}
         settings={settings}
-        previous={tests.data?.tests[0]}
-        pending={createTest.isPending}
+        previous={previous}
+        pending={pending}
         onChange={setChosen}
         onStart={(baseline) => {
           writeStorage(SETTINGS_KEY, JSON.stringify(settings));
+          // Once the test starts, its settings stay as they are.
+          setChosen(settings);
           if (baseline.mode === "measure") {
             setPhase("resting");
             return;
           }
           // Without a resting reading to take, the warm-up is next.
-          createTest.mutate({
-            test: {
-              date: today(),
-              restingLactateMmolPerLiter:
-                baseline.mode === "known" ? baseline.mmolPerLiter : 0,
-            },
-          });
+          createTest(baseline.mode === "known" ? baseline.mmolPerLiter : 0)
+            .then(() => {
+              setPhase("warm-up");
+            })
+            .catch(() => {
+              // The error is shown below, and the test can be started again.
+            });
         }}
       />
     );
   } else if (phase === "resting") {
     content = (
       <Resting
-        pending={createTest.isPending}
+        pending={pending}
         onSave={(mmolPerLiter) => {
-          createTest.mutate({
-            test: { date: today(), restingLactateMmolPerLiter: mmolPerLiter },
-          });
+          createTest(mmolPerLiter)
+            .then(() => {
+              setPhase("warm-up");
+            })
+            .catch(() => {
+              // The error is shown below, and the reading can be saved again.
+            });
         }}
       />
     );
@@ -861,7 +833,7 @@ const LactateTestRunPage: React.FC = () => {
         key={loaded.stages.length}
         test={loaded}
         settings={settings}
-        pending={update.isPending}
+        pending={pending}
         onSave={(stages) => {
           saveStages(loaded, stages);
         }}
@@ -879,7 +851,76 @@ const LactateTestRunPage: React.FC = () => {
           saveStages(loaded, loaded.stages.slice(0, -1));
         }}
         onFinish={() => {
-          void navigate(`/lactate-tests/${loaded.id}`);
+          onFinish(loaded);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {content}
+      <ErrorText error={error} />
+      {loaded !== undefined &&
+        (loaded.restingLactateMmolPerLiter > 0 || loaded.stages.length > 0) && (
+          <Card title="Readings">
+            <Readings test={loaded} />
+          </Card>
+        )}
+    </div>
+  );
+};
+
+// LactateTestRunPage runs one of the user's lactate tests, or a new one.
+const LactateTestRunPage: React.FC = () => {
+  const { id } = useParams();
+  const queryClient = useQueryClient();
+  const transport = useTransport();
+  const navigate = useNavigate();
+  const tests = useQuery(listLactateTests, {});
+  const test = useQuery(getLactateTest, id === undefined ? skipToken : { id });
+
+  const store = (updated: LactateTest | undefined): void => {
+    if (updated === undefined) {
+      return;
+    }
+    queryClient.setQueryData(
+      createConnectQueryKey({
+        cardinality: "finite",
+        input: { id: updated.id },
+        schema: getLactateTest,
+        transport,
+      }),
+      create(GetLactateTestResponseSchema, { test: updated })
+    );
+  };
+  const createTest = useMutation(createLactateTest, {
+    onSuccess: async (response) => {
+      store(response.test);
+      await invalidateServices(queryClient, [LactateTestService]);
+      if (response.test !== undefined) {
+        void navigate(`/lactate-tests/${response.test.id}/run`, {
+          replace: true,
+        });
+      }
+    },
+  });
+  const update = useMutation(updateLactateTest, {
+    onSuccess: async (response) => {
+      store(response.test);
+      await invalidateServices(queryClient, [LactateTestService]);
+    },
+  });
+
+  if ((id !== undefined && test.isPending) || tests.isPending) {
+    return <Loading />;
+  }
+  if (test.isError) {
+    return (
+      <QueryError
+        error={test.error}
+        onRetry={() => {
+          void test.refetch();
         }}
       />
     );
@@ -895,17 +936,29 @@ const LactateTestRunPage: React.FC = () => {
           </Link>
         }
       />
-      <div className="flex flex-col gap-4">
-        {content}
-        <ErrorText error={createTest.error ?? update.error} />
-        {loaded !== undefined &&
-          (loaded.restingLactateMmolPerLiter > 0 ||
-            loaded.stages.length > 0) && (
-            <Card title="Readings">
-              <Readings test={loaded} />
-            </Card>
-          )}
-      </div>
+      <GuidedTest
+        test={test.data?.test}
+        // The latest other test with stages to start from.
+        previous={tests.data?.tests.find(
+          (other) => other.id !== test.data?.test?.id && other.stages.length > 0
+        )}
+        pending={createTest.isPending || update.isPending}
+        error={createTest.error ?? update.error}
+        create={async (mmolPerLiter) => {
+          await createTest.mutateAsync({
+            test: { date: today(), restingLactateMmolPerLiter: mmolPerLiter },
+          });
+        }}
+        saveStages={async (current, stages) => {
+          await update.mutateAsync({
+            test: { id: current.id, stages },
+            updateMask: { paths: ["stages"] },
+          });
+        }}
+        onFinish={(finished) => {
+          void navigate(`/lactate-tests/${finished.id}`);
+        }}
+      />
     </div>
   );
 };

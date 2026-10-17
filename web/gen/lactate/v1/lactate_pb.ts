@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file lactate/v1/lactate.proto.
  */
 export const file_lactate_v1_lactate: GenFile = /*@__PURE__*/
-  fileDesc("ChhsYWN0YXRlL3YxL2xhY3RhdGUucHJvdG8SCmxhY3RhdGUudjEinwMKC0xhY3RhdGVUZXN0EgoKAmlkGAEgASgJEgwKBGRhdGUYAiABKAkSDQoFbm90ZXMYAyABKAkSJgoecmVzdGluZ19sYWN0YXRlX21tb2xfcGVyX2xpdGVyGAQgASgBEigKBnN0YWdlcxgFIAMoCzIYLmxhY3RhdGUudjEuTGFjdGF0ZVN0YWdlEi0KHWxvd2VzdF9sYWN0YXRlX21tb2xfcGVyX2xpdGVyGAYgASgBQgaqnxkCCAESMAogYWVyb2JpY190aHJlc2hvbGRfaGVhcnRfcmF0ZV9icG0YByABKAVCBqqfGQIIARJCChN0aHJlc2hvbGRfZXN0aW1hdGVzGAggAygLMh0ubGFjdGF0ZS52MS5UaHJlc2hvbGRFc3RpbWF0ZUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBIoABChFUaHJlc2hvbGRFc3RpbWF0ZRIzCgpkZWZpbml0aW9uGAEgASgOMh8ubGFjdGF0ZS52MS5UaHJlc2hvbGREZWZpbml0aW9uEh4KFmxhY3RhdGVfbW1vbF9wZXJfbGl0ZXIYAiABKAESFgoOaGVhcnRfcmF0ZV9icG0YAyABKAUiRgoMTGFjdGF0ZVN0YWdlEhYKDmhlYXJ0X3JhdGVfYnBtGAEgASgFEh4KFmxhY3RhdGVfbW1vbF9wZXJfbGl0ZXIYAiABKAEiQQoYQ3JlYXRlTGFjdGF0ZVRlc3RSZXF1ZXN0EiUKBHRlc3QYASABKAsyFy5sYWN0YXRlLnYxLkxhY3RhdGVUZXN0IkIKGUNyZWF0ZUxhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiIwoVR2V0TGFjdGF0ZVRlc3RSZXF1ZXN0EgoKAmlkGAEgASgJIj8KFkdldExhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiGQoXTGlzdExhY3RhdGVUZXN0c1JlcXVlc3QiQgoYTGlzdExhY3RhdGVUZXN0c1Jlc3BvbnNlEiYKBXRlc3RzGAEgAygLMhcubGFjdGF0ZS52MS5MYWN0YXRlVGVzdCJyChhVcGRhdGVMYWN0YXRlVGVzdFJlcXVlc3QSJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QSLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIkIKGVVwZGF0ZUxhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiJgoYRGVsZXRlTGFjdGF0ZVRlc3RSZXF1ZXN0EgoKAmlkGAEgASgJIhsKGURlbGV0ZUxhY3RhdGVUZXN0UmVzcG9uc2UquAEKE1RocmVzaG9sZERlZmluaXRpb24SJAogVEhSRVNIT0xEX0RFRklOSVRJT05fVU5TUEVDSUZJRUQQABIlCiFUSFJFU0hPTERfREVGSU5JVElPTl9GSVhFRF8yX01NT0wQARInCiNUSFJFU0hPTERfREVGSU5JVElPTl9GSVhFRF8yXzVfTU1PTBACEisKJ1RIUkVTSE9MRF9ERUZJTklUSU9OX0xPV0VTVF9QTFVTXzFfTU1PTBADMvIDChJMYWN0YXRlVGVzdFNlcnZpY2USYAoRQ3JlYXRlTGFjdGF0ZVRlc3QSJC5sYWN0YXRlLnYxLkNyZWF0ZUxhY3RhdGVUZXN0UmVxdWVzdBolLmxhY3RhdGUudjEuQ3JlYXRlTGFjdGF0ZVRlc3RSZXNwb25zZRJXCg5HZXRMYWN0YXRlVGVzdBIhLmxhY3RhdGUudjEuR2V0TGFjdGF0ZVRlc3RSZXF1ZXN0GiIubGFjdGF0ZS52MS5HZXRMYWN0YXRlVGVzdFJlc3BvbnNlEl0KEExpc3RMYWN0YXRlVGVzdHMSIy5sYWN0YXRlLnYxLkxpc3RMYWN0YXRlVGVzdHNSZXF1ZXN0GiQubGFjdGF0ZS52MS5MaXN0TGFjdGF0ZVRlc3RzUmVzcG9uc2USYAoRVXBkYXRlTGFjdGF0ZVRlc3QSJC5sYWN0YXRlLnYxLlVwZGF0ZUxhY3RhdGVUZXN0UmVxdWVzdBolLmxhY3RhdGUudjEuVXBkYXRlTGFjdGF0ZVRlc3RSZXNwb25zZRJgChFEZWxldGVMYWN0YXRlVGVzdBIkLmxhY3RhdGUudjEuRGVsZXRlTGFjdGF0ZVRlc3RSZXF1ZXN0GiUubGFjdGF0ZS52MS5EZWxldGVMYWN0YXRlVGVzdFJlc3BvbnNlQrEBCg5jb20ubGFjdGF0ZS52MUIMTGFjdGF0ZVByb3RvUAFaSGdpdGh1Yi5jb20vam9oYW5icmFuZGhvcnN0L3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9sYWN0YXRlL3YxO2xhY3RhdGV2MaICA0xYWKoCCkxhY3RhdGUuVjHKAgpMYWN0YXRlXFYx4gIWTGFjdGF0ZVxWMVxHUEJNZXRhZGF0YeoCC0xhY3RhdGU6OlYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChhsYWN0YXRlL3YxL2xhY3RhdGUucHJvdG8SCmxhY3RhdGUudjEinwMKC0xhY3RhdGVUZXN0EgoKAmlkGAEgASgJEgwKBGRhdGUYAiABKAkSDQoFbm90ZXMYAyABKAkSJgoecmVzdGluZ19sYWN0YXRlX21tb2xfcGVyX2xpdGVyGAQgASgBEigKBnN0YWdlcxgFIAMoCzIYLmxhY3RhdGUudjEuTGFjdGF0ZVN0YWdlEi0KHWxvd2VzdF9sYWN0YXRlX21tb2xfcGVyX2xpdGVyGAYgASgBQgaqnxkCCAESMAogYWVyb2JpY190aHJlc2hvbGRfaGVhcnRfcmF0ZV9icG0YByABKAVCBqqfGQIIARJCChN0aHJlc2hvbGRfZXN0aW1hdGVzGAggAygLMh0ubGFjdGF0ZS52MS5UaHJlc2hvbGRFc3RpbWF0ZUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBIoABChFUaHJlc2hvbGRFc3RpbWF0ZRIzCgpkZWZpbml0aW9uGAEgASgOMh8ubGFjdGF0ZS52MS5UaHJlc2hvbGREZWZpbml0aW9uEh4KFmxhY3RhdGVfbW1vbF9wZXJfbGl0ZXIYAiABKAESFgoOaGVhcnRfcmF0ZV9icG0YAyABKAUiRgoMTGFjdGF0ZVN0YWdlEhYKDmhlYXJ0X3JhdGVfYnBtGAEgASgFEh4KFmxhY3RhdGVfbW1vbF9wZXJfbGl0ZXIYAiABKAEiQQoYQ3JlYXRlTGFjdGF0ZVRlc3RSZXF1ZXN0EiUKBHRlc3QYASABKAsyFy5sYWN0YXRlLnYxLkxhY3RhdGVUZXN0IkIKGUNyZWF0ZUxhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiIwoVR2V0TGFjdGF0ZVRlc3RSZXF1ZXN0EgoKAmlkGAEgASgJIj8KFkdldExhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiGQoXTGlzdExhY3RhdGVUZXN0c1JlcXVlc3QiQgoYTGlzdExhY3RhdGVUZXN0c1Jlc3BvbnNlEiYKBXRlc3RzGAEgAygLMhcubGFjdGF0ZS52MS5MYWN0YXRlVGVzdCJyChhVcGRhdGVMYWN0YXRlVGVzdFJlcXVlc3QSJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QSLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIkIKGVVwZGF0ZUxhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiJgoYRGVsZXRlTGFjdGF0ZVRlc3RSZXF1ZXN0EgoKAmlkGAEgASgJIhsKGURlbGV0ZUxhY3RhdGVUZXN0UmVzcG9uc2Ui3gEKEExhY3RhdGVUZXN0U2hhcmUSEgoCaWQYASABKAlCBqqfGQIIARITCgN1cmwYAiABKAlCBqqfGQIIARIWCgZvcGVuZWQYAyABKAhCBqqfGQIIARIXCgd0ZXN0X2lkGAQgASgJQgaqnxkCCAESNwoLZXhwaXJlX3RpbWUYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAESNwoLY3JlYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wQgaqnxkCCAEiHwodQ3JlYXRlTGFjdGF0ZVRlc3RTaGFyZVJlcXVlc3QiTQoeQ3JlYXRlTGFjdGF0ZVRlc3RTaGFyZVJlc3BvbnNlEisKBXNoYXJlGAEgASgLMhwubGFjdGF0ZS52MS5MYWN0YXRlVGVzdFNoYXJlIh4KHExpc3RMYWN0YXRlVGVzdFNoYXJlc1JlcXVlc3QiTQodTGlzdExhY3RhdGVUZXN0U2hhcmVzUmVzcG9uc2USLAoGc2hhcmVzGAEgAygLMhwubGFjdGF0ZS52MS5MYWN0YXRlVGVzdFNoYXJlIisKHURlbGV0ZUxhY3RhdGVUZXN0U2hhcmVSZXF1ZXN0EgoKAmlkGAEgASgJIiAKHkRlbGV0ZUxhY3RhdGVUZXN0U2hhcmVSZXNwb25zZSIgCh5HZXRMYWN0YXRlVGVzdFJlY29yZGluZ1JlcXVlc3QijQEKH0dldExhY3RhdGVUZXN0UmVjb3JkaW5nUmVzcG9uc2USEgoKb3duZXJfbmFtZRgBIAEoCRIvCgtleHBpcmVfdGltZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASJQoEdGVzdBgDIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QiQQoYUmVjb3JkTGFjdGF0ZVRlc3RSZXF1ZXN0EiUKBHRlc3QYASABKAsyFy5sYWN0YXRlLnYxLkxhY3RhdGVUZXN0IkIKGVJlY29yZExhY3RhdGVUZXN0UmVzcG9uc2USJQoEdGVzdBgBIAEoCzIXLmxhY3RhdGUudjEuTGFjdGF0ZVRlc3QquAEKE1RocmVzaG9sZERlZmluaXRpb24SJAogVEhSRVNIT0xEX0RFRklOSVRJT05fVU5TUEVDSUZJRUQQABIlCiFUSFJFU0hPTERfREVGSU5JVElPTl9GSVhFRF8yX01NT0wQARInCiNUSFJFU0hPTERfREVGSU5JVElPTl9GSVhFRF8yXzVfTU1PTBACEisKJ1RIUkVTSE9MRF9ERUZJTklUSU9OX0xPV0VTVF9QTFVTXzFfTU1PTBADMqgIChJMYWN0YXRlVGVzdFNlcnZpY2USYAoRQ3JlYXRlTGFjdGF0ZVRlc3QSJC5sYWN0YXRlLnYxLkNyZWF0ZUxhY3RhdGVUZXN0UmVxdWVzdBolLmxhY3RhdGUudjEuQ3JlYXRlTGFjdGF0ZVRlc3RSZXNwb25zZRJXCg5HZXRMYWN0YXRlVGVzdBIhLmxhY3RhdGUudjEuR2V0TGFjdGF0ZVRlc3RSZXF1ZXN0GiIubGFjdGF0ZS52MS5HZXRMYWN0YXRlVGVzdFJlc3BvbnNlEl0KEExpc3RMYWN0YXRlVGVzdHMSIy5sYWN0YXRlLnYxLkxpc3RMYWN0YXRlVGVzdHNSZXF1ZXN0GiQubGFjdGF0ZS52MS5MaXN0TGFjdGF0ZVRlc3RzUmVzcG9uc2USYAoRVXBkYXRlTGFjdGF0ZVRlc3QSJC5sYWN0YXRlLnYxLlVwZGF0ZUxhY3RhdGVUZXN0UmVxdWVzdBolLmxhY3RhdGUudjEuVXBkYXRlTGFjdGF0ZVRlc3RSZXNwb25zZRJgChFEZWxldGVMYWN0YXRlVGVzdBIkLmxhY3RhdGUudjEuRGVsZXRlTGFjdGF0ZVRlc3RSZXF1ZXN0GiUubGFjdGF0ZS52MS5EZWxldGVMYWN0YXRlVGVzdFJlc3BvbnNlEm8KFkNyZWF0ZUxhY3RhdGVUZXN0U2hhcmUSKS5sYWN0YXRlLnYxLkNyZWF0ZUxhY3RhdGVUZXN0U2hhcmVSZXF1ZXN0GioubGFjdGF0ZS52MS5DcmVhdGVMYWN0YXRlVGVzdFNoYXJlUmVzcG9uc2USbAoVTGlzdExhY3RhdGVUZXN0U2hhcmVzEigubGFjdGF0ZS52MS5MaXN0TGFjdGF0ZVRlc3RTaGFyZXNSZXF1ZXN0GikubGFjdGF0ZS52MS5MaXN0TGFjdGF0ZVRlc3RTaGFyZXNSZXNwb25zZRJvChZEZWxldGVMYWN0YXRlVGVzdFNoYXJlEikubGFjdGF0ZS52MS5EZWxldGVMYWN0YXRlVGVzdFNoYXJlUmVxdWVzdBoqLmxhY3RhdGUudjEuRGVsZXRlTGFjdGF0ZVRlc3RTaGFyZVJlc3BvbnNlEnoKF0dldExhY3RhdGVUZXN0UmVjb3JkaW5nEioubGFjdGF0ZS52MS5HZXRMYWN0YXRlVGVzdFJlY29yZGluZ1JlcXVlc3QaKy5sYWN0YXRlLnYxLkdldExhY3RhdGVUZXN0UmVjb3JkaW5nUmVzcG9uc2UiBqKfGQIIARJoChFSZWNvcmRMYWN0YXRlVGVzdBIkLmxhY3RhdGUudjEuUmVjb3JkTGFjdGF0ZVRlc3RSZXF1ZXN0GiUubGFjdGF0ZS52MS5SZWNvcmRMYWN0YXRlVGVzdFJlc3BvbnNlIgainxkCCAFCsQEKDmNvbS5sYWN0YXRlLnYxQgxMYWN0YXRlUHJvdG9QAVpIZ2l0aHViLmNvbS9qb2hhbmJyYW5kaG9yc3QvdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL2xhY3RhdGUvdjE7bGFjdGF0ZXYxogIDTFhYqgIKTGFjdGF0ZS5WMcoCCkxhY3RhdGVcVjHiAhZMYWN0YXRlXFYxXEdQQk1ldGFkYXRh6gILTGFjdGF0ZTo6VjFiBnByb3RvMw", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_mcp_v1_options]);
 
 /**
  * A blood lactate test.
@@ -361,6 +361,245 @@ export const DeleteLactateTestResponseSchema: GenMessage<DeleteLactateTestRespon
   messageDesc(file_lactate_v1_lactate, 12);
 
 /**
+ * A recording link, which lets someone record a lactate test for the user
+ * without signing in.
+ *
+ * @generated from message lactate.v1.LactateTestShare
+ */
+export type LactateTestShare = Message<"lactate.v1.LactateTestShare"> & {
+  /**
+   * The ID of the link.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The link to send. Only set when it's created: only a hash of it is
+   * kept.
+   *
+   * @generated from field: string url = 2;
+   */
+  url: string;
+
+  /**
+   * Whether a browser opened the link. Only that browser can record with it.
+   *
+   * @generated from field: bool opened = 3;
+   */
+  opened: boolean;
+
+  /**
+   * The ID of the test recorded with the link. Empty until the first
+   * reading is saved.
+   *
+   * @generated from field: string test_id = 4;
+   */
+  testId: string;
+
+  /**
+   * When the link stops working.
+   *
+   * @generated from field: google.protobuf.Timestamp expire_time = 5;
+   */
+  expireTime?: Timestamp | undefined;
+
+  /**
+   * When the link was created.
+   *
+   * @generated from field: google.protobuf.Timestamp create_time = 6;
+   */
+  createTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message lactate.v1.LactateTestShare.
+ * Use `create(LactateTestShareSchema)` to create a new message.
+ */
+export const LactateTestShareSchema: GenMessage<LactateTestShare> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 13);
+
+/**
+ * @generated from message lactate.v1.CreateLactateTestShareRequest
+ */
+export type CreateLactateTestShareRequest = Message<"lactate.v1.CreateLactateTestShareRequest"> & {
+};
+
+/**
+ * Describes the message lactate.v1.CreateLactateTestShareRequest.
+ * Use `create(CreateLactateTestShareRequestSchema)` to create a new message.
+ */
+export const CreateLactateTestShareRequestSchema: GenMessage<CreateLactateTestShareRequest> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 14);
+
+/**
+ * @generated from message lactate.v1.CreateLactateTestShareResponse
+ */
+export type CreateLactateTestShareResponse = Message<"lactate.v1.CreateLactateTestShareResponse"> & {
+  /**
+   * The created link, with its URL.
+   *
+   * @generated from field: lactate.v1.LactateTestShare share = 1;
+   */
+  share?: LactateTestShare | undefined;
+};
+
+/**
+ * Describes the message lactate.v1.CreateLactateTestShareResponse.
+ * Use `create(CreateLactateTestShareResponseSchema)` to create a new message.
+ */
+export const CreateLactateTestShareResponseSchema: GenMessage<CreateLactateTestShareResponse> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 15);
+
+/**
+ * @generated from message lactate.v1.ListLactateTestSharesRequest
+ */
+export type ListLactateTestSharesRequest = Message<"lactate.v1.ListLactateTestSharesRequest"> & {
+};
+
+/**
+ * Describes the message lactate.v1.ListLactateTestSharesRequest.
+ * Use `create(ListLactateTestSharesRequestSchema)` to create a new message.
+ */
+export const ListLactateTestSharesRequestSchema: GenMessage<ListLactateTestSharesRequest> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 16);
+
+/**
+ * @generated from message lactate.v1.ListLactateTestSharesResponse
+ */
+export type ListLactateTestSharesResponse = Message<"lactate.v1.ListLactateTestSharesResponse"> & {
+  /**
+   * The user's links that haven't expired, the latest first.
+   *
+   * @generated from field: repeated lactate.v1.LactateTestShare shares = 1;
+   */
+  shares: LactateTestShare[];
+};
+
+/**
+ * Describes the message lactate.v1.ListLactateTestSharesResponse.
+ * Use `create(ListLactateTestSharesResponseSchema)` to create a new message.
+ */
+export const ListLactateTestSharesResponseSchema: GenMessage<ListLactateTestSharesResponse> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 17);
+
+/**
+ * @generated from message lactate.v1.DeleteLactateTestShareRequest
+ */
+export type DeleteLactateTestShareRequest = Message<"lactate.v1.DeleteLactateTestShareRequest"> & {
+  /**
+   * The ID of the link to delete.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message lactate.v1.DeleteLactateTestShareRequest.
+ * Use `create(DeleteLactateTestShareRequestSchema)` to create a new message.
+ */
+export const DeleteLactateTestShareRequestSchema: GenMessage<DeleteLactateTestShareRequest> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 18);
+
+/**
+ * @generated from message lactate.v1.DeleteLactateTestShareResponse
+ */
+export type DeleteLactateTestShareResponse = Message<"lactate.v1.DeleteLactateTestShareResponse"> & {
+};
+
+/**
+ * Describes the message lactate.v1.DeleteLactateTestShareResponse.
+ * Use `create(DeleteLactateTestShareResponseSchema)` to create a new message.
+ */
+export const DeleteLactateTestShareResponseSchema: GenMessage<DeleteLactateTestShareResponse> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 19);
+
+/**
+ * @generated from message lactate.v1.GetLactateTestRecordingRequest
+ */
+export type GetLactateTestRecordingRequest = Message<"lactate.v1.GetLactateTestRecordingRequest"> & {
+};
+
+/**
+ * Describes the message lactate.v1.GetLactateTestRecordingRequest.
+ * Use `create(GetLactateTestRecordingRequestSchema)` to create a new message.
+ */
+export const GetLactateTestRecordingRequestSchema: GenMessage<GetLactateTestRecordingRequest> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 20);
+
+/**
+ * @generated from message lactate.v1.GetLactateTestRecordingResponse
+ */
+export type GetLactateTestRecordingResponse = Message<"lactate.v1.GetLactateTestRecordingResponse"> & {
+  /**
+   * The name of the user the test is recorded for.
+   *
+   * @generated from field: string owner_name = 1;
+   */
+  ownerName: string;
+
+  /**
+   * When the link stops working.
+   *
+   * @generated from field: google.protobuf.Timestamp expire_time = 2;
+   */
+  expireTime?: Timestamp | undefined;
+
+  /**
+   * The test recorded so far. Unset until the first save.
+   *
+   * @generated from field: lactate.v1.LactateTest test = 3;
+   */
+  test?: LactateTest | undefined;
+};
+
+/**
+ * Describes the message lactate.v1.GetLactateTestRecordingResponse.
+ * Use `create(GetLactateTestRecordingResponseSchema)` to create a new message.
+ */
+export const GetLactateTestRecordingResponseSchema: GenMessage<GetLactateTestRecordingResponse> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 21);
+
+/**
+ * @generated from message lactate.v1.RecordLactateTestRequest
+ */
+export type RecordLactateTestRequest = Message<"lactate.v1.RecordLactateTestRequest"> & {
+  /**
+   * The test to save. Its ID is ignored.
+   *
+   * @generated from field: lactate.v1.LactateTest test = 1;
+   */
+  test?: LactateTest | undefined;
+};
+
+/**
+ * Describes the message lactate.v1.RecordLactateTestRequest.
+ * Use `create(RecordLactateTestRequestSchema)` to create a new message.
+ */
+export const RecordLactateTestRequestSchema: GenMessage<RecordLactateTestRequest> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 22);
+
+/**
+ * @generated from message lactate.v1.RecordLactateTestResponse
+ */
+export type RecordLactateTestResponse = Message<"lactate.v1.RecordLactateTestResponse"> & {
+  /**
+   * The saved test.
+   *
+   * @generated from field: lactate.v1.LactateTest test = 1;
+   */
+  test?: LactateTest | undefined;
+};
+
+/**
+ * Describes the message lactate.v1.RecordLactateTestResponse.
+ * Use `create(RecordLactateTestResponseSchema)` to create a new message.
+ */
+export const RecordLactateTestResponseSchema: GenMessage<RecordLactateTestResponse> = /*@__PURE__*/
+  messageDesc(file_lactate_v1_lactate, 23);
+
+/**
  * ThresholdDefinition is a definition of the aerobic threshold by blood
  * lactate.
  *
@@ -470,6 +709,63 @@ export const LactateTestService: GenService<{
     methodKind: "unary";
     input: typeof DeleteLactateTestRequestSchema;
     output: typeof DeleteLactateTestResponseSchema;
+  },
+  /**
+   * Create a recording link, which lets someone record a lactate test for
+   * the user without signing in, e.g. a friend holding the lactate meter
+   * during the test. The link works for 24 hours, in the first browser that
+   * opens it, and records one test, which is the user's like any other.
+   *
+   * @generated from rpc lactate.v1.LactateTestService.CreateLactateTestShare
+   */
+  createLactateTestShare: {
+    methodKind: "unary";
+    input: typeof CreateLactateTestShareRequestSchema;
+    output: typeof CreateLactateTestShareResponseSchema;
+  },
+  /**
+   * List the user's recording links that haven't expired, the latest first.
+   *
+   * @generated from rpc lactate.v1.LactateTestService.ListLactateTestShares
+   */
+  listLactateTestShares: {
+    methodKind: "unary";
+    input: typeof ListLactateTestSharesRequestSchema;
+    output: typeof ListLactateTestSharesResponseSchema;
+  },
+  /**
+   * Delete a recording link, so it can't record any more. A test it
+   * recorded is kept.
+   *
+   * @generated from rpc lactate.v1.LactateTestService.DeleteLactateTestShare
+   */
+  deleteLactateTestShare: {
+    methodKind: "unary";
+    input: typeof DeleteLactateTestShareRequestSchema;
+    output: typeof DeleteLactateTestShareResponseSchema;
+  },
+  /**
+   * Get the recording of the browser that opened a recording link, which
+   * the link's page records with. Authenticated by the browser's cookie, not
+   * the user's.
+   *
+   * @generated from rpc lactate.v1.LactateTestService.GetLactateTestRecording
+   */
+  getLactateTestRecording: {
+    methodKind: "unary";
+    input: typeof GetLactateTestRecordingRequestSchema;
+    output: typeof GetLactateTestRecordingResponseSchema;
+  },
+  /**
+   * Save the test of the recording of the browser that opened a recording
+   * link, creating it with the first save, and replacing it after.
+   *
+   * @generated from rpc lactate.v1.LactateTestService.RecordLactateTest
+   */
+  recordLactateTest: {
+    methodKind: "unary";
+    input: typeof RecordLactateTestRequestSchema;
+    output: typeof RecordLactateTestResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_lactate_v1_lactate, 0);

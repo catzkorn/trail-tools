@@ -58,6 +58,33 @@ func (q *Queries) CreateLactateTest(ctx context.Context, arg *CreateLactateTestP
 	return &i, err
 }
 
+const createLactateTestShare = `-- name: CreateLactateTestShare :one
+insert into lactate_test_shares (user_id, token_sha256, expire_time)
+values ($1, $2, $3)
+returning id, user_id, token_sha256, recorder_sha256, test_id, expire_time, create_time
+`
+
+type CreateLactateTestShareParams struct {
+	UserID      pgtype.UUID
+	TokenSHA256 []byte
+	ExpireTime  pgtype.Timestamptz
+}
+
+func (q *Queries) CreateLactateTestShare(ctx context.Context, arg *CreateLactateTestShareParams) (*LactateTestShare, error) {
+	row := q.db.QueryRow(ctx, createLactateTestShare, arg.UserID, arg.TokenSHA256, arg.ExpireTime)
+	var i LactateTestShare
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenSHA256,
+		&i.RecorderSHA256,
+		&i.TestID,
+		&i.ExpireTime,
+		&i.CreateTime,
+	)
+	return &i, err
+}
+
 const deleteLactateTest = `-- name: DeleteLactateTest :execrows
 delete from lactate_tests
 where id = $1 and user_id = $2
@@ -70,6 +97,24 @@ type DeleteLactateTestParams struct {
 
 func (q *Queries) DeleteLactateTest(ctx context.Context, arg *DeleteLactateTestParams) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteLactateTest, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteLactateTestShare = `-- name: DeleteLactateTestShare :execrows
+delete from lactate_test_shares
+where id = $1 and user_id = $2
+`
+
+type DeleteLactateTestShareParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteLactateTestShare(ctx context.Context, arg *DeleteLactateTestShareParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteLactateTestShare, arg.ID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
@@ -101,6 +146,93 @@ func (q *Queries) GetLactateTest(ctx context.Context, arg *GetLactateTestParams)
 		&i.UpdateTime,
 	)
 	return &i, err
+}
+
+const getLactateTestRecording = `-- name: GetLactateTestRecording :one
+select s.id, s.user_id, s.token_sha256, s.recorder_sha256, s.test_id, s.expire_time, s.create_time, u.name as owner_name from lactate_test_shares s
+join passkey_users u on u.id = s.user_id
+where s.recorder_sha256 = $1 and s.expire_time > now()
+`
+
+type GetLactateTestRecordingRow struct {
+	ID             pgtype.UUID
+	UserID         pgtype.UUID
+	TokenSHA256    []byte
+	RecorderSHA256 []byte
+	TestID         pgtype.UUID
+	ExpireTime     pgtype.Timestamptz
+	CreateTime     pgtype.Timestamptz
+	OwnerName      string
+}
+
+func (q *Queries) GetLactateTestRecording(ctx context.Context, recorderSha256 []byte) (*GetLactateTestRecordingRow, error) {
+	row := q.db.QueryRow(ctx, getLactateTestRecording, recorderSha256)
+	var i GetLactateTestRecordingRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenSHA256,
+		&i.RecorderSHA256,
+		&i.TestID,
+		&i.ExpireTime,
+		&i.CreateTime,
+		&i.OwnerName,
+	)
+	return &i, err
+}
+
+const getLactateTestShareByToken = `-- name: GetLactateTestShareByToken :one
+select id, user_id, token_sha256, recorder_sha256, test_id, expire_time, create_time from lactate_test_shares
+where token_sha256 = $1 and expire_time > now()
+`
+
+func (q *Queries) GetLactateTestShareByToken(ctx context.Context, tokenSha256 []byte) (*LactateTestShare, error) {
+	row := q.db.QueryRow(ctx, getLactateTestShareByToken, tokenSha256)
+	var i LactateTestShare
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenSHA256,
+		&i.RecorderSHA256,
+		&i.TestID,
+		&i.ExpireTime,
+		&i.CreateTime,
+	)
+	return &i, err
+}
+
+const listLactateTestShares = `-- name: ListLactateTestShares :many
+select id, user_id, token_sha256, recorder_sha256, test_id, expire_time, create_time from lactate_test_shares
+where user_id = $1 and expire_time > now()
+order by create_time desc
+`
+
+func (q *Queries) ListLactateTestShares(ctx context.Context, userID pgtype.UUID) ([]*LactateTestShare, error) {
+	rows, err := q.db.Query(ctx, listLactateTestShares, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*LactateTestShare
+	for rows.Next() {
+		var i LactateTestShare
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TokenSHA256,
+			&i.RecorderSHA256,
+			&i.TestID,
+			&i.ExpireTime,
+			&i.CreateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listLactateTests = `-- name: ListLactateTests :many
@@ -137,6 +269,40 @@ func (q *Queries) ListLactateTests(ctx context.Context, userID pgtype.UUID) ([]*
 		return nil, err
 	}
 	return items, nil
+}
+
+const openLactateTestShare = `-- name: OpenLactateTestShare :execrows
+update lactate_test_shares set recorder_sha256 = $2
+where id = $1 and recorder_sha256 is null and expire_time > now()
+`
+
+type OpenLactateTestShareParams struct {
+	ID             pgtype.UUID
+	RecorderSHA256 []byte
+}
+
+// Records the browser that opened a link, unless another one did first.
+func (q *Queries) OpenLactateTestShare(ctx context.Context, arg *OpenLactateTestShareParams) (int64, error) {
+	result, err := q.db.Exec(ctx, openLactateTestShare, arg.ID, arg.RecorderSHA256)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setLactateTestShareTest = `-- name: SetLactateTestShareTest :exec
+update lactate_test_shares set test_id = $2
+where id = $1
+`
+
+type SetLactateTestShareTestParams struct {
+	ID     pgtype.UUID
+	TestID pgtype.UUID
+}
+
+func (q *Queries) SetLactateTestShareTest(ctx context.Context, arg *SetLactateTestShareTestParams) error {
+	_, err := q.db.Exec(ctx, setLactateTestShareTest, arg.ID, arg.TestID)
+	return err
 }
 
 const updateLactateTest = `-- name: UpdateLactateTest :one
