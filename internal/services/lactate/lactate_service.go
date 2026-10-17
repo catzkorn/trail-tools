@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect/v2"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -37,13 +38,20 @@ const (
 	fixed2_5MmolPerLiter = 2.5
 )
 
-// TestRepository stores lactate tests.
+// TestRepository stores lactate tests, and the links to record them.
 type TestRepository interface {
 	CreateTest(ctx context.Context, test *lactate.Test) (*lactate.Test, error)
 	GetTest(ctx context.Context, userID, testID pgtype.UUID) (*lactate.Test, error)
 	ListTests(ctx context.Context, userID pgtype.UUID) ([]*lactate.Test, error)
 	UpdateTest(ctx context.Context, test *lactate.Test) (*lactate.Test, error)
 	DeleteTest(ctx context.Context, userID, testID pgtype.UUID) error
+	CreateShare(ctx context.Context, userID pgtype.UUID, tokenSHA256 []byte, expireTime time.Time) (*lactate.Share, error)
+	ListShares(ctx context.Context, userID pgtype.UUID) ([]*lactate.Share, error)
+	DeleteShare(ctx context.Context, userID, shareID pgtype.UUID) error
+	GetShareByToken(ctx context.Context, tokenSHA256 []byte) (*lactate.Share, error)
+	OpenShare(ctx context.Context, shareID pgtype.UUID, recorderSHA256 []byte) (bool, error)
+	GetRecording(ctx context.Context, recorderSHA256 []byte) (*lactate.Recording, error)
+	SetShareTest(ctx context.Context, shareID, testID pgtype.UUID) error
 }
 
 // Service implements API handlers for the lactate test service.
@@ -51,11 +59,14 @@ type Service struct {
 	log    *slog.Logger
 	report *errreport.Reporter
 	tests  TestRepository
+	// The public URL of the app, which recording links start with.
+	baseURL string
+	nowFn   func() time.Time
 }
 
 // NewService creates a new Service.
-func NewService(log *slog.Logger, report *errreport.Reporter, tests TestRepository) *Service {
-	return &Service{log: log, report: report, tests: tests}
+func NewService(log *slog.Logger, report *errreport.Reporter, tests TestRepository, baseURL string) *Service {
+	return &Service{log: log, report: report, tests: tests, baseURL: baseURL, nowFn: time.Now}
 }
 
 func (s *Service) CreateLactateTest(ctx context.Context, req *lactatev1.CreateLactateTestRequest) (*lactatev1.CreateLactateTestResponse, error) {

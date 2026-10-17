@@ -215,12 +215,13 @@ func newEnv(t *testing.T) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lactateService := lactatesvc.NewService(log, report, lactateRepo)
+	lactateService := lactatesvc.NewService(log, report, lactateRepo, "https://trail.example")
 	lactatev1connect.RegisterLactateTestServiceHandler(srv2, lactateService)
 	connecthttp.Mount(mux, srv2)
 	mux.Handle(trip.PhotoPath, tripService.PhotoHandler())
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
 	mux.Handle(lactatesvc.WorkoutPath, lactateService.WorkoutHandler())
+	mux.Handle(lactatesvc.SharePath, lactateService.ShareHandler())
 	mux.Handle(trip.ProfilePath, raceReportService.PageHandler(false, tripService.PageHandler(false)))
 
 	mux.Handle("/routes/", routeService.DownloadHandler(http.NotFoundHandler()))
@@ -237,7 +238,7 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	mux.Handle("/mcp", authn.RequireUser(resourceMetadataURL, mcpServer.Handler()))
-	handler, err := authn.NewAuthnMiddleware(ctx, log, report, userRepo, mux, authn.WithResourceMetadata(resourceMetadataURL))
+	handler, err := authn.NewAuthnMiddleware(ctx, log, report, userRepo, lactatesvc.RecorderMiddleware(mux), authn.WithResourceMetadata(resourceMetadataURL))
 	if err != nil {
 		t.Fatal(err)
 	}

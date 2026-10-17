@@ -9,8 +9,11 @@ import (
 	"testing"
 
 	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/johanbrandhorst/trail-tools/internal/fit/fittest"
 	lactatev1 "github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1/lactatev1connect"
+	usersv1 "github.com/johanbrandhorst/trail-tools/internal/gen/users/v1"
 	lactatesvc "github.com/johanbrandhorst/trail-tools/internal/services/lactate"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
@@ -171,4 +174,147 @@ func TestLactateTestWorkout(t *testing.T) {
 			t.Errorf("%s: got status %d, want 400", query, resp.StatusCode)
 		}
 	}
+}
+
+// openRecordingLink opens a recording link like a browser, returning the
+// recorder cookie it set, or "" if it set none.
+func openRecordingLink(t *testing.T, e *env, link string) string {
+	t.Helper()
+	path := strings.TrimPrefix(link, "https://trail.example")
+	client := *e.srv.Client()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := client.Get(e.srv.URL + path)
+	if err != nil {
+		t.Fatalf("GET %s: %v", path, err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != lactatesvc.RecordPath {
+		t.Fatalf("opening the link got status %d to %q, want a redirect to the recording page", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == "lactate_recorder" {
+			if !cookie.HttpOnly || !cookie.Secure {
+				t.Errorf("got an insecure recorder cookie %v", cookie)
+			}
+			return cookie.Value
+		}
+	}
+	return ""
+}
+
+// recorderClient returns a client of a browser with the recorder cookie,
+// signed in with token if it isn't empty.
+func recorderClient(e *env, cookie, token string) lactatev1connect.LactateTestServiceClient {
+	interceptors := []connect.ClientInterceptor{func(next connect.ClientFunc) connect.ClientFunc {
+		return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+			if info, ok := connect.CallInfoForClientContext(ctx); ok && cookie != "" {
+				info.RequestHeader().Set("Cookie", "lactate_recorder="+cookie)
+			}
+			return next(ctx, spec)
+		}
+	}}
+	if token != "" {
+		interceptors = append(interceptors, bearerInterceptor(token))
+	}
+	return lactatev1connect.NewLactateTestServiceClient(
+		connect.NewClient(connecthttp.NewTransport(e.srv.Client(), e.srv.URL), interceptors...))
+}
+
+func TestLactateTestRecordingLinks(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	ctx := context.Background()
+
+	// The user creates a link for a friend to record a test with.
+	created, err := e.lactate.CreateLactateTestShare(ctx, &lactatev1.CreateLactateTestShareRequest{})
+	if err != nil {
+		t.Fatalf("CreateLactateTestShare: %v", err)
+	}
+	link := created.GetShare().GetUrl()
+	if !strings.HasPrefix(link, "https://trail.example"+lactatesvc.SharePath) {
+		t.Fatalf("got link %q", link)
+	}
+
+	// The friend's browser opens it, and records a test with its cookie.
+	cookie := openRecordingLink(t, e, link)
+	if cookie == "" {
+		t.Fatal("opening the link set no cookie")
+	}
+	friend := recorderClient(e, cookie, "")
+	recording, err := friend.GetLactateTestRecording(ctx, &lactatev1.GetLactateTestRecordingRequest{})
+	if err != nil {
+		t.Fatalf("GetLactateTestRecording: %v", err)
+	}
+	user, err := e.users.GetCurrentUser(ctx, &usersv1.GetCurrentUserRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if recording.GetOwnerName() != user.GetUser().GetName() || recording.HasTest() {
+		t.Errorf("got recording %v, want one for %q with no test yet", recording, user.GetUser().GetName())
+	}
+	for _, s := range [][]float64{{1.1}, {1.1, 1.6}} {
+		heartRates := []int32{110, 120}[:len(s)]
+		if _, err := friend.RecordLactateTest(ctx, lactatev1.RecordLactateTestRequest_builder{
+			Test: lactatev1.LactateTest_builder{Date: "2026-10-16", RestingLactateMmolPerLiter: 1.0, Stages: stages(heartRates, s)}.Build(),
+		}.Build()); err != nil {
+			t.Fatalf("RecordLactateTest: %v", err)
+		}
+	}
+
+	// The recorded test is the user's: one test, with both stages.
+	listed, err := e.lactate.ListLactateTests(ctx, &lactatev1.ListLactateTestsRequest{})
+	if err != nil {
+		t.Fatalf("ListLactateTests: %v", err)
+	}
+	if tests := listed.GetTests(); len(tests) != 1 || len(tests[0].GetStages()) != 2 {
+		t.Fatalf("got tests %v, want the recorded one with 2 stages", tests)
+	}
+	shares, err := e.lactate.ListLactateTestShares(ctx, &lactatev1.ListLactateTestSharesRequest{})
+	if err != nil {
+		t.Fatalf("ListLactateTestShares: %v", err)
+	}
+	if got := shares.GetShares(); len(got) != 1 || !got[0].GetOpened() || got[0].GetTestId() != listed.GetTests()[0].GetId() || got[0].GetUrl() != "" {
+		t.Errorf("got shares %v, want the opened link with its test", got)
+	}
+
+	// Another browser opening the link can't record with it.
+	if other := openRecordingLink(t, e, link); other != "" {
+		t.Errorf("a second browser got a cookie")
+	}
+	_, err = recorderClient(e, "", "").GetLactateTestRecording(ctx, &lactatev1.GetLactateTestRecordingRequest{})
+	wantCode(t, err, connect.CodePermissionDenied)
+
+	// A friend who is signed in records for the user, not for themselves.
+	second, err := e.lactate.CreateLactateTestShare(ctx, &lactatev1.CreateLactateTestShareRequest{})
+	if err != nil {
+		t.Fatalf("CreateLactateTestShare: %v", err)
+	}
+	signedIn := recorderClient(e, openRecordingLink(t, e, second.GetShare().GetUrl()), e.otherToken)
+	if _, err := signedIn.RecordLactateTest(ctx, lactatev1.RecordLactateTestRequest_builder{
+		Test: lactatev1.LactateTest_builder{Date: "2026-10-17", Stages: stages([]int32{100}, []float64{1.2})}.Build(),
+	}.Build()); err != nil {
+		t.Fatalf("RecordLactateTest: %v", err)
+	}
+	if listed, err := e.lactate.ListLactateTests(ctx, &lactatev1.ListLactateTestsRequest{}); err != nil || len(listed.GetTests()) != 2 {
+		t.Errorf("got %d tests, %v; want the second recording too", len(listed.GetTests()), err)
+	}
+	if listed, err := e.otherLactate.ListLactateTests(ctx, &lactatev1.ListLactateTestsRequest{}); err != nil || len(listed.GetTests()) != 0 {
+		t.Errorf("the friend got %d tests, %v; want none", len(listed.GetTests()), err)
+	}
+
+	// Deleting a link stops it recording, and keeps its test.
+	if _, err := e.lactate.DeleteLactateTestShare(ctx, lactatev1.DeleteLactateTestShareRequest_builder{Id: created.GetShare().GetId()}.Build()); err != nil {
+		t.Fatalf("DeleteLactateTestShare: %v", err)
+	}
+	_, err = friend.RecordLactateTest(ctx, lactatev1.RecordLactateTestRequest_builder{
+		Test: lactatev1.LactateTest_builder{Date: "2026-10-16"}.Build(),
+	}.Build())
+	wantCode(t, err, connect.CodePermissionDenied)
+
+	// Other users can't delete the user's links, and need to be signed in to
+	// create them.
+	_, err = e.otherLactate.DeleteLactateTestShare(ctx, lactatev1.DeleteLactateTestShareRequest_builder{Id: second.GetShare().GetId()}.Build())
+	wantCode(t, err, connect.CodeNotFound)
+	_, err = recorderClient(e, "", "").CreateLactateTestShare(ctx, &lactatev1.CreateLactateTestShareRequest{})
+	wantCode(t, err, connect.CodeUnauthenticated)
 }
