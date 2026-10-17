@@ -33,6 +33,7 @@ import type {
   RaceReportSegment,
 } from "gen/races/v1/race_reports_pb";
 import type { RoutePoint } from "gen/routes/v1/routes_pb";
+import type { PrivacyZone } from "gen/users/v1/users_pb";
 import React, { useMemo, useState } from "react";
 
 // NEW_SEGMENT_METERS is the length of a new segment.
@@ -96,6 +97,8 @@ const trackLength = (track: RoutePoint[]): number =>
 interface SegmentsEditorProps {
   report: RaceReport;
   track: RoutePoint[];
+  // The user's privacy zones, shown on the map.
+  privacyZones: PrivacyZone[];
   onSaved: () => Promise<void>;
 }
 
@@ -108,6 +111,7 @@ interface SegmentsEditorProps {
 export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
   report,
   track,
+  privacyZones,
   onSaved,
 }) => {
   const [drafts, setDrafts] = useState<Draft[]>(() =>
@@ -212,6 +216,7 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
         track={positions}
         photos={[]}
         selectedId={null}
+        privacyZones={privacyZones}
         hoverPosition={
           hovered === undefined || hovered === null
             ? null
@@ -384,6 +389,11 @@ interface SegmentsViewProps {
   segments: RaceReportSegment[];
   // The track, which the segments are distances along.
   track: RoutePoint[];
+  /**
+   * The indexes of the track's points that start a new piece after a
+   * stretch hidden by privacy zones.
+   */
+  breaks: number[];
 }
 
 /**
@@ -393,6 +403,7 @@ interface SegmentsViewProps {
 export const SegmentsView: React.FC<SegmentsViewProps> = ({
   segments,
   track,
+  breaks,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -412,8 +423,9 @@ export const SegmentsView: React.FC<SegmentsViewProps> = ({
         hoverPosition={
           hovered === undefined ? null : [hovered.lat, hovered.lng]
         }
+        breaks={breaks}
         highlight={
-          active === undefined ? [] : trackSlice(track, rangeOf(active))
+          active === undefined ? [] : trackSlice(track, rangeOf(active), breaks)
         }
         highlightKey={String(activeIndex)}
         fitKey="segments"

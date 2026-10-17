@@ -31,8 +31,7 @@ import {
 import TripMap from "@components/trips/trip-map";
 import Card from "@components/ui/card";
 import ConfirmButton from "@components/ui/confirm-button";
-import { SelectField, TextField } from "@components/ui/fields";
-import type { SelectOption } from "@components/ui/fields";
+import { TextField } from "@components/ui/fields";
 import { Badge } from "@components/ui/misc";
 import QueryError, { ErrorText } from "@components/ui/query-error";
 import {
@@ -68,20 +67,13 @@ import {
 } from "gen/trips/v1/trips-TripReportService_connectquery";
 import type { TripReport, TripSection } from "gen/trips/v1/trips_pb";
 import { LocationSource, TripReportService } from "gen/trips/v1/trips_pb";
+import { listPrivacyZones } from "gen/users/v1/users-UserService_connectquery";
+import type { PrivacyZone } from "gen/users/v1/users_pb";
 import { invalidateServices } from "helpers/query";
 import { isValidSlug, slugify } from "helpers/slug";
 import type { LatLng, LatLngTuple } from "leaflet";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-
-// How much of the track around its start and finish to hide publicly.
-const HIDDEN_ENDS_OPTIONS: SelectOption[] = [
-  { label: "Nothing: show the whole track", value: "0" },
-  { label: "250 m around the start and finish", value: "250" },
-  { label: "500 m around the start and finish", value: "500" },
-  { label: "1 km around the start and finish", value: "1000" },
-  { label: "2 km around the start and finish", value: "2000" },
-];
 
 interface SuggestionPanelProps {
   sections: TripSection[];
@@ -136,6 +128,8 @@ const SuggestionPanel: React.FC<SuggestionPanelProps> = ({
 interface ReportEditorProps {
   report: TripReport;
   track: RoutePoint[];
+  // The user's privacy zones, shown on the map.
+  privacyZones: PrivacyZone[];
   handle: string | undefined;
   onChanged: () => Promise<void>;
 }
@@ -149,6 +143,7 @@ interface ReportEditorProps {
 const ReportEditor: React.FC<ReportEditorProps> = ({
   report,
   track: routePoints,
+  privacyZones,
   handle,
   onChanged,
 }) => {
@@ -159,7 +154,6 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     report.slug !== slugify(report.title)
   );
   const [date, setDate] = useState(report.date);
-  const [hiddenEnds, setHiddenEnds] = useState(String(report.hiddenEndsMeters));
   const [tags, setTags] = useState(report.tags);
   const [draft, setDraft] = useState(() => draftSections(report.sections));
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -269,7 +263,6 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     trimmedTitle !== report.title ||
     slug !== report.slug ||
     date !== report.date ||
-    Number(hiddenEnds) !== report.hiddenEndsMeters ||
     tags.join() !== report.tags.join();
   const sectionsDirty = !sameSections(sections, saved);
   const dirty = detailsDirty || sectionsDirty;
@@ -297,10 +290,6 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     if (detailsDirty) {
       await update.mutateAsync({
         date: date === report.date ? undefined : date,
-        hiddenEndsMeters:
-          Number(hiddenEnds) === report.hiddenEndsMeters
-            ? undefined
-            : Number(hiddenEnds),
         id: report.id,
         slug: slug === report.slug ? undefined : slug,
         tags: tags.join() === report.tags.join() ? undefined : { tags },
@@ -322,7 +311,6 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
     setTitle(report.title);
     setSlug(report.slug);
     setDate(report.date);
-    setHiddenEnds(String(report.hiddenEndsMeters));
     setTags(report.tags);
     setDraft(draftSections(report.sections));
     setSuggestion(null);
@@ -417,13 +405,17 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
               />
             </div>
             {report.hasTrack && (
-              <SelectField
-                label="Hide on the public map"
-                value={hiddenEnds}
-                onChange={setHiddenEnds}
-                options={HIDDEN_ENDS_OPTIONS}
-                className="sm:max-w-sm"
-              />
+              <p className="text-sm text-gray-600">
+                {privacyZones.length > 0
+                  ? "The track and photos within your privacy zones, shaded on the map, are hidden on the public page."
+                  : "The whole track is shown on the public page."}{" "}
+                <Link to="/settings" className={linkClass}>
+                  {privacyZones.length > 0
+                    ? "Edit your privacy zones"
+                    : "Hide places like your home with privacy zones"}
+                </Link>
+                .
+              </p>
             )}
             <TagPicker tags={tags} onChange={setTags} />
           </div>
@@ -590,7 +582,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
             hoverPosition={hoverPosition}
             onSelectPhoto={setSelectedId}
             onMovePhoto={place}
-            hiddenEndsMeters={report.hiddenEndsMeters}
+            privacyZones={privacyZones}
             highlight={highlight}
             onMapClick={
               placing === undefined
@@ -672,6 +664,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({
 };
 
 const NO_TRACK: RoutePoint[] = [];
+const NO_ZONES: PrivacyZone[] = [];
 
 // TripReportPage edits a trip report: its story, photos and publication.
 const TripReportPage: React.FC = () => {
@@ -683,6 +676,7 @@ const TripReportPage: React.FC = () => {
     includeTrack: true,
   });
   const profileQuery = useQuery(getProfile);
+  const zonesQuery = useQuery(listPrivacyZones);
 
   const invalidate = async () => {
     await invalidateServices(queryClient, [TripReportService]);
@@ -815,6 +809,7 @@ const TripReportPage: React.FC = () => {
         key={report.id}
         report={report}
         track={data.track.length > 0 ? data.track : NO_TRACK}
+        privacyZones={zonesQuery.data?.zones ?? NO_ZONES}
         handle={handle}
         onChanged={invalidate}
       />

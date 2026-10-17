@@ -20,7 +20,8 @@ export const textElement = (text: string): HTMLElement => {
 };
 
 interface PolylineLayerProps {
-  positions: LatLngTuple[];
+  // The line's positions, or the positions of each of its pieces.
+  positions: LatLngTuple[] | LatLngTuple[][];
   color: string;
   weight?: number;
   opacity?: number;

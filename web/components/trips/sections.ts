@@ -30,18 +30,47 @@ export const sectionRange = (
   };
 };
 
-// TrackSlice returns the positions of the track within a stretch.
+/**
+ * SplitAt splits a track into its pieces, starting a new piece at each of
+ * the breaks: the indexes of points after a stretch hidden by privacy zones.
+ */
+export const splitAt = <Point>(
+  track: Point[],
+  breaks: readonly number[]
+): Point[][] => {
+  if (breaks.length === 0) {
+    return [track];
+  }
+  const pieces: Point[][] = [];
+  let start = 0;
+  for (const index of breaks) {
+    pieces.push(track.slice(start, index));
+    start = index;
+  }
+  pieces.push(track.slice(start));
+  return pieces;
+};
+
+/**
+ * TrackSlice returns the positions of the track within a stretch, in pieces
+ * split at the breaks so lines aren't drawn across hidden stretches.
+ */
 export const trackSlice = (
   track: RoutePoint[],
-  range: DistanceRange
-): LatLngTuple[] =>
-  track
-    .filter(
-      (point) =>
-        point.distanceMeters >= range.startMeters &&
-        point.distanceMeters <= range.endMeters
+  range: DistanceRange,
+  breaks: readonly number[] = []
+): LatLngTuple[][] =>
+  splitAt(track, breaks)
+    .map((piece) =>
+      piece
+        .filter(
+          (point) =>
+            point.distanceMeters >= range.startMeters &&
+            point.distanceMeters <= range.endMeters
+        )
+        .map((point): LatLngTuple => [point.lat, point.lng])
     )
-    .map((point) => [point.lat, point.lng]);
+    .filter((piece) => piece.length > 1);
 
 // ElevationThreshold filters noise when adding up climbing, as on the server.
 const ELEVATION_THRESHOLD = 4;

@@ -37,6 +37,8 @@ import {
 import type { RaceReport } from "gen/races/v1/race_reports_pb";
 import { RaceReportService } from "gen/races/v1/race_reports_pb";
 import { getProfile } from "gen/trips/v1/trips-TripReportService_connectquery";
+import { listPrivacyZones } from "gen/users/v1/users-UserService_connectquery";
+import type { PrivacyZone } from "gen/users/v1/users_pb";
 import { formatDate, formatKm } from "helpers/format";
 import { durationInput, kmInput, parseDuration, parseKm } from "helpers/parse";
 import { invalidateServices } from "helpers/query";
@@ -335,6 +337,8 @@ const ReportForm: React.FC<ReportFormProps> = ({ report, handle, onSaved }) => {
   );
 };
 
+const NO_ZONES: PrivacyZone[] = [];
+
 // RaceReportPage edits one of the user's race reports.
 const RaceReportPage: React.FC = () => {
   const { id = "" } = useParams();
@@ -346,6 +350,7 @@ const RaceReportPage: React.FC = () => {
     includeTrack: true,
   });
   const profileQuery = useQuery(getProfile);
+  const zonesQuery = useQuery(listPrivacyZones);
   const handle = profileQuery.data?.profile?.handle;
   const invalidate = async () => {
     await invalidateServices(queryClient, [RaceReportService]);
@@ -517,6 +522,7 @@ const RaceReportPage: React.FC = () => {
             key={`${report.id}-${report.activityId}`}
             report={report}
             track={data.track}
+            privacyZones={zonesQuery.data?.zones ?? NO_ZONES}
             onSaved={invalidate}
           />
         ) : (

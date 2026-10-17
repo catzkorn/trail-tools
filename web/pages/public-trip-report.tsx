@@ -258,6 +258,7 @@ const useActiveSection = (ids: string[]): string | null => {
   return active;
 };
 
+const NO_BREAKS: number[] = [];
 const NO_SECTIONS: TripSection[] = [];
 
 /**
@@ -285,6 +286,7 @@ const PublicTripReportPage: React.FC = () => {
   const report = data?.report;
   const routePoints = useMemo(() => data?.track ?? [], [data?.track]);
   const track = useMemo(() => trackPositions(routePoints), [routePoints]);
+  const breaks = data?.trackBreaks ?? NO_BREAKS;
   const profile = useMemo(() => profilePoints(routePoints), [routePoints]);
   const photos = useMemo(() => report?.photos ?? [], [report?.photos]);
   const sections = report?.sections ?? NO_SECTIONS;
@@ -298,8 +300,8 @@ const PublicTripReportPage: React.FC = () => {
   const highlight = useMemo(() => {
     const section = sections.find((candidate) => candidate.id === activeId);
     const range = section === undefined ? undefined : sectionRange(section);
-    return range === undefined ? [] : trackSlice(routePoints, range);
-  }, [routePoints, sections, activeId]);
+    return range === undefined ? [] : trackSlice(routePoints, range, breaks);
+  }, [routePoints, breaks, sections, activeId]);
   const ranges = useMemo(() => {
     const result: ProfileRange[] = [];
     for (const section of sections) {
@@ -468,8 +470,9 @@ const PublicTripReportPage: React.FC = () => {
                   hoverPosition={hoverPosition}
                   onSelectPhoto={selectFromMap}
                   focus={mapFocus}
+                  breaks={breaks}
                   highlight={highlight}
-                  highlightKey={highlight.length > 1 ? (activeId ?? "") : ""}
+                  highlightKey={highlight.length > 0 ? (activeId ?? "") : ""}
                   fitKey={report.id}
                   className="h-80 sm:h-96 lg:h-[50vh]"
                 />

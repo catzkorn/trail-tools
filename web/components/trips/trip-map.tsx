@@ -10,9 +10,12 @@ import type { MapFocus } from "@components/map/layers";
 import MapView, { useMap } from "@components/map/map-view";
 import PhotoMarkers from "@components/map/photo-markers";
 import type { MapPhoto } from "@components/map/photo-markers";
+import type { PrivacyZone } from "gen/users/v1/users_pb";
 import type { LatLng, LatLngTuple } from "leaflet";
 import * as leaflet from "leaflet";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
+
+import { splitAt } from "./sections";
 
 interface TripMapProps {
   track: LatLngTuple[];
@@ -23,14 +26,19 @@ interface TripMapProps {
   onSelectPhoto?: (id: string) => void;
   // Makes the photo markers draggable.
   onMovePhoto?: (id: string, position: LatLng) => void;
-  // Shows the areas around the start and finish hidden on the public page.
-  hiddenEndsMeters?: number;
+  /**
+   * The indexes of the track's points that start a new piece after a
+   * stretch hidden by privacy zones, which isn't drawn across.
+   */
+  breaks?: readonly number[];
+  // Shows the user's privacy zones, which are hidden on public pages.
+  privacyZones?: PrivacyZone[];
   // Called with clicks on the map, e.g. to place a photo.
   onMapClick?: ((position: LatLng) => void) | undefined;
   // Zooms the map to a position, e.g. of a photo shown on the map.
   focus?: MapFocus | null;
-  // A stretch of the track to highlight, e.g. the section being read.
-  highlight?: LatLngTuple[];
+  // A stretch of the track to highlight, e.g. the section being read, in pieces.
+  highlight?: LatLngTuple[][];
   /**
    * The map moves to fit the highlight, or the whole track without one, when
    * the key changes.
@@ -45,7 +53,7 @@ interface HiddenAreaProps {
   radiusMeters: number;
 }
 
-// HiddenArea shades an area of the track hidden on the public page.
+// HiddenArea shades an area hidden on public pages.
 const HiddenArea: React.FC<HiddenAreaProps> = ({ center, radiusMeters }) => {
   const map = useMap();
   const [lat, lng] = center;
@@ -95,7 +103,9 @@ const FitHighlight: React.FC<FitHighlightProps> = ({
   return null;
 };
 
-const NO_HIGHLIGHT: LatLngTuple[] = [];
+const NO_HIGHLIGHT: LatLngTuple[][] = [];
+const NO_BREAKS: readonly number[] = [];
+const NO_ZONES: PrivacyZone[] = [];
 
 /**
  * TripMap shows a trip's track with its photos. Without a track, it fits the
@@ -109,7 +119,8 @@ const TripMap: React.FC<TripMapProps> = ({
   onSelectPhoto,
   onMovePhoto,
   onMapClick,
-  hiddenEndsMeters = 0,
+  breaks = NO_BREAKS,
+  privacyZones = NO_ZONES,
   focus = null,
   highlight = NO_HIGHLIGHT,
   highlightKey,
@@ -120,17 +131,19 @@ const TripMap: React.FC<TripMapProps> = ({
   const finish = track.at(-1);
   const fitPositions =
     track.length > 1 ? track : photos.map((photo) => photo.position);
+  const pieces = useMemo(() => splitAt(track, breaks), [track, breaks]);
+  const highlighted = useMemo(() => highlight.flat(), [highlight]);
   return (
     <MapView className={className}>
       {track.length > 1 && (
         <PolylineLayer
-          positions={track}
+          positions={pieces}
           color="#ea580c"
           weight={4}
-          opacity={highlight.length > 1 ? 0.35 : 0.9}
+          opacity={highlight.length > 0 ? 0.35 : 0.9}
         />
       )}
-      {highlight.length > 1 && (
+      {highlight.length > 0 && (
         <PolylineLayer
           positions={highlight}
           color="#c2410c"
@@ -144,12 +157,13 @@ const TripMap: React.FC<TripMapProps> = ({
       {finish !== undefined && track.length > 1 && (
         <PointMarker position={finish} color="#dc2626" tooltip="Finish" />
       )}
-      {hiddenEndsMeters > 0 && start !== undefined && (
-        <HiddenArea center={start} radiusMeters={hiddenEndsMeters} />
-      )}
-      {hiddenEndsMeters > 0 && finish !== undefined && track.length > 1 && (
-        <HiddenArea center={finish} radiusMeters={hiddenEndsMeters} />
-      )}
+      {privacyZones.map((zone) => (
+        <HiddenArea
+          key={zone.id}
+          center={[zone.lat, zone.lng]}
+          radiusMeters={zone.radiusMeters}
+        />
+      ))}
       <HoverMarker position={hoverPosition} />
       <PhotoMarkers
         photos={photos}
@@ -162,7 +176,7 @@ const TripMap: React.FC<TripMapProps> = ({
       <FlyTo focus={focus} />
       {highlightKey !== undefined && (
         <FitHighlight
-          positions={highlight.length > 1 ? highlight : fitPositions}
+          positions={highlighted.length > 1 ? highlighted : fitPositions}
           highlightKey={highlightKey}
         />
       )}
