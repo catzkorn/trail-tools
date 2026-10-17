@@ -21,6 +21,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1/lactatev1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/plans/v1/plansv1connect"
 	racesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/races/v1/racesv1connect"
@@ -44,6 +45,7 @@ func allServices() []Service {
 	return []Service{
 		{Name: activitiesv1connect.ActivityServiceName, Handler: activitiesv1connect.UnimplementedActivityServiceHandler{}},
 		{Name: geov1connect.GeoServiceName, Handler: geov1connect.UnimplementedGeoServiceHandler{}},
+		{Name: lactatev1connect.LactateTestServiceName, Handler: lactatev1connect.UnimplementedLactateTestServiceHandler{}},
 		{Name: plansv1connect.TrainingPlanServiceName, Handler: plansv1connect.UnimplementedTrainingPlanServiceHandler{}},
 		{Name: racesv1connect.RaceServiceName, Handler: racesv1connect.UnimplementedRaceServiceHandler{}},
 		{Name: racesv1connect.RacePlanServiceName, Handler: racesv1connect.UnimplementedRacePlanServiceHandler{}},

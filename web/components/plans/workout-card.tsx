@@ -1,5 +1,7 @@
+import { useAerobicThreshold } from "@components/lactate/use-aerobic-threshold";
 import { CheckCircleIcon, MapIcon } from "@heroicons/react/24/solid";
 import type { Workout, WorkoutWeather } from "gen/plans/v1/plans_pb";
+import { WorkoutType } from "gen/plans/v1/plans_pb";
 import { formatHoursMinutes } from "helpers/format";
 import { workoutStyle } from "helpers/labels";
 import React from "react";
@@ -13,7 +15,11 @@ interface WorkoutCardProps {
   onClick?: (() => void) | undefined;
 }
 
-const targets = (workout: Workout): string => {
+/**
+ * Targets formats the workout's targets, with the aerobic threshold heart
+ * rate as the cap of base workouts, if there is one.
+ */
+const targets = (workout: Workout, capBpm: number | undefined): string => {
   const parts: string[] = [];
   if (workout.targetDistanceMeters > 0) {
     parts.push(`${(workout.targetDistanceMeters / 1000).toFixed(1)} km`);
@@ -23,6 +29,9 @@ const targets = (workout: Workout): string => {
   }
   if (workout.targetDurationSeconds > 0 && parts.length < 2) {
     parts.push(formatHoursMinutes(workout.targetDurationSeconds));
+  }
+  if (workout.type === WorkoutType.BASE && capBpm !== undefined) {
+    parts.push(`<${capBpm} bpm`);
   }
   return parts.join(" · ");
 };
@@ -34,7 +43,8 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
   onClick,
 }) => {
   const style = workoutStyle(workout.type);
-  const detail = targets(workout);
+  const threshold = useAerobicThreshold();
+  const detail = targets(workout, threshold?.heartRateBpm);
   const content = (
     <>
       <span className="flex items-start justify-between gap-1">

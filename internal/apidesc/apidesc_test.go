@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
 	_ "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
+	_ "github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1"
 	mcpv1 "github.com/johanbrandhorst/trail-tools/internal/gen/mcp/v1"
 	_ "github.com/johanbrandhorst/trail-tools/internal/gen/plans/v1"
 	_ "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"

@@ -36,6 +36,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1/activitiesv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/auth/v1/authv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1/geov1connect"
+	"github.com/johanbrandhorst/trail-tools/internal/gen/lactate/v1/lactatev1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/oauth/v1/oauthv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/plans/v1/plansv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/races/v1/racesv1connect"
@@ -45,6 +46,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1/tripsv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/gen/users/v1/usersv1connect"
 	"github.com/johanbrandhorst/trail-tools/internal/html"
+	"github.com/johanbrandhorst/trail-tools/internal/lactate"
 	"github.com/johanbrandhorst/trail-tools/internal/livetrack"
 	"github.com/johanbrandhorst/trail-tools/internal/mapdata"
 	"github.com/johanbrandhorst/trail-tools/internal/mcp"
@@ -56,6 +58,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/services/activity"
 	"github.com/johanbrandhorst/trail-tools/internal/services/auth"
 	geosvc "github.com/johanbrandhorst/trail-tools/internal/services/geo"
+	lactatesvc "github.com/johanbrandhorst/trail-tools/internal/services/lactate"
 	mapdatasvc "github.com/johanbrandhorst/trail-tools/internal/services/mapdata"
 	oauthsvc "github.com/johanbrandhorst/trail-tools/internal/services/oauth"
 	"github.com/johanbrandhorst/trail-tools/internal/services/plan"
@@ -448,6 +451,10 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to create race repository: %w", err)
 	}
+	lactateRepo, err := lactate.NewRepository(log, db)
+	if err != nil {
+		return fmt.Errorf("failed to create lactate test repository: %w", err)
+	}
 	planRepo, err := plans.NewRepository(log, db)
 	if err != nil {
 		return fmt.Errorf("failed to create plan repository: %w", err)
@@ -569,6 +576,7 @@ func run(
 	}
 	tripService := trip.NewService(log, report, tripRepo, activityRepo, activitySyncer, photos, telemetry.NewClient(0), baseURL)
 	raceReportService := racereport.NewService(log, report, raceRepo, activityRepo, tripRepo, racePlanService, baseURL)
+	lactateService := lactatesvc.NewService(log, report, lactateRepo)
 	// MCP clients that require OAuth, like claude.ai, authorize with this
 	// authorization server instead of API tokens.
 	oauthServer := oauth.NewServer(log, report, users, baseURL, mcpPath)
@@ -602,6 +610,7 @@ func run(
 	racesv1connect.RegisterRaceServiceHandler(server, raceService)
 	racesv1connect.RegisterRacePlanServiceHandler(server, racePlanService)
 	racesv1connect.RegisterRaceReportServiceHandler(server, raceReportService)
+	lactatev1connect.RegisterLactateTestServiceHandler(server, lactateService)
 	oauthv1connect.RegisterOAuthServiceHandler(server, oauthService)
 	tripsv1connect.RegisterTripReportServiceHandler(server, tripService)
 	apiMux := http.NewServeMux()
@@ -640,6 +649,7 @@ func run(
 		mcp.Service{Name: racesv1connect.RacePlanServiceName, Handler: racePlanService},
 		mcp.Service{Name: tripsv1connect.TripReportServiceName, Handler: tripService},
 		mcp.Service{Name: racesv1connect.RaceReportServiceName, Handler: raceReportService},
+		mcp.Service{Name: lactatev1connect.LactateTestServiceName, Handler: lactateService},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create MCP server: %w", err)
@@ -721,6 +731,8 @@ func run(
 	// metadata for search engines and link previews.
 	mux.Handle(trip.PhotoPath, authenticate(tripService.PhotoHandler()))
 	mux.Handle(user.AvatarPath, userService.AvatarHandler())
+	// The guided lactate test as a Garmin workout. It holds no user data.
+	mux.Handle(lactatesvc.WorkoutPath, lactateService.WorkoutHandler())
 	mux.Handle(trip.ProfilePath, authenticate(raceReportService.PageHandler(serveDir != "", tripService.PageHandler(serveDir != ""))))
 
 	// Requests are traced, and named after the routes they match.

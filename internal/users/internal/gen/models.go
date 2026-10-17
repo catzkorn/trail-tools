@@ -691,6 +691,18 @@ type Invitation struct {
 	UseTime     pgtype.Timestamptz
 }
 
+type LactateTest struct {
+	ID                         pgtype.UUID
+	UserID                     pgtype.UUID
+	Date                       pgtype.Date
+	Notes                      string
+	RestingLactateMmolPerLiter pgtype.Float8
+	StageHeartRatesBpm         []int32
+	StageLactatesMmolPerLiter  []float64
+	CreateTime                 pgtype.Timestamptz
+	UpdateTime                 pgtype.Timestamptz
+}
+
 type OAuthAuthorizationCode struct {
 	CodeSHA256    []byte
 	UserID        pgtype.UUID
