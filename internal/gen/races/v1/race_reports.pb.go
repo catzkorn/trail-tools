@@ -103,7 +103,6 @@ type RaceReport struct {
 	xxx_hidden_StopSeconds         int32                  `protobuf:"varint,27,opt,name=stop_seconds,json=stopSeconds,proto3"`
 	xxx_hidden_Segments            *[]*RaceReportSegment  `protobuf:"bytes,28,rep,name=segments,proto3"`
 	xxx_hidden_HasTrack            bool                   `protobuf:"varint,29,opt,name=has_track,json=hasTrack,proto3"`
-	xxx_hidden_HiddenEndsMeters    int32                  `protobuf:"varint,30,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -338,13 +337,6 @@ func (x *RaceReport) GetHasTrack() bool {
 	return false
 }
 
-func (x *RaceReport) GetHiddenEndsMeters() int32 {
-	if x != nil {
-		return x.xxx_hidden_HiddenEndsMeters
-	}
-	return 0
-}
-
 func (x *RaceReport) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -461,10 +453,6 @@ func (x *RaceReport) SetHasTrack(v bool) {
 	x.xxx_hidden_HasTrack = v
 }
 
-func (x *RaceReport) SetHiddenEndsMeters(v int32) {
-	x.xxx_hidden_HiddenEndsMeters = v
-}
-
 func (x *RaceReport) HasPublishTime() bool {
 	if x == nil {
 		return false
@@ -567,9 +555,6 @@ type RaceReport_builder struct {
 	Segments []*RaceReportSegment
 	// Whether the report has a track, from its activity, which segments need.
 	HasTrack bool
-	// How far around the start and finish the track is hidden on the public
-	// page, in meters, from 0 to 2000. Defaults to 500.
-	HiddenEndsMeters int32
 }
 
 func (b0 RaceReport_builder) Build() *RaceReport {
@@ -605,7 +590,6 @@ func (b0 RaceReport_builder) Build() *RaceReport {
 	x.xxx_hidden_StopSeconds = b.StopSeconds
 	x.xxx_hidden_Segments = &b.Segments
 	x.xxx_hidden_HasTrack = b.HasTrack
-	x.xxx_hidden_HiddenEndsMeters = b.HiddenEndsMeters
 	return m0
 }
 
@@ -1640,7 +1624,6 @@ type UpdateRaceReportRequest struct {
 	xxx_hidden_StopDistanceMeters float64                `protobuf:"fixed64,15,opt,name=stop_distance_meters,json=stopDistanceMeters,proto3,oneof"`
 	xxx_hidden_StopCheckpoint     *string                `protobuf:"bytes,16,opt,name=stop_checkpoint,json=stopCheckpoint,proto3,oneof"`
 	xxx_hidden_StopSeconds        int32                  `protobuf:"varint,17,opt,name=stop_seconds,json=stopSeconds,proto3,oneof"`
-	xxx_hidden_HiddenEndsMeters   int32                  `protobuf:"varint,18,opt,name=hidden_ends_meters,json=hiddenEndsMeters,proto3,oneof"`
 	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
 	XXX_presence                  [1]uint32
 	unknownFields                 protoimpl.UnknownFields
@@ -1827,100 +1810,88 @@ func (x *UpdateRaceReportRequest) GetStopSeconds() int32 {
 	return 0
 }
 
-func (x *UpdateRaceReportRequest) GetHiddenEndsMeters() int32 {
-	if x != nil {
-		return x.xxx_hidden_HiddenEndsMeters
-	}
-	return 0
-}
-
 func (x *UpdateRaceReportRequest) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
 
 func (x *UpdateRaceReportRequest) SetTitle(v string) {
 	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetSlug(v string) {
 	x.xxx_hidden_Slug = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetActivityId(v string) {
 	x.xxx_hidden_ActivityId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetFinishSeconds(v int32) {
 	x.xxx_hidden_FinishSeconds = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetPlacement(v string) {
 	x.xxx_hidden_Placement = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetSummary(v string) {
 	x.xxx_hidden_Summary = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetPreparation(v string) {
 	x.xxx_hidden_Preparation = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetRaceDay(v string) {
 	x.xxx_hidden_RaceDay = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetNutrition(v string) {
 	x.xxx_hidden_Nutrition = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetWentWell(v string) {
 	x.xxx_hidden_WentWell = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetWentBadly(v string) {
 	x.xxx_hidden_WentBadly = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetLessons(v string) {
 	x.xxx_hidden_Lessons = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetDidNotFinish(v bool) {
 	x.xxx_hidden_DidNotFinish = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetStopDistanceMeters(v float64) {
 	x.xxx_hidden_StopDistanceMeters = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetStopCheckpoint(v string) {
 	x.xxx_hidden_StopCheckpoint = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 17)
 }
 
 func (x *UpdateRaceReportRequest) SetStopSeconds(v int32) {
 	x.xxx_hidden_StopSeconds = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 16, 18)
-}
-
-func (x *UpdateRaceReportRequest) SetHiddenEndsMeters(v int32) {
-	x.xxx_hidden_HiddenEndsMeters = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 17, 18)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 16, 17)
 }
 
 func (x *UpdateRaceReportRequest) HasTitle() bool {
@@ -2035,13 +2006,6 @@ func (x *UpdateRaceReportRequest) HasStopSeconds() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 16)
 }
 
-func (x *UpdateRaceReportRequest) HasHiddenEndsMeters() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 17)
-}
-
 func (x *UpdateRaceReportRequest) ClearTitle() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Title = nil
@@ -2122,11 +2086,6 @@ func (x *UpdateRaceReportRequest) ClearStopSeconds() {
 	x.xxx_hidden_StopSeconds = 0
 }
 
-func (x *UpdateRaceReportRequest) ClearHiddenEndsMeters() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
-	x.xxx_hidden_HiddenEndsMeters = 0
-}
-
 type UpdateRaceReportRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -2171,9 +2130,6 @@ type UpdateRaceReportRequest_builder struct {
 	// The new elapsed time when the runner stopped in seconds, if set. Only
 	// for a DNF.
 	StopSeconds *int32
-	// The new radius hidden around the start and finish of the public track,
-	// in meters, if set. From 0 to 2000.
-	HiddenEndsMeters *int32
 }
 
 func (b0 UpdateRaceReportRequest_builder) Build() *UpdateRaceReportRequest {
@@ -2182,72 +2138,68 @@ func (b0 UpdateRaceReportRequest_builder) Build() *UpdateRaceReportRequest {
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
 	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 17)
 		x.xxx_hidden_Title = b.Title
 	}
 	if b.Slug != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 17)
 		x.xxx_hidden_Slug = b.Slug
 	}
 	if b.ActivityId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 17)
 		x.xxx_hidden_ActivityId = b.ActivityId
 	}
 	if b.FinishSeconds != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 17)
 		x.xxx_hidden_FinishSeconds = *b.FinishSeconds
 	}
 	if b.Placement != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 17)
 		x.xxx_hidden_Placement = b.Placement
 	}
 	if b.Summary != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 17)
 		x.xxx_hidden_Summary = b.Summary
 	}
 	if b.Preparation != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 17)
 		x.xxx_hidden_Preparation = b.Preparation
 	}
 	if b.RaceDay != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 17)
 		x.xxx_hidden_RaceDay = b.RaceDay
 	}
 	if b.Nutrition != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 17)
 		x.xxx_hidden_Nutrition = b.Nutrition
 	}
 	if b.WentWell != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 17)
 		x.xxx_hidden_WentWell = b.WentWell
 	}
 	if b.WentBadly != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 17)
 		x.xxx_hidden_WentBadly = b.WentBadly
 	}
 	if b.Lessons != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 17)
 		x.xxx_hidden_Lessons = b.Lessons
 	}
 	if b.DidNotFinish != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 17)
 		x.xxx_hidden_DidNotFinish = *b.DidNotFinish
 	}
 	if b.StopDistanceMeters != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 17)
 		x.xxx_hidden_StopDistanceMeters = *b.StopDistanceMeters
 	}
 	if b.StopCheckpoint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 17)
 		x.xxx_hidden_StopCheckpoint = b.StopCheckpoint
 	}
 	if b.StopSeconds != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 18)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 17)
 		x.xxx_hidden_StopSeconds = *b.StopSeconds
-	}
-	if b.HiddenEndsMeters != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 17, 18)
-		x.xxx_hidden_HiddenEndsMeters = *b.HiddenEndsMeters
 	}
 	return m0
 }
@@ -3267,8 +3219,7 @@ type GetPublicRaceReportResponse_builder struct {
 	Comparison *RaceComparison
 	// The display name of the author.
 	AuthorName string
-	// The report's track, without the stretches near the start and finish it
-	// hides. Its distances are along the whole track, like the segments'.
+	// The report's track, which the segments are distances along.
 	Track []*v1.RoutePoint
 }
 
@@ -3287,7 +3238,7 @@ var File_races_v1_race_reports_proto protoreflect.FileDescriptor
 
 const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\n" +
-	"\x1braces/v1/race_reports.proto\x12\braces.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xa8\t\n" +
+	"\x1braces/v1/race_reports.proto\x12\braces.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xf2\b\n" +
 	"\n" +
 	"RaceReport\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x1f\n" +
@@ -3323,8 +3274,7 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x0fstop_checkpoint\x18\x1a \x01(\tR\x0estopCheckpoint\x12!\n" +
 	"\fstop_seconds\x18\x1b \x01(\x05R\vstopSeconds\x12?\n" +
 	"\bsegments\x18\x1c \x03(\v2\x1b.races.v1.RaceReportSegmentB\x06\xaa\x9f\x19\x02\b\x01R\bsegments\x12#\n" +
-	"\thas_track\x18\x1d \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\x124\n" +
-	"\x12hidden_ends_meters\x18\x1e \x01(\x05B\x06\xaa\x9f\x19\x02\b\x01R\x10hiddenEndsMeters\"\xa1\x01\n" +
+	"\thas_track\x18\x1d \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\"\xa1\x01\n" +
 	"\x11RaceReportSegment\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x122\n" +
@@ -3375,7 +3325,7 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x16ListRaceReportsRequest\x12\x17\n" +
 	"\arace_id\x18\x01 \x01(\tR\x06raceId\"I\n" +
 	"\x17ListRaceReportsResponse\x12.\n" +
-	"\areports\x18\x01 \x03(\v2\x14.races.v1.RaceReportR\areports\"\xb7\a\n" +
+	"\areports\x18\x01 \x03(\v2\x14.races.v1.RaceReportR\areports\"\xed\x06\n" +
 	"\x17UpdateRaceReportRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x17\n" +
@@ -3397,8 +3347,7 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x0edid_not_finish\x18\x0e \x01(\bH\fR\fdidNotFinish\x88\x01\x01\x125\n" +
 	"\x14stop_distance_meters\x18\x0f \x01(\x01H\rR\x12stopDistanceMeters\x88\x01\x01\x12,\n" +
 	"\x0fstop_checkpoint\x18\x10 \x01(\tH\x0eR\x0estopCheckpoint\x88\x01\x01\x12&\n" +
-	"\fstop_seconds\x18\x11 \x01(\x05H\x0fR\vstopSeconds\x88\x01\x01\x121\n" +
-	"\x12hidden_ends_meters\x18\x12 \x01(\x05H\x10R\x10hiddenEndsMeters\x88\x01\x01B\b\n" +
+	"\fstop_seconds\x18\x11 \x01(\x05H\x0fR\vstopSeconds\x88\x01\x01B\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_slugB\x0e\n" +
 	"\f_activity_idB\x11\n" +
@@ -3419,8 +3368,7 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x0f_did_not_finishB\x17\n" +
 	"\x15_stop_distance_metersB\x12\n" +
 	"\x10_stop_checkpointB\x0f\n" +
-	"\r_stop_secondsB\x15\n" +
-	"\x13_hidden_ends_meters\"t\n" +
+	"\r_stop_seconds\"t\n" +
 	"\x1cSetRaceReportSegmentsRequest\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x127\n" +
 	"\bsegments\x18\x02 \x03(\v2\x1b.races.v1.RaceReportSegmentR\bsegments\"M\n" +

@@ -27,7 +27,6 @@ import { PlusIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import {
   setRaceReportSegments,
   suggestRaceReportSegments,
-  updateRaceReport,
 } from "gen/races/v1/race_reports-RaceReportService_connectquery";
 import type {
   RaceReport,
@@ -84,12 +83,6 @@ const draftRange = (draft: Draft): DistanceRange | undefined => {
   return { endMeters: end, startMeters: start };
 };
 
-// HiddenEndsMeters parses the hidden distance input, 0 if it's invalid.
-const hiddenEndsMeters = (text: string): number => {
-  const value = Number(text);
-  return Number.isFinite(value) && value > 0 ? value : 0;
-};
-
 // RangeOf returns the stretch of a segment.
 const rangeOf = (segment: RaceReportSegment): DistanceRange => ({
   endMeters: segment.endDistanceMeters,
@@ -122,10 +115,8 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
   );
   const [activeKey, setActiveKey] = useState("");
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const [hiddenEnds, setHiddenEnds] = useState(String(report.hiddenEndsMeters));
   const [validation, setValidation] = useState("");
   const save = useMutation(setRaceReportSegments);
-  const saveHiddenEnds = useMutation(updateRaceReport);
   const suggest = useMutation(suggestRaceReportSegments, {
     onSuccess: (response) => {
       setDrafts(response.segments.map(toDraft));
@@ -196,11 +187,6 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
         title: draft.title,
       });
     }
-    const hidden = Number(hiddenEnds);
-    if (!Number.isInteger(hidden) || hidden < 0 || hidden > 2000) {
-      setValidation("The hidden distance must be from 0 to 2000 m.");
-      return;
-    }
     setValidation("");
     // In order along the track, as the server requires.
     segments.sort(
@@ -208,12 +194,6 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
     );
     void (async () => {
       await save.mutateAsync({ reportId: report.id, segments });
-      if (hidden !== report.hiddenEndsMeters) {
-        await saveHiddenEnds.mutateAsync({
-          hiddenEndsMeters: hidden,
-          id: report.id,
-        });
-      }
       await onSaved();
     })().catch(() => {
       // The error is shown below.
@@ -237,7 +217,6 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
             ? null
             : [hovered.lat, hovered.lng]
         }
-        hiddenEndsMeters={hiddenEndsMeters(hiddenEnds)}
         highlight={
           activeRange === undefined ? [] : trackSlice(track, activeRange)
         }
@@ -384,21 +363,10 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
             Suggest from the climbs
           </ConfirmButton>
         )}
-        <label className="ml-auto w-44">
-          <span className={labelClass}>Hide around start and finish (m)</span>
-          <input
-            className={inputClass}
-            inputMode="numeric"
-            value={hiddenEnds}
-            onChange={(event) => {
-              setHiddenEnds(event.target.value);
-            }}
-          />
-        </label>
         <button
           type="button"
-          className={primaryButton}
-          disabled={save.isPending || saveHiddenEnds.isPending}
+          className={`${primaryButton} ml-auto`}
+          disabled={save.isPending}
           onClick={submit}
         >
           {save.isPending ? "Saving…" : "Save segments"}
@@ -407,14 +375,14 @@ export const SegmentsEditor: React.FC<SegmentsEditorProps> = ({
       {validation !== "" && (
         <p className="text-sm text-red-700">{validation}</p>
       )}
-      <ErrorText error={save.error ?? saveHiddenEnds.error ?? suggest.error} />
+      <ErrorText error={save.error ?? suggest.error} />
     </div>
   );
 };
 
 interface SegmentsViewProps {
   segments: RaceReportSegment[];
-  // The visible track, without its hidden ends.
+  // The track, which the segments are distances along.
   track: RoutePoint[];
 }
 

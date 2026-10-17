@@ -955,7 +955,6 @@ type RaceReport struct {
 	StopCheckpoint      string
 	StopSeconds         int32
 	Track               []byte
-	HiddenEndsMeters    int32
 }
 
 type RaceReportSegment struct {

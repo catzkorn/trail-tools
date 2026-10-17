@@ -12,7 +12,6 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/activities"
 	activitiesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/activities/v1"
 	racesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/races/v1"
-	routesv1 "github.com/johanbrandhorst/trail-tools/internal/gen/routes/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/races"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
 	"github.com/johanbrandhorst/trail-tools/internal/track"
@@ -214,18 +213,4 @@ func segmentsToProto(segments []races.RaceReportSegment) []*racesv1.RaceReportSe
 		}.Build()
 	}
 	return out
-}
-
-// visibleTrack returns the points of a track without the stretches within
-// a radius of its start and finish, or none if the radius hides all of it.
-func visibleTrack(t *track.Track, radius int32) []*routesv1.RoutePoint {
-	points := t.RoutePoints()
-	if radius <= 0 {
-		return points
-	}
-	from, to, ok := t.VisibleRange(float64(radius))
-	if !ok {
-		return nil
-	}
-	return points[from : to+1]
 }

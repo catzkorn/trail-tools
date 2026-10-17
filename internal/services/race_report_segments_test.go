@@ -87,11 +87,7 @@ func TestRaceReportSegments(t *testing.T) {
 	_, err = e.otherRaceReports.SetRaceReportSegments(ctx, racesv1.SetRaceReportSegmentsRequest_builder{ReportId: reportID}.Build())
 	wantCode(t, err, connect.CodeNotFound)
 
-	// The public report has the segments, and the track without its ends,
-	// with distances along the whole track.
-	if _, err := e.raceReports.UpdateRaceReport(ctx, racesv1.UpdateRaceReportRequest_builder{Id: reportID, HiddenEndsMeters: new(int32(1000))}.Build()); err != nil {
-		t.Fatalf("UpdateRaceReport: %v", err)
-	}
+	// The public report has the segments and the whole track.
 	e.createProfile("jane-doe")
 	if _, err := e.raceReports.PublishRaceReport(ctx, racesv1.PublishRaceReportRequest_builder{Id: reportID}.Build()); err != nil {
 		t.Fatalf("PublishRaceReport: %v", err)
@@ -100,10 +96,7 @@ func TestRaceReportSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPublicRaceReport: %v", err)
 	}
-	visible := public.GetTrack()
-	if len(public.GetReport().GetSegments()) != 2 || len(visible) == 0 ||
-		visible[0].GetDistanceMeters() < 900 || visible[len(visible)-1].GetDistanceMeters() > length-900 {
-		t.Errorf("got %d segments and a public track from %v to %v m, want it without the first and last km of %v",
-			len(public.GetReport().GetSegments()), visible[0].GetDistanceMeters(), visible[len(visible)-1].GetDistanceMeters(), length)
+	if len(public.GetReport().GetSegments()) != 2 || len(public.GetTrack()) != len(track) {
+		t.Errorf("got %d segments and %d track points, want 2 and the whole track of %d", len(public.GetReport().GetSegments()), len(public.GetTrack()), len(track))
 	}
 }

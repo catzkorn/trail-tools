@@ -138,9 +138,6 @@ message RaceReport {
   repeated RaceReportSegment segments = 28 [(mcp.v1.field).output_only = true];
   // Whether the report has a track, from its activity, which segments need.
   bool has_track = 29 [(mcp.v1.field).output_only = true];
-  // How far around the start and finish the track is hidden on the public
-  // page, in meters, from 0 to 2000. Defaults to 500.
-  int32 hidden_ends_meters = 30 [(mcp.v1.field).output_only = true];
 }
 
 // A stretch of a race report's track the runner comments on.
@@ -305,9 +302,6 @@ message UpdateRaceReportRequest {
   // The new elapsed time when the runner stopped in seconds, if set. Only
   // for a DNF.
   optional int32 stop_seconds = 17;
-  // The new radius hidden around the start and finish of the public track,
-  // in meters, if set. From 0 to 2000.
-  optional int32 hidden_ends_meters = 18;
 }
 
 message SetRaceReportSegmentsRequest {
@@ -390,7 +384,6 @@ message GetPublicRaceReportResponse {
   RaceComparison comparison = 2;
   // The display name of the author.
   string author_name = 3;
-  // The report's track, without the stretches near the start and finish it
-  // hides. Its distances are along the whole track, like the segments'.
+  // The report's track, which the segments are distances along.
   repeated routes.v1.RoutePoint track = 4;
 }

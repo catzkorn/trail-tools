@@ -4,13 +4,6 @@
 -- activity changes on Strava. Null without an activity or positions.
 alter table race_reports add column track bytea;
 
--- How far around the start and finish the track is hidden on the public
--- page, in meters, so the runner's home and parking aren't shown, like trip
--- reports.
-alter table race_reports
-  add column hidden_ends_meters integer not null default 500
-    check (hidden_ends_meters between 0 and 2000);
-
 -- Stretches of the race's track the runner comments on, e.g. "The climb to
 -- the ridge", shown highlighted on its map and elevation profile.
 create table race_report_segments (

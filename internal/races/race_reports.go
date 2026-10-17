@@ -44,9 +44,6 @@ type RaceReport struct {
 	// A copy of the activity's track, an encoded activities.v1.ActivityStreams
 	// message, nil if there is none. Segments are distances along it.
 	Track []byte
-	// How far around the start and finish the public page hides the track,
-	// in meters.
-	HiddenEndsMeters int32
 	// Whether the report is published, and when it was first published.
 	Published   bool
 	PublishTime time.Time
@@ -166,21 +163,19 @@ type RaceReportUpdate struct {
 	Title, Slug *string
 	// SetActivity sets the activity to ActivityID, which may be invalid to
 	// unset it, and the track to Track, its track.
-	SetActivity bool
-	ActivityID  pgtype.UUID
-	Track       []byte
-	// The radius hidden around the ends of the public track.
-	HiddenEndsMeters *int32
-	FinishSeconds    *int32
-	Placement        *string
-	Summary          *string
-	Preparation      *string
-	RaceDay          *string
-	Nutrition        *string
-	WentWell         *string
-	WentBadly        *string
-	Lessons          *string
-	DidNotFinish     *bool
+	SetActivity   bool
+	ActivityID    pgtype.UUID
+	Track         []byte
+	FinishSeconds *int32
+	Placement     *string
+	Summary       *string
+	Preparation   *string
+	RaceDay       *string
+	Nutrition     *string
+	WentWell      *string
+	WentBadly     *string
+	Lessons       *string
+	DidNotFinish  *bool
 	// The fields of the stop to change.
 	StopDistanceMeters *float64
 	StopCheckpoint     *string
@@ -218,9 +213,6 @@ func (r *Repository) UpdateRaceReport(ctx context.Context, u *RaceReportUpdate) 
 	}
 	if u.DidNotFinish != nil {
 		params.DidNotFinish = pgtype.Bool{Bool: *u.DidNotFinish, Valid: true}
-	}
-	if u.HiddenEndsMeters != nil {
-		params.HiddenEndsMeters = pgtype.Int4{Int32: *u.HiddenEndsMeters, Valid: true}
 	}
 	if u.StopDistanceMeters != nil {
 		params.StopDistanceMeters = pgtype.Float8{Float64: *u.StopDistanceMeters, Valid: true}
@@ -358,12 +350,11 @@ func raceReportFromDB(row *gen.RaceReport) *RaceReport {
 			WentBadly:   row.WentBadly,
 			Lessons:     row.Lessons,
 		},
-		Track:            row.Track,
-		HiddenEndsMeters: row.HiddenEndsMeters,
-		Published:        row.Published,
-		PublishTime:      row.PublishTime.Time,
-		CreateTime:       row.CreateTime.Time,
-		UpdateTime:       row.UpdateTime.Time,
+		Track:       row.Track,
+		Published:   row.Published,
+		PublishTime: row.PublishTime.Time,
+		CreateTime:  row.CreateTime.Time,
+		UpdateTime:  row.UpdateTime.Time,
 	}
 }
 

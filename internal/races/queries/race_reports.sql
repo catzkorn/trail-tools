@@ -37,7 +37,6 @@ update race_reports set
   slug = coalesce(sqlc.narg(slug), slug),
   activity_id = case when sqlc.arg(set_activity)::boolean then sqlc.narg(activity_id)::uuid else activity_id end,
   track = case when sqlc.arg(set_activity)::boolean then sqlc.narg(track)::bytea else track end,
-  hidden_ends_meters = coalesce(sqlc.narg(hidden_ends_meters), hidden_ends_meters),
   finish_seconds = coalesce(sqlc.narg(finish_seconds), finish_seconds),
   placement = coalesce(sqlc.narg(placement), placement),
   summary = coalesce(sqlc.narg(summary), summary),

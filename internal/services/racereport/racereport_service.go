@@ -39,9 +39,6 @@ const (
 	maxTitleLength = 200
 	// maxSectionLength is the longest section of a report in characters.
 	maxSectionLength = 50_000
-	// maxHiddenEndsMeters is the largest radius hidden around the ends of a
-	// report's public track.
-	maxHiddenEndsMeters = 2000
 	// maxPlacementLength is the longest placement in characters.
 	maxPlacementLength = 200
 	// maxStopCheckpointLength is the longest name of the checkpoint where a
@@ -302,13 +299,6 @@ func (s *Service) UpdateRaceReport(ctx context.Context, req *racesv1.UpdateRaceR
 		}
 		update.ActivityID = activityID
 	}
-	if req.HasHiddenEndsMeters() {
-		hidden := req.GetHiddenEndsMeters()
-		if hidden < 0 || hidden > maxHiddenEndsMeters {
-			return nil, connect.Errorf(connect.CodeInvalidArgument, "hidden_ends_meters must be from 0 to %d", maxHiddenEndsMeters)
-		}
-		update.HiddenEndsMeters = &hidden
-	}
 	if req.HasFinishSeconds() {
 		finish := req.GetFinishSeconds()
 		if finish < 0 {
@@ -530,7 +520,7 @@ func (s *Service) GetPublicRaceReport(ctx context.Context, req *racesv1.GetPubli
 		Report:     reportProto,
 		Comparison: comparison,
 		AuthorName: profile.DisplayName,
-		Track:      visibleTrack(t, report.HiddenEndsMeters),
+		Track:      t.RoutePoints(),
 	}.Build(), nil
 }
 
@@ -643,7 +633,6 @@ func (s *Service) reportToProto(r *races.RaceReport, profile *trips.Profile) *ra
 		WentBadly:           r.Sections.WentBadly,
 		Lessons:             r.Sections.Lessons,
 		HasTrack:            r.Track != nil,
-		HiddenEndsMeters:    r.HiddenEndsMeters,
 		Published:           r.Published,
 		CreateTime:          timestamppb.New(r.CreateTime),
 		UpdateTime:          timestamppb.New(r.UpdateTime),
