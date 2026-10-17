@@ -22,11 +22,12 @@ insert into race_reports (
   race_date,
   distance_meters,
   elevation_gain_meters,
-  finish_seconds
+  finish_seconds,
+  track
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
-returning id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds
+returning id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds, track, hidden_ends_meters
 `
 
 type CreateRaceReportParams struct {
@@ -40,6 +41,7 @@ type CreateRaceReportParams struct {
 	DistanceMeters      float64
 	ElevationGainMeters float64
 	FinishSeconds       int32
+	Track               []byte
 }
 
 func (q *Queries) CreateRaceReport(ctx context.Context, arg *CreateRaceReportParams) (*RaceReport, error) {
@@ -54,6 +56,7 @@ func (q *Queries) CreateRaceReport(ctx context.Context, arg *CreateRaceReportPar
 		arg.DistanceMeters,
 		arg.ElevationGainMeters,
 		arg.FinishSeconds,
+		arg.Track,
 	)
 	var i RaceReport
 	err := row.Scan(
@@ -84,6 +87,8 @@ func (q *Queries) CreateRaceReport(ctx context.Context, arg *CreateRaceReportPar
 		&i.StopDistanceMeters,
 		&i.StopCheckpoint,
 		&i.StopSeconds,
+		&i.Track,
+		&i.HiddenEndsMeters,
 	)
 	return &i, err
 }
@@ -106,8 +111,18 @@ func (q *Queries) DeleteRaceReport(ctx context.Context, arg *DeleteRaceReportPar
 	return result.RowsAffected(), nil
 }
 
+const deleteRaceReportSegments = `-- name: DeleteRaceReportSegments :exec
+delete from race_report_segments
+where report_id = $1
+`
+
+func (q *Queries) DeleteRaceReportSegments(ctx context.Context, reportID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRaceReportSegments, reportID)
+	return err
+}
+
 const getRaceReport = `-- name: GetRaceReport :one
-select id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds from race_reports
+select id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds, track, hidden_ends_meters from race_reports
 where id = $1 and user_id = $2
 `
 
@@ -147,12 +162,14 @@ func (q *Queries) GetRaceReport(ctx context.Context, arg *GetRaceReportParams) (
 		&i.StopDistanceMeters,
 		&i.StopCheckpoint,
 		&i.StopSeconds,
+		&i.Track,
+		&i.HiddenEndsMeters,
 	)
 	return &i, err
 }
 
 const getRaceReportBySlug = `-- name: GetRaceReportBySlug :one
-select id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds from race_reports
+select id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds, track, hidden_ends_meters from race_reports
 where user_id = $1 and slug = $2
 `
 
@@ -192,12 +209,81 @@ func (q *Queries) GetRaceReportBySlug(ctx context.Context, arg *GetRaceReportByS
 		&i.StopDistanceMeters,
 		&i.StopCheckpoint,
 		&i.StopSeconds,
+		&i.Track,
+		&i.HiddenEndsMeters,
 	)
 	return &i, err
 }
 
+const insertRaceReportSegments = `-- name: InsertRaceReportSegments :exec
+insert into race_report_segments (report_id, position, title, body, start_distance_meters, end_distance_meters)
+select
+  $1::uuid,
+  unnest($2::integer[]),
+  unnest($3::text[]),
+  unnest($4::text[]),
+  unnest($5::double precision[]),
+  unnest($6::double precision[])
+`
+
+type InsertRaceReportSegmentsParams struct {
+	ReportID             pgtype.UUID
+	Positions            []int32
+	Titles               []string
+	Bodies               []string
+	StartDistancesMeters []float64
+	EndDistancesMeters   []float64
+}
+
+func (q *Queries) InsertRaceReportSegments(ctx context.Context, arg *InsertRaceReportSegmentsParams) error {
+	_, err := q.db.Exec(ctx, insertRaceReportSegments,
+		arg.ReportID,
+		arg.Positions,
+		arg.Titles,
+		arg.Bodies,
+		arg.StartDistancesMeters,
+		arg.EndDistancesMeters,
+	)
+	return err
+}
+
+const listRaceReportSegments = `-- name: ListRaceReportSegments :many
+select id, report_id, position, title, body, start_distance_meters, end_distance_meters, create_time from race_report_segments
+where report_id = $1
+order by position
+`
+
+func (q *Queries) ListRaceReportSegments(ctx context.Context, reportID pgtype.UUID) ([]*RaceReportSegment, error) {
+	rows, err := q.db.Query(ctx, listRaceReportSegments, reportID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*RaceReportSegment
+	for rows.Next() {
+		var i RaceReportSegment
+		if err := rows.Scan(
+			&i.ID,
+			&i.ReportID,
+			&i.Position,
+			&i.Title,
+			&i.Body,
+			&i.StartDistanceMeters,
+			&i.EndDistanceMeters,
+			&i.CreateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRaceReports = `-- name: ListRaceReports :many
-select id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds from race_reports
+select id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds, track, hidden_ends_meters from race_reports
 where user_id = $1
   and (not $2::boolean or published)
   and ($3::uuid is null or race_id = $3::uuid)
@@ -247,6 +333,8 @@ func (q *Queries) ListRaceReports(ctx context.Context, arg *ListRaceReportsParam
 			&i.StopDistanceMeters,
 			&i.StopCheckpoint,
 			&i.StopSeconds,
+			&i.Track,
+			&i.HiddenEndsMeters,
 		); err != nil {
 			return nil, err
 		}
@@ -264,7 +352,7 @@ update race_reports set
   publish_time = case when $1 then coalesce(publish_time, now()) else publish_time end,
   update_time = now()
 where id = $2 and user_id = $3
-returning id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds
+returning id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds, track, hidden_ends_meters
 `
 
 type SetRaceReportPublishedParams struct {
@@ -304,8 +392,37 @@ func (q *Queries) SetRaceReportPublished(ctx context.Context, arg *SetRaceReport
 		&i.StopDistanceMeters,
 		&i.StopCheckpoint,
 		&i.StopSeconds,
+		&i.Track,
+		&i.HiddenEndsMeters,
 	)
 	return &i, err
+}
+
+const setRaceReportTrack = `-- name: SetRaceReportTrack :exec
+update race_reports set track = $3
+where id = $1 and user_id = $2 and track is null
+`
+
+type SetRaceReportTrackParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+	Track  []byte
+}
+
+// Stores the track of a report made before reports had one.
+func (q *Queries) SetRaceReportTrack(ctx context.Context, arg *SetRaceReportTrackParams) error {
+	_, err := q.db.Exec(ctx, setRaceReportTrack, arg.ID, arg.UserID, arg.Track)
+	return err
+}
+
+const touchRaceReport = `-- name: TouchRaceReport :exec
+update race_reports set update_time = now()
+where id = $1
+`
+
+func (q *Queries) TouchRaceReport(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, touchRaceReport, id)
+	return err
 }
 
 const updateRaceReport = `-- name: UpdateRaceReport :one
@@ -313,22 +430,24 @@ update race_reports set
   title = coalesce($1, title),
   slug = coalesce($2, slug),
   activity_id = case when $3::boolean then $4::uuid else activity_id end,
-  finish_seconds = coalesce($5, finish_seconds),
-  placement = coalesce($6, placement),
-  summary = coalesce($7, summary),
-  preparation = coalesce($8, preparation),
-  race_day = coalesce($9, race_day),
-  nutrition = coalesce($10, nutrition),
-  went_well = coalesce($11, went_well),
-  went_badly = coalesce($12, went_badly),
-  lessons = coalesce($13, lessons),
-  did_not_finish = coalesce($14, did_not_finish),
-  stop_distance_meters = coalesce($15, stop_distance_meters),
-  stop_checkpoint = coalesce($16, stop_checkpoint),
-  stop_seconds = coalesce($17, stop_seconds),
+  track = case when $3::boolean then $5::bytea else track end,
+  hidden_ends_meters = coalesce($6, hidden_ends_meters),
+  finish_seconds = coalesce($7, finish_seconds),
+  placement = coalesce($8, placement),
+  summary = coalesce($9, summary),
+  preparation = coalesce($10, preparation),
+  race_day = coalesce($11, race_day),
+  nutrition = coalesce($12, nutrition),
+  went_well = coalesce($13, went_well),
+  went_badly = coalesce($14, went_badly),
+  lessons = coalesce($15, lessons),
+  did_not_finish = coalesce($16, did_not_finish),
+  stop_distance_meters = coalesce($17, stop_distance_meters),
+  stop_checkpoint = coalesce($18, stop_checkpoint),
+  stop_seconds = coalesce($19, stop_seconds),
   update_time = now()
-where id = $18 and user_id = $19
-returning id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds
+where id = $20 and user_id = $21
+returning id, user_id, race_id, activity_id, title, slug, race_name, race_date, distance_meters, elevation_gain_meters, finish_seconds, placement, summary, preparation, race_day, nutrition, went_well, went_badly, lessons, published, publish_time, create_time, update_time, did_not_finish, stop_distance_meters, stop_checkpoint, stop_seconds, track, hidden_ends_meters
 `
 
 type UpdateRaceReportParams struct {
@@ -336,6 +455,8 @@ type UpdateRaceReportParams struct {
 	Slug               pgtype.Text
 	SetActivity        bool
 	ActivityID         pgtype.UUID
+	Track              []byte
+	HiddenEndsMeters   pgtype.Int4
 	FinishSeconds      pgtype.Int4
 	Placement          pgtype.Text
 	Summary            pgtype.Text
@@ -359,6 +480,8 @@ func (q *Queries) UpdateRaceReport(ctx context.Context, arg *UpdateRaceReportPar
 		arg.Slug,
 		arg.SetActivity,
 		arg.ActivityID,
+		arg.Track,
+		arg.HiddenEndsMeters,
 		arg.FinishSeconds,
 		arg.Placement,
 		arg.Summary,
@@ -404,6 +527,8 @@ func (q *Queries) UpdateRaceReport(ctx context.Context, arg *UpdateRaceReportPar
 		&i.StopDistanceMeters,
 		&i.StopCheckpoint,
 		&i.StopSeconds,
+		&i.Track,
+		&i.HiddenEndsMeters,
 	)
 	return &i, err
 }

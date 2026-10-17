@@ -4,6 +4,7 @@ package races.v1;
 
 import "google/protobuf/timestamp.proto";
 import "mcp/v1/options.proto";
+import "routes/v1/routes.proto";
 
 // RaceReportService manages race reports: the story of a race the user ran,
 // focused on how it was prepared for and executed rather than on photos.
@@ -15,6 +16,13 @@ import "mcp/v1/options.proto";
 // plan's checkpoints, from the activity's recording or the race day splits,
 // against the planned ones. A DNF meets no goal, and has no arrival times
 // beyond where the runner stopped.
+//
+// A report can also have segments: stretches of the race's track, like "The
+// climb to Galbraith", with a title and text, which the app highlights on a
+// map and elevation profile. The track is a copy of the activity's, made when
+// the activity is set; segments are distances along it. SuggestRaceReportSegments
+// suggests segments from the climbs and descents of the track, to write
+// about.
 //
 // Reports are private drafts until the author publishes them in the app,
 // which requires a public profile (see TripReportService). Help the author
@@ -33,6 +41,15 @@ service RaceReportService {
   rpc UpdateRaceReport(UpdateRaceReportRequest) returns (UpdateRaceReportResponse);
   // Delete a race report.
   rpc DeleteRaceReport(DeleteRaceReportRequest) returns (DeleteRaceReportResponse);
+  // Replace the segments of a race report, in order along the track. The
+  // report needs a track, from its activity.
+  rpc SetRaceReportSegments(SetRaceReportSegmentsRequest) returns (SetRaceReportSegmentsResponse);
+  // Suggest segments for a race report from the climbs and descents of its
+  // track, each named like "Climb to 1,450 m", without text. Nothing is
+  // saved: set the segments to keep them, with text the author writes. Fails
+  // with FAILED_PRECONDITION if the report has no track, or the track has no
+  // elevations.
+  rpc SuggestRaceReportSegments(SuggestRaceReportSegmentsRequest) returns (SuggestRaceReportSegmentsResponse);
   // Publish a race report on the user's public profile.
   rpc PublishRaceReport(PublishRaceReportRequest) returns (PublishRaceReportResponse) {
     option (mcp.v1.method).exclude = true;
@@ -116,6 +133,26 @@ message RaceReport {
   // The elapsed time when the runner stopped in seconds, 0 if unknown. Only
   // for a DNF.
   int32 stop_seconds = 27;
+  // The segments: stretches of the track the runner comments on, in order.
+  // Set with SetRaceReportSegments. Not set in lists.
+  repeated RaceReportSegment segments = 28 [(mcp.v1.field).output_only = true];
+  // Whether the report has a track, from its activity, which segments need.
+  bool has_track = 29 [(mcp.v1.field).output_only = true];
+  // How far around the start and finish the track is hidden on the public
+  // page, in meters, from 0 to 2000. Defaults to 500.
+  int32 hidden_ends_meters = 30 [(mcp.v1.field).output_only = true];
+}
+
+// A stretch of a race report's track the runner comments on.
+message RaceReportSegment {
+  // The heading, e.g. "The climb to Galbraith". At most 200 characters.
+  string title = 1;
+  // The text as plain text. Paragraphs are separated by blank lines.
+  string body = 2;
+  // Where the stretch starts and ends, in meters along the report's track.
+  // The end must be after the start, and within the track.
+  double start_distance_meters = 3;
+  double end_distance_meters = 4;
 }
 
 // The comparison of a race plan with what happened.
@@ -202,6 +239,8 @@ message CreateRaceReportResponse {
 message GetRaceReportRequest {
   // The ID of the report.
   string id = 1;
+  // Whether to include the report's track.
+  bool include_track = 2;
 }
 
 message GetRaceReportResponse {
@@ -209,6 +248,9 @@ message GetRaceReportResponse {
   RaceReport report = 1;
   // The comparison with the race plan.
   RaceComparison comparison = 2;
+  // The report's track, downsampled, if include_track was set and it has
+  // one.
+  repeated routes.v1.RoutePoint track = 3;
 }
 
 message ListRaceReportsRequest {
@@ -263,6 +305,31 @@ message UpdateRaceReportRequest {
   // The new elapsed time when the runner stopped in seconds, if set. Only
   // for a DNF.
   optional int32 stop_seconds = 17;
+  // The new radius hidden around the start and finish of the public track,
+  // in meters, if set. From 0 to 2000.
+  optional int32 hidden_ends_meters = 18;
+}
+
+message SetRaceReportSegmentsRequest {
+  // The ID of the report.
+  string report_id = 1;
+  // The segments, at most 50. Empty to remove them all.
+  repeated RaceReportSegment segments = 2;
+}
+
+message SetRaceReportSegmentsResponse {
+  // The updated report.
+  RaceReport report = 1;
+}
+
+message SuggestRaceReportSegmentsRequest {
+  // The ID of the report.
+  string report_id = 1;
+}
+
+message SuggestRaceReportSegmentsResponse {
+  // The suggested segments, in order along the track, without text.
+  repeated RaceReportSegment segments = 1;
 }
 
 message UpdateRaceReportResponse {
@@ -323,4 +390,7 @@ message GetPublicRaceReportResponse {
   RaceComparison comparison = 2;
   // The display name of the author.
   string author_name = 3;
+  // The report's track, without the stretches near the start and finish it
+  // hides. Its distances are along the whole track, like the segments'.
+  repeated routes.v1.RoutePoint track = 4;
 }

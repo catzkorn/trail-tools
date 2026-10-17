@@ -7,13 +7,15 @@ import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import { file_mcp_v1_options } from "../../mcp/v1/options_pb";
+import type { RoutePoint } from "../../routes/v1/routes_pb";
+import { file_routes_v1_routes } from "../../routes/v1/routes_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file races/v1/race_reports.proto.
  */
 export const file_races_v1_race_reports: GenFile = /*@__PURE__*/
-  fileDesc("ChtyYWNlcy92MS9yYWNlX3JlcG9ydHMucHJvdG8SCHJhY2VzLnYxItgFCgpSYWNlUmVwb3J0EhIKAmlkGAEgASgJQgaqnxkCCAESFwoHcmFjZV9pZBgCIAEoCUIGqp8ZAggBEhMKC2FjdGl2aXR5X2lkGAMgASgJEg0KBXRpdGxlGAQgASgJEgwKBHNsdWcYBSABKAkSGQoJcmFjZV9uYW1lGAYgASgJQgaqnxkCCAESGQoJcmFjZV9kYXRlGAcgASgJQgaqnxkCCAESHwoPZGlzdGFuY2VfbWV0ZXJzGAggASgBQgaqnxkCCAESJQoVZWxldmF0aW9uX2dhaW5fbWV0ZXJzGAkgASgBQgaqnxkCCAESFgoOZmluaXNoX3NlY29uZHMYCiABKAUSEQoJcGxhY2VtZW50GAsgASgJEg8KB3N1bW1hcnkYDCABKAkSEwoLcHJlcGFyYXRpb24YDSABKAkSEAoIcmFjZV9kYXkYDiABKAkSEQoJbnV0cml0aW9uGA8gASgJEhEKCXdlbnRfd2VsbBgQIAEoCRISCgp3ZW50X2JhZGx5GBEgASgJEg8KB2xlc3NvbnMYEiABKAkSGQoJcHVibGlzaGVkGBMgASgIQgaqnxkCCAESOAoMcHVibGlzaF90aW1lGBQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhMKA3VybBgVIAEoCUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGBYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGBcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhYKDmRpZF9ub3RfZmluaXNoGBggASgIEhwKFHN0b3BfZGlzdGFuY2VfbWV0ZXJzGBkgASgBEhcKD3N0b3BfY2hlY2twb2ludBgaIAEoCRIUCgxzdG9wX3NlY29uZHMYGyABKAUi7wEKDlJhY2VDb21wYXJpc29uEhAKCGhhc19wbGFuGAEgASgIEiMKBWdvYWxzGAIgAygLMhQucmFjZXMudjEuR29hbFJlc3VsdBIeChZwbGFubmVkX2ZpbmlzaF9zZWNvbmRzGAMgASgFEi8KC2NoZWNrcG9pbnRzGAQgAygLMhoucmFjZXMudjEuQ2hlY2twb2ludFJlc3VsdBI4ChNhY3R1YWxfdGltZXNfc291cmNlGAUgASgOMhsucmFjZXMudjEuQWN0dWFsVGltZXNTb3VyY2USGwoTYWN0dWFsX3RpbWVzX3NjYWxlZBgGIAEoCCJbCgpHb2FsUmVzdWx0EgwKBGdvYWwYASABKAkSFgoOdGFyZ2V0X3NlY29uZHMYAiABKAUSCwoDbWV0GAMgASgIEhoKEmRpZmZlcmVuY2Vfc2Vjb25kcxgEIAEoBSL/AQoQQ2hlY2twb2ludFJlc3VsdBIMCgRuYW1lGAEgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgCIAEoARIfChdwbGFubmVkX2Fycml2YWxfc2Vjb25kcxgDIAEoBRIjChZhY3R1YWxfYXJyaXZhbF9zZWNvbmRzGAQgASgFSACIAQESHwoSZGlmZmVyZW5jZV9zZWNvbmRzGAUgASgFSAGIAQESFgoOY3V0b2ZmX3NlY29uZHMYBiABKAUSEwoLbm90X3JlYWNoZWQYByABKAhCGQoXX2FjdHVhbF9hcnJpdmFsX3NlY29uZHNCFQoTX2RpZmZlcmVuY2Vfc2Vjb25kcyI/ChdDcmVhdGVSYWNlUmVwb3J0UmVxdWVzdBIPCgdyYWNlX2lkGAEgASgJEhMKC2FjdGl2aXR5X2lkGAIgASgJIm4KGENyZWF0ZVJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiIiChRHZXRSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJrChVHZXRSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydBIsCgpjb21wYXJpc29uGAIgASgLMhgucmFjZXMudjEuUmFjZUNvbXBhcmlzb24iKQoWTGlzdFJhY2VSZXBvcnRzUmVxdWVzdBIPCgdyYWNlX2lkGAEgASgJIkAKF0xpc3RSYWNlUmVwb3J0c1Jlc3BvbnNlEiUKB3JlcG9ydHMYASADKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0Iq8FChdVcGRhdGVSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCRISCgV0aXRsZRgCIAEoCUgAiAEBEhEKBHNsdWcYAyABKAlIAYgBARIYCgthY3Rpdml0eV9pZBgEIAEoCUgCiAEBEhsKDmZpbmlzaF9zZWNvbmRzGAUgASgFSAOIAQESFgoJcGxhY2VtZW50GAYgASgJSASIAQESFAoHc3VtbWFyeRgHIAEoCUgFiAEBEhgKC3ByZXBhcmF0aW9uGAggASgJSAaIAQESFQoIcmFjZV9kYXkYCSABKAlIB4gBARIWCgludXRyaXRpb24YCiABKAlICIgBARIWCgl3ZW50X3dlbGwYCyABKAlICYgBARIXCgp3ZW50X2JhZGx5GAwgASgJSAqIAQESFAoHbGVzc29ucxgNIAEoCUgLiAEBEhsKDmRpZF9ub3RfZmluaXNoGA4gASgISAyIAQESIQoUc3RvcF9kaXN0YW5jZV9tZXRlcnMYDyABKAFIDYgBARIcCg9zdG9wX2NoZWNrcG9pbnQYECABKAlIDogBARIZCgxzdG9wX3NlY29uZHMYESABKAVID4gBAUIICgZfdGl0bGVCBwoFX3NsdWdCDgoMX2FjdGl2aXR5X2lkQhEKD19maW5pc2hfc2Vjb25kc0IMCgpfcGxhY2VtZW50QgoKCF9zdW1tYXJ5Qg4KDF9wcmVwYXJhdGlvbkILCglfcmFjZV9kYXlCDAoKX251dHJpdGlvbkIMCgpfd2VudF93ZWxsQg0KC193ZW50X2JhZGx5QgoKCF9sZXNzb25zQhEKD19kaWRfbm90X2ZpbmlzaEIXChVfc3RvcF9kaXN0YW5jZV9tZXRlcnNCEgoQX3N0b3BfY2hlY2twb2ludEIPCg1fc3RvcF9zZWNvbmRzIm4KGFVwZGF0ZVJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiIlChdEZWxldGVSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSIaChhEZWxldGVSYWNlUmVwb3J0UmVzcG9uc2UiJgoYUHVibGlzaFJhY2VSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJIkEKGVB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydCIoChpVbnB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJDChtVbnB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydCIuChxMaXN0UHVibGljUmFjZVJlcG9ydHNSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSJGCh1MaXN0UHVibGljUmFjZVJlcG9ydHNSZXNwb25zZRIlCgdyZXBvcnRzGAEgAygLMhQucmFjZXMudjEuUmFjZVJlcG9ydCI6ChpHZXRQdWJsaWNSYWNlUmVwb3J0UmVxdWVzdBIOCgZoYW5kbGUYASABKAkSDAoEc2x1ZxgCIAEoCSKGAQobR2V0UHVibGljUmFjZVJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQSLAoKY29tcGFyaXNvbhgCIAEoCzIYLnJhY2VzLnYxLlJhY2VDb21wYXJpc29uEhMKC2F1dGhvcl9uYW1lGAMgASgJKnwKEUFjdHVhbFRpbWVzU291cmNlEiMKH0FDVFVBTF9USU1FU19TT1VSQ0VfVU5TUEVDSUZJRUQQABIgChxBQ1RVQUxfVElNRVNfU09VUkNFX0FDVElWSVRZEAESIAocQUNUVUFMX1RJTUVTX1NPVVJDRV9SQUNFX0RBWRACMv4GChFSYWNlUmVwb3J0U2VydmljZRJZChBDcmVhdGVSYWNlUmVwb3J0EiEucmFjZXMudjEuQ3JlYXRlUmFjZVJlcG9ydFJlcXVlc3QaIi5yYWNlcy52MS5DcmVhdGVSYWNlUmVwb3J0UmVzcG9uc2USUAoNR2V0UmFjZVJlcG9ydBIeLnJhY2VzLnYxLkdldFJhY2VSZXBvcnRSZXF1ZXN0Gh8ucmFjZXMudjEuR2V0UmFjZVJlcG9ydFJlc3BvbnNlElYKD0xpc3RSYWNlUmVwb3J0cxIgLnJhY2VzLnYxLkxpc3RSYWNlUmVwb3J0c1JlcXVlc3QaIS5yYWNlcy52MS5MaXN0UmFjZVJlcG9ydHNSZXNwb25zZRJZChBVcGRhdGVSYWNlUmVwb3J0EiEucmFjZXMudjEuVXBkYXRlUmFjZVJlcG9ydFJlcXVlc3QaIi5yYWNlcy52MS5VcGRhdGVSYWNlUmVwb3J0UmVzcG9uc2USWQoQRGVsZXRlUmFjZVJlcG9ydBIhLnJhY2VzLnYxLkRlbGV0ZVJhY2VSZXBvcnRSZXF1ZXN0GiIucmFjZXMudjEuRGVsZXRlUmFjZVJlcG9ydFJlc3BvbnNlEmQKEVB1Ymxpc2hSYWNlUmVwb3J0EiIucmFjZXMudjEuUHVibGlzaFJhY2VSZXBvcnRSZXF1ZXN0GiMucmFjZXMudjEuUHVibGlzaFJhY2VSZXBvcnRSZXNwb25zZSIGop8ZAggBEmoKE1VucHVibGlzaFJhY2VSZXBvcnQSJC5yYWNlcy52MS5VbnB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBolLnJhY2VzLnYxLlVucHVibGlzaFJhY2VSZXBvcnRSZXNwb25zZSIGop8ZAggBEnAKFUxpc3RQdWJsaWNSYWNlUmVwb3J0cxImLnJhY2VzLnYxLkxpc3RQdWJsaWNSYWNlUmVwb3J0c1JlcXVlc3QaJy5yYWNlcy52MS5MaXN0UHVibGljUmFjZVJlcG9ydHNSZXNwb25zZSIGop8ZAggBEmoKE0dldFB1YmxpY1JhY2VSZXBvcnQSJC5yYWNlcy52MS5HZXRQdWJsaWNSYWNlUmVwb3J0UmVxdWVzdBolLnJhY2VzLnYxLkdldFB1YmxpY1JhY2VSZXBvcnRSZXNwb25zZSIGop8ZAggBQqcBCgxjb20ucmFjZXMudjFCEFJhY2VSZXBvcnRzUHJvdG9QAVpEZ2l0aHViLmNvbS9qb2hhbmJyYW5kaG9yc3QvdHJhaWwtdG9vbHMvaW50ZXJuYWwvZ2VuL3JhY2VzL3YxO3JhY2VzdjGiAgNSWFiqAghSYWNlcy5WMcoCCFJhY2VzXFYx4gIUUmFjZXNcVjFcR1BCTWV0YWRhdGHqAglSYWNlczo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mcp_v1_options]);
+  fileDesc("ChtyYWNlcy92MS9yYWNlX3JlcG9ydHMucHJvdG8SCHJhY2VzLnYxIs4GCgpSYWNlUmVwb3J0EhIKAmlkGAEgASgJQgaqnxkCCAESFwoHcmFjZV9pZBgCIAEoCUIGqp8ZAggBEhMKC2FjdGl2aXR5X2lkGAMgASgJEg0KBXRpdGxlGAQgASgJEgwKBHNsdWcYBSABKAkSGQoJcmFjZV9uYW1lGAYgASgJQgaqnxkCCAESGQoJcmFjZV9kYXRlGAcgASgJQgaqnxkCCAESHwoPZGlzdGFuY2VfbWV0ZXJzGAggASgBQgaqnxkCCAESJQoVZWxldmF0aW9uX2dhaW5fbWV0ZXJzGAkgASgBQgaqnxkCCAESFgoOZmluaXNoX3NlY29uZHMYCiABKAUSEQoJcGxhY2VtZW50GAsgASgJEg8KB3N1bW1hcnkYDCABKAkSEwoLcHJlcGFyYXRpb24YDSABKAkSEAoIcmFjZV9kYXkYDiABKAkSEQoJbnV0cml0aW9uGA8gASgJEhEKCXdlbnRfd2VsbBgQIAEoCRISCgp3ZW50X2JhZGx5GBEgASgJEg8KB2xlc3NvbnMYEiABKAkSGQoJcHVibGlzaGVkGBMgASgIQgaqnxkCCAESOAoMcHVibGlzaF90aW1lGBQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhMKA3VybBgVIAEoCUIGqp8ZAggBEjcKC2NyZWF0ZV90aW1lGBYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEjcKC3VwZGF0ZV90aW1lGBcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEIGqp8ZAggBEhYKDmRpZF9ub3RfZmluaXNoGBggASgIEhwKFHN0b3BfZGlzdGFuY2VfbWV0ZXJzGBkgASgBEhcKD3N0b3BfY2hlY2twb2ludBgaIAEoCRIUCgxzdG9wX3NlY29uZHMYGyABKAUSNQoIc2VnbWVudHMYHCADKAsyGy5yYWNlcy52MS5SYWNlUmVwb3J0U2VnbWVudEIGqp8ZAggBEhkKCWhhc190cmFjaxgdIAEoCEIGqp8ZAggBEiIKEmhpZGRlbl9lbmRzX21ldGVycxgeIAEoBUIGqp8ZAggBImwKEVJhY2VSZXBvcnRTZWdtZW50Eg0KBXRpdGxlGAEgASgJEgwKBGJvZHkYAiABKAkSHQoVc3RhcnRfZGlzdGFuY2VfbWV0ZXJzGAMgASgBEhsKE2VuZF9kaXN0YW5jZV9tZXRlcnMYBCABKAEi7wEKDlJhY2VDb21wYXJpc29uEhAKCGhhc19wbGFuGAEgASgIEiMKBWdvYWxzGAIgAygLMhQucmFjZXMudjEuR29hbFJlc3VsdBIeChZwbGFubmVkX2ZpbmlzaF9zZWNvbmRzGAMgASgFEi8KC2NoZWNrcG9pbnRzGAQgAygLMhoucmFjZXMudjEuQ2hlY2twb2ludFJlc3VsdBI4ChNhY3R1YWxfdGltZXNfc291cmNlGAUgASgOMhsucmFjZXMudjEuQWN0dWFsVGltZXNTb3VyY2USGwoTYWN0dWFsX3RpbWVzX3NjYWxlZBgGIAEoCCJbCgpHb2FsUmVzdWx0EgwKBGdvYWwYASABKAkSFgoOdGFyZ2V0X3NlY29uZHMYAiABKAUSCwoDbWV0GAMgASgIEhoKEmRpZmZlcmVuY2Vfc2Vjb25kcxgEIAEoBSL/AQoQQ2hlY2twb2ludFJlc3VsdBIMCgRuYW1lGAEgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgCIAEoARIfChdwbGFubmVkX2Fycml2YWxfc2Vjb25kcxgDIAEoBRIjChZhY3R1YWxfYXJyaXZhbF9zZWNvbmRzGAQgASgFSACIAQESHwoSZGlmZmVyZW5jZV9zZWNvbmRzGAUgASgFSAGIAQESFgoOY3V0b2ZmX3NlY29uZHMYBiABKAUSEwoLbm90X3JlYWNoZWQYByABKAhCGQoXX2FjdHVhbF9hcnJpdmFsX3NlY29uZHNCFQoTX2RpZmZlcmVuY2Vfc2Vjb25kcyI/ChdDcmVhdGVSYWNlUmVwb3J0UmVxdWVzdBIPCgdyYWNlX2lkGAEgASgJEhMKC2FjdGl2aXR5X2lkGAIgASgJIm4KGENyZWF0ZVJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiI5ChRHZXRSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCRIVCg1pbmNsdWRlX3RyYWNrGAIgASgIIpEBChVHZXRSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydBIsCgpjb21wYXJpc29uGAIgASgLMhgucmFjZXMudjEuUmFjZUNvbXBhcmlzb24SJAoFdHJhY2sYAyADKAsyFS5yb3V0ZXMudjEuUm91dGVQb2ludCIpChZMaXN0UmFjZVJlcG9ydHNSZXF1ZXN0Eg8KB3JhY2VfaWQYASABKAkiQAoXTGlzdFJhY2VSZXBvcnRzUmVzcG9uc2USJQoHcmVwb3J0cxgBIAMoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQi5wUKF1VwZGF0ZVJhY2VSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJEhIKBXRpdGxlGAIgASgJSACIAQESEQoEc2x1ZxgDIAEoCUgBiAEBEhgKC2FjdGl2aXR5X2lkGAQgASgJSAKIAQESGwoOZmluaXNoX3NlY29uZHMYBSABKAVIA4gBARIWCglwbGFjZW1lbnQYBiABKAlIBIgBARIUCgdzdW1tYXJ5GAcgASgJSAWIAQESGAoLcHJlcGFyYXRpb24YCCABKAlIBogBARIVCghyYWNlX2RheRgJIAEoCUgHiAEBEhYKCW51dHJpdGlvbhgKIAEoCUgIiAEBEhYKCXdlbnRfd2VsbBgLIAEoCUgJiAEBEhcKCndlbnRfYmFkbHkYDCABKAlICogBARIUCgdsZXNzb25zGA0gASgJSAuIAQESGwoOZGlkX25vdF9maW5pc2gYDiABKAhIDIgBARIhChRzdG9wX2Rpc3RhbmNlX21ldGVycxgPIAEoAUgNiAEBEhwKD3N0b3BfY2hlY2twb2ludBgQIAEoCUgOiAEBEhkKDHN0b3Bfc2Vjb25kcxgRIAEoBUgPiAEBEh8KEmhpZGRlbl9lbmRzX21ldGVycxgSIAEoBUgQiAEBQggKBl90aXRsZUIHCgVfc2x1Z0IOCgxfYWN0aXZpdHlfaWRCEQoPX2ZpbmlzaF9zZWNvbmRzQgwKCl9wbGFjZW1lbnRCCgoIX3N1bW1hcnlCDgoMX3ByZXBhcmF0aW9uQgsKCV9yYWNlX2RheUIMCgpfbnV0cml0aW9uQgwKCl93ZW50X3dlbGxCDQoLX3dlbnRfYmFkbHlCCgoIX2xlc3NvbnNCEQoPX2RpZF9ub3RfZmluaXNoQhcKFV9zdG9wX2Rpc3RhbmNlX21ldGVyc0ISChBfc3RvcF9jaGVja3BvaW50Qg8KDV9zdG9wX3NlY29uZHNCFQoTX2hpZGRlbl9lbmRzX21ldGVycyJgChxTZXRSYWNlUmVwb3J0U2VnbWVudHNSZXF1ZXN0EhEKCXJlcG9ydF9pZBgBIAEoCRItCghzZWdtZW50cxgCIAMoCzIbLnJhY2VzLnYxLlJhY2VSZXBvcnRTZWdtZW50IkUKHVNldFJhY2VSZXBvcnRTZWdtZW50c1Jlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQiNQogU3VnZ2VzdFJhY2VSZXBvcnRTZWdtZW50c1JlcXVlc3QSEQoJcmVwb3J0X2lkGAEgASgJIlIKIVN1Z2dlc3RSYWNlUmVwb3J0U2VnbWVudHNSZXNwb25zZRItCghzZWdtZW50cxgBIAMoCzIbLnJhY2VzLnYxLlJhY2VSZXBvcnRTZWdtZW50Im4KGFVwZGF0ZVJhY2VSZXBvcnRSZXNwb25zZRIkCgZyZXBvcnQYASABKAsyFC5yYWNlcy52MS5SYWNlUmVwb3J0EiwKCmNvbXBhcmlzb24YAiABKAsyGC5yYWNlcy52MS5SYWNlQ29tcGFyaXNvbiIlChdEZWxldGVSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSIaChhEZWxldGVSYWNlUmVwb3J0UmVzcG9uc2UiJgoYUHVibGlzaFJhY2VSZXBvcnRSZXF1ZXN0EgoKAmlkGAEgASgJIkEKGVB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydCIoChpVbnB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBIKCgJpZBgBIAEoCSJDChtVbnB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQucmFjZXMudjEuUmFjZVJlcG9ydCIuChxMaXN0UHVibGljUmFjZVJlcG9ydHNSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSJGCh1MaXN0UHVibGljUmFjZVJlcG9ydHNSZXNwb25zZRIlCgdyZXBvcnRzGAEgAygLMhQucmFjZXMudjEuUmFjZVJlcG9ydCI6ChpHZXRQdWJsaWNSYWNlUmVwb3J0UmVxdWVzdBIOCgZoYW5kbGUYASABKAkSDAoEc2x1ZxgCIAEoCSKsAQobR2V0UHVibGljUmFjZVJlcG9ydFJlc3BvbnNlEiQKBnJlcG9ydBgBIAEoCzIULnJhY2VzLnYxLlJhY2VSZXBvcnQSLAoKY29tcGFyaXNvbhgCIAEoCzIYLnJhY2VzLnYxLlJhY2VDb21wYXJpc29uEhMKC2F1dGhvcl9uYW1lGAMgASgJEiQKBXRyYWNrGAQgAygLMhUucm91dGVzLnYxLlJvdXRlUG9pbnQqfAoRQWN0dWFsVGltZXNTb3VyY2USIwofQUNUVUFMX1RJTUVTX1NPVVJDRV9VTlNQRUNJRklFRBAAEiAKHEFDVFVBTF9USU1FU19TT1VSQ0VfQUNUSVZJVFkQARIgChxBQ1RVQUxfVElNRVNfU09VUkNFX1JBQ0VfREFZEAIy3ggKEVJhY2VSZXBvcnRTZXJ2aWNlElkKEENyZWF0ZVJhY2VSZXBvcnQSIS5yYWNlcy52MS5DcmVhdGVSYWNlUmVwb3J0UmVxdWVzdBoiLnJhY2VzLnYxLkNyZWF0ZVJhY2VSZXBvcnRSZXNwb25zZRJQCg1HZXRSYWNlUmVwb3J0Eh4ucmFjZXMudjEuR2V0UmFjZVJlcG9ydFJlcXVlc3QaHy5yYWNlcy52MS5HZXRSYWNlUmVwb3J0UmVzcG9uc2USVgoPTGlzdFJhY2VSZXBvcnRzEiAucmFjZXMudjEuTGlzdFJhY2VSZXBvcnRzUmVxdWVzdBohLnJhY2VzLnYxLkxpc3RSYWNlUmVwb3J0c1Jlc3BvbnNlElkKEFVwZGF0ZVJhY2VSZXBvcnQSIS5yYWNlcy52MS5VcGRhdGVSYWNlUmVwb3J0UmVxdWVzdBoiLnJhY2VzLnYxLlVwZGF0ZVJhY2VSZXBvcnRSZXNwb25zZRJZChBEZWxldGVSYWNlUmVwb3J0EiEucmFjZXMudjEuRGVsZXRlUmFjZVJlcG9ydFJlcXVlc3QaIi5yYWNlcy52MS5EZWxldGVSYWNlUmVwb3J0UmVzcG9uc2USaAoVU2V0UmFjZVJlcG9ydFNlZ21lbnRzEiYucmFjZXMudjEuU2V0UmFjZVJlcG9ydFNlZ21lbnRzUmVxdWVzdBonLnJhY2VzLnYxLlNldFJhY2VSZXBvcnRTZWdtZW50c1Jlc3BvbnNlEnQKGVN1Z2dlc3RSYWNlUmVwb3J0U2VnbWVudHMSKi5yYWNlcy52MS5TdWdnZXN0UmFjZVJlcG9ydFNlZ21lbnRzUmVxdWVzdBorLnJhY2VzLnYxLlN1Z2dlc3RSYWNlUmVwb3J0U2VnbWVudHNSZXNwb25zZRJkChFQdWJsaXNoUmFjZVJlcG9ydBIiLnJhY2VzLnYxLlB1Ymxpc2hSYWNlUmVwb3J0UmVxdWVzdBojLnJhY2VzLnYxLlB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2UiBqKfGQIIARJqChNVbnB1Ymxpc2hSYWNlUmVwb3J0EiQucmFjZXMudjEuVW5wdWJsaXNoUmFjZVJlcG9ydFJlcXVlc3QaJS5yYWNlcy52MS5VbnB1Ymxpc2hSYWNlUmVwb3J0UmVzcG9uc2UiBqKfGQIIARJwChVMaXN0UHVibGljUmFjZVJlcG9ydHMSJi5yYWNlcy52MS5MaXN0UHVibGljUmFjZVJlcG9ydHNSZXF1ZXN0GicucmFjZXMudjEuTGlzdFB1YmxpY1JhY2VSZXBvcnRzUmVzcG9uc2UiBqKfGQIIARJqChNHZXRQdWJsaWNSYWNlUmVwb3J0EiQucmFjZXMudjEuR2V0UHVibGljUmFjZVJlcG9ydFJlcXVlc3QaJS5yYWNlcy52MS5HZXRQdWJsaWNSYWNlUmVwb3J0UmVzcG9uc2UiBqKfGQIIAUKnAQoMY29tLnJhY2VzLnYxQhBSYWNlUmVwb3J0c1Byb3RvUAFaRGdpdGh1Yi5jb20vam9oYW5icmFuZGhvcnN0L3RyYWlsLXRvb2xzL2ludGVybmFsL2dlbi9yYWNlcy92MTtyYWNlc3YxogIDUlhYqgIIUmFjZXMuVjHKAghSYWNlc1xWMeICFFJhY2VzXFYxXEdQQk1ldGFkYXRh6gIJUmFjZXM6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mcp_v1_options, file_routes_v1_routes]);
 
 /**
  * A race report.
@@ -216,6 +218,29 @@ export type RaceReport = Message<"races.v1.RaceReport"> & {
    * @generated from field: int32 stop_seconds = 27;
    */
   stopSeconds: number;
+
+  /**
+   * The segments: stretches of the track the runner comments on, in order.
+   * Set with SetRaceReportSegments. Not set in lists.
+   *
+   * @generated from field: repeated races.v1.RaceReportSegment segments = 28;
+   */
+  segments: RaceReportSegment[];
+
+  /**
+   * Whether the report has a track, from its activity, which segments need.
+   *
+   * @generated from field: bool has_track = 29;
+   */
+  hasTrack: boolean;
+
+  /**
+   * How far around the start and finish the track is hidden on the public
+   * page, in meters, from 0 to 2000. Defaults to 500.
+   *
+   * @generated from field: int32 hidden_ends_meters = 30;
+   */
+  hiddenEndsMeters: number;
 };
 
 /**
@@ -224,6 +249,47 @@ export type RaceReport = Message<"races.v1.RaceReport"> & {
  */
 export const RaceReportSchema: GenMessage<RaceReport> = /*@__PURE__*/
   messageDesc(file_races_v1_race_reports, 0);
+
+/**
+ * A stretch of a race report's track the runner comments on.
+ *
+ * @generated from message races.v1.RaceReportSegment
+ */
+export type RaceReportSegment = Message<"races.v1.RaceReportSegment"> & {
+  /**
+   * The heading, e.g. "The climb to Galbraith". At most 200 characters.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * The text as plain text. Paragraphs are separated by blank lines.
+   *
+   * @generated from field: string body = 2;
+   */
+  body: string;
+
+  /**
+   * Where the stretch starts and ends, in meters along the report's track.
+   * The end must be after the start, and within the track.
+   *
+   * @generated from field: double start_distance_meters = 3;
+   */
+  startDistanceMeters: number;
+
+  /**
+   * @generated from field: double end_distance_meters = 4;
+   */
+  endDistanceMeters: number;
+};
+
+/**
+ * Describes the message races.v1.RaceReportSegment.
+ * Use `create(RaceReportSegmentSchema)` to create a new message.
+ */
+export const RaceReportSegmentSchema: GenMessage<RaceReportSegment> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_reports, 1);
 
 /**
  * The comparison of a race plan with what happened.
@@ -283,7 +349,7 @@ export type RaceComparison = Message<"races.v1.RaceComparison"> & {
  * Use `create(RaceComparisonSchema)` to create a new message.
  */
 export const RaceComparisonSchema: GenMessage<RaceComparison> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 1);
+  messageDesc(file_races_v1_race_reports, 2);
 
 /**
  * A goal of a race plan and the result against it.
@@ -327,7 +393,7 @@ export type GoalResult = Message<"races.v1.GoalResult"> & {
  * Use `create(GoalResultSchema)` to create a new message.
  */
 export const GoalResultSchema: GenMessage<GoalResult> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 2);
+  messageDesc(file_races_v1_race_reports, 3);
 
 /**
  * A checkpoint of a race plan with the planned and actual arrival times.
@@ -394,7 +460,7 @@ export type CheckpointResult = Message<"races.v1.CheckpointResult"> & {
  * Use `create(CheckpointResultSchema)` to create a new message.
  */
 export const CheckpointResultSchema: GenMessage<CheckpointResult> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 3);
+  messageDesc(file_races_v1_race_reports, 4);
 
 /**
  * @generated from message races.v1.CreateRaceReportRequest
@@ -421,7 +487,7 @@ export type CreateRaceReportRequest = Message<"races.v1.CreateRaceReportRequest"
  * Use `create(CreateRaceReportRequestSchema)` to create a new message.
  */
 export const CreateRaceReportRequestSchema: GenMessage<CreateRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 4);
+  messageDesc(file_races_v1_race_reports, 5);
 
 /**
  * @generated from message races.v1.CreateRaceReportResponse
@@ -447,7 +513,7 @@ export type CreateRaceReportResponse = Message<"races.v1.CreateRaceReportRespons
  * Use `create(CreateRaceReportResponseSchema)` to create a new message.
  */
 export const CreateRaceReportResponseSchema: GenMessage<CreateRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 5);
+  messageDesc(file_races_v1_race_reports, 6);
 
 /**
  * @generated from message races.v1.GetRaceReportRequest
@@ -459,6 +525,13 @@ export type GetRaceReportRequest = Message<"races.v1.GetRaceReportRequest"> & {
    * @generated from field: string id = 1;
    */
   id: string;
+
+  /**
+   * Whether to include the report's track.
+   *
+   * @generated from field: bool include_track = 2;
+   */
+  includeTrack: boolean;
 };
 
 /**
@@ -466,7 +539,7 @@ export type GetRaceReportRequest = Message<"races.v1.GetRaceReportRequest"> & {
  * Use `create(GetRaceReportRequestSchema)` to create a new message.
  */
 export const GetRaceReportRequestSchema: GenMessage<GetRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 6);
+  messageDesc(file_races_v1_race_reports, 7);
 
 /**
  * @generated from message races.v1.GetRaceReportResponse
@@ -485,6 +558,14 @@ export type GetRaceReportResponse = Message<"races.v1.GetRaceReportResponse"> & 
    * @generated from field: races.v1.RaceComparison comparison = 2;
    */
   comparison?: RaceComparison | undefined;
+
+  /**
+   * The report's track, downsampled, if include_track was set and it has
+   * one.
+   *
+   * @generated from field: repeated routes.v1.RoutePoint track = 3;
+   */
+  track: RoutePoint[];
 };
 
 /**
@@ -492,7 +573,7 @@ export type GetRaceReportResponse = Message<"races.v1.GetRaceReportResponse"> & 
  * Use `create(GetRaceReportResponseSchema)` to create a new message.
  */
 export const GetRaceReportResponseSchema: GenMessage<GetRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 7);
+  messageDesc(file_races_v1_race_reports, 8);
 
 /**
  * @generated from message races.v1.ListRaceReportsRequest
@@ -511,7 +592,7 @@ export type ListRaceReportsRequest = Message<"races.v1.ListRaceReportsRequest"> 
  * Use `create(ListRaceReportsRequestSchema)` to create a new message.
  */
 export const ListRaceReportsRequestSchema: GenMessage<ListRaceReportsRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 8);
+  messageDesc(file_races_v1_race_reports, 9);
 
 /**
  * @generated from message races.v1.ListRaceReportsResponse
@@ -530,7 +611,7 @@ export type ListRaceReportsResponse = Message<"races.v1.ListRaceReportsResponse"
  * Use `create(ListRaceReportsResponseSchema)` to create a new message.
  */
 export const ListRaceReportsResponseSchema: GenMessage<ListRaceReportsResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 9);
+  messageDesc(file_races_v1_race_reports, 10);
 
 /**
  * @generated from message races.v1.UpdateRaceReportRequest
@@ -661,6 +742,14 @@ export type UpdateRaceReportRequest = Message<"races.v1.UpdateRaceReportRequest"
    * @generated from field: optional int32 stop_seconds = 17;
    */
   stopSeconds?: number | undefined;
+
+  /**
+   * The new radius hidden around the start and finish of the public track,
+   * in meters, if set. From 0 to 2000.
+   *
+   * @generated from field: optional int32 hidden_ends_meters = 18;
+   */
+  hiddenEndsMeters?: number | undefined;
 };
 
 /**
@@ -668,7 +757,90 @@ export type UpdateRaceReportRequest = Message<"races.v1.UpdateRaceReportRequest"
  * Use `create(UpdateRaceReportRequestSchema)` to create a new message.
  */
 export const UpdateRaceReportRequestSchema: GenMessage<UpdateRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 10);
+  messageDesc(file_races_v1_race_reports, 11);
+
+/**
+ * @generated from message races.v1.SetRaceReportSegmentsRequest
+ */
+export type SetRaceReportSegmentsRequest = Message<"races.v1.SetRaceReportSegmentsRequest"> & {
+  /**
+   * The ID of the report.
+   *
+   * @generated from field: string report_id = 1;
+   */
+  reportId: string;
+
+  /**
+   * The segments, at most 50. Empty to remove them all.
+   *
+   * @generated from field: repeated races.v1.RaceReportSegment segments = 2;
+   */
+  segments: RaceReportSegment[];
+};
+
+/**
+ * Describes the message races.v1.SetRaceReportSegmentsRequest.
+ * Use `create(SetRaceReportSegmentsRequestSchema)` to create a new message.
+ */
+export const SetRaceReportSegmentsRequestSchema: GenMessage<SetRaceReportSegmentsRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_reports, 12);
+
+/**
+ * @generated from message races.v1.SetRaceReportSegmentsResponse
+ */
+export type SetRaceReportSegmentsResponse = Message<"races.v1.SetRaceReportSegmentsResponse"> & {
+  /**
+   * The updated report.
+   *
+   * @generated from field: races.v1.RaceReport report = 1;
+   */
+  report?: RaceReport | undefined;
+};
+
+/**
+ * Describes the message races.v1.SetRaceReportSegmentsResponse.
+ * Use `create(SetRaceReportSegmentsResponseSchema)` to create a new message.
+ */
+export const SetRaceReportSegmentsResponseSchema: GenMessage<SetRaceReportSegmentsResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_reports, 13);
+
+/**
+ * @generated from message races.v1.SuggestRaceReportSegmentsRequest
+ */
+export type SuggestRaceReportSegmentsRequest = Message<"races.v1.SuggestRaceReportSegmentsRequest"> & {
+  /**
+   * The ID of the report.
+   *
+   * @generated from field: string report_id = 1;
+   */
+  reportId: string;
+};
+
+/**
+ * Describes the message races.v1.SuggestRaceReportSegmentsRequest.
+ * Use `create(SuggestRaceReportSegmentsRequestSchema)` to create a new message.
+ */
+export const SuggestRaceReportSegmentsRequestSchema: GenMessage<SuggestRaceReportSegmentsRequest> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_reports, 14);
+
+/**
+ * @generated from message races.v1.SuggestRaceReportSegmentsResponse
+ */
+export type SuggestRaceReportSegmentsResponse = Message<"races.v1.SuggestRaceReportSegmentsResponse"> & {
+  /**
+   * The suggested segments, in order along the track, without text.
+   *
+   * @generated from field: repeated races.v1.RaceReportSegment segments = 1;
+   */
+  segments: RaceReportSegment[];
+};
+
+/**
+ * Describes the message races.v1.SuggestRaceReportSegmentsResponse.
+ * Use `create(SuggestRaceReportSegmentsResponseSchema)` to create a new message.
+ */
+export const SuggestRaceReportSegmentsResponseSchema: GenMessage<SuggestRaceReportSegmentsResponse> = /*@__PURE__*/
+  messageDesc(file_races_v1_race_reports, 15);
 
 /**
  * @generated from message races.v1.UpdateRaceReportResponse
@@ -694,7 +866,7 @@ export type UpdateRaceReportResponse = Message<"races.v1.UpdateRaceReportRespons
  * Use `create(UpdateRaceReportResponseSchema)` to create a new message.
  */
 export const UpdateRaceReportResponseSchema: GenMessage<UpdateRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 11);
+  messageDesc(file_races_v1_race_reports, 16);
 
 /**
  * @generated from message races.v1.DeleteRaceReportRequest
@@ -713,7 +885,7 @@ export type DeleteRaceReportRequest = Message<"races.v1.DeleteRaceReportRequest"
  * Use `create(DeleteRaceReportRequestSchema)` to create a new message.
  */
 export const DeleteRaceReportRequestSchema: GenMessage<DeleteRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 12);
+  messageDesc(file_races_v1_race_reports, 17);
 
 /**
  * @generated from message races.v1.DeleteRaceReportResponse
@@ -726,7 +898,7 @@ export type DeleteRaceReportResponse = Message<"races.v1.DeleteRaceReportRespons
  * Use `create(DeleteRaceReportResponseSchema)` to create a new message.
  */
 export const DeleteRaceReportResponseSchema: GenMessage<DeleteRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 13);
+  messageDesc(file_races_v1_race_reports, 18);
 
 /**
  * @generated from message races.v1.PublishRaceReportRequest
@@ -745,7 +917,7 @@ export type PublishRaceReportRequest = Message<"races.v1.PublishRaceReportReques
  * Use `create(PublishRaceReportRequestSchema)` to create a new message.
  */
 export const PublishRaceReportRequestSchema: GenMessage<PublishRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 14);
+  messageDesc(file_races_v1_race_reports, 19);
 
 /**
  * @generated from message races.v1.PublishRaceReportResponse
@@ -764,7 +936,7 @@ export type PublishRaceReportResponse = Message<"races.v1.PublishRaceReportRespo
  * Use `create(PublishRaceReportResponseSchema)` to create a new message.
  */
 export const PublishRaceReportResponseSchema: GenMessage<PublishRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 15);
+  messageDesc(file_races_v1_race_reports, 20);
 
 /**
  * @generated from message races.v1.UnpublishRaceReportRequest
@@ -783,7 +955,7 @@ export type UnpublishRaceReportRequest = Message<"races.v1.UnpublishRaceReportRe
  * Use `create(UnpublishRaceReportRequestSchema)` to create a new message.
  */
 export const UnpublishRaceReportRequestSchema: GenMessage<UnpublishRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 16);
+  messageDesc(file_races_v1_race_reports, 21);
 
 /**
  * @generated from message races.v1.UnpublishRaceReportResponse
@@ -802,7 +974,7 @@ export type UnpublishRaceReportResponse = Message<"races.v1.UnpublishRaceReportR
  * Use `create(UnpublishRaceReportResponseSchema)` to create a new message.
  */
 export const UnpublishRaceReportResponseSchema: GenMessage<UnpublishRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 17);
+  messageDesc(file_races_v1_race_reports, 22);
 
 /**
  * @generated from message races.v1.ListPublicRaceReportsRequest
@@ -821,7 +993,7 @@ export type ListPublicRaceReportsRequest = Message<"races.v1.ListPublicRaceRepor
  * Use `create(ListPublicRaceReportsRequestSchema)` to create a new message.
  */
 export const ListPublicRaceReportsRequestSchema: GenMessage<ListPublicRaceReportsRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 18);
+  messageDesc(file_races_v1_race_reports, 23);
 
 /**
  * @generated from message races.v1.ListPublicRaceReportsResponse
@@ -840,7 +1012,7 @@ export type ListPublicRaceReportsResponse = Message<"races.v1.ListPublicRaceRepo
  * Use `create(ListPublicRaceReportsResponseSchema)` to create a new message.
  */
 export const ListPublicRaceReportsResponseSchema: GenMessage<ListPublicRaceReportsResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 19);
+  messageDesc(file_races_v1_race_reports, 24);
 
 /**
  * @generated from message races.v1.GetPublicRaceReportRequest
@@ -866,7 +1038,7 @@ export type GetPublicRaceReportRequest = Message<"races.v1.GetPublicRaceReportRe
  * Use `create(GetPublicRaceReportRequestSchema)` to create a new message.
  */
 export const GetPublicRaceReportRequestSchema: GenMessage<GetPublicRaceReportRequest> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 20);
+  messageDesc(file_races_v1_race_reports, 25);
 
 /**
  * @generated from message races.v1.GetPublicRaceReportResponse
@@ -892,6 +1064,14 @@ export type GetPublicRaceReportResponse = Message<"races.v1.GetPublicRaceReportR
    * @generated from field: string author_name = 3;
    */
   authorName: string;
+
+  /**
+   * The report's track, without the stretches near the start and finish it
+   * hides. Its distances are along the whole track, like the segments'.
+   *
+   * @generated from field: repeated routes.v1.RoutePoint track = 4;
+   */
+  track: RoutePoint[];
 };
 
 /**
@@ -899,7 +1079,7 @@ export type GetPublicRaceReportResponse = Message<"races.v1.GetPublicRaceReportR
  * Use `create(GetPublicRaceReportResponseSchema)` to create a new message.
  */
 export const GetPublicRaceReportResponseSchema: GenMessage<GetPublicRaceReportResponse> = /*@__PURE__*/
-  messageDesc(file_races_v1_race_reports, 21);
+  messageDesc(file_races_v1_race_reports, 26);
 
 /**
  * Where the actual times of a race come from.
@@ -946,6 +1126,13 @@ export const ActualTimesSourceSchema: GenEnum<ActualTimesSource> = /*@__PURE__*/
  * plan's checkpoints, from the activity's recording or the race day splits,
  * against the planned ones. A DNF meets no goal, and has no arrival times
  * beyond where the runner stopped.
+ *
+ * A report can also have segments: stretches of the race's track, like "The
+ * climb to Galbraith", with a title and text, which the app highlights on a
+ * map and elevation profile. The track is a copy of the activity's, made when
+ * the activity is set; segments are distances along it. SuggestRaceReportSegments
+ * suggests segments from the climbs and descents of the track, to write
+ * about.
  *
  * Reports are private drafts until the author publishes them in the app,
  * which requires a public profile (see TripReportService). Help the author
@@ -1006,6 +1193,31 @@ export const RaceReportService: GenService<{
     methodKind: "unary";
     input: typeof DeleteRaceReportRequestSchema;
     output: typeof DeleteRaceReportResponseSchema;
+  },
+  /**
+   * Replace the segments of a race report, in order along the track. The
+   * report needs a track, from its activity.
+   *
+   * @generated from rpc races.v1.RaceReportService.SetRaceReportSegments
+   */
+  setRaceReportSegments: {
+    methodKind: "unary";
+    input: typeof SetRaceReportSegmentsRequestSchema;
+    output: typeof SetRaceReportSegmentsResponseSchema;
+  },
+  /**
+   * Suggest segments for a race report from the climbs and descents of its
+   * track, each named like "Climb to 1,450 m", without text. Nothing is
+   * saved: set the segments to keep them, with text the author writes. Fails
+   * with FAILED_PRECONDITION if the report has no track, or the track has no
+   * elevations.
+   *
+   * @generated from rpc races.v1.RaceReportService.SuggestRaceReportSegments
+   */
+  suggestRaceReportSegments: {
+    methodKind: "unary";
+    input: typeof SuggestRaceReportSegmentsRequestSchema;
+    output: typeof SuggestRaceReportSegmentsResponseSchema;
   },
   /**
    * Publish a race report on the user's public profile.

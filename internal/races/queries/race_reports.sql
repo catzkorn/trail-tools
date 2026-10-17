@@ -9,9 +9,10 @@ insert into race_reports (
   race_date,
   distance_meters,
   elevation_gain_meters,
-  finish_seconds
+  finish_seconds,
+  track
 ) values (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 returning *;
 
@@ -35,6 +36,8 @@ update race_reports set
   title = coalesce(sqlc.narg(title), title),
   slug = coalesce(sqlc.narg(slug), slug),
   activity_id = case when sqlc.arg(set_activity)::boolean then sqlc.narg(activity_id)::uuid else activity_id end,
+  track = case when sqlc.arg(set_activity)::boolean then sqlc.narg(track)::bytea else track end,
+  hidden_ends_meters = coalesce(sqlc.narg(hidden_ends_meters), hidden_ends_meters),
   finish_seconds = coalesce(sqlc.narg(finish_seconds), finish_seconds),
   placement = coalesce(sqlc.narg(placement), placement),
   summary = coalesce(sqlc.narg(summary), summary),
@@ -63,3 +66,31 @@ returning *;
 -- name: DeleteRaceReport :execrows
 delete from race_reports
 where id = $1 and user_id = $2;
+
+-- name: SetRaceReportTrack :exec
+-- Stores the track of a report made before reports had one.
+update race_reports set track = $3
+where id = $1 and user_id = $2 and track is null;
+
+-- name: ListRaceReportSegments :many
+select * from race_report_segments
+where report_id = $1
+order by position;
+
+-- name: DeleteRaceReportSegments :exec
+delete from race_report_segments
+where report_id = $1;
+
+-- name: InsertRaceReportSegments :exec
+insert into race_report_segments (report_id, position, title, body, start_distance_meters, end_distance_meters)
+select
+  sqlc.arg(report_id)::uuid,
+  unnest(sqlc.arg(positions)::integer[]),
+  unnest(sqlc.arg(titles)::text[]),
+  unnest(sqlc.arg(bodies)::text[]),
+  unnest(sqlc.arg(start_distances_meters)::double precision[]),
+  unnest(sqlc.arg(end_distances_meters)::double precision[]);
+
+-- name: TouchRaceReport :exec
+update race_reports set update_time = now()
+where id = $1;

@@ -954,6 +954,19 @@ type RaceReport struct {
 	StopDistanceMeters  float64
 	StopCheckpoint      string
 	StopSeconds         int32
+	Track               []byte
+	HiddenEndsMeters    int32
+}
+
+type RaceReportSegment struct {
+	ID                  pgtype.UUID
+	ReportID            pgtype.UUID
+	Position            int32
+	Title               string
+	Body                string
+	StartDistanceMeters float64
+	EndDistanceMeters   float64
+	CreateTime          pgtype.Timestamptz
 }
 
 type Route struct {

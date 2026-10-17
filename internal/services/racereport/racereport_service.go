@@ -22,6 +22,7 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/services/raceplan"
 	"github.com/johanbrandhorst/trail-tools/internal/services/trip"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/track"
 	"github.com/johanbrandhorst/trail-tools/internal/trips"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -38,6 +39,9 @@ const (
 	maxTitleLength = 200
 	// maxSectionLength is the longest section of a report in characters.
 	maxSectionLength = 50_000
+	// maxHiddenEndsMeters is the largest radius hidden around the ends of a
+	// report's public track.
+	maxHiddenEndsMeters = 2000
 	// maxPlacementLength is the longest placement in characters.
 	maxPlacementLength = 200
 	// maxStopCheckpointLength is the longest name of the checkpoint where a
@@ -60,6 +64,9 @@ type ReportRepository interface {
 	UpdateRaceReport(ctx context.Context, update *races.RaceReportUpdate) (*races.RaceReport, error)
 	SetRaceReportPublished(ctx context.Context, userID, reportID pgtype.UUID, published bool) (*races.RaceReport, error)
 	DeleteRaceReport(ctx context.Context, userID, reportID pgtype.UUID) error
+	SetRaceReportTrack(ctx context.Context, userID, reportID pgtype.UUID, track []byte) error
+	ListRaceReportSegments(ctx context.Context, reportID pgtype.UUID) ([]races.RaceReportSegment, error)
+	SetRaceReportSegments(ctx context.Context, reportID pgtype.UUID, segments []races.RaceReportSegment) error
 }
 
 // ActivityRepository gets activities.
@@ -134,6 +141,9 @@ func (s *Service) CreateRaceReport(ctx context.Context, req *racesv1.CreateRaceR
 	if activity != nil {
 		report.ActivityID = activity.ID
 		report.FinishSeconds = activity.ElapsedTimeSeconds
+		if report.Track, err = s.activityTrack(ctx, userID, activity); err != nil {
+			return nil, err
+		}
 	}
 	base := trip.Slugify(report.Title)
 	if base == "" {
@@ -196,11 +206,25 @@ func (s *Service) GetRaceReport(ctx context.Context, req *racesv1.GetRaceReportR
 	if err != nil {
 		return nil, err
 	}
+	if err := s.ensureTrack(ctx, report); err != nil {
+		return nil, err
+	}
 	reportProto, comparison, err := s.withComparison(ctx, report)
 	if err != nil {
 		return nil, err
 	}
-	return racesv1.GetRaceReportResponse_builder{Report: reportProto, Comparison: comparison}.Build(), nil
+	if err := s.withSegments(ctx, reportProto, report.ID); err != nil {
+		return nil, err
+	}
+	resp := racesv1.GetRaceReportResponse_builder{Report: reportProto, Comparison: comparison}.Build()
+	if req.GetIncludeTrack() {
+		t, err := track.Decode(report.Track)
+		if err != nil {
+			return nil, s.toConnectError(ctx, err, "failed to decode race report track")
+		}
+		resp.SetTrack(t.RoutePoints())
+	}
+	return resp, nil
 }
 
 func (s *Service) ListRaceReports(ctx context.Context, req *racesv1.ListRaceReportsRequest) (*racesv1.ListRaceReportsResponse, error) {
@@ -266,12 +290,24 @@ func (s *Service) UpdateRaceReport(ctx context.Context, req *racesv1.UpdateRaceR
 			if err != nil {
 				return nil, connect.Errorf(connect.CodeInvalidArgument, "invalid activity ID: %v", err).WithCause(err)
 			}
-			if _, err := s.activities.GetActivity(ctx, current.UserID, id); err != nil {
+			activity, err := s.activities.GetActivity(ctx, current.UserID, id)
+			if err != nil {
 				return nil, s.toConnectError(ctx, err, "failed to get activity")
 			}
 			activityID = id
+			// Segments keep their distances along the new activity's track.
+			if update.Track, err = s.activityTrack(ctx, current.UserID, activity); err != nil {
+				return nil, err
+			}
 		}
 		update.ActivityID = activityID
+	}
+	if req.HasHiddenEndsMeters() {
+		hidden := req.GetHiddenEndsMeters()
+		if hidden < 0 || hidden > maxHiddenEndsMeters {
+			return nil, connect.Errorf(connect.CodeInvalidArgument, "hidden_ends_meters must be from 0 to %d", maxHiddenEndsMeters)
+		}
+		update.HiddenEndsMeters = &hidden
 	}
 	if req.HasFinishSeconds() {
 		finish := req.GetFinishSeconds()
@@ -318,6 +354,9 @@ func (s *Service) UpdateRaceReport(ctx context.Context, req *racesv1.UpdateRaceR
 	}
 	reportProto, comparison, err := s.withComparison(ctx, updated)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.withSegments(ctx, reportProto, updated.ID); err != nil {
 		return nil, err
 	}
 	return racesv1.UpdateRaceReportResponse_builder{Report: reportProto, Comparison: comparison}.Build(), nil
@@ -480,10 +519,18 @@ func (s *Service) GetPublicRaceReport(ctx context.Context, req *racesv1.GetPubli
 	if err != nil {
 		return nil, err
 	}
+	if err := s.withSegments(ctx, reportProto, report.ID); err != nil {
+		return nil, err
+	}
+	t, err := track.Decode(report.Track)
+	if err != nil {
+		return nil, s.toConnectError(ctx, err, "failed to decode race report track")
+	}
 	return racesv1.GetPublicRaceReportResponse_builder{
 		Report:     reportProto,
 		Comparison: comparison,
 		AuthorName: profile.DisplayName,
+		Track:      visibleTrack(t, report.HiddenEndsMeters),
 	}.Build(), nil
 }
 
@@ -595,6 +642,8 @@ func (s *Service) reportToProto(r *races.RaceReport, profile *trips.Profile) *ra
 		WentWell:            r.Sections.WentWell,
 		WentBadly:           r.Sections.WentBadly,
 		Lessons:             r.Sections.Lessons,
+		HasTrack:            r.Track != nil,
+		HiddenEndsMeters:    r.HiddenEndsMeters,
 		Published:           r.Published,
 		CreateTime:          timestamppb.New(r.CreateTime),
 		UpdateTime:          timestamppb.New(r.UpdateTime),
