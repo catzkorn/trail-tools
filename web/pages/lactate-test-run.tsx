@@ -773,6 +773,8 @@ export const GuidedTest: React.FC<GuidedTestProps> = ({
         onChange={setChosen}
         onStart={(baseline) => {
           writeStorage(SETTINGS_KEY, JSON.stringify(settings));
+          // Once the test starts, its settings stay as they are.
+          setChosen(settings);
           if (baseline.mode === "measure") {
             setPhase("resting");
             return;
@@ -936,7 +938,10 @@ const LactateTestRunPage: React.FC = () => {
       />
       <GuidedTest
         test={test.data?.test}
-        previous={tests.data?.tests[0]}
+        // The latest other test with stages to start from.
+        previous={tests.data?.tests.find(
+          (other) => other.id !== test.data?.test?.id && other.stages.length > 0
+        )}
         pending={createTest.isPending || update.isPending}
         error={createTest.error ?? update.error}
         create={async (mmolPerLiter) => {
