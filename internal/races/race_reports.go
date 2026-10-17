@@ -41,11 +41,24 @@ type RaceReport struct {
 	Stop         RaceStop
 	// The story, in sections.
 	Sections RaceReportSections
+	// A copy of the activity's track, an encoded activities.v1.ActivityStreams
+	// message, nil if there is none. Segments are distances along it.
+	Track []byte
 	// Whether the report is published, and when it was first published.
 	Published   bool
 	PublishTime time.Time
 	CreateTime  time.Time
 	UpdateTime  time.Time
+}
+
+// RaceReportSegment is a stretch of a race report's track the runner
+// comments on.
+type RaceReportSegment struct {
+	Title string
+	// Plain text, with paragraphs separated by blank lines.
+	Body string
+	// Where the stretch starts and ends along the report's track.
+	StartDistanceMeters, EndDistanceMeters float64
 }
 
 // RaceStop is where and when a runner who did not finish stopped. Zero
@@ -85,6 +98,7 @@ func (r *Repository) CreateRaceReport(ctx context.Context, report *RaceReport) (
 		DistanceMeters:      report.DistanceMeters,
 		ElevationGainMeters: report.ElevationGainMeters,
 		FinishSeconds:       report.FinishSeconds,
+		Track:               report.Track,
 	})
 	if err != nil {
 		if isUniqueViolation(err, "race_reports_user_id_slug_key") {
@@ -148,9 +162,10 @@ type RaceReportUpdate struct {
 	ID, UserID  pgtype.UUID
 	Title, Slug *string
 	// SetActivity sets the activity to ActivityID, which may be invalid to
-	// unset it.
+	// unset it, and the track to Track, its track.
 	SetActivity   bool
 	ActivityID    pgtype.UUID
+	Track         []byte
 	FinishSeconds *int32
 	Placement     *string
 	Summary       *string
@@ -183,6 +198,7 @@ func (r *Repository) UpdateRaceReport(ctx context.Context, u *RaceReportUpdate) 
 		Slug:        text(u.Slug),
 		SetActivity: u.SetActivity,
 		ActivityID:  u.ActivityID,
+		Track:       u.Track,
 		Placement:   text(u.Placement),
 		Summary:     text(u.Summary),
 		Preparation: text(u.Preparation),
@@ -235,6 +251,64 @@ func (r *Repository) SetRaceReportPublished(ctx context.Context, userID, reportI
 	return raceReportFromDB(row), nil
 }
 
+// SetRaceReportTrack stores the track of one of the user's race reports
+// made before reports had one. It leaves a report with a track as it is.
+func (r *Repository) SetRaceReportTrack(ctx context.Context, userID, reportID pgtype.UUID, track []byte) error {
+	if err := r.q.SetRaceReportTrack(ctx, &gen.SetRaceReportTrackParams{ID: reportID, UserID: userID, Track: track}); err != nil {
+		return fmt.Errorf("failed to set race report track: %w", err)
+	}
+	return nil
+}
+
+// ListRaceReportSegments lists the segments of a race report, in order.
+// The caller checks the report is the user's.
+func (r *Repository) ListRaceReportSegments(ctx context.Context, reportID pgtype.UUID) ([]RaceReportSegment, error) {
+	rows, err := r.q.ListRaceReportSegments(ctx, reportID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list race report segments: %w", err)
+	}
+	segments := make([]RaceReportSegment, len(rows))
+	for i, row := range rows {
+		segments[i] = RaceReportSegment{
+			Title:               row.Title,
+			Body:                row.Body,
+			StartDistanceMeters: row.StartDistanceMeters,
+			EndDistanceMeters:   row.EndDistanceMeters,
+		}
+	}
+	return segments, nil
+}
+
+// SetRaceReportSegments replaces the segments of a race report, in one
+// round trip. The caller checks the report is the user's.
+func (r *Repository) SetRaceReportSegments(ctx context.Context, reportID pgtype.UUID, segments []RaceReportSegment) error {
+	params := &gen.InsertRaceReportSegmentsParams{ReportID: reportID}
+	for i, s := range segments {
+		params.Positions = append(params.Positions, int32(i))
+		params.Titles = append(params.Titles, s.Title)
+		params.Bodies = append(params.Bodies, s.Body)
+		params.StartDistancesMeters = append(params.StartDistancesMeters, s.StartDistanceMeters)
+		params.EndDistancesMeters = append(params.EndDistancesMeters, s.EndDistanceMeters)
+	}
+	var batch store.Batch
+	q := gen.New(&batch)
+	if err := q.DeleteRaceReportSegments(ctx, reportID); err != nil {
+		return err
+	}
+	if len(segments) > 0 {
+		if err := q.InsertRaceReportSegments(ctx, params); err != nil {
+			return err
+		}
+	}
+	if err := q.TouchRaceReport(ctx, reportID); err != nil {
+		return err
+	}
+	if err := batch.Send(ctx, r.db); err != nil {
+		return fmt.Errorf("failed to set race report segments: %w", err)
+	}
+	return nil
+}
+
 // DeleteRaceReport deletes one of the user's race reports.
 func (r *Repository) DeleteRaceReport(ctx context.Context, userID, reportID pgtype.UUID) error {
 	n, err := r.q.DeleteRaceReport(ctx, &gen.DeleteRaceReportParams{ID: reportID, UserID: userID})
@@ -276,6 +350,7 @@ func raceReportFromDB(row *gen.RaceReport) *RaceReport {
 			WentBadly:   row.WentBadly,
 			Lessons:     row.Lessons,
 		},
+		Track:       row.Track,
 		Published:   row.Published,
 		PublishTime: row.PublishTime.Time,
 		CreateTime:  row.CreateTime.Time,

@@ -1,4 +1,4 @@
-package trip
+package track
 
 import (
 	"errors"
@@ -10,9 +10,9 @@ import (
 	"github.com/johanbrandhorst/trail-tools/internal/geo"
 )
 
-// errNoProfile is returned when suggesting sections for a track without an
+// ErrNoProfile is returned when suggesting sections for a track without an
 // elevation profile.
-var errNoProfile = errors.New("the track has no elevation profile")
+var ErrNoProfile = errors.New("the track has no elevation profile")
 
 // segmentKind is the shape of a stretch of a track.
 type segmentKind int
@@ -40,10 +40,10 @@ func (k segmentKind) String() string {
 
 // segment is a natural stretch of a track: a climb, a descent, a rolling
 // stretch or a flat one.
-type segment struct {
+type Segment struct {
 	kind segmentKind
 	// The distances along the track where the segment starts and ends.
-	startMeters, endMeters float64
+	StartMeters, EndMeters float64
 	// The elevation gain and loss within the segment, and the change from
 	// its start to its end.
 	gain, loss, net float64
@@ -52,10 +52,10 @@ type segment struct {
 	// Whether the segment holds the highest point of the track.
 	highPoint bool
 	// A descriptive name, e.g. "Climb to 1,450 m".
-	name string
+	Name string
 }
 
-func (s *segment) length() float64 { return s.endMeters - s.startMeters }
+func (s *Segment) length() float64 { return s.EndMeters - s.StartMeters }
 
 const (
 	// maxSuggestedSections is the most sections suggested for a track.
@@ -84,7 +84,7 @@ type profile struct {
 
 // newProfile resamples the elevations of a track at a fixed step and
 // smooths them. Points with unknown elevations are skipped. It returns
-// errNoProfile if fewer than two points have elevations or the track is
+// ErrNoProfile if fewer than two points have elevations or the track is
 // shorter than a kilometer.
 func newProfile(dists, eles []float64) (*profile, error) {
 	var ds, es []float64
@@ -96,7 +96,7 @@ func newProfile(dists, eles []float64) (*profile, error) {
 		es = append(es, e)
 	}
 	if len(ds) < 2 || ds[len(ds)-1]-ds[0] < minProfileMeters {
-		return nil, errNoProfile
+		return nil, ErrNoProfile
 	}
 	p := &profile{start: ds[0], end: ds[len(ds)-1]}
 	total := p.end - p.start
@@ -225,12 +225,12 @@ func turningPoints(e []float64, threshold float64) []int {
 	return points
 }
 
-// suggestSegments splits a track into its natural segments from its
+// SuggestSegments splits a track into its natural segments from its
 // elevation profile: the climbs, descents, and rolling or flat stretches in
 // between, at most maxSuggestedSections of them. dists are the cumulative
 // distances of the track's points and eles their elevations, NaN if
 // unknown.
-func suggestSegments(dists, eles []float64) ([]*segment, error) {
+func SuggestSegments(dists, eles []float64) ([]*Segment, error) {
 	p, err := newProfile(dists, eles)
 	if err != nil {
 		return nil, err
@@ -295,10 +295,10 @@ func suggestSegments(dists, eles []float64) ([]*segment, error) {
 			pieces = append(pieces, piece{cuts[k-1], cuts[k]})
 		}
 	}
-	measure := func(pc piece) *segment {
-		s := &segment{
-			startMeters: p.dist(pc.from),
-			endMeters:   p.dist(pc.to),
+	measure := func(pc piece) *Segment {
+		s := &Segment{
+			StartMeters: p.dist(pc.from),
+			EndMeters:   p.dist(pc.to),
 			net:         p.smooth[pc.to] - p.smooth[pc.from],
 		}
 		s.gain, s.loss = geo.ElevationGainLoss(p.smooth[pc.from : pc.to+1])
@@ -312,7 +312,7 @@ func suggestSegments(dists, eles []float64) ([]*segment, error) {
 		s.kind = classify(s)
 		return s
 	}
-	segs := make([]*segment, len(pieces))
+	segs := make([]*Segment, len(pieces))
 	for i, pc := range pieces {
 		segs[i] = measure(pc)
 	}
@@ -385,7 +385,7 @@ func suggestSegments(dists, eles []float64) ([]*segment, error) {
 }
 
 // classify returns the kind of a measured segment.
-func classify(s *segment) segmentKind {
+func classify(s *Segment) segmentKind {
 	grade := s.net / s.length()
 	switch {
 	case s.net >= minChangeMeters && grade >= minClimbGrade && s.net >= s.gain/2:
@@ -400,13 +400,13 @@ func classify(s *segment) segmentKind {
 
 // significance is how much a segment stands out: its climbing or
 // descending, and its length.
-func significance(s *segment) float64 {
+func significance(s *Segment) float64 {
 	return math.Max(s.gain, s.loss) + 0.01*s.length()
 }
 
 // nameSegments names segments, e.g. "Climb to 1,450 m". lowest and highest
 // are the lowest and highest smoothed elevations of the track.
-func nameSegments(segs []*segment, lowest, highest float64) {
+func nameSegments(segs []*Segment, lowest, highest float64) {
 	top := 0
 	climbs := 0
 	for i, s := range segs {
@@ -424,28 +424,28 @@ func nameSegments(segs []*segment, lowest, highest float64) {
 		case segmentClimb:
 			switch {
 			case s.highPoint && climbs > 1:
-				s.name = "Climb to the high point, " + formatElevation(s.maxEle)
+				s.Name = "Climb to the high point, " + formatElevation(s.maxEle)
 			case firstClimb && climbs > 1:
-				s.name = "First climb to " + formatElevation(s.maxEle)
+				s.Name = "First climb to " + formatElevation(s.maxEle)
 			default:
-				s.name = "Climb to " + formatElevation(s.maxEle)
+				s.Name = "Climb to " + formatElevation(s.maxEle)
 			}
 			firstClimb = false
 		case segmentDescent:
 			if i == len(segs)-1 {
-				s.name = "Final descent to " + formatElevation(s.minEle)
+				s.Name = "Final descent to " + formatElevation(s.minEle)
 			} else {
-				s.name = "Descent to " + formatElevation(s.minEle)
+				s.Name = "Descent to " + formatElevation(s.minEle)
 			}
 		case segmentRolling:
 			// A rolling stretch in the upper half of the track is a ridge.
 			if highest > lowest && (s.meanEle-lowest)/(highest-lowest) >= 0.5 {
-				s.name = "Rolling ridge, " + formatKilometers(s.length())
+				s.Name = "Rolling ridge, " + formatKilometers(s.length())
 			} else {
-				s.name = "Rolling terrain, " + formatKilometers(s.length())
+				s.Name = "Rolling terrain, " + formatKilometers(s.length())
 			}
 		case segmentFlat:
-			s.name = "Flat stretch, " + formatKilometers(s.length())
+			s.Name = "Flat stretch, " + formatKilometers(s.length())
 		}
 	}
 }

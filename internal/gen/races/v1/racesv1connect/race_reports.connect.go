@@ -39,6 +39,12 @@ const (
 	// RaceReportServiceDeleteRaceReportProcedure is the procedure name of the RaceReportService's
 	// DeleteRaceReport RPC.
 	RaceReportServiceDeleteRaceReportProcedure = "/races.v1.RaceReportService/DeleteRaceReport"
+	// RaceReportServiceSetRaceReportSegmentsProcedure is the procedure name of the RaceReportService's
+	// SetRaceReportSegments RPC.
+	RaceReportServiceSetRaceReportSegmentsProcedure = "/races.v1.RaceReportService/SetRaceReportSegments"
+	// RaceReportServiceSuggestRaceReportSegmentsProcedure is the procedure name of the
+	// RaceReportService's SuggestRaceReportSegments RPC.
+	RaceReportServiceSuggestRaceReportSegmentsProcedure = "/races.v1.RaceReportService/SuggestRaceReportSegments"
 	// RaceReportServicePublishRaceReportProcedure is the procedure name of the RaceReportService's
 	// PublishRaceReport RPC.
 	RaceReportServicePublishRaceReportProcedure = "/races.v1.RaceReportService/PublishRaceReport"
@@ -89,6 +95,20 @@ var (
 			Procedure:  RaceReportServiceDeleteRaceReportProcedure,
 		}
 	})
+	raceReportServiceSetRaceReportSegmentsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_race_reports_proto.Services().ByName("RaceReportService").Methods().ByName("SetRaceReportSegments"),
+			Procedure:  RaceReportServiceSetRaceReportSegmentsProcedure,
+		}
+	})
+	raceReportServiceSuggestRaceReportSegmentsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_races_v1_race_reports_proto.Services().ByName("RaceReportService").Methods().ByName("SuggestRaceReportSegments"),
+			Procedure:  RaceReportServiceSuggestRaceReportSegmentsProcedure,
+		}
+	})
 	raceReportServicePublishRaceReportSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -133,6 +153,15 @@ type RaceReportServiceClient interface {
 	UpdateRaceReport(context.Context, *v1.UpdateRaceReportRequest) (*v1.UpdateRaceReportResponse, error)
 	// Delete a race report.
 	DeleteRaceReport(context.Context, *v1.DeleteRaceReportRequest) (*v1.DeleteRaceReportResponse, error)
+	// Replace the segments of a race report, in order along the track. The
+	// report needs a track, from its activity.
+	SetRaceReportSegments(context.Context, *v1.SetRaceReportSegmentsRequest) (*v1.SetRaceReportSegmentsResponse, error)
+	// Suggest segments for a race report from the climbs and descents of its
+	// track, each named like "Climb to 1,450 m", without text. Nothing is
+	// saved: set the segments to keep them, with text the author writes. Fails
+	// with FAILED_PRECONDITION if the report has no track, or the track has no
+	// elevations.
+	SuggestRaceReportSegments(context.Context, *v1.SuggestRaceReportSegmentsRequest) (*v1.SuggestRaceReportSegmentsResponse, error)
 	// Publish a race report on the user's public profile.
 	PublishRaceReport(context.Context, *v1.PublishRaceReportRequest) (*v1.PublishRaceReportResponse, error)
 	// Unpublish a race report, making it a private draft again.
@@ -165,6 +194,15 @@ type RaceReportServiceHandler interface {
 	UpdateRaceReport(context.Context, *v1.UpdateRaceReportRequest) (*v1.UpdateRaceReportResponse, error)
 	// Delete a race report.
 	DeleteRaceReport(context.Context, *v1.DeleteRaceReportRequest) (*v1.DeleteRaceReportResponse, error)
+	// Replace the segments of a race report, in order along the track. The
+	// report needs a track, from its activity.
+	SetRaceReportSegments(context.Context, *v1.SetRaceReportSegmentsRequest) (*v1.SetRaceReportSegmentsResponse, error)
+	// Suggest segments for a race report from the climbs and descents of its
+	// track, each named like "Climb to 1,450 m", without text. Nothing is
+	// saved: set the segments to keep them, with text the author writes. Fails
+	// with FAILED_PRECONDITION if the report has no track, or the track has no
+	// elevations.
+	SuggestRaceReportSegments(context.Context, *v1.SuggestRaceReportSegmentsRequest) (*v1.SuggestRaceReportSegmentsResponse, error)
 	// Publish a race report on the user's public profile.
 	PublishRaceReport(context.Context, *v1.PublishRaceReportRequest) (*v1.PublishRaceReportResponse, error)
 	// Unpublish a race report, making it a private draft again.
@@ -187,6 +225,8 @@ func RegisterRaceReportServiceHandler(server *connect.Server, svc RaceReportServ
 		connect.Method{Spec: raceReportServiceListRaceReportsSpec(), Handler: adapter.listRaceReports},
 		connect.Method{Spec: raceReportServiceUpdateRaceReportSpec(), Handler: adapter.updateRaceReport},
 		connect.Method{Spec: raceReportServiceDeleteRaceReportSpec(), Handler: adapter.deleteRaceReport},
+		connect.Method{Spec: raceReportServiceSetRaceReportSegmentsSpec(), Handler: adapter.setRaceReportSegments},
+		connect.Method{Spec: raceReportServiceSuggestRaceReportSegmentsSpec(), Handler: adapter.suggestRaceReportSegments},
 		connect.Method{Spec: raceReportServicePublishRaceReportSpec(), Handler: adapter.publishRaceReport},
 		connect.Method{Spec: raceReportServiceUnpublishRaceReportSpec(), Handler: adapter.unpublishRaceReport},
 		connect.Method{Spec: raceReportServiceListPublicRaceReportsSpec(), Handler: adapter.listPublicRaceReports},
@@ -215,6 +255,14 @@ func (UnimplementedRaceReportServiceHandler) UpdateRaceReport(context.Context, *
 
 func (UnimplementedRaceReportServiceHandler) DeleteRaceReport(context.Context, *v1.DeleteRaceReportRequest) (*v1.DeleteRaceReportResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceReportService.DeleteRaceReport is not implemented")
+}
+
+func (UnimplementedRaceReportServiceHandler) SetRaceReportSegments(context.Context, *v1.SetRaceReportSegmentsRequest) (*v1.SetRaceReportSegmentsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceReportService.SetRaceReportSegments is not implemented")
+}
+
+func (UnimplementedRaceReportServiceHandler) SuggestRaceReportSegments(context.Context, *v1.SuggestRaceReportSegmentsRequest) (*v1.SuggestRaceReportSegmentsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "races.v1.RaceReportService.SuggestRaceReportSegments is not implemented")
 }
 
 func (UnimplementedRaceReportServiceHandler) PublishRaceReport(context.Context, *v1.PublishRaceReportRequest) (*v1.PublishRaceReportResponse, error) {
@@ -272,6 +320,22 @@ func (c *raceReportServiceClient) UpdateRaceReport(ctx context.Context, req *v1.
 func (c *raceReportServiceClient) DeleteRaceReport(ctx context.Context, req *v1.DeleteRaceReportRequest) (*v1.DeleteRaceReportResponse, error) {
 	var res v1.DeleteRaceReportResponse
 	if err := c.client.CallUnary(ctx, raceReportServiceDeleteRaceReportSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceReportServiceClient) SetRaceReportSegments(ctx context.Context, req *v1.SetRaceReportSegmentsRequest) (*v1.SetRaceReportSegmentsResponse, error) {
+	var res v1.SetRaceReportSegmentsResponse
+	if err := c.client.CallUnary(ctx, raceReportServiceSetRaceReportSegmentsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *raceReportServiceClient) SuggestRaceReportSegments(ctx context.Context, req *v1.SuggestRaceReportSegmentsRequest) (*v1.SuggestRaceReportSegmentsResponse, error) {
+	var res v1.SuggestRaceReportSegmentsResponse
+	if err := c.client.CallUnary(ctx, raceReportServiceSuggestRaceReportSegmentsSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -365,6 +429,30 @@ func (h raceReportServiceHandler) deleteRaceReport(ctx context.Context, _ connec
 		return err
 	}
 	res, err := h.svc.DeleteRaceReport(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceReportServiceHandler) setRaceReportSegments(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SetRaceReportSegmentsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SetRaceReportSegments(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h raceReportServiceHandler) suggestRaceReportSegments(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SuggestRaceReportSegmentsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SuggestRaceReportSegments(ctx, &req)
 	if err != nil {
 		return err
 	}

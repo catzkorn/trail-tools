@@ -5,6 +5,7 @@ import {
   RaceResult,
   SECTIONS,
 } from "@components/races/race-report-bits";
+import { SegmentsView } from "@components/races/race-segments";
 import PublicFooter from "@components/ui/public-footer";
 import QueryError from "@components/ui/query-error";
 import { Code } from "@connectrpc/connect";
@@ -74,6 +75,13 @@ const PublicRaceReportPage: React.FC = () => {
   const sections = SECTIONS.filter(
     (section) => section.key !== "summary" && report[section.key].trim() !== ""
   );
+  // The segments come after the race day, or after the sections without it.
+  const segments = report.segments.length > 0 && data.track.length > 1 && (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-xl font-semibold text-gray-900">Along the course</h2>
+      <SegmentsView segments={report.segments} track={data.track} />
+    </section>
+  );
 
   return (
     <article className="mx-auto flex w-full max-w-3xl flex-col gap-8 pb-16">
@@ -130,15 +138,19 @@ const PublicRaceReportPage: React.FC = () => {
         </section>
       )}
       {sections.map((section) => (
-        <section key={section.key} className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {section.label}
-          </h2>
-          <div className="flex flex-col gap-4 text-base leading-7 text-gray-800">
-            <Paragraphs text={report[section.key]} />
-          </div>
-        </section>
+        <React.Fragment key={section.key}>
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {section.label}
+            </h2>
+            <div className="flex flex-col gap-4 text-base leading-7 text-gray-800">
+              <Paragraphs text={report[section.key]} />
+            </div>
+          </section>
+          {section.key === "raceDay" && segments}
+        </React.Fragment>
       ))}
+      {!sections.some((section) => section.key === "raceDay") && segments}
       <PublicFooter author={{ displayName: data.authorName, handle }} />
     </article>
   );

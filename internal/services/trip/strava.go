@@ -14,6 +14,7 @@ import (
 	geov1 "github.com/johanbrandhorst/trail-tools/internal/gen/geo/v1"
 	tripsv1 "github.com/johanbrandhorst/trail-tools/internal/gen/trips/v1"
 	"github.com/johanbrandhorst/trail-tools/internal/store"
+	"github.com/johanbrandhorst/trail-tools/internal/track"
 	"github.com/johanbrandhorst/trail-tools/internal/trips"
 	"gitlab.com/greyxor/slogor"
 )
@@ -113,7 +114,7 @@ func (s *Service) importPhotos(ctx context.Context, report *trips.Report, activi
 	if count > maxPhotosPerReport {
 		return nil, connect.Errorf(connect.CodeFailedPrecondition, "a report can have at most %d photos", maxPhotosPerReport)
 	}
-	t, err := decodeTrack(report.Track)
+	t, err := track.Decode(report.Track)
 	if err != nil {
 		return nil, s.toConnectError(ctx, err, "failed to get track")
 	}

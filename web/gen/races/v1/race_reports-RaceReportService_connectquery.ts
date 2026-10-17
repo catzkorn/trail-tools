@@ -42,6 +42,25 @@ export const updateRaceReport = RaceReportService.method.updateRaceReport;
 export const deleteRaceReport = RaceReportService.method.deleteRaceReport;
 
 /**
+ * Replace the segments of a race report, in order along the track. The
+ * report needs a track, from its activity.
+ *
+ * @generated from rpc races.v1.RaceReportService.SetRaceReportSegments
+ */
+export const setRaceReportSegments = RaceReportService.method.setRaceReportSegments;
+
+/**
+ * Suggest segments for a race report from the climbs and descents of its
+ * track, each named like "Climb to 1,450 m", without text. Nothing is
+ * saved: set the segments to keep them, with text the author writes. Fails
+ * with FAILED_PRECONDITION if the report has no track, or the track has no
+ * elevations.
+ *
+ * @generated from rpc races.v1.RaceReportService.SuggestRaceReportSegments
+ */
+export const suggestRaceReportSegments = RaceReportService.method.suggestRaceReportSegments;
+
+/**
  * Publish a race report on the user's public profile.
  *
  * @generated from rpc races.v1.RaceReportService.PublishRaceReport

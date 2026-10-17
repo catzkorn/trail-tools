@@ -8,6 +8,7 @@ package racesv1
 
 import (
 	_ "github.com/johanbrandhorst/trail-tools/internal/gen/mcp/v1"
+	v1 "github.com/johanbrandhorst/trail-tools/internal/gen/routes/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -100,6 +101,8 @@ type RaceReport struct {
 	xxx_hidden_StopDistanceMeters  float64                `protobuf:"fixed64,25,opt,name=stop_distance_meters,json=stopDistanceMeters,proto3"`
 	xxx_hidden_StopCheckpoint      string                 `protobuf:"bytes,26,opt,name=stop_checkpoint,json=stopCheckpoint,proto3"`
 	xxx_hidden_StopSeconds         int32                  `protobuf:"varint,27,opt,name=stop_seconds,json=stopSeconds,proto3"`
+	xxx_hidden_Segments            *[]*RaceReportSegment  `protobuf:"bytes,28,rep,name=segments,proto3"`
+	xxx_hidden_HasTrack            bool                   `protobuf:"varint,29,opt,name=has_track,json=hasTrack,proto3"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -318,6 +321,22 @@ func (x *RaceReport) GetStopSeconds() int32 {
 	return 0
 }
 
+func (x *RaceReport) GetSegments() []*RaceReportSegment {
+	if x != nil {
+		if x.xxx_hidden_Segments != nil {
+			return *x.xxx_hidden_Segments
+		}
+	}
+	return nil
+}
+
+func (x *RaceReport) GetHasTrack() bool {
+	if x != nil {
+		return x.xxx_hidden_HasTrack
+	}
+	return false
+}
+
 func (x *RaceReport) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -426,6 +445,14 @@ func (x *RaceReport) SetStopSeconds(v int32) {
 	x.xxx_hidden_StopSeconds = v
 }
 
+func (x *RaceReport) SetSegments(v []*RaceReportSegment) {
+	x.xxx_hidden_Segments = &v
+}
+
+func (x *RaceReport) SetHasTrack(v bool) {
+	x.xxx_hidden_HasTrack = v
+}
+
 func (x *RaceReport) HasPublishTime() bool {
 	if x == nil {
 		return false
@@ -523,6 +550,11 @@ type RaceReport_builder struct {
 	// The elapsed time when the runner stopped in seconds, 0 if unknown. Only
 	// for a DNF.
 	StopSeconds int32
+	// The segments: stretches of the track the runner comments on, in order.
+	// Set with SetRaceReportSegments. Not set in lists.
+	Segments []*RaceReportSegment
+	// Whether the report has a track, from its activity, which segments need.
+	HasTrack bool
 }
 
 func (b0 RaceReport_builder) Build() *RaceReport {
@@ -556,6 +588,112 @@ func (b0 RaceReport_builder) Build() *RaceReport {
 	x.xxx_hidden_StopDistanceMeters = b.StopDistanceMeters
 	x.xxx_hidden_StopCheckpoint = b.StopCheckpoint
 	x.xxx_hidden_StopSeconds = b.StopSeconds
+	x.xxx_hidden_Segments = &b.Segments
+	x.xxx_hidden_HasTrack = b.HasTrack
+	return m0
+}
+
+// A stretch of a race report's track the runner comments on.
+type RaceReportSegment struct {
+	state                          protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Title               string                 `protobuf:"bytes,1,opt,name=title,proto3"`
+	xxx_hidden_Body                string                 `protobuf:"bytes,2,opt,name=body,proto3"`
+	xxx_hidden_StartDistanceMeters float64                `protobuf:"fixed64,3,opt,name=start_distance_meters,json=startDistanceMeters,proto3"`
+	xxx_hidden_EndDistanceMeters   float64                `protobuf:"fixed64,4,opt,name=end_distance_meters,json=endDistanceMeters,proto3"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
+}
+
+func (x *RaceReportSegment) Reset() {
+	*x = RaceReportSegment{}
+	mi := &file_races_v1_race_reports_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RaceReportSegment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RaceReportSegment) ProtoMessage() {}
+
+func (x *RaceReportSegment) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_reports_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RaceReportSegment) GetTitle() string {
+	if x != nil {
+		return x.xxx_hidden_Title
+	}
+	return ""
+}
+
+func (x *RaceReportSegment) GetBody() string {
+	if x != nil {
+		return x.xxx_hidden_Body
+	}
+	return ""
+}
+
+func (x *RaceReportSegment) GetStartDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_StartDistanceMeters
+	}
+	return 0
+}
+
+func (x *RaceReportSegment) GetEndDistanceMeters() float64 {
+	if x != nil {
+		return x.xxx_hidden_EndDistanceMeters
+	}
+	return 0
+}
+
+func (x *RaceReportSegment) SetTitle(v string) {
+	x.xxx_hidden_Title = v
+}
+
+func (x *RaceReportSegment) SetBody(v string) {
+	x.xxx_hidden_Body = v
+}
+
+func (x *RaceReportSegment) SetStartDistanceMeters(v float64) {
+	x.xxx_hidden_StartDistanceMeters = v
+}
+
+func (x *RaceReportSegment) SetEndDistanceMeters(v float64) {
+	x.xxx_hidden_EndDistanceMeters = v
+}
+
+type RaceReportSegment_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The heading, e.g. "The climb to Galbraith". At most 200 characters.
+	Title string
+	// The text as plain text. Paragraphs are separated by blank lines.
+	Body string
+	// Where the stretch starts and ends, in meters along the report's track.
+	// The end must be after the start, and within the track.
+	StartDistanceMeters float64
+	EndDistanceMeters   float64
+}
+
+func (b0 RaceReportSegment_builder) Build() *RaceReportSegment {
+	m0 := &RaceReportSegment{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Title = b.Title
+	x.xxx_hidden_Body = b.Body
+	x.xxx_hidden_StartDistanceMeters = b.StartDistanceMeters
+	x.xxx_hidden_EndDistanceMeters = b.EndDistanceMeters
 	return m0
 }
 
@@ -574,7 +712,7 @@ type RaceComparison struct {
 
 func (x *RaceComparison) Reset() {
 	*x = RaceComparison{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[1]
+	mi := &file_races_v1_race_reports_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -586,7 +724,7 @@ func (x *RaceComparison) String() string {
 func (*RaceComparison) ProtoMessage() {}
 
 func (x *RaceComparison) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[1]
+	mi := &file_races_v1_race_reports_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -714,7 +852,7 @@ type GoalResult struct {
 
 func (x *GoalResult) Reset() {
 	*x = GoalResult{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[2]
+	mi := &file_races_v1_race_reports_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -726,7 +864,7 @@ func (x *GoalResult) String() string {
 func (*GoalResult) ProtoMessage() {}
 
 func (x *GoalResult) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[2]
+	mi := &file_races_v1_race_reports_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -825,7 +963,7 @@ type CheckpointResult struct {
 
 func (x *CheckpointResult) Reset() {
 	*x = CheckpointResult{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[3]
+	mi := &file_races_v1_race_reports_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -837,7 +975,7 @@ func (x *CheckpointResult) String() string {
 func (*CheckpointResult) ProtoMessage() {}
 
 func (x *CheckpointResult) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[3]
+	mi := &file_races_v1_race_reports_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1004,7 +1142,7 @@ type CreateRaceReportRequest struct {
 
 func (x *CreateRaceReportRequest) Reset() {
 	*x = CreateRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[4]
+	mi := &file_races_v1_race_reports_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1016,7 +1154,7 @@ func (x *CreateRaceReportRequest) String() string {
 func (*CreateRaceReportRequest) ProtoMessage() {}
 
 func (x *CreateRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[4]
+	mi := &file_races_v1_race_reports_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1216,7 @@ type CreateRaceReportResponse struct {
 
 func (x *CreateRaceReportResponse) Reset() {
 	*x = CreateRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[5]
+	mi := &file_races_v1_race_reports_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1090,7 +1228,7 @@ func (x *CreateRaceReportResponse) String() string {
 func (*CreateRaceReportResponse) ProtoMessage() {}
 
 func (x *CreateRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[5]
+	mi := &file_races_v1_race_reports_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1164,15 +1302,16 @@ func (b0 CreateRaceReportResponse_builder) Build() *CreateRaceReportResponse {
 }
 
 type GetRaceReportRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id           string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_IncludeTrack bool                   `protobuf:"varint,2,opt,name=include_track,json=includeTrack,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetRaceReportRequest) Reset() {
 	*x = GetRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[6]
+	mi := &file_races_v1_race_reports_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1184,7 +1323,7 @@ func (x *GetRaceReportRequest) String() string {
 func (*GetRaceReportRequest) ProtoMessage() {}
 
 func (x *GetRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[6]
+	mi := &file_races_v1_race_reports_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1202,8 +1341,19 @@ func (x *GetRaceReportRequest) GetId() string {
 	return ""
 }
 
+func (x *GetRaceReportRequest) GetIncludeTrack() bool {
+	if x != nil {
+		return x.xxx_hidden_IncludeTrack
+	}
+	return false
+}
+
 func (x *GetRaceReportRequest) SetId(v string) {
 	x.xxx_hidden_Id = v
+}
+
+func (x *GetRaceReportRequest) SetIncludeTrack(v bool) {
+	x.xxx_hidden_IncludeTrack = v
 }
 
 type GetRaceReportRequest_builder struct {
@@ -1211,6 +1361,8 @@ type GetRaceReportRequest_builder struct {
 
 	// The ID of the report.
 	Id string
+	// Whether to include the report's track.
+	IncludeTrack bool
 }
 
 func (b0 GetRaceReportRequest_builder) Build() *GetRaceReportRequest {
@@ -1218,6 +1370,7 @@ func (b0 GetRaceReportRequest_builder) Build() *GetRaceReportRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_IncludeTrack = b.IncludeTrack
 	return m0
 }
 
@@ -1225,13 +1378,14 @@ type GetRaceReportResponse struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Report     *RaceReport            `protobuf:"bytes,1,opt,name=report,proto3"`
 	xxx_hidden_Comparison *RaceComparison        `protobuf:"bytes,2,opt,name=comparison,proto3"`
+	xxx_hidden_Track      *[]*v1.RoutePoint      `protobuf:"bytes,3,rep,name=track,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetRaceReportResponse) Reset() {
 	*x = GetRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[7]
+	mi := &file_races_v1_race_reports_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1243,7 +1397,7 @@ func (x *GetRaceReportResponse) String() string {
 func (*GetRaceReportResponse) ProtoMessage() {}
 
 func (x *GetRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[7]
+	mi := &file_races_v1_race_reports_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1268,12 +1422,25 @@ func (x *GetRaceReportResponse) GetComparison() *RaceComparison {
 	return nil
 }
 
+func (x *GetRaceReportResponse) GetTrack() []*v1.RoutePoint {
+	if x != nil {
+		if x.xxx_hidden_Track != nil {
+			return *x.xxx_hidden_Track
+		}
+	}
+	return nil
+}
+
 func (x *GetRaceReportResponse) SetReport(v *RaceReport) {
 	x.xxx_hidden_Report = v
 }
 
 func (x *GetRaceReportResponse) SetComparison(v *RaceComparison) {
 	x.xxx_hidden_Comparison = v
+}
+
+func (x *GetRaceReportResponse) SetTrack(v []*v1.RoutePoint) {
+	x.xxx_hidden_Track = &v
 }
 
 func (x *GetRaceReportResponse) HasReport() bool {
@@ -1305,6 +1472,9 @@ type GetRaceReportResponse_builder struct {
 	Report *RaceReport
 	// The comparison with the race plan.
 	Comparison *RaceComparison
+	// The report's track, downsampled, if include_track was set and it has
+	// one.
+	Track []*v1.RoutePoint
 }
 
 func (b0 GetRaceReportResponse_builder) Build() *GetRaceReportResponse {
@@ -1313,6 +1483,7 @@ func (b0 GetRaceReportResponse_builder) Build() *GetRaceReportResponse {
 	_, _ = b, x
 	x.xxx_hidden_Report = b.Report
 	x.xxx_hidden_Comparison = b.Comparison
+	x.xxx_hidden_Track = &b.Track
 	return m0
 }
 
@@ -1325,7 +1496,7 @@ type ListRaceReportsRequest struct {
 
 func (x *ListRaceReportsRequest) Reset() {
 	*x = ListRaceReportsRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[8]
+	mi := &file_races_v1_race_reports_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1337,7 +1508,7 @@ func (x *ListRaceReportsRequest) String() string {
 func (*ListRaceReportsRequest) ProtoMessage() {}
 
 func (x *ListRaceReportsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[8]
+	mi := &file_races_v1_race_reports_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1383,7 +1554,7 @@ type ListRaceReportsResponse struct {
 
 func (x *ListRaceReportsResponse) Reset() {
 	*x = ListRaceReportsResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[9]
+	mi := &file_races_v1_race_reports_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1395,7 +1566,7 @@ func (x *ListRaceReportsResponse) String() string {
 func (*ListRaceReportsResponse) ProtoMessage() {}
 
 func (x *ListRaceReportsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[9]
+	mi := &file_races_v1_race_reports_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1461,7 +1632,7 @@ type UpdateRaceReportRequest struct {
 
 func (x *UpdateRaceReportRequest) Reset() {
 	*x = UpdateRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[10]
+	mi := &file_races_v1_race_reports_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1473,7 +1644,7 @@ func (x *UpdateRaceReportRequest) String() string {
 func (*UpdateRaceReportRequest) ProtoMessage() {}
 
 func (x *UpdateRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[10]
+	mi := &file_races_v1_race_reports_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2033,6 +2204,268 @@ func (b0 UpdateRaceReportRequest_builder) Build() *UpdateRaceReportRequest {
 	return m0
 }
 
+type SetRaceReportSegmentsRequest struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ReportId string                 `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3"`
+	xxx_hidden_Segments *[]*RaceReportSegment  `protobuf:"bytes,2,rep,name=segments,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SetRaceReportSegmentsRequest) Reset() {
+	*x = SetRaceReportSegmentsRequest{}
+	mi := &file_races_v1_race_reports_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetRaceReportSegmentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetRaceReportSegmentsRequest) ProtoMessage() {}
+
+func (x *SetRaceReportSegmentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_reports_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SetRaceReportSegmentsRequest) GetReportId() string {
+	if x != nil {
+		return x.xxx_hidden_ReportId
+	}
+	return ""
+}
+
+func (x *SetRaceReportSegmentsRequest) GetSegments() []*RaceReportSegment {
+	if x != nil {
+		if x.xxx_hidden_Segments != nil {
+			return *x.xxx_hidden_Segments
+		}
+	}
+	return nil
+}
+
+func (x *SetRaceReportSegmentsRequest) SetReportId(v string) {
+	x.xxx_hidden_ReportId = v
+}
+
+func (x *SetRaceReportSegmentsRequest) SetSegments(v []*RaceReportSegment) {
+	x.xxx_hidden_Segments = &v
+}
+
+type SetRaceReportSegmentsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the report.
+	ReportId string
+	// The segments, at most 50. Empty to remove them all.
+	Segments []*RaceReportSegment
+}
+
+func (b0 SetRaceReportSegmentsRequest_builder) Build() *SetRaceReportSegmentsRequest {
+	m0 := &SetRaceReportSegmentsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ReportId = b.ReportId
+	x.xxx_hidden_Segments = &b.Segments
+	return m0
+}
+
+type SetRaceReportSegmentsResponse struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Report *RaceReport            `protobuf:"bytes,1,opt,name=report,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SetRaceReportSegmentsResponse) Reset() {
+	*x = SetRaceReportSegmentsResponse{}
+	mi := &file_races_v1_race_reports_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetRaceReportSegmentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetRaceReportSegmentsResponse) ProtoMessage() {}
+
+func (x *SetRaceReportSegmentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_reports_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SetRaceReportSegmentsResponse) GetReport() *RaceReport {
+	if x != nil {
+		return x.xxx_hidden_Report
+	}
+	return nil
+}
+
+func (x *SetRaceReportSegmentsResponse) SetReport(v *RaceReport) {
+	x.xxx_hidden_Report = v
+}
+
+func (x *SetRaceReportSegmentsResponse) HasReport() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Report != nil
+}
+
+func (x *SetRaceReportSegmentsResponse) ClearReport() {
+	x.xxx_hidden_Report = nil
+}
+
+type SetRaceReportSegmentsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The updated report.
+	Report *RaceReport
+}
+
+func (b0 SetRaceReportSegmentsResponse_builder) Build() *SetRaceReportSegmentsResponse {
+	m0 := &SetRaceReportSegmentsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Report = b.Report
+	return m0
+}
+
+type SuggestRaceReportSegmentsRequest struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ReportId string                 `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SuggestRaceReportSegmentsRequest) Reset() {
+	*x = SuggestRaceReportSegmentsRequest{}
+	mi := &file_races_v1_race_reports_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SuggestRaceReportSegmentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuggestRaceReportSegmentsRequest) ProtoMessage() {}
+
+func (x *SuggestRaceReportSegmentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_reports_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SuggestRaceReportSegmentsRequest) GetReportId() string {
+	if x != nil {
+		return x.xxx_hidden_ReportId
+	}
+	return ""
+}
+
+func (x *SuggestRaceReportSegmentsRequest) SetReportId(v string) {
+	x.xxx_hidden_ReportId = v
+}
+
+type SuggestRaceReportSegmentsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The ID of the report.
+	ReportId string
+}
+
+func (b0 SuggestRaceReportSegmentsRequest_builder) Build() *SuggestRaceReportSegmentsRequest {
+	m0 := &SuggestRaceReportSegmentsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ReportId = b.ReportId
+	return m0
+}
+
+type SuggestRaceReportSegmentsResponse struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Segments *[]*RaceReportSegment  `protobuf:"bytes,1,rep,name=segments,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SuggestRaceReportSegmentsResponse) Reset() {
+	*x = SuggestRaceReportSegmentsResponse{}
+	mi := &file_races_v1_race_reports_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SuggestRaceReportSegmentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuggestRaceReportSegmentsResponse) ProtoMessage() {}
+
+func (x *SuggestRaceReportSegmentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_races_v1_race_reports_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SuggestRaceReportSegmentsResponse) GetSegments() []*RaceReportSegment {
+	if x != nil {
+		if x.xxx_hidden_Segments != nil {
+			return *x.xxx_hidden_Segments
+		}
+	}
+	return nil
+}
+
+func (x *SuggestRaceReportSegmentsResponse) SetSegments(v []*RaceReportSegment) {
+	x.xxx_hidden_Segments = &v
+}
+
+type SuggestRaceReportSegmentsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The suggested segments, in order along the track, without text.
+	Segments []*RaceReportSegment
+}
+
+func (b0 SuggestRaceReportSegmentsResponse_builder) Build() *SuggestRaceReportSegmentsResponse {
+	m0 := &SuggestRaceReportSegmentsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Segments = &b.Segments
+	return m0
+}
+
 type UpdateRaceReportResponse struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Report     *RaceReport            `protobuf:"bytes,1,opt,name=report,proto3"`
@@ -2043,7 +2476,7 @@ type UpdateRaceReportResponse struct {
 
 func (x *UpdateRaceReportResponse) Reset() {
 	*x = UpdateRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[11]
+	mi := &file_races_v1_race_reports_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2055,7 +2488,7 @@ func (x *UpdateRaceReportResponse) String() string {
 func (*UpdateRaceReportResponse) ProtoMessage() {}
 
 func (x *UpdateRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[11]
+	mi := &file_races_v1_race_reports_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2137,7 +2570,7 @@ type DeleteRaceReportRequest struct {
 
 func (x *DeleteRaceReportRequest) Reset() {
 	*x = DeleteRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[12]
+	mi := &file_races_v1_race_reports_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2149,7 +2582,7 @@ func (x *DeleteRaceReportRequest) String() string {
 func (*DeleteRaceReportRequest) ProtoMessage() {}
 
 func (x *DeleteRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[12]
+	mi := &file_races_v1_race_reports_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2194,7 +2627,7 @@ type DeleteRaceReportResponse struct {
 
 func (x *DeleteRaceReportResponse) Reset() {
 	*x = DeleteRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[13]
+	mi := &file_races_v1_race_reports_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2206,7 +2639,7 @@ func (x *DeleteRaceReportResponse) String() string {
 func (*DeleteRaceReportResponse) ProtoMessage() {}
 
 func (x *DeleteRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[13]
+	mi := &file_races_v1_race_reports_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2238,7 +2671,7 @@ type PublishRaceReportRequest struct {
 
 func (x *PublishRaceReportRequest) Reset() {
 	*x = PublishRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[14]
+	mi := &file_races_v1_race_reports_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2250,7 +2683,7 @@ func (x *PublishRaceReportRequest) String() string {
 func (*PublishRaceReportRequest) ProtoMessage() {}
 
 func (x *PublishRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[14]
+	mi := &file_races_v1_race_reports_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2296,7 +2729,7 @@ type PublishRaceReportResponse struct {
 
 func (x *PublishRaceReportResponse) Reset() {
 	*x = PublishRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[15]
+	mi := &file_races_v1_race_reports_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2308,7 +2741,7 @@ func (x *PublishRaceReportResponse) String() string {
 func (*PublishRaceReportResponse) ProtoMessage() {}
 
 func (x *PublishRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[15]
+	mi := &file_races_v1_race_reports_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2365,7 +2798,7 @@ type UnpublishRaceReportRequest struct {
 
 func (x *UnpublishRaceReportRequest) Reset() {
 	*x = UnpublishRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[16]
+	mi := &file_races_v1_race_reports_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2377,7 +2810,7 @@ func (x *UnpublishRaceReportRequest) String() string {
 func (*UnpublishRaceReportRequest) ProtoMessage() {}
 
 func (x *UnpublishRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[16]
+	mi := &file_races_v1_race_reports_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2423,7 +2856,7 @@ type UnpublishRaceReportResponse struct {
 
 func (x *UnpublishRaceReportResponse) Reset() {
 	*x = UnpublishRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[17]
+	mi := &file_races_v1_race_reports_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2435,7 +2868,7 @@ func (x *UnpublishRaceReportResponse) String() string {
 func (*UnpublishRaceReportResponse) ProtoMessage() {}
 
 func (x *UnpublishRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[17]
+	mi := &file_races_v1_race_reports_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2492,7 +2925,7 @@ type ListPublicRaceReportsRequest struct {
 
 func (x *ListPublicRaceReportsRequest) Reset() {
 	*x = ListPublicRaceReportsRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[18]
+	mi := &file_races_v1_race_reports_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2504,7 +2937,7 @@ func (x *ListPublicRaceReportsRequest) String() string {
 func (*ListPublicRaceReportsRequest) ProtoMessage() {}
 
 func (x *ListPublicRaceReportsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[18]
+	mi := &file_races_v1_race_reports_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2550,7 +2983,7 @@ type ListPublicRaceReportsResponse struct {
 
 func (x *ListPublicRaceReportsResponse) Reset() {
 	*x = ListPublicRaceReportsResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[19]
+	mi := &file_races_v1_race_reports_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2562,7 +2995,7 @@ func (x *ListPublicRaceReportsResponse) String() string {
 func (*ListPublicRaceReportsResponse) ProtoMessage() {}
 
 func (x *ListPublicRaceReportsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[19]
+	mi := &file_races_v1_race_reports_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2611,7 +3044,7 @@ type GetPublicRaceReportRequest struct {
 
 func (x *GetPublicRaceReportRequest) Reset() {
 	*x = GetPublicRaceReportRequest{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[20]
+	mi := &file_races_v1_race_reports_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2623,7 +3056,7 @@ func (x *GetPublicRaceReportRequest) String() string {
 func (*GetPublicRaceReportRequest) ProtoMessage() {}
 
 func (x *GetPublicRaceReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[20]
+	mi := &file_races_v1_race_reports_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2679,13 +3112,14 @@ type GetPublicRaceReportResponse struct {
 	xxx_hidden_Report     *RaceReport            `protobuf:"bytes,1,opt,name=report,proto3"`
 	xxx_hidden_Comparison *RaceComparison        `protobuf:"bytes,2,opt,name=comparison,proto3"`
 	xxx_hidden_AuthorName string                 `protobuf:"bytes,3,opt,name=author_name,json=authorName,proto3"`
+	xxx_hidden_Track      *[]*v1.RoutePoint      `protobuf:"bytes,4,rep,name=track,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetPublicRaceReportResponse) Reset() {
 	*x = GetPublicRaceReportResponse{}
-	mi := &file_races_v1_race_reports_proto_msgTypes[21]
+	mi := &file_races_v1_race_reports_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2697,7 +3131,7 @@ func (x *GetPublicRaceReportResponse) String() string {
 func (*GetPublicRaceReportResponse) ProtoMessage() {}
 
 func (x *GetPublicRaceReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_races_v1_race_reports_proto_msgTypes[21]
+	mi := &file_races_v1_race_reports_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2729,6 +3163,15 @@ func (x *GetPublicRaceReportResponse) GetAuthorName() string {
 	return ""
 }
 
+func (x *GetPublicRaceReportResponse) GetTrack() []*v1.RoutePoint {
+	if x != nil {
+		if x.xxx_hidden_Track != nil {
+			return *x.xxx_hidden_Track
+		}
+	}
+	return nil
+}
+
 func (x *GetPublicRaceReportResponse) SetReport(v *RaceReport) {
 	x.xxx_hidden_Report = v
 }
@@ -2739,6 +3182,10 @@ func (x *GetPublicRaceReportResponse) SetComparison(v *RaceComparison) {
 
 func (x *GetPublicRaceReportResponse) SetAuthorName(v string) {
 	x.xxx_hidden_AuthorName = v
+}
+
+func (x *GetPublicRaceReportResponse) SetTrack(v []*v1.RoutePoint) {
+	x.xxx_hidden_Track = &v
 }
 
 func (x *GetPublicRaceReportResponse) HasReport() bool {
@@ -2772,6 +3219,8 @@ type GetPublicRaceReportResponse_builder struct {
 	Comparison *RaceComparison
 	// The display name of the author.
 	AuthorName string
+	// The report's track, which the segments are distances along.
+	Track []*v1.RoutePoint
 }
 
 func (b0 GetPublicRaceReportResponse_builder) Build() *GetPublicRaceReportResponse {
@@ -2781,6 +3230,7 @@ func (b0 GetPublicRaceReportResponse_builder) Build() *GetPublicRaceReportRespon
 	x.xxx_hidden_Report = b.Report
 	x.xxx_hidden_Comparison = b.Comparison
 	x.xxx_hidden_AuthorName = b.AuthorName
+	x.xxx_hidden_Track = &b.Track
 	return m0
 }
 
@@ -2788,7 +3238,7 @@ var File_races_v1_race_reports_proto protoreflect.FileDescriptor
 
 const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\n" +
-	"\x1braces/v1/race_reports.proto\x12\braces.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\"\x8c\b\n" +
+	"\x1braces/v1/race_reports.proto\x12\braces.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x14mcp/v1/options.proto\x1a\x16routes/v1/routes.proto\"\xf2\b\n" +
 	"\n" +
 	"RaceReport\x12\x16\n" +
 	"\x02id\x18\x01 \x01(\tB\x06\xaa\x9f\x19\x02\b\x01R\x02id\x12\x1f\n" +
@@ -2822,7 +3272,14 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x0edid_not_finish\x18\x18 \x01(\bR\fdidNotFinish\x120\n" +
 	"\x14stop_distance_meters\x18\x19 \x01(\x01R\x12stopDistanceMeters\x12'\n" +
 	"\x0fstop_checkpoint\x18\x1a \x01(\tR\x0estopCheckpoint\x12!\n" +
-	"\fstop_seconds\x18\x1b \x01(\x05R\vstopSeconds\"\xc8\x02\n" +
+	"\fstop_seconds\x18\x1b \x01(\x05R\vstopSeconds\x12?\n" +
+	"\bsegments\x18\x1c \x03(\v2\x1b.races.v1.RaceReportSegmentB\x06\xaa\x9f\x19\x02\b\x01R\bsegments\x12#\n" +
+	"\thas_track\x18\x1d \x01(\bB\x06\xaa\x9f\x19\x02\b\x01R\bhasTrack\"\xa1\x01\n" +
+	"\x11RaceReportSegment\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04body\x18\x02 \x01(\tR\x04body\x122\n" +
+	"\x15start_distance_meters\x18\x03 \x01(\x01R\x13startDistanceMeters\x12.\n" +
+	"\x13end_distance_meters\x18\x04 \x01(\x01R\x11endDistanceMeters\"\xc8\x02\n" +
 	"\x0eRaceComparison\x12\x19\n" +
 	"\bhas_plan\x18\x01 \x01(\bR\ahasPlan\x12*\n" +
 	"\x05goals\x18\x02 \x03(\v2\x14.races.v1.GoalResultR\x05goals\x124\n" +
@@ -2855,14 +3312,16 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\x128\n" +
 	"\n" +
 	"comparison\x18\x02 \x01(\v2\x18.races.v1.RaceComparisonR\n" +
-	"comparison\"&\n" +
+	"comparison\"K\n" +
 	"\x14GetRaceReportRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x7f\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
+	"\rinclude_track\x18\x02 \x01(\bR\fincludeTrack\"\xac\x01\n" +
 	"\x15GetRaceReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\x128\n" +
 	"\n" +
 	"comparison\x18\x02 \x01(\v2\x18.races.v1.RaceComparisonR\n" +
-	"comparison\"1\n" +
+	"comparison\x12+\n" +
+	"\x05track\x18\x03 \x03(\v2\x15.routes.v1.RoutePointR\x05track\"1\n" +
 	"\x16ListRaceReportsRequest\x12\x17\n" +
 	"\arace_id\x18\x01 \x01(\tR\x06raceId\"I\n" +
 	"\x17ListRaceReportsResponse\x12.\n" +
@@ -2909,7 +3368,16 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\x0f_did_not_finishB\x17\n" +
 	"\x15_stop_distance_metersB\x12\n" +
 	"\x10_stop_checkpointB\x0f\n" +
-	"\r_stop_seconds\"\x82\x01\n" +
+	"\r_stop_seconds\"t\n" +
+	"\x1cSetRaceReportSegmentsRequest\x12\x1b\n" +
+	"\treport_id\x18\x01 \x01(\tR\breportId\x127\n" +
+	"\bsegments\x18\x02 \x03(\v2\x1b.races.v1.RaceReportSegmentR\bsegments\"M\n" +
+	"\x1dSetRaceReportSegmentsResponse\x12,\n" +
+	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\"?\n" +
+	" SuggestRaceReportSegmentsRequest\x12\x1b\n" +
+	"\treport_id\x18\x01 \x01(\tR\breportId\"\\\n" +
+	"!SuggestRaceReportSegmentsResponse\x127\n" +
+	"\bsegments\x18\x01 \x03(\v2\x1b.races.v1.RaceReportSegmentR\bsegments\"\x82\x01\n" +
 	"\x18UpdateRaceReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\x128\n" +
 	"\n" +
@@ -2932,24 +3400,27 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\areports\x18\x01 \x03(\v2\x14.races.v1.RaceReportR\areports\"H\n" +
 	"\x1aGetPublicRaceReportRequest\x12\x16\n" +
 	"\x06handle\x18\x01 \x01(\tR\x06handle\x12\x12\n" +
-	"\x04slug\x18\x02 \x01(\tR\x04slug\"\xa6\x01\n" +
+	"\x04slug\x18\x02 \x01(\tR\x04slug\"\xd3\x01\n" +
 	"\x1bGetPublicRaceReportResponse\x12,\n" +
 	"\x06report\x18\x01 \x01(\v2\x14.races.v1.RaceReportR\x06report\x128\n" +
 	"\n" +
 	"comparison\x18\x02 \x01(\v2\x18.races.v1.RaceComparisonR\n" +
 	"comparison\x12\x1f\n" +
 	"\vauthor_name\x18\x03 \x01(\tR\n" +
-	"authorName*|\n" +
+	"authorName\x12+\n" +
+	"\x05track\x18\x04 \x03(\v2\x15.routes.v1.RoutePointR\x05track*|\n" +
 	"\x11ActualTimesSource\x12#\n" +
 	"\x1fACTUAL_TIMES_SOURCE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cACTUAL_TIMES_SOURCE_ACTIVITY\x10\x01\x12 \n" +
-	"\x1cACTUAL_TIMES_SOURCE_RACE_DAY\x10\x022\xfe\x06\n" +
+	"\x1cACTUAL_TIMES_SOURCE_RACE_DAY\x10\x022\xde\b\n" +
 	"\x11RaceReportService\x12Y\n" +
 	"\x10CreateRaceReport\x12!.races.v1.CreateRaceReportRequest\x1a\".races.v1.CreateRaceReportResponse\x12P\n" +
 	"\rGetRaceReport\x12\x1e.races.v1.GetRaceReportRequest\x1a\x1f.races.v1.GetRaceReportResponse\x12V\n" +
 	"\x0fListRaceReports\x12 .races.v1.ListRaceReportsRequest\x1a!.races.v1.ListRaceReportsResponse\x12Y\n" +
 	"\x10UpdateRaceReport\x12!.races.v1.UpdateRaceReportRequest\x1a\".races.v1.UpdateRaceReportResponse\x12Y\n" +
-	"\x10DeleteRaceReport\x12!.races.v1.DeleteRaceReportRequest\x1a\".races.v1.DeleteRaceReportResponse\x12d\n" +
+	"\x10DeleteRaceReport\x12!.races.v1.DeleteRaceReportRequest\x1a\".races.v1.DeleteRaceReportResponse\x12h\n" +
+	"\x15SetRaceReportSegments\x12&.races.v1.SetRaceReportSegmentsRequest\x1a'.races.v1.SetRaceReportSegmentsResponse\x12t\n" +
+	"\x19SuggestRaceReportSegments\x12*.races.v1.SuggestRaceReportSegmentsRequest\x1a+.races.v1.SuggestRaceReportSegmentsResponse\x12d\n" +
 	"\x11PublishRaceReport\x12\".races.v1.PublishRaceReportRequest\x1a#.races.v1.PublishRaceReportResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12j\n" +
 	"\x13UnpublishRaceReport\x12$.races.v1.UnpublishRaceReportRequest\x1a%.races.v1.UnpublishRaceReportResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12p\n" +
 	"\x15ListPublicRaceReports\x12&.races.v1.ListPublicRaceReportsRequest\x1a'.races.v1.ListPublicRaceReportsResponse\"\x06\xa2\x9f\x19\x02\b\x01\x12j\n" +
@@ -2957,75 +3428,91 @@ const file_races_v1_race_reports_proto_rawDesc = "" +
 	"\fcom.races.v1B\x10RaceReportsProtoP\x01ZDgithub.com/johanbrandhorst/trail-tools/internal/gen/races/v1;racesv1\xa2\x02\x03RXX\xaa\x02\bRaces.V1\xca\x02\bRaces\\V1\xe2\x02\x14Races\\V1\\GPBMetadata\xea\x02\tRaces::V1b\x06proto3"
 
 var file_races_v1_race_reports_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_races_v1_race_reports_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_races_v1_race_reports_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_races_v1_race_reports_proto_goTypes = []any{
-	(ActualTimesSource)(0),                // 0: races.v1.ActualTimesSource
-	(*RaceReport)(nil),                    // 1: races.v1.RaceReport
-	(*RaceComparison)(nil),                // 2: races.v1.RaceComparison
-	(*GoalResult)(nil),                    // 3: races.v1.GoalResult
-	(*CheckpointResult)(nil),              // 4: races.v1.CheckpointResult
-	(*CreateRaceReportRequest)(nil),       // 5: races.v1.CreateRaceReportRequest
-	(*CreateRaceReportResponse)(nil),      // 6: races.v1.CreateRaceReportResponse
-	(*GetRaceReportRequest)(nil),          // 7: races.v1.GetRaceReportRequest
-	(*GetRaceReportResponse)(nil),         // 8: races.v1.GetRaceReportResponse
-	(*ListRaceReportsRequest)(nil),        // 9: races.v1.ListRaceReportsRequest
-	(*ListRaceReportsResponse)(nil),       // 10: races.v1.ListRaceReportsResponse
-	(*UpdateRaceReportRequest)(nil),       // 11: races.v1.UpdateRaceReportRequest
-	(*UpdateRaceReportResponse)(nil),      // 12: races.v1.UpdateRaceReportResponse
-	(*DeleteRaceReportRequest)(nil),       // 13: races.v1.DeleteRaceReportRequest
-	(*DeleteRaceReportResponse)(nil),      // 14: races.v1.DeleteRaceReportResponse
-	(*PublishRaceReportRequest)(nil),      // 15: races.v1.PublishRaceReportRequest
-	(*PublishRaceReportResponse)(nil),     // 16: races.v1.PublishRaceReportResponse
-	(*UnpublishRaceReportRequest)(nil),    // 17: races.v1.UnpublishRaceReportRequest
-	(*UnpublishRaceReportResponse)(nil),   // 18: races.v1.UnpublishRaceReportResponse
-	(*ListPublicRaceReportsRequest)(nil),  // 19: races.v1.ListPublicRaceReportsRequest
-	(*ListPublicRaceReportsResponse)(nil), // 20: races.v1.ListPublicRaceReportsResponse
-	(*GetPublicRaceReportRequest)(nil),    // 21: races.v1.GetPublicRaceReportRequest
-	(*GetPublicRaceReportResponse)(nil),   // 22: races.v1.GetPublicRaceReportResponse
-	(*timestamppb.Timestamp)(nil),         // 23: google.protobuf.Timestamp
+	(ActualTimesSource)(0),                    // 0: races.v1.ActualTimesSource
+	(*RaceReport)(nil),                        // 1: races.v1.RaceReport
+	(*RaceReportSegment)(nil),                 // 2: races.v1.RaceReportSegment
+	(*RaceComparison)(nil),                    // 3: races.v1.RaceComparison
+	(*GoalResult)(nil),                        // 4: races.v1.GoalResult
+	(*CheckpointResult)(nil),                  // 5: races.v1.CheckpointResult
+	(*CreateRaceReportRequest)(nil),           // 6: races.v1.CreateRaceReportRequest
+	(*CreateRaceReportResponse)(nil),          // 7: races.v1.CreateRaceReportResponse
+	(*GetRaceReportRequest)(nil),              // 8: races.v1.GetRaceReportRequest
+	(*GetRaceReportResponse)(nil),             // 9: races.v1.GetRaceReportResponse
+	(*ListRaceReportsRequest)(nil),            // 10: races.v1.ListRaceReportsRequest
+	(*ListRaceReportsResponse)(nil),           // 11: races.v1.ListRaceReportsResponse
+	(*UpdateRaceReportRequest)(nil),           // 12: races.v1.UpdateRaceReportRequest
+	(*SetRaceReportSegmentsRequest)(nil),      // 13: races.v1.SetRaceReportSegmentsRequest
+	(*SetRaceReportSegmentsResponse)(nil),     // 14: races.v1.SetRaceReportSegmentsResponse
+	(*SuggestRaceReportSegmentsRequest)(nil),  // 15: races.v1.SuggestRaceReportSegmentsRequest
+	(*SuggestRaceReportSegmentsResponse)(nil), // 16: races.v1.SuggestRaceReportSegmentsResponse
+	(*UpdateRaceReportResponse)(nil),          // 17: races.v1.UpdateRaceReportResponse
+	(*DeleteRaceReportRequest)(nil),           // 18: races.v1.DeleteRaceReportRequest
+	(*DeleteRaceReportResponse)(nil),          // 19: races.v1.DeleteRaceReportResponse
+	(*PublishRaceReportRequest)(nil),          // 20: races.v1.PublishRaceReportRequest
+	(*PublishRaceReportResponse)(nil),         // 21: races.v1.PublishRaceReportResponse
+	(*UnpublishRaceReportRequest)(nil),        // 22: races.v1.UnpublishRaceReportRequest
+	(*UnpublishRaceReportResponse)(nil),       // 23: races.v1.UnpublishRaceReportResponse
+	(*ListPublicRaceReportsRequest)(nil),      // 24: races.v1.ListPublicRaceReportsRequest
+	(*ListPublicRaceReportsResponse)(nil),     // 25: races.v1.ListPublicRaceReportsResponse
+	(*GetPublicRaceReportRequest)(nil),        // 26: races.v1.GetPublicRaceReportRequest
+	(*GetPublicRaceReportResponse)(nil),       // 27: races.v1.GetPublicRaceReportResponse
+	(*timestamppb.Timestamp)(nil),             // 28: google.protobuf.Timestamp
+	(*v1.RoutePoint)(nil),                     // 29: routes.v1.RoutePoint
 }
 var file_races_v1_race_reports_proto_depIdxs = []int32{
-	23, // 0: races.v1.RaceReport.publish_time:type_name -> google.protobuf.Timestamp
-	23, // 1: races.v1.RaceReport.create_time:type_name -> google.protobuf.Timestamp
-	23, // 2: races.v1.RaceReport.update_time:type_name -> google.protobuf.Timestamp
-	3,  // 3: races.v1.RaceComparison.goals:type_name -> races.v1.GoalResult
-	4,  // 4: races.v1.RaceComparison.checkpoints:type_name -> races.v1.CheckpointResult
-	0,  // 5: races.v1.RaceComparison.actual_times_source:type_name -> races.v1.ActualTimesSource
-	1,  // 6: races.v1.CreateRaceReportResponse.report:type_name -> races.v1.RaceReport
-	2,  // 7: races.v1.CreateRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
-	1,  // 8: races.v1.GetRaceReportResponse.report:type_name -> races.v1.RaceReport
-	2,  // 9: races.v1.GetRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
-	1,  // 10: races.v1.ListRaceReportsResponse.reports:type_name -> races.v1.RaceReport
-	1,  // 11: races.v1.UpdateRaceReportResponse.report:type_name -> races.v1.RaceReport
-	2,  // 12: races.v1.UpdateRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
-	1,  // 13: races.v1.PublishRaceReportResponse.report:type_name -> races.v1.RaceReport
-	1,  // 14: races.v1.UnpublishRaceReportResponse.report:type_name -> races.v1.RaceReport
-	1,  // 15: races.v1.ListPublicRaceReportsResponse.reports:type_name -> races.v1.RaceReport
-	1,  // 16: races.v1.GetPublicRaceReportResponse.report:type_name -> races.v1.RaceReport
-	2,  // 17: races.v1.GetPublicRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
-	5,  // 18: races.v1.RaceReportService.CreateRaceReport:input_type -> races.v1.CreateRaceReportRequest
-	7,  // 19: races.v1.RaceReportService.GetRaceReport:input_type -> races.v1.GetRaceReportRequest
-	9,  // 20: races.v1.RaceReportService.ListRaceReports:input_type -> races.v1.ListRaceReportsRequest
-	11, // 21: races.v1.RaceReportService.UpdateRaceReport:input_type -> races.v1.UpdateRaceReportRequest
-	13, // 22: races.v1.RaceReportService.DeleteRaceReport:input_type -> races.v1.DeleteRaceReportRequest
-	15, // 23: races.v1.RaceReportService.PublishRaceReport:input_type -> races.v1.PublishRaceReportRequest
-	17, // 24: races.v1.RaceReportService.UnpublishRaceReport:input_type -> races.v1.UnpublishRaceReportRequest
-	19, // 25: races.v1.RaceReportService.ListPublicRaceReports:input_type -> races.v1.ListPublicRaceReportsRequest
-	21, // 26: races.v1.RaceReportService.GetPublicRaceReport:input_type -> races.v1.GetPublicRaceReportRequest
-	6,  // 27: races.v1.RaceReportService.CreateRaceReport:output_type -> races.v1.CreateRaceReportResponse
-	8,  // 28: races.v1.RaceReportService.GetRaceReport:output_type -> races.v1.GetRaceReportResponse
-	10, // 29: races.v1.RaceReportService.ListRaceReports:output_type -> races.v1.ListRaceReportsResponse
-	12, // 30: races.v1.RaceReportService.UpdateRaceReport:output_type -> races.v1.UpdateRaceReportResponse
-	14, // 31: races.v1.RaceReportService.DeleteRaceReport:output_type -> races.v1.DeleteRaceReportResponse
-	16, // 32: races.v1.RaceReportService.PublishRaceReport:output_type -> races.v1.PublishRaceReportResponse
-	18, // 33: races.v1.RaceReportService.UnpublishRaceReport:output_type -> races.v1.UnpublishRaceReportResponse
-	20, // 34: races.v1.RaceReportService.ListPublicRaceReports:output_type -> races.v1.ListPublicRaceReportsResponse
-	22, // 35: races.v1.RaceReportService.GetPublicRaceReport:output_type -> races.v1.GetPublicRaceReportResponse
-	27, // [27:36] is the sub-list for method output_type
-	18, // [18:27] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	28, // 0: races.v1.RaceReport.publish_time:type_name -> google.protobuf.Timestamp
+	28, // 1: races.v1.RaceReport.create_time:type_name -> google.protobuf.Timestamp
+	28, // 2: races.v1.RaceReport.update_time:type_name -> google.protobuf.Timestamp
+	2,  // 3: races.v1.RaceReport.segments:type_name -> races.v1.RaceReportSegment
+	4,  // 4: races.v1.RaceComparison.goals:type_name -> races.v1.GoalResult
+	5,  // 5: races.v1.RaceComparison.checkpoints:type_name -> races.v1.CheckpointResult
+	0,  // 6: races.v1.RaceComparison.actual_times_source:type_name -> races.v1.ActualTimesSource
+	1,  // 7: races.v1.CreateRaceReportResponse.report:type_name -> races.v1.RaceReport
+	3,  // 8: races.v1.CreateRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
+	1,  // 9: races.v1.GetRaceReportResponse.report:type_name -> races.v1.RaceReport
+	3,  // 10: races.v1.GetRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
+	29, // 11: races.v1.GetRaceReportResponse.track:type_name -> routes.v1.RoutePoint
+	1,  // 12: races.v1.ListRaceReportsResponse.reports:type_name -> races.v1.RaceReport
+	2,  // 13: races.v1.SetRaceReportSegmentsRequest.segments:type_name -> races.v1.RaceReportSegment
+	1,  // 14: races.v1.SetRaceReportSegmentsResponse.report:type_name -> races.v1.RaceReport
+	2,  // 15: races.v1.SuggestRaceReportSegmentsResponse.segments:type_name -> races.v1.RaceReportSegment
+	1,  // 16: races.v1.UpdateRaceReportResponse.report:type_name -> races.v1.RaceReport
+	3,  // 17: races.v1.UpdateRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
+	1,  // 18: races.v1.PublishRaceReportResponse.report:type_name -> races.v1.RaceReport
+	1,  // 19: races.v1.UnpublishRaceReportResponse.report:type_name -> races.v1.RaceReport
+	1,  // 20: races.v1.ListPublicRaceReportsResponse.reports:type_name -> races.v1.RaceReport
+	1,  // 21: races.v1.GetPublicRaceReportResponse.report:type_name -> races.v1.RaceReport
+	3,  // 22: races.v1.GetPublicRaceReportResponse.comparison:type_name -> races.v1.RaceComparison
+	29, // 23: races.v1.GetPublicRaceReportResponse.track:type_name -> routes.v1.RoutePoint
+	6,  // 24: races.v1.RaceReportService.CreateRaceReport:input_type -> races.v1.CreateRaceReportRequest
+	8,  // 25: races.v1.RaceReportService.GetRaceReport:input_type -> races.v1.GetRaceReportRequest
+	10, // 26: races.v1.RaceReportService.ListRaceReports:input_type -> races.v1.ListRaceReportsRequest
+	12, // 27: races.v1.RaceReportService.UpdateRaceReport:input_type -> races.v1.UpdateRaceReportRequest
+	18, // 28: races.v1.RaceReportService.DeleteRaceReport:input_type -> races.v1.DeleteRaceReportRequest
+	13, // 29: races.v1.RaceReportService.SetRaceReportSegments:input_type -> races.v1.SetRaceReportSegmentsRequest
+	15, // 30: races.v1.RaceReportService.SuggestRaceReportSegments:input_type -> races.v1.SuggestRaceReportSegmentsRequest
+	20, // 31: races.v1.RaceReportService.PublishRaceReport:input_type -> races.v1.PublishRaceReportRequest
+	22, // 32: races.v1.RaceReportService.UnpublishRaceReport:input_type -> races.v1.UnpublishRaceReportRequest
+	24, // 33: races.v1.RaceReportService.ListPublicRaceReports:input_type -> races.v1.ListPublicRaceReportsRequest
+	26, // 34: races.v1.RaceReportService.GetPublicRaceReport:input_type -> races.v1.GetPublicRaceReportRequest
+	7,  // 35: races.v1.RaceReportService.CreateRaceReport:output_type -> races.v1.CreateRaceReportResponse
+	9,  // 36: races.v1.RaceReportService.GetRaceReport:output_type -> races.v1.GetRaceReportResponse
+	11, // 37: races.v1.RaceReportService.ListRaceReports:output_type -> races.v1.ListRaceReportsResponse
+	17, // 38: races.v1.RaceReportService.UpdateRaceReport:output_type -> races.v1.UpdateRaceReportResponse
+	19, // 39: races.v1.RaceReportService.DeleteRaceReport:output_type -> races.v1.DeleteRaceReportResponse
+	14, // 40: races.v1.RaceReportService.SetRaceReportSegments:output_type -> races.v1.SetRaceReportSegmentsResponse
+	16, // 41: races.v1.RaceReportService.SuggestRaceReportSegments:output_type -> races.v1.SuggestRaceReportSegmentsResponse
+	21, // 42: races.v1.RaceReportService.PublishRaceReport:output_type -> races.v1.PublishRaceReportResponse
+	23, // 43: races.v1.RaceReportService.UnpublishRaceReport:output_type -> races.v1.UnpublishRaceReportResponse
+	25, // 44: races.v1.RaceReportService.ListPublicRaceReports:output_type -> races.v1.ListPublicRaceReportsResponse
+	27, // 45: races.v1.RaceReportService.GetPublicRaceReport:output_type -> races.v1.GetPublicRaceReportResponse
+	35, // [35:46] is the sub-list for method output_type
+	24, // [24:35] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_races_v1_race_reports_proto_init() }
@@ -3033,15 +3520,15 @@ func file_races_v1_race_reports_proto_init() {
 	if File_races_v1_race_reports_proto != nil {
 		return
 	}
-	file_races_v1_race_reports_proto_msgTypes[3].OneofWrappers = []any{}
-	file_races_v1_race_reports_proto_msgTypes[10].OneofWrappers = []any{}
+	file_races_v1_race_reports_proto_msgTypes[4].OneofWrappers = []any{}
+	file_races_v1_race_reports_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_races_v1_race_reports_proto_rawDesc), len(file_races_v1_race_reports_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   22,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
